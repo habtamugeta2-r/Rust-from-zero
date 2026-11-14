@@ -22,9 +22,9 @@ It is worth knowing the size of what you are starting, so that you can plan.
 |---|---|
 | Chapters | 54, of which 8 are complete projects you build file by file |
 | Appendices | 4: a glossary, a reference, a catalogue of compiler errors, and Rust for people who know other languages |
-| Rust examples | 873, **every one compiled and run** by a real compiler, with its real output shown |
+| Rust examples | 875, **every one compiled and run** by a real compiler, with its real output shown |
 | Exercises | 184, each with a hint and a worked solution |
-| Quiz questions | 224, each with an explanation |
+| Quiz questions | 225, each with an explanation |
 
 Nothing here is a mock-up. When the guide shows a compiler error, that is the message the compiler really printed, on the line number it really pointed at. When it shows program output, the program really produced it. This is checked automatically, for every example, on every change to the guide.
 

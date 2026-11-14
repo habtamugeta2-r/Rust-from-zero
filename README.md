@@ -14,9 +14,9 @@ themes and search all work offline.
 | | |
 |---|---|
 | Chapters | 54, including 8 complete projects, plus 4 appendices |
-| Examples | 1,108 code listings, **873 of them Rust** |
+| Examples | 1,112 code listings, **875 of them Rust** |
 | Exercises | 184, every one with a hint and a worked solution |
-| Quiz questions | 224, each with an explanation of the answer |
+| Quiz questions | 225, each with an explanation of the answer |
 | Captured output | 104 real compiler messages and program outputs |
 | Size | 42,400 lines of source; one 4 MB HTML file |
 
@@ -80,8 +80,11 @@ python3 guide-src/tools/project.py 48 shortener /tmp/shortener
 (cd /tmp/shortener && cargo test)
 ```
 
-CI runs the build-freshness and structural checks on every pull request, and
-compiles every example weekly (see [`.github/workflows/build.yml`](./.github/workflows/build.yml)).
+CI checks two things (see [`.github/workflows/build.yml`](./.github/workflows/build.yml)):
+the build is fresh and the structure is clean on every push, and **every example
+is compiled and run** — standard library and crate examples both — on every pull
+request and once a week. The latest weekly run is the honest answer to "do the
+examples still compile?".
 
 ## How examples are marked
 
