@@ -67,8 +67,27 @@ jobs:
           (cd ext && cargo new main --name extmain -q)
           cp guide-src/tools/ext-main-Cargo.toml ext/main/Cargo.toml
 
+      # The failure output is echoed and, for the first few lines, surfaced as
+      # ::error:: annotations, so that a red run explains itself in the UI even
+      # when the raw log is not available.
       - name: Compile and run the standard-library examples
-        run: python3 guide-src/tools/check.py
+        run: |
+          set +e
+          python3 guide-src/tools/check.py > /tmp/std.log 2>&1
+          status=$?
+          tail -n 30 /tmp/std.log
+          if [ $status -ne 0 ]; then
+            grep -m 8 -E "^✗|^error" /tmp/std.log | sed 's/^/::error::/'
+            exit 1
+          fi
 
       - name: Check the crate examples with cargo
-        run: python3 guide-src/tools/check.py --ext
+        run: |
+          set +e
+          python3 guide-src/tools/check.py --ext > /tmp/ext.log 2>&1
+          status=$?
+          tail -n 40 /tmp/ext.log
+          if [ $status -ne 0 ]; then
+            grep -m 8 -E "^✗|^error|failed to select|no matching package" /tmp/ext.log | sed 's/^/::error::/'
+            exit 1
+          fi

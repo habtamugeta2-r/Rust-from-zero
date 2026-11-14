@@ -779,6 +779,14 @@ fn main() -> io::Result<()> {
 
 Locking standard output once, as this program does, also makes the writing faster ([chapter 51](#performance)).
 
+The other early exit is the one the user asks for: **Ctrl+C**. By default it kills the program where it stands, which is fine for a tool that only prints, and wrong for one that is holding a lock file, a temporary file or a half-written download. Handle the interrupt and tidy up:
+
+- In an async program, `tokio::signal::ctrl_c().await` is one line in a `select!` next to the real work; the server chapters use it for a graceful shutdown.
+- In a synchronous program, the crate `ctrlc` installs a handler that runs your closure.
+- Exit with code **130** (128 + SIGINT), so scripts and shells know the program was interrupted rather than failed. A `Drop` guard that removes the temporary file is often all the tidy-up you need.
+
+A program that ignores Ctrl+C entirely, or that swallows it and keeps working, is worse than one that dies: the user's only remaining option is `kill -9`, which leaves the mess behind.
+
 ### Running other programs
 
 Command-line tools often start other tools: a compiler, `git`, an editor. `std::process::Command` does that:

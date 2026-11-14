@@ -1351,6 +1351,7 @@ A brand-new service does not need a full observability stack. It needs: one stru
 | Redis | `redis`, `fred` |
 | Logs, metrics and traces | `tracing` + `tracing-subscriber`, `metrics` + `metrics-exporter-prometheus`, `opentelemetry` + `tracing-opentelemetry` |
 | Looking inside the runtime | `console-subscriber`, used by `tokio-console` |
+| Cheap shared byte buffers | `bytes` (`Bytes`, `BytesMut`) |
 | E-mail | `lettre` |
 | DNS | `hickory-resolver` |
 | Other async runtimes | `smol` (small and simple), `embassy` (for microcontrollers, [chapter 50](#games-embedded)) |
@@ -1412,6 +1413,12 @@ Then a producer publishes to `jobs.titles` and a worker subscribes with a queue 
 
 :::details The architecture, in one paragraph
 Take the URL shortener from [chapter 48](#project-api). Creating a short link is fast: validate, insert, return. Fetching the title of the target page is slow and can fail, so it does not belong in the request. Instead the handler inserts the row and publishes `link.created {id}`, and returns. A worker consumes that topic, fetches the page with `reqwest`, and writes the title back. If the fetch fails, the message is retried with backoff and finally parked in a dead-letter queue that a human reads weekly. The API is now fast and independent of the internet; the title appears a second later. That is the whole pattern, and it is the same one behind thumbnails, e-mails, invoices and search indexing.
+:::
+
+:::tip The byte buffer you will meet everywhere
+`bytes::Bytes` is an immutable slice of memory that can be cloned cheaply: a clone copies a pointer and bumps a counter, not the data. `BytesMut` is the writable counterpart — you append into it, then freeze it into a `Bytes` without copying. Together they are the currency of the HTTP and gRPC layers: bodies and headers in `hyper`, `reqwest` and `tonic` are `Bytes`, which is how one request body can be handed to three layers and a retry without ever being copied.
+
+You will meet the type in compiler messages before you meet it in documentation — "expected `bytes::Bytes`, found `Vec<u8>`". The conversions are one call each: `Bytes::from(vec)` takes ownership of a vector, `Bytes::from_static(b"…")` borrows a literal for ever, `bytes.slice(range)` gives a sub-slice that shares the same memory, and `.to_vec()` copies back out when you really need one.
 :::
 
 :::warn A channel is not a queue

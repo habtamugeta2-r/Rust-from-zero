@@ -844,6 +844,63 @@ let app = Router::new()
 
 Axum also supports **WebSockets** (`axum::extract::ws`, a lasting two-way connection, right for chats and live updates) and **server-sent events** (`axum::response::sse`, a stream of messages from the server to the browser).
 
+## Live updates: WebSockets and server-sent events
+
+Everything so far is request and response: the client asks, the server answers, the connection is done. Some features need the server to speak first — a chat message arriving, a job finishing, a price changing. Three techniques do that, and they are not interchangeable.
+
+| Technique | Direction | Latency | Reconnects by itself | Works through proxies | Cost |
+|---|---|---|---|---|---|
+| **Polling** — ask every *n* seconds | client asks | up to *n* seconds | yes, it is just requests | yes | one request per client per interval, most of them empty |
+| **Server-sent events (SSE)** | server → client, one way | immediate | yes, the browser retries | yes, it is ordinary HTTP | one long-lived HTTP response per client |
+| **WebSocket** | both ways | immediate | no, you write it | usually; needs proxy support | one upgraded connection per client, with its own lifecycle |
+
+Start with polling. It is a `setInterval` and one route you already have. Move to SSE when the client only listens. Choose a WebSocket when both sides talk.
+
+### WebSockets in Axum
+
+Axum has WebSockets built in, behind the `ws` feature, with no extra crate. The pattern is two steps: a handler that receives a normal HTTP request and *upgrades* it, and a function that then owns the connection as a plain async task.
+
+The types are `axum::extract::ws::{WebSocketUpgrade, WebSocket, Message}`. A handler takes `WebSocketUpgrade`, and returns `ws.on_upgrade(handle_socket)`. From that point `handle_socket(socket: WebSocket)` loops: `socket.recv().await` gives `Option<Result<Message, Error>>`, and you `match` on `Message::Text`, `Message::Binary`, `Message::Ping`, `Message::Pong` and `Message::Close`. Sending is `socket.send(Message::Text(…)).await`. A `None` from `recv` means the peer has gone, which is the end of the task.
+
+The room server of [chapter 33](#project-chat) maps onto this with almost no changes: the `Arc<Mutex<Rooms>>` and the `broadcast::Sender<String>` become the application state, and each socket task subscribes to the broadcast channel and forwards what it receives. The difference is the transport — a TCP line protocol there, an upgraded HTTP connection here — and the fact that a WebSocket already frames messages for you.
+
+Three practical rules:
+
+- **Send a heartbeat.** A ping every thirty seconds keeps idle connections alive through load balancers, which cut connections they consider dead after a minute or two of silence.
+- **Bound the input.** `Message::Text` has a maximum size, set on the upgrade, and you should also cap the length of a chat line.
+- **Decide where the state lives.** In-memory rooms mean two server instances do not see each other's messages. Either keep one instance, use sticky sessions, or move the fan-out to Redis pub/sub or NATS ([chapter 45](#async-ecosystem)).
+
+### Server-sent events
+
+SSE is a long-lived HTTP response whose body is a stream of text lines: `data: …`, optionally `event: …` and `id: …`, separated by blank lines. The browser consumes it with a few lines of JavaScript and reconnects by itself:
+
+```js
+const feed = new EventSource("/events");
+feed.addEventListener("tick", (e) => console.log(e.data));
+```
+
+In Axum the response type is `axum::response::sse::Sse`, wrapping a `Stream<Item = Result<Event, E>>`; `Sse::new(stream).keep_alive(KeepAlive::default())` adds the comment lines that stop proxies closing an idle connection. The stream can be anything that yields values over time — a `tokio::time::interval` for ticks, a broadcast channel for real events, a `tokio_stream` adapter over a queue.
+
+SSE is the right choice for notifications, progress bars, live logs and dashboards. It gives you HTTP status codes, cookies, compression and proxying for free, and the browser handles reconnection and resumes with a `Last-Event-ID` header. The cost is that it is one-way: to send something back, make a normal `POST`.
+
+## Describing the API: OpenAPI
+
+Once anything but you can call the API — a front-end team, a mobile app, a customer — the question "what does this endpoint take?" needs an answer that is not a conversation. **OpenAPI** is that answer: a machine-readable description of every route, parameter, body and response, from which documentation pages, client SDKs and tests are generated.
+
+Writing the description by hand guarantees it drifts. Two crates generate it from the code you already have:
+
+| Crate | Style | Notes |
+|---|---|---|
+| [`utoipa`](https://docs.rs/utoipa) | Derive macros on the handlers and the types (`#[utoipa::path]`, `#[derive(ToSchema)]`), assembled into one `#[derive(OpenApi)]` struct | Framework-agnostic, mature, and `utoipa-swagger-ui` serves a browsable `/docs` page from the same program |
+| [`aide`](https://docs.rs/aide) | Generates the document from the Axum router itself | Less typing when the router is the source of truth; Axum-specific |
+
+Either way the rules are the same as for tests: annotate the type once, keep the annotations next to the handler, and treat a mismatch between the document and the behaviour as a bug. A `GET /openapi.json` route that serves the generated document makes it checkable in CI, and that is what client generators consume.
+
+:::tip Multipart uploads and streaming bodies
+Two things that come up as soon as files are involved. **Uploads** use `axum::extract::Multipart` — iterate the fields, enforce a maximum size per field and in total, and never trust the client's `Content-Type` or file name. **Downloads and streams** build a `Body` from a stream (`Body::from_stream(…)`) or serve a `tokio_util::io::ReaderStream` over a file, so a 2 GB export is never held in memory. Both are ordinary handlers; the only new rule is that a streamed body has no `Content-Length`, so the client must not expect one.
+:::
+
+
 ## Security basics
 
 Security is a large subject. These are the points that no public web server may skip.
@@ -953,6 +1010,26 @@ Four mistakes account for most of the incidents:
 2. **Treating a signature as revocation.** A signature says "I issued this and nobody changed it". It does not say "this user is still allowed". A deleted user keeps working until their token expires, which is the price of going stateless — accept it, or check a deny-list.
 3. **Choosing HS256 in a system with many verifiers.** HS256 uses one shared secret, so every service that can verify a token can also *mint* one. When several services must verify, sign with an asymmetric algorithm (RS256 or ES256): the private key stays with the issuer, and the public key is safe to publish.
 4. **Checking the token in the browser.** A client-side check is a decoration. The server verifies on every request, in one place, as an extractor or a middleware layer.
+
+### Validate every field
+
+A type checks the *shape* of a body: that `limits` is a number and `code` is a string. It says nothing about whether the number is 50 or 5,000,000, or whether the code is six characters of base62. Everything from a client must be checked twice over — shape by `serde`, meaning by you.
+
+Axum deliberately has no built-in validation. The two crates that fill the gap both work by deriving the checks from attributes on the struct:
+
+| Crate | The attribute | Reported as |
+|---|---|---|
+| [`validator`](https://docs.rs/validator) | `#[validate(length(min = 1, max = 64))]`, `email`, `range`, `regex` | a map of field to message |
+| [`garde`](https://docs.rs/garde) | `#[garde(length(min = 1, max = 64))]`, `email`, `range` | one error type with the field path |
+
+The integration is a small extractor of your own — call it `ValidatedJson<T>` — that deserialises as `Json<T>` does, calls `payload.validate()`, and either returns the value or rejects the request with **422 Unprocessable Content** and the field errors. Put it in the same place as the other extractors and use it for every route that takes a body; a route that takes `Json<T>` directly is a route where validation was forgotten.
+
+Four details that decide whether this works in practice:
+
+- **Normalise before you validate.** Trim whitespace, lower-case e-mail addresses, collapse repeated spaces. Validation runs on what you are going to store, not on what arrived.
+- **Reject unknown fields** with `#[serde(deny_unknown_fields)]` on request types ([chapter 43](#serde)). Otherwise a client that misspells `expires_at` gets a silently ignored field and a bug that hunts you for a week.
+- **Keep the database constraints.** Validation is the friendly error; the `NOT NULL`, the `UNIQUE` and the check constraint are the truth, because two requests can pass validation at the same instant ([chapter 47](#databases)).
+- **Say what is wrong, not what to do about it in SQL.** "code must be between 1 and 16 characters" is a message; "insert failed" is a leak.
 
 ### Security headers
 

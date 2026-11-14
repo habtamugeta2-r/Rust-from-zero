@@ -976,6 +976,12 @@ Which one? If you know SQL or want to learn it, start with SQLx: there is nothin
 
 The Rust code stays the same apart from these points. Many projects use SQLite for tests and small installations, and PostgreSQL when several servers must share one database.
 
+Three PostgreSQL features are worth knowing by name, because they solve problems that otherwise turn into polling loops or guesswork:
+
+- **`LISTEN` / `NOTIFY`** — a table's changes can wake other processes. `NOTIFY events_changed` inside the same transaction as the write, and every connection that ran `LISTEN events_changed` receives it after the commit. It is the cheapest way to push a change to a second service without adding a broker; the Rust side holds a connection and awaits the notifications. Ordering is not guaranteed and nothing is persisted, so use it for "something changed, go and look", not as a queue.
+- **`EXPLAIN ANALYZE`** — the answer to "why is this query slow". `EXPLAIN ANALYZE SELECT …` runs the query and prints the plan with real times per step. A sequential scan on a table with a million rows, where you expected an index, is the single most common finding.
+- **`COPY`** — bulk loading. Inserting a million rows one statement at a time takes minutes; `COPY … FROM STDIN` takes seconds, and `sqlx` can copy from a stream.
+
 ### Other kinds of storage
 
 A relational database is the right default: it gives you transactions, constraints and a query language that answers questions you did not plan for. These are the tools you reach for when one of those is in the way.
