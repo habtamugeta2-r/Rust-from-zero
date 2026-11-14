@@ -52,11 +52,11 @@ Markdown chapters and the assets, never the generated HTML. From the repository
 root:
 
 ```sh
-python3 -m pip install pygments        # the only build dependency
+python3 -m pip install 'pygments==2.21.0'   # the only build dependency
 python3 guide-src/tools/build.py       # writes ./rust-guide.html
 ```
 
-`build.py` is fast (about two seconds) and checks every internal chapter link.
+`build.py` is fast (about two seconds) and checks every internal chapter link. CI rebuilds the guide and fails if the committed `rust-guide.html` differs, so pin the version: the generated markup depends on it.
 
 ## Verify
 
