@@ -564,7 +564,7 @@ fn main() -> Result<(), miette::Report> {
 ```
 
 ```output
-error: the colour 'snake' is not known
+the colour 'snake' is not known
 ```
 
 With miette's own report handler the same error also prints its help line and its error code; the handler is what gives you compiler-style reports, including source snippets when you add `#[label]` spans.

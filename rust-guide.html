@@ -6237,7 +6237,7 @@ thiserror = <span class="s">"1.0"</span></code></pre></figure>
     <span class="m">println!</span>(<span class="s">"{report}"</span>);
     <span class="t">Ok</span>(())
 }</code></pre></figure>
-<figure class="code lang-output out"><figcaption class="code-head"><span class="code-lang">Output</span><span class="code-actions"></span></figcaption><pre><code>error: the colour 'snake' is not known</code></pre></figure>
+<figure class="code lang-output out"><figcaption class="code-head"><span class="code-lang">Output</span><span class="code-actions"></span></figcaption><pre><code>the colour 'snake' is not known</code></pre></figure>
 <p>With miette’s own report handler the same error also prints its help line and its error code; the handler is what gives you compiler-style reports, including source snippets when you add <code>#[label]</code> spans.</p>
 <div class="table-wrap"><table><thead><tr><th></th><th>Best for</th><th>What it adds</th></tr></thead><tbody><tr><td><code>thiserror</code></td><td>libraries</td><td>precise error enums callers can <code>match</code> on</td></tr><tr><td><code>anyhow</code></td><td>applications</td><td>one error type, <code>context</code> and <code>bail!</code></td></tr><tr><td><code>eyre</code></td><td>applications, especially CLIs</td><td>coloured reports and source locations via <code>color-eyre</code></td></tr><tr><td><code>miette</code></td><td>developer tools</td><td>compiler-style diagnostics: codes, help text, source snippets</td></tr></tbody></table></div>
 <aside class="callout c-compare"><div class="callout-label"><svg class="i " aria-hidden="true"><use href="#i-scale"/></svg>How other languages do it</div><div class="callout-title">Which error crate today?</div><div class="callout-body"><ul><li>Writing a library: <code>thiserror</code>, so callers can react to each case.</li><li>Writing an application: <code>anyhow</code>, quick context for every error.</li><li>Writing a CLI tool that people run: <code>eyre</code>; add <code>color-eyre</code> for coloured reports.</li><li>Writing a tool that parses or generates code or config: <code>miette</code>.</li></ul></div></aside>
@@ -18257,7 +18257,8 @@ env_logger = <span class="s">"0.11"</span></code></pre></figure>
 
 <span class="k">fn</span> <span class="f">main</span>() {
     <span class="t">Builder</span>::<span class="f">from_env</span>(<span class="t">Env</span>::<span class="f">default</span>().<span class="f">default_filter_or</span>(<span class="s">"trace"</span>))
-        .<span class="f">format</span>(|buf, record| <span class="m">writeln!</span>(buf, <span class="s">"{}: {}"</span>, record.<span class="f">level</span>(), record.<span class="f">args</span>()))
+        .<span class="f">target</span>(env_logger::<span class="t">Target</span>::<span class="t">Stdout</span>)     <span class="c">// loggers write to stderr by default
+</span>        .<span class="f">format</span>(|buf, record| <span class="m">writeln!</span>(buf, <span class="s">"{}: {}"</span>, record.<span class="f">level</span>(), record.<span class="f">args</span>()))
         .<span class="f">init</span>();
 
     <span class="f">work</span>(&amp;[<span class="s">"tea"</span>, <span class="s">""</span>, <span class="s">"milk"</span>]);
@@ -18267,7 +18268,7 @@ env_logger = <span class="s">"0.11"</span></code></pre></figure>
 WARN: skipping an empty item
 DEBUG: a detail only useful while developing
 ERROR: could not reach the server</code></pre></figure>
-<ul><li>The <code>format</code> closure decides what each line looks like; here it is just the level and the message.</li><li><code>default_filter_or("trace")</code> shows everything during development. Without any <code>RUST_LOG</code> setting, <code>info</code> and above would be enough for production.</li><li><code>error!</code> shows even though nothing catches it: logging does not stop the program.</li></ul>
+<ul><li>The <code>format</code> closure decides what each line looks like; here it is just the level and the message. A logger’s output belongs on standard error, so that it never mixes with the program’s real output; this listing sends it to standard output instead, so that the lines above are the program’s own output.</li><li><code>default_filter_or("trace")</code> shows everything during development. Without any <code>RUST_LOG</code> setting, <code>info</code> and above would be enough for production.</li><li><code>error!</code> shows even though nothing catches it: logging does not stop the program.</li></ul>
 <figure class="code lang-text"><figcaption class="code-head"><span class="code-lang">Text</span><span class="code-actions"><button type="button" class="cbtn btn-copy" title="Copy this code"><svg class="i " aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button></span></figcaption><pre><code>$ RUST_LOG=warn myprogram
 WARN: skipping an empty item
 ERROR: could not reach the server</code></pre></figure>

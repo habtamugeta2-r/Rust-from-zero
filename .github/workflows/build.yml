@@ -91,6 +91,6 @@ jobs:
             # A dependency-resolution error appears near the top; per-example
             # compile errors are marked with a cross.
             head -n 14 /tmp/ext.log | sed 's/^/::error::/'
-            grep -E "^✗" /tmp/ext.log | sed 's/^/::error::/'
+            grep -A5 -E "^✗" /tmp/ext.log | head -n 40 | sed 's/^/::error::/'
             exit 1
           fi

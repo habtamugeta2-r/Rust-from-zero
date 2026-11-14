@@ -357,6 +357,7 @@ fn work(items: &[&str]) {
 
 fn main() {
     Builder::from_env(Env::default().default_filter_or("trace"))
+        .target(env_logger::Target::Stdout)     // loggers write to stderr by default
         .format(|buf, record| writeln!(buf, "{}: {}", record.level(), record.args()))
         .init();
 
@@ -372,7 +373,7 @@ DEBUG: a detail only useful while developing
 ERROR: could not reach the server
 ```
 
-- The `format` closure decides what each line looks like; here it is just the level and the message.
+- The `format` closure decides what each line looks like; here it is just the level and the message. A logger's output belongs on standard error, so that it never mixes with the program's real output; this listing sends it to standard output instead, so that the lines above are the program's own output.
 - `default_filter_or("trace")` shows everything during development. Without any `RUST_LOG` setting, `info` and above would be enough for production.
 - `error!` shows even though nothing catches it: logging does not stop the program.
 
