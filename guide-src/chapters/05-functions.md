@@ -243,12 +243,12 @@ fn mystery(a: i32) -> i32 {
 - Because functions run faster with types
 = The compiler infers types inside function bodies, but signatures are fixed contracts. You can understand how to use a function from its signature alone.
 
-? What happens if you put a semicolon `;` at the end of `b + 1` in a function that promises `-> i32`?
-- It still returns `b + 1`
-- It returns `0`
-+ It does not compile, because the semicolon turns the expression into a statement producing `()` instead of `i32`
-- It prints `b + 1` to the screen
-= A semicolon suppresses the value and yields the unit type `()`. The compiler catches the mismatch between `()` and the promised `i32`.
+? Why does returning a value usually make a function easier to reuse?
+- Because a function can print only once
+- Because return values are stored on the stack automatically
++ Because the caller can decide what to do with the result and combine it with other work
+- Because printing values is faster than computing them
+= A function that returns a value can be used in expressions, assigned to variables, or tested. That makes it composable.
 :::
 
 :::exercise guided Your first function with a result

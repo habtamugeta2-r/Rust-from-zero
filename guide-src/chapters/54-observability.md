@@ -385,20 +385,27 @@ use axum::extract::State;
 use axum::http::StatusCode;
 use axum::routing::get;
 use axum::{Json, Router};
-use serde_json::{Value, json};
+use serde::Serialize;
 
 #[derive(Clone)]
 struct ProbeState {
     db_healthy: Arc<AtomicBool>,
 }
 
+#[derive(Serialize)]
+struct ProbeBody {
+    status: &'static str,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    db: Option<&'static str>,
+}
+
 /// Liveness: cheap in-process answer. Never blocks on external services.
-async fn live() -> (StatusCode, Json<Value>) {
-    (StatusCode::OK, Json(json!({ "status": "alive" })))
+async fn live() -> (StatusCode, Json<ProbeBody>) {
+    (StatusCode::OK, Json(ProbeBody { status: "alive", db: None }))
 }
 
 /// Readiness: checks critical dependencies within a strict timeout.
-async fn ready(State(state): State<ProbeState>) -> (StatusCode, Json<Value>) {
+async fn ready(State(state): State<ProbeState>) -> (StatusCode, Json<ProbeBody>) {
     let check = tokio::time::timeout(Duration::from_millis(200), async {
         // In production: `sqlx::query_scalar::<_, i32>("SELECT 1").fetch_one(&state.pool).await.is_ok()`
         state.db_healthy.load(Ordering::Relaxed)
@@ -406,10 +413,13 @@ async fn ready(State(state): State<ProbeState>) -> (StatusCode, Json<Value>) {
     .await;
 
     match check {
-        Ok(true) => (StatusCode::OK, Json(json!({ "status": "ready", "db": "ok" }))),
+        Ok(true) => (
+            StatusCode::OK,
+            Json(ProbeBody { status: "ready", db: Some("ok") }),
+        ),
         _ => (
             StatusCode::SERVICE_UNAVAILABLE,
-            Json(json!({ "status": "not_ready", "db": "unavailable" })),
+            Json(ProbeBody { status: "not_ready", db: Some("unavailable") }),
         ),
     }
 }
@@ -630,6 +640,7 @@ Write an Axum router using `ServiceBuilder` with `SetRequestIdLayer`, `TraceLaye
 Put `SetRequestIdLayer::x_request_id(MakeRequestUuid)` first inside `ServiceBuilder`, then `TraceLayer`, then `PropagateRequestIdLayer::x_request_id()`. Pass `HeaderMap` into the handler to read `"x-request-id"`.
 ::solution
 ```rust ext run
+use axum::extract::State;
 use axum::http::{HeaderMap, Request};
 use axum::routing::get;
 use axum::Router;
@@ -637,14 +648,13 @@ use tower::{ServiceBuilder, ServiceExt};
 use tower_http::request_id::{MakeRequestUuid, PropagateRequestIdLayer, SetRequestIdLayer};
 use tower_http::trace::TraceLayer;
 
-async fn proxy_handler(headers: HeaderMap) -> String {
+async fn proxy_handler(State(client): State<reqwest::Client>, headers: HeaderMap) -> String {
     let req_id = headers
         .get("x-request-id")
         .and_then(|v| v.to_str().ok())
         .unwrap_or("missing");
 
-    // In production, forward the same header to downstream services:
-    let client = reqwest::Client::new();
+    // In production, reuse the shared `Client` and forward the header downstream:
     let _outbound = client
         .get("https://httpbin.org/get")
         .header("x-request-id", req_id);
@@ -660,6 +670,7 @@ fn app() -> Router {
 
     Router::new()
         .route("/proxy", get(proxy_handler))
+        .with_state(reqwest::Client::new())
         .layer(
             ServiceBuilder::new()
                 .layer(SetRequestIdLayer::x_request_id(MakeRequestUuid))

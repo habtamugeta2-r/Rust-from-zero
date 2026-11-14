@@ -185,23 +185,15 @@ You also thought about what could go wrong (no tea bag). That is error handling,
 :::exercise practice Pick your goal
 Write down one thing you would like to build once you know Rust. It can be small: a tool that renames your photo files, a simple game, a website that tracks your reading. Keep the note. A concrete goal makes it much easier to keep going.
 ::hint
-Pick something you would actually use yourself, even if it only runs in a terminal and takes twenty lines of code.
+Choose a project you already care about. A personal problem is easier to motivate than a generic toy project.
 ::solution
 There is no wrong answer. If you cannot think of anything yet, borrow one of these: a quiz game in the terminal, a tool that counts the words in a file, a personal expense tracker, or a small website for a club. You will build something similar to each of them in this guide.
 :::
 
-:::exercise practice Compile time or run time?
-For each situation below, decide whether the mistake is caught **at compile time** (before the program ever runs) or **at run time** (only when a user runs it):
-
-1. A missing closing brace `}` in a function.
-2. Reading a configuration file whose name the user mistyped on the command line.
-3. Passing text `"abc"` to a function that expects a number `i32`.
-4. A web request failing because the Wi-Fi dropped.
+:::exercise practice Choose the first kind of Rust program you want to build
+Pick a category for your first project: command-line tool, web service, terminal game, desktop app, or small library. Write one sentence explaining why that category fits your goal.
 ::hint
-Ask whether the compiler can see the mistake just by reading your source code, or whether it depends on the outside world when the program runs.
+Think about what you want to do with the program, not about the syntax. A CLI is easier to start with if you want a tool for files and folders.
 ::solution
-1. **Compile time.** Syntax errors are spotted while translating source code into machine code.
-2. **Run time.** The file exists (or does not) on the user's disk only when the program runs.
-3. **Compile time.** Rust checks all types before creating the program.
-4. **Run time.** Network availability cannot be known in advance. Rust forces you to handle run-time failures explicitly with `Result`, which you will meet in Part 4.
+A good answer is specific and connected to a real task. For example: "I want a command-line tool that renames my photos by date, because I have many files and I want a quicker way to organise them." The purpose of the exercise is to turn a vague wish into a project you can finish and learn from.
 :::

@@ -752,7 +752,7 @@ pub fn router() -> Router<AppState> {
 
 ## Step 6: settings and `main`
 
-Settings come from environment variables, never from the source code. For multi-environment config files, `.env` loading, and `secrecy::SecretString` redaction, see [chapter 46](#web); for separating `/health/live` and `/health/ready`, see [chapter 51](#observability). `main` wires everything together: logging, the store, the router, and the server.
+Settings come from environment variables, never from the source code. For multi-environment config files, `.env` loading, and `secrecy::SecretString` redaction, see [chapter 46](#web) and [the configuration section](#cli) of the CLI chapter; for separating `/health/live` and `/health/ready`, see [chapter 51](#observability). `main` wires everything together: logging, the store, the router, and the server.
 
 ```rust proj=library file=src/config.rs
 use std::env;
@@ -1222,4 +1222,4 @@ ALTER TABLE books ADD COLUMN last_visited TEXT;
 
 ## What comes next
 
-You have reached the end of Part 11 and of this guide. You now know how to build command-line tools, web services, database-backed programs, graphical applications, observability pipelines, and embedded software in Rust. Head to [chapter 54](#next) for the books, crates, and communities where Rust developers keep learning.
+You have reached the end of Part 11 and of this guide, and the last of its eight projects. You now know how to build command-line tools, web services, database-backed programs, graphical applications, observability pipelines, and embedded software in Rust. Head to [chapter 54](#next) for the books, crates, and communities where Rust developers keep learning.

@@ -25,6 +25,29 @@ def prose_only(text):
     return re.sub(r"^```.*?^```", "", text, flags=re.M | re.S)
 
 
+def box_problems(text, name):
+    """Report stray or unclosed :::-box fences (a box that is never closed, or a :::
+    with nothing to close, silently swallows the rest of the chapter)."""
+    out, stack, in_fence = [], [], False
+    for i, line in enumerate(text.split("\n"), 1):
+        s = line.strip()
+        if s.startswith("```"):
+            in_fence = not in_fence
+            continue
+        if in_fence:
+            continue
+        if s == ":::":
+            if stack:
+                stack.pop()
+            else:
+                out.append(f"{name}: stray ':::' at line {i} with no box open")
+        elif s.startswith(":::") and len(s) > 4 and s[3].isalpha():
+            stack.append((s.split()[0], i))
+    for opener, i in stack:
+        out.append(f"{name}: unclosed {opener} (opened at line {i})")
+    return out
+
+
 def summary(strict=False):
     problems = []
     total = {"lines": 0, "words": 0, "rust": 0, "ex": 0, "quiz": 0}
@@ -72,6 +95,7 @@ def summary(strict=False):
         for word in ("TODO", "FIXME", "XXX", "TBD", "lorem", "@@"):
             if word in text:
                 problems.append(f"{p.name}: contains {word!r}")
+        problems.extend(box_problems(text, p.name))
     print(f"{'total':<40}{total['lines']:>6}{total['words']:>7}{total['rust']:>5}{'':>5}{total['ex']:>4}{total['quiz']:>5}")
     print(f"\n{len(problems)} structural remark(s):")
     for pr in problems:

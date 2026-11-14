@@ -18,6 +18,10 @@ Picture a street with billions of small letterboxes in a row. Each box holds one
 
 A program uses its memory in two different ways, in two different areas: the **stack** and the **heap**.
 
+:::compare Memory management in other languages
+A garbage-collected language such as Java or Python also hides many memory details from you, but it keeps a helper running in the background. C and C++ let the programmer manage memory by hand, which is fast but easy to get wrong. Rust gives a middle path: many rules are checked by the compiler, and the memory is freed when ownership ends, without a garbage collector.
+:::
+
 ## The stack: fast and automatic
 
 :::analogy A pile of trays
@@ -167,6 +171,10 @@ A pointer that still holds the address of memory that has been freed is called a
 These bugs are dangerous because the program often *keeps running* with wrong data. They may show up only sometimes, on some machines. Attackers look for them on purpose: a use-after-free or a buffer overflow can often be turned into a way to take control of a program. As you read in [chapter 1](#what-is-rust), around 70% of the serious security bugs in large C and C++ products are memory bugs of this kind.
 
 ## Three ways to manage memory
+
+:::compare Where your language sits
+If you come from Python, Java, JavaScript, Go or C#, you have been relying on a garbage collector and have never had to free anything by hand. If you come from C or C++, you have written `free` and `delete` yourself, and you have probably met a crash caused by calling them at the wrong moment. Rust takes a third path: the compiler proves where the clean-up belongs, so the code runs at C speed while the bugs of hand-written memory management fail to compile.
+:::
 
 | Approach | Who frees the memory? | Languages | Advantages | Disadvantages |
 |---|---|---|---|---|

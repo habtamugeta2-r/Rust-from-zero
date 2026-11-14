@@ -10,11 +10,19 @@ Time to write a real program. First you will run Rust in your web browser with n
 
 ## Two ways to run Rust
 
+:::analogy A kitchen you can borrow, and a kitchen you own
+A borrowed kitchen lets you try a recipe quickly, but a real kitchen is what you need when you are cooking for a week. The Rust Playground is the borrowed kitchen: perfect for a first try. A real Rust install is the kitchen you keep: the place where you build larger projects and keep your files.
+:::
+
 **1. In the browser: the Rust Playground.** Open [play.rust-lang.org](https://play.rust-lang.org). You see an editor with a small program in it. Press the **Run** button and the result appears below. That is all. The Playground is perfect for the first chapters and for quick experiments. The **Run** button on examples in this guide opens the example there for you.
 
 **2. On your own computer.** You need this for real projects: programs made of several files, programs that read your files, and everything from the first mini-project onwards. Installing takes about ten minutes and is explained below.
 
 If you cannot install software right now, use the Playground and come back to the installation later.
+
+:::analogy Setting up a workshop before building anything
+A carpenter spends the first day hanging tools on the wall. Nothing is built that day, yet every later hour is faster. Setting up Rust, a terminal and an editor is that day: dull while it lasts, paid back every day after.
+:::
 
 ## A five-minute tour of the terminal
 

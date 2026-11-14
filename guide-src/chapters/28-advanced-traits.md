@@ -8,6 +8,10 @@
 
 [Chapter 20](#traits) covered the everyday use of traits. This chapter collects the features you meet when you read the standard library, design a library of your own, or wonder how `a + b` works for your own type. You can read it once now and come back when you need a particular tool.
 
+:::analogy A manager with special rules
+A trait is like a job description: it says what a type must be able to do. Associated types are the extra details that each person in that role supplies, like "this team produces numbers, that team produces strings".
+:::
+
 ## Associated types
 
 :::analogy A country's power socket vs a universal adapter
@@ -80,6 +84,69 @@ A trait could also take a type parameter: `trait Container<T>`. The difference:
 
 The question to ask: *can a type sensibly implement this trait several times, with different types?* If yes, use a generic parameter. If there is one natural answer per type, use an associated type. It keeps signatures shorter, because users write `impl Iterator<Item = u32>` and the compiler never has to guess.
 
+### Generic associated types: a type that depends on a lifetime
+
+Everything above has one hidden limitation: an associated type cannot mention a lifetime. `type Item = &str` is not a type — it is missing the lifetime of the borrow — and `type Item<'a>` was not allowed until 2022. A **generic associated type**, or **GAT**, lets the associated type take parameters of its own, and the usual parameter is a lifetime.
+
+The difference is easiest to see on a type that lends out a view of its insides:
+
+```rust run
+/// A type that can hand out a borrowed view of itself.
+trait View {
+    type Item<'a> where Self: 'a;
+
+    fn view(&self) -> Self::Item<'_>;
+}
+
+struct Report {
+    title: String,
+    rows: Vec<u32>,
+}
+
+impl View for Report {
+    type Item<'a> = (&'a str, &'a [u32]) where Self: 'a;
+
+    fn view(&self) -> Self::Item<'_> {
+        (&self.title, &self.rows)
+    }
+}
+
+fn main() {
+    let report = Report {
+        title: String::from("sales"),
+        rows: vec![3, 5, 8],
+    };
+    let (title, rows) = report.view();
+    println!("{title}: {rows:?}");
+}
+```
+```output
+sales: [3, 5, 8]
+```
+
+Read the impl line by line:
+
+- `type Item<'a> = (&'a str, &'a [u32])` — the associated type now *has* a lifetime, and that lifetime is supplied by the method that uses it. Each call to `view` picks a lifetime; the compiler chooses one no longer than the borrow.
+- `where Self: 'a` — the promise that the value itself outlives the borrow it lends. Without it, a `&'a str` taken from `self` could outlive `self`, which is the dangling-reference bug Rust exists to prevent. The compiler will not accept a GAT impl that needs this bound and omits it, and the error message says so.
+- `fn view(&self) -> Self::Item<'_>` — the `'_` is the elided lifetime of `&self`, so the returned tuple cannot outlive the borrow. Try to keep it after the `Report` is dropped and the borrow checker refuses, exactly as it would for a plain `&str`.
+
+The pattern GATs were stabilised for is the **lending iterator**: an iterator whose `next` returns items that borrow from the iterator itself. The signature says it all —
+
+```text
+trait LendingIterator {
+    type Item<'a> where Self: 'a;
+    fn next<'a>(&'a mut self) -> Option<Self::Item<'a>>;
+}
+```
+
+— and the ordinary `Iterator` trait cannot express it, because `type Item` has no lifetime to lend. This is why `Iterator` only ever yields owned values or references borrowed from somewhere else. The three places GATs earn their keep:
+
+1. **Lending iterators**, as above: cursors over a buffer, parsers that yield borrowed tokens, streaming decoders.
+2. **Traits over async or fallible work**, where the "output" borrows from the input — the reason the `async-trait` crate existed before async functions in traits.
+3. **Borrowing views** of a container, like `View` above: an associated type that is a projection into `self`.
+
+They are stable since Rust 1.65, so no feature flag is needed; you will meet them mostly when reading library code rather than when writing it. When you do write one, two rules save hours: put the `where Self: 'a` bound on both the trait and the impl, and keep the borrow as short as the method allows rather than trying to return it from a longer-lived function.
+
 ### Associated constants
 
 A trait can also demand a constant:
@@ -120,62 +187,6 @@ A square has 4 sides.
 ```
 
 `describe` has no `self` parameter. It is an associated function of the trait and is called on the type: `Triangle::describe()`.
-
-### Generic associated types (GATs)
-
-Sometimes an associated type itself needs a lifetime or type parameter—for example, when a trait method returns a value borrowing from `&mut self`. Plain `type Item;` cannot name `'a` because `'a` changes on every call. A **generic associated type (GAT)** attaches `<'a>` (or `<T>`) directly to the associated type:
-
-```rust run
-trait LendingWindows {
-    type Window<'a>
-    where
-        Self: 'a;
-
-    fn next_window<'a>(&'a mut self) -> Option<Self::Window<'a>>;
-}
-
-struct SlidingWindow {
-    data: Vec<i32>,
-    size: usize,
-    pos: usize,
-}
-
-impl LendingWindows for SlidingWindow {
-    type Window<'a> = &'a mut [i32];
-
-    fn next_window<'a>(&'a mut self) -> Option<Self::Window<'a>> {
-        if self.pos + self.size > self.data.len() {
-            return None;
-        }
-        let slice = &mut self.data[self.pos..self.pos + self.size];
-        self.pos += 1;
-        Some(slice)
-    }
-}
-
-fn main() {
-    let mut windows = SlidingWindow {
-        data: vec![1, 2, 3, 4],
-        size: 2,
-        pos: 0,
-    };
-    while let Some(win) = windows.next_window() {
-        win[0] += 10;
-        println!("{win:?}");
-    }
-    println!("after: {:?}", windows.data);
-}
-```
-```output
-[11, 2]
-[12, 3]
-[13, 4]
-after: [11, 12, 13, 4]
-```
-
-Why could standard `Iterator` never return `&mut [i32]` slices that overlap like this? Because `Iterator::next` guarantees yielded items do not borrow `self`—otherwise `.collect::<Vec<_>>()` could hold two overlapping mutable slices into the same `Vec` at once. GATs tie the output lifetime `'a` directly to `&'a mut self`, so the borrow checker enforces that you finish with one window before asking for the next. Notice `where Self: 'a`: it promises the compiler that `Self` lives at least as long as any reference `'a` borrowed from it.
-
-GATs also appear in traits that abstract over *type constructors* (for instance, choosing whether a library stores items in `Rc<T>` or `Arc<T>` via `type Pointer<T>`).
 
 ## Operator overloading
 
@@ -712,12 +723,12 @@ AB AB
 - So that iterators can be endless
 = With `Iterator<T>`, one type could implement `Iterator<u32>` and `Iterator<String>` at once, and every call of `next` would be ambiguous. An associated type fixes the item type per implementation.
 
-? When do you need a generic associated type (GAT) like `type Window<'a> where Self: 'a;`?
-- Whenever a trait defines a constant value
-+ When the associated type depends on a lifetime or generic parameter of each method call, such as returning a slice borrowed from `&'a mut self`
-- Whenever you overload `+` for a struct
-- Whenever you want dynamic dispatch with `dyn Trait`
-= Plain `type Item;` is fixed for the whole `impl`. Adding `<'a>` lets each call tie the returned type to the lifetime of `&'a self` or `&'a mut self`.
+? Why does a generic associated type often need the bound `where Self: 'a`?
+- To make the type copyable
+- Because lifetimes cannot appear in associated types otherwise
++ Because the item borrows from `self`, and the compiler must know that `self` outlives that borrow
+- Because `'a` must outlive the program
+= The GAT promises `type Item<'a>`, and an implementation may hand out `&'a str` taken from `self`. Without `Self: 'a` the borrow could outlive the value it points into, which is exactly the dangling reference the borrow checker exists to reject. The bound states the relationship once, so every caller gets it checked.
 
 ? What must you implement so that `a + b` works for your type `Money`?
 - A method called `plus`

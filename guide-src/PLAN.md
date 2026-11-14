@@ -1,7 +1,15 @@
-# Rust from Zero — working plan (source of truth for the build)
+# Rust from Zero — maintainer's notes (chapter-format reference)
 
-Deliverable: /home/user/rust-guide.html (ONE self-contained file), built by `python3 tools/build.py`
-from `chapters/*.md` + `assets/*`. Never edit the HTML by hand.
+> **For readers and contributors:** the public instructions are in
+> [`../README.md`](../README.md) (build, verify, style) and
+> [`../CONTRIBUTING.md`](../CONTRIBUTING.md) (pull-request checklist).
+> This file is the internal reference for the chapter format and the checking
+> tools. Some paths here (`/opt/rs`, `/opt/pw`) describe a temporary checking
+> environment that is created by `tools/setup-env.sh` and is not part of the
+> repository.
+
+Deliverable: `rust-guide.html` at the repository root (ONE self-contained file), built by
+`python3 guide-src/tools/build.py` from `chapters/*.md` + `assets/*`. Never edit the HTML by hand.
 
 ## Tooling (not persisted between messages — reinstall if /opt/rs is missing)
 - Rust toolchain lives in /opt/rs (RUSTUP_HOME=/opt/rs/rustup, CARGO_HOME=/opt/rs/cargo, `. /opt/rs/env.sh`).

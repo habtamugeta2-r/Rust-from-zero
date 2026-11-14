@@ -840,6 +840,21 @@ Worth noticing in the design:
 
 A server for the real world needs more. It should limit the length of a line (a client that sends gigabytes without a line break would fill the memory), limit how fast a client may send, encrypt the connections with TLS, and identify users with passwords. The crates for those jobs appear in Part 10.
 
+:::details When one server becomes several
+This chat server holds every room in one process. That is the right design for thousands of users, and it stops working when you need two servers behind a load balancer: a message sent to server A never reaches the clients connected to server B.
+
+The usual next step is to make the servers **stateless** and move the shared state out: room membership and message history into a database, and the live fan-out through a message broker — each server subscribes to `room.*` and delivers to its own clients ([chapter 45](#async-ecosystem) covers the brokers). Redis pub/sub is the smallest version of this; NATS is the next.
+
+Beyond that the questions stop being about Rust and start being about distributed systems, and they have names worth recognising before you meet them in an incident report:
+
+- **Service discovery** — how does a client find a healthy instance? DNS, a load balancer, or a registry such as etcd or Consul.
+- **Consensus** — how do several machines agree on one value after a crash? The Raft algorithm is the readable one; `openraft` is a Rust implementation.
+- **Replication and the CAP trade-off** — when the network partitions, choose consistency or availability, and know which you chose.
+- **Idempotency** — every distributed system retries. A retried request must not charge a card twice.
+
+You do not need these to build this project; you need to know the words exist, so that "just run two of them" does not sound like a small change. The book for this territory is *Designing Data-Intensive Applications* by Martin Kleppmann, and it is the one every team has a copy of.
+:::
+
 ## Make it better
 
 :::exercise practice Actions with `/me`

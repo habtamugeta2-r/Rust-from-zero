@@ -611,6 +611,8 @@ fn main() {
 
 Behind a `dyn Shape` the concrete type is unknown, so a method that returns `Self` or has type parameters cannot be called through it.
 
+Rust changed the vocabulary here: what older books and forum answers call **object safety** is now **dyn compatibility**, and the compiler's own message uses the new phrase. A trait is dyn compatible when every method can be called through a fat pointer — no `Self` by value, no generic type parameters, no associated constants, and no associated types without a specified value. [Chapter 28](#advanced-traits) walks through the rules one by one.
+
 **Repairs:**
 
 - Add `where Self: Sized` to that method: it is then left out of the trait object.

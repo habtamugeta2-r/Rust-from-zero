@@ -186,38 +186,40 @@ fn main() {
 
 The real type returned here is long and awkward to write. The caller only needs to know that it can be iterated. You will use this form a lot with iterators and closures in Part 5.
 
-#### Choosing which lifetimes `-> impl Trait` captures (`use<...>`)
+### What the returned type is allowed to borrow: `use<…>`
 
-In Rust 2024, a return type like `-> impl Iterator<Item = &str>` automatically captures **every** generic parameter and lifetime in the function signature—even parameters that the returned iterator never keeps a reference to. When a caller passes a temporary helper argument and drops it before consuming the iterator, the compiler complains that the helper is still borrowed.
+An `impl Trait` return type is an opaque type, and an opaque type has to say which lifetimes it depends on. Since the **2024 edition** the rule is the simple one: **the hidden type may capture every lifetime in scope**. Before 2024 it captured only the ones it obviously needed, which caused the opposite problem — a returned iterator that *did* borrow something failed to compile until you added a lifetime nobody could see in the signature.
 
-Adding **`+ use<'a>`** (called **precise capturing**) tells the compiler explicitly which parameters the returned value may borrow:
+The new rule is easier to explain and occasionally too generous: capturing a lifetime ties the returned value to a borrow it does not really need. When that happens, say precisely what the return type captures with a `use<…>` list — an empty `use<>` means "captures nothing":
 
 ```rust run
-// Without `+ use<'a>`, Rust 2024 assumes the returned iterator borrows `needle` too.
-// Because we copy `needle` into an owned `String`, the iterator borrows only `'a`.
-fn matching_items<'a>(items: &'a [String], needle: &str) -> impl Iterator<Item = &'a str> + use<'a> {
-    let needle = needle.to_owned();
-    items.iter().map(|s| s.as_str()).filter(move |s| s.contains(needle.as_str()))
+/// Returns a closure that prints the first word. The closure owns its data,
+/// so it does not borrow `words` — `use<>` says so out loud.
+fn first_word_printer(words: &[String]) -> impl FnOnce() -> String + use<> {
+    let first = words.first().cloned().unwrap_or_default();
+    move || first
 }
 
 fn main() {
-    let items = vec![
-        String::from("rust-core"),
-        String::from("async-io"),
-        String::from("rust-web"),
-    ];
-    let temp_filter = String::from("rust");
-    let iter = matching_items(&items, &temp_filter);
-    drop(temp_filter); // Allowed only because `+ use<'a>` did not capture `&temp_filter`!
-    let results: Vec<&str> = iter.collect();
-    println!("{results:?}");
+    // `words` dies at the end of this block, and `printer` outlives it.
+    let printer = {
+        let words = vec![String::from("hello"), String::from("world")];
+        first_word_printer(&words)
+    };
+    println!("{}", printer());
 }
 ```
 ```output
-["rust-core", "rust-web"]
+hello
 ```
 
-You write `use<...>` most often on methods returning `impl Iterator` or `impl Future` (including methods in traits: `fn list(&self, filter: &str) -> impl Iterator<Item = &str> + use<'_>`). Inside `use<...>`, list every type parameter (`T`) and only the lifetimes (`'a` or `'_`) that the hidden return type actually holds onto.
+Without `use<>`, edition 2024 would make the return type depend on the borrow of `words`, and the program above would not compile: `printer` would be carrying a lifetime that ended with the block. The error would point at the block, not at the closure, which is why this rule surprises people who upgraded a working 2021 project.
+
+Two rules of thumb:
+
+- **You rarely need to write `use<…>`.** Write it when the compiler complains that a value is borrowed for too long, or when you are returning a closure or iterator that obviously owns everything it uses.
+- **List what the type really needs.** `use<'a>` for one lifetime, `use<'a, T>` when a generic type parameter is also involved. In edition 2024 all type parameters are captured by default, so a `use<…>` list must mention every type parameter the hidden type uses — the compiler checks this and tells you which one is missing.
+
 
 ## The standard traits you meet every day
 

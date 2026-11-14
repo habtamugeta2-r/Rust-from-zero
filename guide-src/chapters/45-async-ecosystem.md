@@ -1,10 +1,10 @@
 @id async-ecosystem
 @part p10
-@title Concurrency in practice: Rayon, Tokio, streams, reqwest and tower
-@short Rayon, Tokio, reqwest, tower
+@title Concurrency in practice: Rayon, Tokio, streams, HTTP clients and tower
+@short Rayon, Tokio, HTTP clients, tower
 @level advanced
 @time 80
-@learn Use all processor cores for a computation with Rayon | Set up a Tokio runtime, run heavy work beside it, and shut it down cleanly | Process values that arrive over time with streams | Call web APIs with reqwest | Add timeouts and limits with tower layers
+@learn Use all processor cores for a computation with Rayon | Set up a Tokio runtime, run heavy work beside it, and shut it down cleanly | Process values that arrive over time with streams | Call web APIs with async reqwest or blocking ureq | Add timeouts and limits with tower layers
 
 Part 7 explained the machinery of concurrency: threads, locks, channels and async tasks. In daily work you rarely build on that machinery directly. A handful of crates package the common patterns, and this chapter is a tour of them.
 
@@ -1005,59 +1005,6 @@ is_decode: true
 reqwest has no time limit by default. A request to a server that never answers waits for ever, and so does your task. Set `.timeout(…)` on the client.
 :::
 
-### A smaller client: `ureq`
-
-reqwest is powerful, and it needs Tokio. A script or a command-line tool often does not want an async runtime at all. **ureq** is a minimal, blocking HTTP client: one call does the whole request and waits for the answer.
-
-```toml
-ureq = "2.11"
-```
-
-A tiny server and a client that talks to it, all in one program:
-
-```rust ext run
-use std::io::Write;
-use std::net::TcpListener;
-use std::thread;
-
-fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let listener = TcpListener::bind("127.0.0.1:0")?;
-    let address = listener.local_addr()?;
-
-    thread::spawn(move || {
-        if let Ok((mut stream, _)) = listener.accept() {
-            let _ = stream.write_all(
-                b"HTTP/1.1 200 OK\r\ncontent-type: text/plain\r\ncontent-length: 11\r\n\r\nhello, ureq",
-            );
-        }
-    });
-
-    let response = ureq::get(&format!("http://{address}/"))
-        .timeout(std::time::Duration::from_secs(5))
-        .call()?;
-
-    println!("status: {}", response.status());
-    println!("{}", response.into_string()?);
-    Ok(())
-}
-```
-
-```output
-status: 200
-hello, ureq
-```
-
-- `.call()` performs the request and waits. No `async`, no `await`, no runtime.
-- `response.status()` is the status code, and `into_string()` reads the whole body as text.
-- `timeout` sets an upper bound: a server that never answers does not wait forever.
-- Other builders: `.set("header", "value")` for headers, `.send_json(&value)` for a JSON body, and `ureq::Agent` to reuse connections across many requests (the equivalent of reqwest's `Client`).
-
-| | reqwest | ureq |
-|---|---|---|
-| Async | yes, on Tokio | no |
-| Best fit | services, many requests at once | scripts and command-line tools |
-
-Choose reqwest for a server or for many requests at once; choose ureq when a small dependency and no runtime matter more.
 
 
 ### Many requests at once
@@ -1174,6 +1121,34 @@ The practice server answers number 5 only after two seconds, and number 7 with a
 :::note Encrypted connections
 An address that starts with `https://` is encrypted with **TLS**. reqwest handles this for you. In version 0.13 it uses `rustls` by default, a TLS library written in Rust, so that no system library has to be installed. For a small script that needs no async code, `reqwest::blocking` offers the same API without `await` (enable the feature `blocking`). The crate `ureq` is a smaller, blocking alternative.
 :::
+
+### `ureq`: a synchronous HTTP client
+
+Choose `ureq` when a command-line program makes a few HTTP calls and a blocking request is simpler than introducing an async runtime. It is not a faster way to make many concurrent requests: while a call waits, its current thread is blocked. Its `Agent` owns reusable client configuration and a connection pool; borrow one agent across calls instead of rebuilding a client each time.
+
+```toml
+[dependencies]
+ureq = "3.5.2"
+```
+
+```rust ext check
+use std::error::Error;
+
+fn main() -> Result<(), Box<dyn Error>> {
+    let agent = ureq::agent();
+    let mut response = agent
+        .get("https://example.com")
+        .header("accept", "text/html")
+        .call()?;
+
+    let status = response.status();
+    let body = response.body_mut().read_to_string()?;
+    println!("HTTP {status}, {} bytes", body.len());
+    Ok(())
+}
+```
+
+`call()` and body reading both return errors, so `?` reports connection, protocol and I/O failures. Check the returned status before treating a body as successful application data; an HTTP response such as 404 is not the same kind of failure as a DNS or TLS error. Configure request timeouts and response-size limits for the service you call. In an async Tokio handler, do not call this blocking client directly on an executor thread; use async `reqwest` or deliberately isolate blocking work with `spawn_blocking`.
 
 ## tower: layers around a service
 
@@ -1384,40 +1359,114 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 Because `tonic` runs on `tower`, timeouts, concurrency limits, and request-ID / OpenTelemetry layers attach to a gRPC server the exact same way as to Axum. Choose **REST/JSON** for public browser APIs and simple integrations; choose **gRPC (`tonic`)** for high-throughput internal service-to-service contracts and streaming RPCs.
 
-## Background jobs, queues, and messaging
+## Watching a service in production: logs, metrics and traces
 
-Spawning a background task with `tokio::spawn` works for fire-and-forget work inside a single process, **until the server restarts or crashes**: anything sitting only in memory vanishes. Production services separate accepting a request from doing slow work (sending email, resizing images, syncing billing) using durable queues and message brokers:
+A program that works on your laptop is half of the job. In production nobody can attach a debugger to the machine that is failing, and the failure happens at three in the morning. What you have instead are three kinds of signal that the program emits while it runs. Between them they answer almost every question you will ever ask about a service.
 
-- **Durable job queues on your existing database** (`sqlx` + `SELECT ... FOR UPDATE SKIP LOCKED`, or the `apalis` crate): workers claim pending rows in SQL transactions. Zero new infrastructure, ACID guarantees, and survived restarts.
-- **Task queues / pub-sub (`lapin` for RabbitMQ, `async-nats` for NATS)**: route messages between independent services with explicit acknowledgements (**ACK** after the work succeeds, **NACK** / dead-letter queue after repeated failures).
-- **Distributed event logs (`rdkafka` for Kafka / Redpanda)**: append-only partitioned logs when multiple consumer groups need to replay days of events independently.
+| Signal | The question it answers | Size | An example |
+|---|---|---|---|
+| **Logs** | What exactly happened in this one event? | Grows with traffic: one line per interesting thing | `order 8123 rejected: card declined` |
+| **Metrics** | How much, how fast, how often — as numbers over time | Tiny and constant per series | `http_requests_total{route="/notes",status="500"} 12` |
+| **Traces** | Where did *this* request spend its time, and in which service? | Sampled, so a fraction of requests | a tree of spans: `GET /notes` → `db.query` → `redis.get` |
 
-```rust file=src/worker.rs
-use futures::StreamExt;
-use tokio_util::sync::CancellationToken;
+They are not alternatives. Metrics tell you *that* something is wrong; traces tell you *where*; logs tell you *why*. A service with only logs is expensive to search and blind to trends. A service with only metrics tells you the error rate is up but not which request failed.
 
-async fn run_nats_worker(client: async_nats::Client, stop: CancellationToken) -> Result<(), Box<dyn std::error::Error>> {
-    let mut subscriber = client.subscribe("orders.created").await?;
+### Logs that a machine can search
 
-    loop {
-        tokio::select! {
-            _ = stop.cancelled() => {
-                // Stop reading new messages and flush any in-flight work
-                break;
-            }
-            Some(msg) = subscriber.next() => {
-                // Handlers must be idempotent: redelivering the same event_id
-                // after a network glitch must not charge a customer twice.
-                println!("received {} bytes on {}", msg.payload.len(), msg.subject);
-            }
-        }
-    }
-    Ok(())
-}
+`println!` is fine for a program you run yourself and useless for a service. The difference is **structure**: instead of one sentence, emit one line of JSON per event, with the parts you will want to filter on as fields.
+
+```json
+{"timestamp":"2026-11-14T09:12:03.421Z","level":"INFO","target":"notes_api","message":"request finished","method":"POST","route":"/notes","status":201,"duration_ms":7,"request_id":"8f3c1d0e"}
 ```
 
-:::warn Design message handlers to be idempotent
-Virtually every queue delivers messages **at least once**: if a worker processes a job and crashes a millisecond before sending the ACK, the broker hands the same message to another worker. Store a unique `idempotency_key` (or processed event ID in a `UNIQUE` database column) inside the same transaction so duplicate deliveries become harmless no-ops.
+Any log system — Loki, Elasticsearch, CloudWatch, Datadog, `jq` on a file — can then answer "every request slower than 500 ms on `/notes` yesterday" without a regular expression written by hand. The `message` field stays human, the fields stay machine-readable.
+
+In Rust the crate for this is [`tracing`](https://docs.rs/tracing), which [chapter 42](#crates) introduced: an *event* is a log line, a *span* is a named region of work with fields attached, and every event inside that region inherits them. It is the same crate for logs and traces, which is why the ecosystem settled on it. The subscriber decides the format:
+
+- `tracing_subscriber::fmt()` prints human-readable lines, as in [chapter 48](#project-api);
+- `tracing_subscriber::fmt().json()` prints one JSON object per line — the production format;
+- `EnvFilter` reads `RUST_LOG`, so you can raise the level of one dependency at run time without rebuilding: `RUST_LOG=info,my_crate=debug,sqlx=warn`.
+
+:::warn What never goes into a log
+Never log a password, session cookie, `Authorization` header, API key, card number or full personal record. Logs are copied to other machines, indexed, kept for months, and read by people who are not you. Log an identifier and look the record up in the database instead. When you must log a value to debug it, log a hash or a prefix, and delete the line before merging.
+:::
+
+### Metrics: a few numbers that never grow
+
+A metric is a number with a name and a set of labels, sampled over time. Three shapes cover almost everything:
+
+| Kind | What it does | Rust type | Examples |
+|---|---|---|---|
+| **Counter** | Only goes up. Rate = per second | `Counter` | `http_requests_total`, `errors_total`, `jobs_processed_total` |
+| **Gauge** | Goes up and down | `Gauge` | `queue_depth`, `connections_open`, `cache_bytes` |
+| **Histogram** | Counts observations in buckets, so you can compute quantiles | `Histogram` | `http_request_duration_seconds` |
+
+The labels are the powerful part, and also the trap: `http_requests_total{route="/notes",status="500"}` lets you ask for the error rate of one route. A label with unbounded values — a user id, a raw URL, an order number — creates a new time series for every value, and the monitoring system falls over. Keep labels to a handful of low-cardinality values (`route` not `path`, `status` not `request id`).
+
+For a web service the four numbers worth having on day one are the **RED** set: **R**ate (requests per second), **E**rrors (the proportion that failed), and **D**uration (the distribution, not the average).
+
+:::warn Never average a latency
+The average request time hides the problem: with one 30-second request in a thousand fast ones, the average barely moves while one user waited half a minute. Store a histogram and look at the 99th percentile (p99) — the time within which 99% of requests finished. That is the number your users feel.
+:::
+
+The facade is [`metrics`](https://docs.rs/metrics): your code calls `counter!`, `gauge!` and `histogram!` once, and a recorder installed at start-up decides where the numbers go. The usual recorder for a service is [`metrics-exporter-prometheus`](https://docs.rs/metrics-exporter-prometheus), which keeps them in memory and serves the standard Prometheus text format from one route:
+
+```text
+# HELP http_requests_total Total HTTP requests served
+# TYPE http_requests_total counter
+http_requests_total{route="/notes",status="200"} 1841
+http_requests_total{route="/notes",status="500"} 3
+# HELP http_request_duration_seconds Request duration in seconds
+# TYPE http_request_duration_seconds histogram
+http_request_duration_seconds_bucket{route="/notes",le="0.005"} 1502
+http_request_duration_seconds_bucket{route="/notes",le="0.05"} 1838
+http_request_duration_seconds_count{route="/notes"} 1844
+```
+
+That text is what `GET /metrics` returns. Prometheus (or Grafana Agent, or VictoriaMetrics) scrapes it every fifteen seconds, and Grafana draws it. The `prometheus` crate is the alternative to the `metrics` facade when you want its client library directly; the `metrics` facade is the choice when a library needs to record something without forcing an exporter on its users.
+
+### Traces: one request, many services
+
+A **trace** follows a single request through the system. Each step is a **span**: a name, a start, an end, and the parent span it belongs to. Collect them and you can see, for one slow checkout, that 900 ms of 1,000 were spent in one database query — which no amount of grep on log lines will tell you.
+
+The vendor-neutral standard is **OpenTelemetry** (often shortened to OTel). The Rust crates are [`opentelemetry`](https://docs.rs/opentelemetry) for the API and SDK, [`opentelemetry-otlp`](https://docs.rs/opentelemetry-otlp) for the exporter, and [`tracing-opentelemetry`](https://docs.rs/tracing-opentelemetry) to connect the two worlds: your `tracing` spans become OTel spans, so you instrument once and export anywhere. The exporter speaks **OTLP** to a **collector** — a sidecar or a service — which forwards to Jaeger, Grafana Tempo, Honeycomb, or whatever the team already runs. That indirection is the point of the facade: you can change backend without touching a line of application code.
+
+Practical rules that save hours:
+
+- **Instrument spans, not log lines.** A span for `GET /notes`, one for the database call inside it, one for the cache lookup. Field names come free, and the trace is assembled from the nesting.
+- **Sample.** Traces are bulky. Keep every request when the rate is low, a small percentage when it is high (head sampling in the SDK), and make sure errors are always kept.
+- **Propagate the context.** The trace id travels in a request header (`traceparent`) between services. That is what makes one trace span several processes instead of one.
+
+### Health and readiness
+
+Two tiny endpoints, with different meanings, and both needed by every orchestrator:
+
+| Route | Question | Answer | When it fails |
+|---|---|---|---|
+| `GET /health` | Is the process alive and serving HTTP? | `200` with `{"status":"ok"}` | Restart me |
+| `GET /ready` | Can it do useful work right now? | `200` when dependencies answer, `503` otherwise | Send me no traffic yet |
+
+`/health` must not touch the database. A liveness probe that fails because the database is down will restart a healthy process in a loop and make the outage worse. `/ready` is where the dependency checks belong: it returns `503` while the connection pool is still connecting after start-up, so the load balancer holds traffic back. [Chapter 48](#project-api) already has the first of the two; in Kubernetes they are `livenessProbe` and `readinessProbe`, and the handler patterns are those of [chapter 46](#web).
+
+### Request ids: one string that makes support possible
+
+Give every incoming request an id, put it in the log lines of that request, and return it in a response header such as `x-request-id`. Then a user can say "my request 8f3c1d0e failed" and you can find the three log lines and the trace in seconds. In Axum, `tower-http` provides `SetRequestIdLayer` and `PropagateRequestIdLayer` with `MakeRequestUuid`; if you prefer to write it, it is the same layer pattern as the timeout in the tower section above.
+
+### Looking at a running process
+
+[`tokio-console`](https://github.com/tokio-rs/console) attaches to a running Tokio program and shows every task: how long it has waited, what woke it, and which task is holding a thread and blocking everything else. It is the tool that finds "one task does blocking work" in minutes instead of days. It needs the `console-subscriber` crate and a rebuild with `--cfg tokio_unstable`.
+
+:::checklist
+- The service logs one JSON line per request, with method, route, status, duration and a request id.
+- `RUST_LOG` can raise the level of one dependency without a rebuild.
+- `GET /metrics` exposes a request counter, an error counter and a duration histogram, labelled by route and status, not by path or user.
+- `GET /health` returns 200 without touching the database; `GET /ready` returns 503 until dependencies are up.
+- The trace id is propagated to downstream services.
+- Nothing in the logs would embarrass you if a customer read them.
+:::
+
+:::tip Start with three lines of output
+A brand-new service does not need a full observability stack. It needs: one structured log line per request, one counter of failures, and a `/health` route. Those three take an hour and cover most incidents. Add traces when there is more than one service, and dashboards when someone asks a question twice. For complete Rust code wiring `tracing-subscriber` JSON logs, OpenTelemetry OTLP export, `metrics-exporter-prometheus`, and `/health/live` vs `/health/ready`, see [chapter 51](#observability).
 :::
 
 ## More crates for networking
@@ -1431,9 +1480,109 @@ Virtually every queue delivers messages **at least once**: if a worker processes
 | QUIC and HTTP/3 | `quinn`, `h3` |
 | Message queues | `lapin` (RabbitMQ), `rdkafka` (Kafka), `async-nats` (NATS) |
 | Redis | `redis`, `fred` |
+| Logs, metrics and traces | `tracing` + `tracing-subscriber`, `metrics` + `metrics-exporter-prometheus`, `opentelemetry` + `tracing-opentelemetry` |
+| Looking inside the runtime | `console-subscriber`, used by `tokio-console` |
+| Cheap shared byte buffers | `bytes` (`Bytes`, `BytesMut`) |
 | E-mail | `lettre` |
 | DNS | `hickory-resolver` |
-| Other async runtimes | `smol` (small and simple), `embassy` (for microcontrollers, [chapter 50](#games-embedded)) |
+| Other async runtimes | `smol` (small and composable), `async-std` (legacy projects; discontinued), `embassy` (microcontrollers, [chapter 50](#games-embedded)) |
+
+:::warn Runtime status matters
+`async-std` is discontinued: its maintainers recommend that existing users migrate to `smol` rather than expecting continued development. It remains relevant when reading older projects or a dependency that still supports it, but it is not a good default for a new application. `smol` is a small runtime assembled from focused crates; it is not a drop-in promise that every Tokio library can run unchanged. Check each library's runtime features and I/O traits before mixing ecosystems. For a new network service, Tokio remains the broadest default in this guide.
+:::
+
+## When services talk by message
+
+Every call so far has been direct: a client asks, a server answers, and if the server is slow the client waits. That works until the work is slow, or the receiver is down, or a burst arrives that nobody planned for. A **message queue** puts a buffer between the two sides: the sender drops a message and returns, a worker picks it up when it can.
+
+The four things a queue buys you:
+
+- **Load levelling.** Ten thousand uploads in a minute become ten thousand jobs in a queue, processed at the rate the workers can manage, instead of ten thousand timeouts.
+- **Decoupling.** The service that creates the order does not need to know which services care. It publishes `order.created`; the e-mail service, the warehouse and the analytics pipeline subscribe.
+- **Retries.** A message that fails is redelivered later, without the user pressing the button again.
+- **Backpressure with a memory.** The queue holds the overflow, and its depth is a value you can expose as a gauge (the section above shows how).
+
+### The vocabulary
+
+| Word | Meaning |
+|---|---|
+| **Producer** | Code that publishes a message |
+| **Consumer** | Code that reads and handles messages |
+| **Topic** / **queue** | The named channel a message is published to |
+| **Partition** | An ordered shard of a topic. Order is guaranteed within a partition, not across a topic |
+| **Consumer group** | A set of consumers that share the work; each partition goes to one member at a time |
+| **Ack** | The consumer tells the broker "handled, you can forget it" |
+| **Dead-letter queue** | Where a message goes after it has failed too many times |
+
+### Delivery guarantees, and the only one that matters
+
+- **At most once.** Fire and forget. A crash loses the message.
+- **At least once.** The broker redelivers until it is acknowledged. A crash after the work but before the ack means the work happens twice.
+- **Exactly once.** Every broker that advertises it means "exactly once *within the broker*". The moment your handler writes to a database and sends an e-mail, it is at-least-once again.
+
+So the practical answer is: **assume every message can arrive twice, and make the handler idempotent.** An idempotent handler produces the same result whether it runs once or five times. Three ways to get there:
+
+1. **An idempotency key** — the message carries a unique id; the handler records ids it has seen (a unique index in the database is enough) and returns early on a repeat.
+2. **Make the operation naturally idempotent** — `UPDATE accounts SET balance = 120` is idempotent; `UPDATE accounts SET balance = balance + 10` is not.
+3. **A transactional outbox** — write the business row *and* the outgoing message in one database transaction, then a relay publishes it. This is how you avoid "the order was saved but the message was lost", which is the failure people forget.
+
+### Choosing a broker
+
+| Broker | Model | Choose it when | Rust crate |
+|---|---|---|---|
+| **NATS** with JetStream | Subjects, at-least-once, tiny and fast | You want something you can run in one container and understand in an afternoon | `async-nats` |
+| **Kafka** | Append-only log, partitions, replay | Throughput and replay matter: events are kept, and a new consumer can read history | `rdkafka` |
+| **RabbitMQ** | Queues with routing rules, per-message acks | Complex routing, per-message priorities, work queues with fine control | `lapin` |
+| **Redis Streams** | Log on a Redis you already run | You already have Redis and the volume is modest | `redis` |
+| **A cloud queue** (SQS, Pub/Sub) | Managed, pay per message | You do not want to operate a broker | the provider's SDK |
+
+One rule of thumb: **start with the simplest thing that can lose a message safely.** If losing the message is unacceptable, that is a durability requirement, and it pushes you towards Kafka, or towards a database table used as a queue for small volumes. A table with `SELECT … FOR UPDATE SKIP LOCKED` is an honest queue for thousands of jobs a day and needs no new infrastructure.
+
+### Trying it without a broker on your laptop
+
+```sh
+docker run --rm -p 4222:4222 nats:latest -js     # NATS with JetStream on localhost:4222
+```
+
+Then a producer publishes to `jobs.titles` and a worker subscribes with a queue group, so two copies of the worker split the messages instead of both receiving each one. The worker's shape is the same as any async task from [chapter 32](#async): a loop, a `CancellationToken` for graceful shutdown, and an idempotent handler:
+
+```rust file=src/worker.rs
+use futures::StreamExt;
+use tokio_util::sync::CancellationToken;
+
+async fn run_nats_worker(client: async_nats::Client, stop: CancellationToken) -> Result<(), Box<dyn std::error::Error>> {
+    let mut subscriber = client.subscribe("jobs.titles").await?;
+
+    loop {
+        tokio::select! {
+            _ = stop.cancelled() => {
+                // Stop reading new messages and flush any in-flight work
+                break;
+            }
+            Some(msg) = subscriber.next() => {
+                // Handlers must be idempotent: redelivering the same event_id
+                // after a network glitch must not run side effects twice.
+                println!("received {} bytes on {}", msg.payload.len(), msg.subject);
+            }
+        }
+    }
+    Ok(())
+}
+```
+
+:::details The architecture, in one paragraph
+Take the URL shortener from [chapter 48](#project-api). Creating a short link is fast: validate, insert, return. Fetching the title of the target page is slow and can fail, so it does not belong in the request. Instead the handler inserts the row and publishes `link.created {id}`, and returns. A worker consumes that topic, fetches the page with `reqwest`, and writes the title back. If the fetch fails, the message is retried with backoff and finally parked in a dead-letter queue that a human reads weekly. The API is now fast and independent of the internet; the title appears a second later. That is the whole pattern, and it is the same one behind thumbnails, e-mails, invoices and search indexing.
+:::
+
+:::tip The byte buffer you will meet everywhere
+`bytes::Bytes` is an immutable slice of memory that can be cloned cheaply: a clone copies a pointer and bumps a counter, not the data. `BytesMut` is the writable counterpart — you append into it, then freeze it into a `Bytes` without copying. Together they are the currency of the HTTP and gRPC layers: bodies and headers in `hyper`, `reqwest` and `tonic` are `Bytes`, which is how one request body can be handed to three layers and a retry without ever being copied.
+
+You will meet the type in compiler messages before you meet it in documentation — "expected `bytes::Bytes`, found `Vec<u8>`". The conversions are one call each: `Bytes::from(vec)` takes ownership of a vector, `Bytes::from_static(b"…")` borrows a literal for ever, `bytes.slice(range)` gives a sub-slice that shares the same memory, and `.to_vec()` copies back out when you really need one.
+:::
+
+:::warn A channel is not a queue
+`tokio::sync::mpsc` is a queue *inside one process*. When the process restarts, everything in it is gone, and a second machine cannot see it. That is fine for passing work between tasks, and wrong for anything that must survive a crash. Ask where the message lives when the power goes off.
+:::
 
 :::compare Parallelism and HTTP elsewhere
 - **Python** has `multiprocessing` and `concurrent.futures`. Because of the interpreter lock, parallel calculations long needed separate processes, with data copied between them. `requests` and `httpx` are its HTTP clients.
@@ -1453,8 +1602,14 @@ Virtually every queue delivers messages **at least once**: if a worker processes
 - `CancellationToken` and `TaskTracker` give a graceful shutdown.
 - A stream is an async iterator. `map(…).buffer_unordered(n)` runs up to `n` operations at once.
 - reqwest sends HTTP requests. Reuse one `Client`, set a timeout, and check the status.
+- `ureq` is a synchronous client for simple programs; do not block a Tokio executor thread with it.
 - tower wraps services in layers such as timeouts and limits. The same layers work across the ecosystem.
+- Production needs three signals: logs (what happened), metrics (how much, how fast) and traces (where the time went). Metrics find the problem, traces locate it, logs explain it.
+- Log one structured JSON line per event, never log secrets, and expose RED metrics with a duration histogram. Averages hide latency; look at p99.
+- `/health` says the process is alive; `/ready` says it can work. Only the second one should touch the database.
+- A message queue levels load, decouples services and buys retries. Every realistic queue is at-least-once, so make handlers idempotent.
 :::
+
 
 :::quiz Check your understanding
 ? What do you change to make `numbers.iter().map(f).sum()` use all cores with Rayon?
@@ -1491,6 +1646,20 @@ Virtually every queue delivers messages **at least once**: if a worker processes
 - The body has been downloaded and is valid JSON
 - The connection was encrypted
 = An HTTP error status is a normal response. Check `status()`, or use `error_for_status()`.
+
+? A user reports that one request took 30 seconds. Which signal do you open first, and why?
+- Logs, because they contain the most detail
++ The trace, because it shows where inside that request the 30 seconds went, across services
+- Metrics, because they show the error rate
+- None: 30 seconds once is not worth investigating
+= A trace follows one request step by step, so it says *which* span was slow. Metrics would show a p99 spike but not the cause, and logs would tell you what each step printed without the timing relationship between them.
+
+? Your worker handles `order.created` from a queue advertised as "at least once". What must the handler do?
+- Nothing special; the broker guarantees one delivery
++ Be idempotent, because the same message can arrive twice after a crash
+- Ack before doing the work, to avoid duplicates
+- Store the message and process it in a batch
+= At-least-once means "never lost, possibly repeated". Acking before the work turns a duplicate into a *lost* message, which is worse: the work never happens and the broker thinks it did.
 :::
 
 :::exercise guided Count words on all cores

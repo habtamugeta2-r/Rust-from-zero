@@ -394,53 +394,32 @@ fn main() {
 `assume_init` is the unsafe step: you promise that a value has been written. In old code you may see `std::mem::uninitialized()`. It is deprecated, because almost every use of it was undefined behaviour.
 :::
 
-### Controlling drop order: `ManuallyDrop<T>`
+### Dropping by hand: `ManuallyDrop`
 
-Normally Rust runs `Drop` automatically on every field when a struct leaves scope, in declaration order. Sometimes you need to suppress automatic dropping—for instance, to put a non-`Copy` field inside a `union`, hand ownership across FFI without double-freeing, or drop fields in an explicit custom order before releasing an allocator or lock.
-
-`std::mem::ManuallyDrop<T>` wraps `T` with zero memory overhead and **never drops `T` automatically**. Unlike `std::mem::forget` (which consumes ownership permanently and leaks), `ManuallyDrop<T>` lets you keep reading and mutating `T` via `Deref`/`DerefMut` and explicitly run `ManuallyDrop::drop` inside `unsafe` (or extract the value back out safely with `ManuallyDrop::into_inner`):
+The mirror image of building a value by hand is *giving it away* by hand. A `Vec` that hands its buffer to the operating system, or a struct that moves one of its fields into a C function, must not free that memory when it is dropped itself. `std::mem::ManuallyDrop<T>` wraps a value and switches the automatic drop off: the compiler will not run `T`'s destructor for it, so the destructor runs when you say, or never.
 
 ```rust run
 use std::mem::ManuallyDrop;
 
-struct Logger(&'static str);
-
-impl Drop for Logger {
-    fn drop(&mut self) {
-        println!("dropping {}", self.0);
-    }
-}
-
-struct OrderedPair {
-    second: ManuallyDrop<Logger>,
-    first: ManuallyDrop<Logger>,
-}
-
-impl Drop for OrderedPair {
-    fn drop(&mut self) {
-        // SAFETY: both fields are initialised and dropped exactly once here.
-        unsafe {
-            ManuallyDrop::drop(&mut self.first);
-            ManuallyDrop::drop(&mut self.second);
-        }
-    }
-}
-
 fn main() {
-    let pair = OrderedPair {
-        second: ManuallyDrop::new(Logger("second field")),
-        first: ManuallyDrop::new(Logger("first field")),
-    };
-    println!("created {}", pair.first.0);
+    let mut owner = ManuallyDrop::new(String::from("hello"));
+
+    // Deref works as usual, so the value is fully usable while it lives.
+    println!("still usable: {}", *owner);
+
+    // SAFETY: this is the only drop of `owner`, and nothing uses it afterwards.
+    unsafe { ManuallyDrop::drop(&mut owner) };
 }
 ```
 ```output
-created first field
-dropping first field
-dropping second field
+still usable: hello
 ```
 
-`ManuallyDrop::drop(&mut x)` runs the destructor in place without moving `x`, so you must guarantee nothing touches `x` afterwards and it is never dropped a second time.
+:::warn Dropping twice is a double free
+`ManuallyDrop::drop` is unsafe for exactly this reason: safe code could call it twice, and the second call would free memory that has already been freed. If you call it, the value must never be dropped again — not at the end of the scope, not by a later `mem::take`, not by anything else. In ordinary code `Option<T>` with `take()` is the better tool, because the `None` that `take` leaves behind means "already moved out" and needs no `unsafe` at all. `ManuallyDrop` is for the cases where a type must keep its layout — a struct shared with C, or a self-referential type whose fields point into each other — and where the destructor has to be taken over deliberately.
+:::
+
+The two tools often appear together: `MaybeUninit` is "a value may be here", and `ManuallyDrop` is "the value is definitely here, but I will decide when it goes". `std::mem::forget(x)` is the third form of the same idea — it takes ownership of `x` and never drops it, which leaks the value but cannot be undone.
 
 ## The other three abilities
 

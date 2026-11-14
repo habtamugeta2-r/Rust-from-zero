@@ -805,6 +805,15 @@ A machine learning library does the same with more comfort. It stores the number
 | `tokenizers` | splits text into the pieces that language models read |
 | `rig-core`, `async-openai` | building LLM-powered applications, structured prompts, embeddings, and tool-calling agents |
 
+Choosing between them, in three lines each:
+
+- **`candle`** — a small, readable framework from Hugging Face for *running* models, with Metal and CUDA backends. Choose it to serve an inference endpoint or run a model on a device; the weights of most published models load directly.
+- **`burn`** — a full framework with training, a backend abstraction (CPU, GPU, browser through WebAssembly) and its own tensor library. Choose it when you are training as well as running, and want one codebase for several targets.
+- **`tch` and `ort`** — bindings to LibTorch (PyTorch's engine) and the ONNX Runtime. Choose them when you must run an existing model exactly as its authors trained it, and accept shipping a large native library alongside your binary.
+- **`linfa`** — the classic algorithms: regression, clustering, decision trees, with an API modelled on scikit-learn. Choose it for tabular prediction where a small, explainable model beats a neural network — which is most of the time.
+- **`polars`, `datafusion`, `duckdb`** — three ways to the same goal: query tables without loading them into a database. Polars is the data-frame library, DataFusion is an engine you embed in a program, DuckDB is a SQL database that reads Parquet and CSV files directly.
+- **`arrow` and `parquet`** — Arrow is the in-memory column format that Polars, DataFusion, pandas and Spark all speak; Parquet is its compressed form on disk. Together they are why a Rust data pipeline can hand its output to a Python notebook without a conversion step.
+
 :::compare Rust and Python in data science
 Python is the language in which data scientists think and try things out, and that will not change soon. But much of what makes Python fast today is Rust underneath: Polars, the `tokenizers` library, the validation core of Pydantic, the tools `ruff` and `uv`. They are Python modules built with PyO3, like the one in [chapter 36](#ffi) that was 27 times faster than its Python version. Reach for Rust when a data job must run fast and reliably day after day, when a trained model has to answer requests with little memory, when it has to run in a browser or on a device, or when a Python library needs a fast core.
 :::

@@ -677,6 +677,20 @@ async fn main() {
 5
 ```
 
+**Several futures at once, without spawning.** `tokio::join!` waits for all of a handful of futures and hands back a tuple of their results, and their types may differ. `tokio::try_join!` does the same for futures that return `Result`, and returns at the first `Err`, cancelling the others — the fail-fast shape of "fetch the user, the settings and the avatar, or give up". `select!` from above is the third case: it stops as soon as *one* future is ready and drops the rest. None of them needs `spawn`, and none needs `'static`, because the futures stay in the current task.
+
+| Want | Use | Notes |
+|---|---|---|
+| All of a fixed handful to finish | `join!` | Different types are fine; returns a tuple |
+| All to finish, or the first error | `try_join!` | Errors must share a type; the rest are cancelled |
+| The first to finish, ignore the rest | `select!` | Also the tool for timeout races |
+| Many at once, from a list | `buffer_unordered(n)` | Maps a stream to futures, at most `n` in flight ([chapter 45](#async-ecosystem)) |
+| Many independent tasks | `JoinSet` | Tasks may be cancelled, and `tokio-console` sees them |
+
+**A set of futures that grows and shrinks.** `FuturesUnordered` from the `futures` crate holds futures of one output type, lets you push new ones while it is being polled, and yields results in the order they finish. That is exactly what a worker needs when a finished job may add another job. It is also the honest answer to "how is this different from the other three?": `buffer_unordered` needs an iterator of items up front and applies a map function, `JoinSet` turns each future into an independent spawned task (so it needs `'static`, and gains cancellation and visibility), and `FuturesUnordered` polls them all inside the task that owns it, so the futures may borrow from that task's data.
+
+**Projecting a pin, when the compiler asks.** A hand-written `Future` eventually has to turn `Pin<&mut Self>` into `Pin<&mut Field>`, and that operation is only sound if the field is never moved afterwards — which is why it cannot be written in safe Rust. Two escapes: put the self-referential part behind `Box::pin`, as the recursive `async fn` above does, or let `pin-project-lite` generate the projection and its `unsafe` for you. Libraries that implement `Stream`, `Future` or an async trait by hand use the second. Application code almost never needs either, and it is fine to recognise the pattern rather than write it.
+
 **Streams** are the async relatives of iterators: a sequence of values that arrive over time, such as lines from a connection. They come from the crates `futures` and `tokio-stream`, and you will see them in [chapter 45](#async-ecosystem).
 
 **Other runtimes.** Tokio is the default choice for servers and network tools. `smol` is a small alternative, and `embassy` brings async to microcontrollers that have no operating system. Libraries are often written for one runtime, so pick one per program. This guide uses Tokio throughout.

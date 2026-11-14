@@ -1,5 +1,7 @@
 // usage: node shot.js <out.png> <hash> [width] [height] [theme] [full] [sandbox] [clickSelector...]
 const { chromium } = require('playwright');
+const { resolve } = require('path');
+const { pathToFileURL } = require('url');
 (async () => {
   const [out, hash = '', w = '1440', h = '900', theme = 'light', full = '0', sandbox = '0', ...clicks] = process.argv.slice(2);
   const browser = await chromium.launch();
@@ -7,7 +9,7 @@ const { chromium } = require('playwright');
   const errors = [];
   page.on('pageerror', e => errors.push('pageerror: ' + e.message));
   page.on('console', m => { if (m.type() === 'error') errors.push('console: ' + m.text()); });
-  const file = 'file:///home/user/rust-guide.html';
+  const file = pathToFileURL(resolve(__dirname, '../../rust-guide.html')).href;
   if (sandbox === '1') {
     await page.setContent(`<body style="margin:0"><iframe sandbox="allow-scripts" src="${file}${hash ? '#' + hash : ''}" style="border:0;width:100vw;height:100vh"></iframe></body>`);
     await page.waitForTimeout(900);

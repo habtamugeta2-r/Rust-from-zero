@@ -339,6 +339,36 @@ Without an operating system, a program uses `core` (everything that needs neithe
 | `#![no_std]`, `#![no_main]` | a crate without the standard library; without the usual start | [50](#games-embedded) |
 | `#![forbid(unsafe_code)]` | refuse `unsafe` in the whole crate | [35](#unsafe) |
 
+## HTTP status codes
+
+HTTP status codes are part of every web service, and the numbers matter to clients. The ones a Rust web service sends, in practice ([chapter 46](#web)):
+
+| Code | Name | Meaning | When a server sends it |
+|---|---|---|---|
+| 200 | OK | Success with a body | A `GET` that found something |
+| 201 | Created | Success, something new exists | After a `POST` that stored a row; add a `Location` header |
+| 204 | No Content | Success, deliberately no body | A `DELETE`, or a `PUT` whose result the client does not need |
+| 301 | Moved Permanently | The resource has a new address for ever | Redirecting a renamed route in a browser |
+| 304 | Not Modified | The client's cached copy is still good | `If-None-Match` matching your `ETag` |
+| 400 | Bad Request | Malformed: the body is not even parseable | Broken JSON, a missing required field |
+| 401 | Unauthorized | *I do not know who you are* | No session, expired token, bad API key |
+| 403 | Forbidden | *I know who you are, and you may not* | A reader calling an admin route |
+| 404 | Not Found | No such resource — or none you may know about | A missing id; also used to hide existence |
+| 405 | Method Not Allowed | The path exists, the method does not | `DELETE` on a read-only route |
+| 409 | Conflict | The request clashes with the current state | A duplicate unique key, an edit of a stale version |
+| 413 | Payload Too Large | The body exceeds the limit | An upload beyond the configured maximum |
+| 415 | Unsupported Media Type | The body's format is not accepted | XML sent to a JSON endpoint |
+| 422 | Unprocessable Content | Well-formed, but fails validation | A negative age, a handle with a forbidden character. Older material calls it Unprocessable Entity; the code is the same |
+| 429 | Too Many Requests | Rate limited | Include `Retry-After` |
+| 500 | Internal Server Error | The server's fault, no detail to the client | Any unexpected error; log it, do not leak it |
+| 502 | Bad Gateway | An upstream answered badly | A proxy could not get a valid answer |
+| 503 | Service Unavailable | Temporarily unable to serve | Starting up, shutting down, `/ready` failing |
+| 504 | Gateway Timeout | An upstream took too long | A proxy's timeout expired |
+
+The two that are most often confused are **401** and **403**: authentication versus authorisation. The one that is most often wrong is **200 with an error inside the body** — a client, a proxy and a monitoring system all read the status code, and none of them reads your JSON.
+
+The full list, with the official definitions, is in [RFC 9110](https://www.rfc-editor.org/rfc/rfc9110).
+
 ## More tables in the chapters
 
 - The basic types, with sizes and ranges: [chapter 4](#types).
@@ -348,3 +378,29 @@ Without an operating system, a program uses `core` (everything that needs neithe
 - Naming rules: [chapter 38](#idioms).
 - The Cargo commands: [chapter 39](#cargo).
 - The common compiler errors and their repairs: [the errors appendix](#errors-ref).
+
+## Authoritative and current sources
+
+This guide aims to explain the ideas and provide a practical route through the ecosystem. It cannot replace the reference for a language guarantee, a crate's full API, or a target-specific deployment rule. Use primary documentation to verify details before making a production decision:
+
+| Resource | Best for |
+|---|---|
+| [The Rust Programming Language](https://doc.rust-lang.org/book/) | A systematic introduction to the language and standard tools |
+| [The Rust Reference](https://doc.rust-lang.org/reference/) | Precise language syntax and semantics |
+| [Rust by Example](https://doc.rust-lang.org/rust-by-example/) | Small runnable examples of language and library features |
+| [The Rustonomicon](https://doc.rust-lang.org/nomicon/) | Advanced unsafe-code patterns and their obligations; it is explicitly incomplete, so compare it with the Reference |
+| [The Cargo Book](https://doc.rust-lang.org/cargo/) | Cargo manifests, workspaces, profiles, configuration and commands |
+| [Rustup documentation](https://rust-lang.github.io/rustup/) | Toolchain channels, targets, components and toolchain selection |
+| [docs.rs](https://docs.rs/) and [crates.io](https://crates.io/) | A crate's versioned API documentation, release metadata and published package |
+| [Are We Web Yet?](https://www.arewewebyet.org/) | A community-maintained map of Rust's web libraries and trade-offs |
+| [Awesome Rust](https://github.com/rust-unofficial/awesome-rust) | A broad, community-curated catalogue of projects and resources |
+| [Zero To Production in Rust](https://www.zero2prod.com/) | A production-oriented backend development path and its publicly available examples |
+| Web frameworks | [Axum](https://docs.rs/axum/latest/axum/), [Actix Web](https://actix.rs/docs/), [Rocket](https://rocket.rs/guide/v0.5/), [Warp](https://docs.rs/warp/latest/warp/) |
+| Async runtimes | [Tokio tutorial](https://tokio.rs/tokio/tutorial), [smol](https://docs.rs/smol/latest/smol/), [async-std status](https://docs.rs/async-std/latest/async_std/), [Embassy](https://embassy.dev/) |
+| Data and databases | [Serde](https://serde.rs/), [SQLx](https://docs.rs/sqlx/latest/sqlx/), [Diesel](https://docs.rs/diesel/latest/diesel/), [SeaORM](https://docs.rs/sea-orm/latest/sea_orm/) |
+| Errors, logging and CLI | [anyhow](https://docs.rs/anyhow/latest/anyhow/), [thiserror](https://docs.rs/thiserror/latest/thiserror/), [eyre](https://docs.rs/eyre/latest/eyre/), [miette](https://docs.rs/miette/latest/miette/), [clap](https://docs.rs/clap/latest/clap/), [tracing](https://docs.rs/tracing/latest/tracing/) |
+| HTTP and tests | [reqwest](https://docs.rs/reqwest/latest/reqwest/), [ureq](https://docs.rs/ureq/latest/ureq/), [proptest](https://proptest-rs.github.io/proptest/), [Mockall](https://docs.rs/mockall/latest/mockall/), [Criterion](https://criterion-rs.github.io/book/index.html) |
+| FFI, embedded and UI | [wasm-bindgen](https://wasm-bindgen.github.io/wasm-bindgen/), [PyO3](https://pyo3.rs/latest/), [embedded-hal](https://docs.rs/embedded-hal/latest/embedded_hal/), [egui](https://docs.rs/egui/latest/egui/), [iced](https://docs.rs/iced/latest/iced/), [Bevy](https://bevy.org/learn/quick-start/introduction/) |
+| Delivery and deployment | [Cross](https://github.com/cross-rs/cross), [GitHub Actions for Rust](https://github.com/actions-rust-lang/setup-rust-toolchain), [Docker's Rust guide](https://docs.docker.com/guides/rust/), [Nix manual](https://nix.dev/manual/nix/stable/) |
+
+For framework and library behavior, start at that project's official guide or API documentation; examples in this guide are deliberately smaller than those references. Check the version selector, changelog, minimum supported Rust version, feature flags, platform support, license and maintenance status. A link to `/latest/` documentation describes what is current when you read it, not necessarily what an older `Cargo.lock` selected. The ecosystem moves faster than Rust's stable language guarantees.
