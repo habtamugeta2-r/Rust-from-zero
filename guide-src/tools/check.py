@@ -13,7 +13,7 @@ Flags after ```rust decide what is checked:
   nocmp   do not compare the output
 Lines starting with "# " are compiled but hidden from readers (like rustdoc).
 
-Usage: check.py [name-part ...] [--ext] [--nocache] [--warn] [--show FILE:LINE]
+Usage: check.py [name-part ...] [--ext] [--projects] [--strict-targets] [--nocache] [--warn] [--show FILE:LINE]
 """
 import concurrent.futures
 import hashlib
@@ -23,6 +23,8 @@ import re
 import subprocess
 import sys
 from pathlib import Path
+
+import project as projtool
 
 ROOT = Path(__file__).resolve().parent.parent
 CH = ROOT / "chapters"
@@ -264,12 +266,88 @@ def check_ext(blocks):
                 elif b["expect"] is not None and norm(p.stdout) != norm(b["expect"]):
                     results[id(b)] = ("FAIL", "output differs.\n--- actual:\n" + p.stdout[:1200]
                                       + "\n--- written in the guide:\n" + b["expect"][:1200])
+            elif results[id(b)][0] == "PASS" and "test" in b["flags"]:
+                p = subprocess.run(["cargo", "test", "-q", "--example", name], capture_output=True, text=True, env=ENV,
+                                   cwd=str(pdir), timeout=600, stdin=subprocess.DEVNULL)
+                if p.returncode != 0:
+                    results[id(b)] = ("FAIL", f"test failed (exit {p.returncode})\n{p.stdout[-900:]}\n{p.stderr[-900:]}")
     return results
+
+
+def installed_targets():
+    try:
+        r = subprocess.run(["rustup", "target", "list", "--installed"], capture_output=True, text=True, env=ENV, timeout=30)
+        if r.returncode == 0:
+            return set(r.stdout.split())
+    except OSError:
+        pass
+    return set()
+
+
+def check_projects(args, strict_targets=False):
+    """Rebuild and check/test every multi-file `proj=` project extracted from chapters/*.md."""
+    projects = projtool.list_projects()
+    if args:
+        projects = [p for p in projects if any(a in p["chapter"] or a in p["name"] for a in args)]
+    if not projects:
+        print("0 projects matched")
+        return 0
+    have_targets = installed_targets()
+    proj_root = BASE / "projects"
+    proj_root.mkdir(parents=True, exist_ok=True)
+    passed = skipped = failed = 0
+    for p in projects:
+        ch_prefix = p["chapter"][:2]
+        pdir = proj_root / f"{ch_prefix}_{p['name']}"
+        projtool.write_project(p["files"], p["name"], pdir, ensure_manifest=True, clean=True)
+        targets = p["targets"]
+        cfg_target = p["config_target"]
+        steps = []
+        if targets:
+            for t in targets:
+                if t == "host":
+                    steps.append(("host-test", ["cargo", "test", "--color", "never"], None))
+                else:
+                    steps.append((f"check:{t}", ["cargo", "check", "--target", t, "--color", "never"], t))
+        elif cfg_target:
+            steps.append((f"check:{cfg_target}", ["cargo", "check", "--color", "never"], cfg_target))
+        else:
+            steps.append(("host-check", ["cargo", "check", "--all-targets", "--color", "never"], None))
+            steps.append(("host-test", ["cargo", "test", "--color", "never"], None))
+        ok = True
+        was_skipped = False
+        for label, cmd, req_target in steps:
+            if req_target and have_targets and req_target not in have_targets:
+                msg = f"target {req_target} is not installed (run: rustup target add {req_target})"
+                if strict_targets:
+                    print(f"✗ {p['chapter']}:{p['name']} [{label}] {msg}")
+                    ok = False
+                    break
+                print(f"- {p['chapter']}:{p['name']} [{label}] SKIP: {msg}")
+                was_skipped = True
+                continue
+            r = subprocess.run(cmd, capture_output=True, text=True, env=ENV, cwd=str(pdir), timeout=900,
+                               stdin=subprocess.DEVNULL)
+            if r.returncode != 0:
+                print(f"✗ {p['chapter']}:{p['name']} [{label}]\n{r.stderr[-1500:]}\n{r.stdout[-900:]}")
+                ok = False
+                break
+        if not ok:
+            failed += 1
+        elif was_skipped and len(steps) == 1:
+            skipped += 1
+        else:
+            passed += 1
+            print(f"✓ {p['chapter']}:{p['name']} ({', '.join(s[0] for s in steps)})")
+    print(f"{len(projects)} projects: {passed} passed, {skipped} skipped, {failed} failing")
+    return 1 if failed else 0
 
 
 def main():
     args = [a for a in sys.argv[1:] if not a.startswith("--")]
     opts = [a for a in sys.argv[1:] if a.startswith("--")]
+    if "--projects" in opts:
+        sys.exit(check_projects(args, strict_targets="--strict-targets" in opts))
     if "--show" in opts:
         target = args[0]
         f, line = target.split(":")

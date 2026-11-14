@@ -1,5 +1,5 @@
 @id unsafe
-@part p8
+@part p9
 @title Unsafe Rust: taking over responsibility
 @short Unsafe Rust
 @level advanced
@@ -269,7 +269,7 @@ Every hazard of manual memory management appears in these lines, each one answer
 
 The fields are private. That matters: if outside code could change `length`, all the safety arguments would collapse. **The privacy boundary of the module is the safety boundary.** All code that can touch the private parts must be reviewed together.
 
-A `Layout` describes how many bytes are needed and how they must be aligned ([chapter 37](#memory-layout)). In real code you would simply use `vec![0; 4]`. The point is to see that there is no magic underneath.
+A `Layout` describes how many bytes are needed and how they must be aligned ([chapter 40](#memory-layout)). In real code you would simply use `vec![0; 4]`. The point is to see that there is no magic underneath.
 
 
 ### A lock built by hand: `UnsafeCell`
@@ -556,7 +556,7 @@ Unsafe code cannot be verified by the compiler, but you are not without help.
 
   Run it on every piece of unsafe code you write. It is slow, and it can only find problems on the paths your tests exercise, so write tests that cover the unusual cases.
 - **Sanitizers** (AddressSanitizer, ThreadSanitizer) are checks compiled into the program. They are faster than Miri and also cover code from other languages that is linked into your program.
-- **Clippy** ([chapter 40](#quality-tools)) has lints for unsafe code. `clippy::undocumented_unsafe_blocks` demands a `SAFETY` comment on every block.
+- **Clippy** ([chapter 35](#quality-tools)) has lints for unsafe code. `clippy::undocumented_unsafe_blocks` demands a `SAFETY` comment on every block.
 - **`#![forbid(unsafe_code)]`** at the top of a crate makes any `unsafe` a compile error. Use it to state, and enforce, that a crate is entirely safe.
 - **`cargo geiger`** counts the unsafe code in your dependencies.
 
@@ -564,7 +564,7 @@ Unsafe code cannot be verified by the compiler, but you are not without help.
 
 Good reasons:
 
-- **Talking to other languages and to the operating system.** There is no other way ([chapter 36](#ffi)).
+- **Talking to other languages and to the operating system.** There is no other way ([chapter 39](#ffi)).
 - **Talking to hardware**, in embedded systems and drivers, where memory addresses are device registers.
 - **Building basic data structures and synchronisation tools** that the borrow checker cannot express: a doubly linked list, a lock-free queue, a memory arena.
 - **Performance**, in a place that measurements have shown to matter, where a check cannot be removed in any safe way.

@@ -44,6 +44,7 @@ tower-http = { version = "0.7.1", features = ["trace", "cors", "timeout", "limit
 tracing = "0.1.44"
 tracing-subscriber = { version = "0.3.23", features = ["env-filter", "json"] }
 ureq = "3"
+wasm-bindgen = "0.2.130"
 
 # Smaller and faster example builds: no debug information
 [profile.dev]

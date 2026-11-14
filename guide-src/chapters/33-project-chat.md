@@ -87,6 +87,16 @@ cd chat
 cargo add tokio --features full
 ```
 
+```toml proj=chat file=Cargo.toml
+[package]
+name = "chat"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+tokio = { version = "1", features = ["full"] }
+```
+
 Every Rust file placed in `src/bin/` becomes an additional program of the package. This package therefore has two programs, `chat` (from `src/main.rs`) and `client`. With more than one, you must say which to run: `cargo run --bin chat` and `cargo run --bin client`.
 
 ## Step 1: the room
@@ -243,7 +253,7 @@ fn parse(line: &str) -> Input {
 
 `strip_prefix('/')` returns the rest of the line if it starts with a slash. If not, the line is an ordinary message. `parse` is a pure function, so its tests are short. They go at the bottom of `src/lib.rs`:
 
-```rust
+```rust proj=chat file=src/lib.rs
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -402,7 +412,7 @@ An error from one client is printed and ends only that client's task. The accept
 
 The program itself is short. Put it into `src/main.rs`:
 
-```rust file=src/main.rs
+```rust proj=chat file=src/main.rs
 use tokio::net::TcpListener;
 
 #[tokio::main]
@@ -425,7 +435,7 @@ async fn main() -> std::io::Result<()> {
 
 To talk to the server you need a program that connects, sends what you type, and shows what arrives. Tools such as `nc` (netcat) or `telnet` can do that, but not every computer has them. A client of our own takes 25 lines. Put it into `src/bin/client.rs`:
 
-```rust check noplay file=src/bin/client.rs
+```rust check noplay proj=chat file=src/bin/client.rs
 use std::io::{self, BufRead, BufReader, Write};
 use std::net::TcpStream;
 use std::thread;
@@ -492,7 +502,7 @@ The server listens on `127.0.0.1`, which is reachable only from the same compute
 
 Trying things by hand in three terminals does not scale. An integration test can start the server and play several users. Put this into `tests/chat.rs`:
 
-```rust file=tests/chat.rs
+```rust proj=chat file=tests/chat.rs
 use std::net::SocketAddr;
 use std::time::Duration;
 
@@ -622,7 +632,7 @@ The third test, `leaving_is_announced`, covers both ways of leaving: `/quit`, an
 
 ## The complete server
 
-```rust ext file=src/lib.rs
+```rust ext check proj=chat file=src/lib.rs
 use std::collections::BTreeSet;
 use std::io;
 use std::sync::{Arc, Mutex};
@@ -1014,4 +1024,4 @@ This design is simple, and it has a cost: every task wakes up for every private 
 - I added private messages.
 :::
 
-You have finished Part 7. You can now write programs that do many things at once, with threads for heavy work and async tasks for waiting, and you know how Rust keeps both safe. Part 8 covers the advanced corners of the language: macros, unsafe code, calling other languages, and how data is laid out in memory.
+You have finished Part 7. You can now write programs that do many things at once, with threads for heavy work and async tasks for waiting, and you know how Rust keeps both safe. Part 8 turns to the everyday engineering tools that keep larger Rust projects healthy—Cargo workspaces, formatting, Clippy, debugging, CI, and testing strategies—before Part 9 explores advanced corners of the language and Part 10 tours the ecosystem.

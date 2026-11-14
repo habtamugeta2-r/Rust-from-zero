@@ -9,7 +9,7 @@
 Three more fields where Rust is used, and each of them could fill a book of its own. This chapter gives you a first working program in each field, the two or three ideas that everything else builds on, and a map of the crates.
 
 :::note How the programs of this chapter were tested
-The games were built and played on Linux with real key presses. The program for a microcontroller ran in an emulator. The program for the Raspberry Pi Pico was compiled for that chip, but not loaded onto a real board. The other examples that show an output were run by the checker of this guide, like the examples of the earlier chapters.
+The Cortex-M3 bare-metal project (`thumbv7m-none-eabi`) is extracted and cross-compiled in CI by `tools/check.py --projects`, and the standalone `embedded-hal`, `heapless`, `ndarray`, and machine-learning listings are checked and run by `tools/check.py`. Windowed games (`macroquad`, `Bevy`) were built and played on Linux with real key presses, the QEMU firmware run and Raspberry Pi Pico binary were verified against their targets locally, and the Polars snippet was run against the chapter 26 sales data.
 :::
 
 ## Games
@@ -204,7 +204,7 @@ bird   at ( 8.5,  5.0)
 - `add_systems(Startup, …)` registers systems that run once. Those under `Update` run every frame. `.chain()` fixes their order: first move, then report.
 - The tree is printed first although it was created last. Bevy stores entities with the same set of components together, and a query walks through these groups. Never rely on the order.
 
-Two things make this design more than a matter of taste. It **composes**: to make the tree fall over, you add a `Velocity` to it, and the existing system moves it. No class has to be rewritten. And it is **fast**: the components of one kind lie side by side in memory, as in the "struct of arrays" layout of [chapter 37](#memory-layout). Bevy also reads from the parameters which systems touch the same data. Systems that do not get in each other's way run on several cores at the same time. These are the borrowing rules, applied to whole functions: many readers or one writer.
+Two things make this design more than a matter of taste. It **composes**: to make the tree fall over, you add a `Velocity` to it, and the existing system moves it. No class has to be rewritten. And it is **fast**: the components of one kind lie side by side in memory, as in the "struct of arrays" layout of [chapter 40](#memory-layout). Bevy also reads from the parameters which systems touch the same data. Systems that do not get in each other's way run on several cores at the same time. These are the borrowing rules, applied to whole functions: many readers or one writer.
 
 ### A window and the keyboard
 
@@ -310,7 +310,7 @@ rustup target add thumbv7m-none-eabi
 
 The project has four small files besides `Cargo.toml`:
 
-```toml file=Cargo.toml
+```toml proj=embedded_m3 file=Cargo.toml
 [dependencies]
 cortex-m = { version = "0.7.10", features = ["critical-section-single-core"] }
 cortex-m-rt = "0.7.7"
@@ -318,7 +318,7 @@ cortex-m-semihosting = "0.6.0"
 panic-semihosting = { version = "0.7.0", features = ["exit"] }
 ```
 
-```toml file=.cargo/config.toml
+```toml proj=embedded_m3 file=.cargo/config.toml
 [build]
 target = "thumbv7m-none-eabi"
 
@@ -328,7 +328,7 @@ runner = "qemu-system-arm -cpu cortex-m3 -machine lm3s6965evb -nographic -semiho
 rustflags = ["-C", "link-arg=-Tlink.x"]
 ```
 
-```text file=memory.x
+```text proj=embedded_m3 file=memory.x
 /* The memory of the LM3S6965 chip: where it starts and how much there is */
 MEMORY
 {
@@ -337,7 +337,7 @@ MEMORY
 }
 ```
 
-```rust file=build.rs
+```rust proj=embedded_m3 file=build.rs
 use std::path::PathBuf;
 use std::{env, fs};
 
@@ -350,7 +350,7 @@ fn main() {
 }
 ```
 
-```rust file=src/main.rs
+```rust proj=embedded_m3 file=src/main.rs
 #![no_std]
 #![no_main]
 
@@ -815,7 +815,7 @@ Choosing between them, in three lines each:
 - **`arrow` and `parquet`** — Arrow is the in-memory column format that Polars, DataFusion, pandas and Spark all speak; Parquet is its compressed form on disk. Together they are why a Rust data pipeline can hand its output to a Python notebook without a conversion step.
 
 :::compare Rust and Python in data science
-Python is the language in which data scientists think and try things out, and that will not change soon. But much of what makes Python fast today is Rust underneath: Polars, the `tokenizers` library, the validation core of Pydantic, the tools `ruff` and `uv`. They are Python modules built with PyO3, like the one in [chapter 36](#ffi) that was 27 times faster than its Python version. Reach for Rust when a data job must run fast and reliably day after day, when a trained model has to answer requests with little memory, when it has to run in a browser or on a device, or when a Python library needs a fast core.
+Python is the language in which data scientists think and try things out, and that will not change soon. But much of what makes Python fast today is Rust underneath: Polars, the `tokenizers` library, the validation core of Pydantic, the tools `ruff` and `uv`. They are Python modules built with PyO3, like the one in [chapter 39](#ffi) that was 27 times faster than its Python version. Reach for Rust when a data job must run fast and reliably day after day, when a trained model has to answer requests with little memory, when it has to run in a browser or on a device, or when a Python library needs a fast core.
 :::
 
 :::recap

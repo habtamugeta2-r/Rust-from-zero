@@ -232,6 +232,19 @@ cargo add serde --features derive
 cargo add serde_json anyhow
 ```
 
+```toml proj=todo_cli file=Cargo.toml
+[package]
+name = "todo"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+anyhow = "1"
+clap = { version = "4", features = ["derive"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+```
+
 ### Step 1: describe the command line
 
 ```rust
@@ -477,7 +490,7 @@ The first error comes from your code. The other two come from clap, which exits 
 
 Since `run` takes a `Command` and a list, and returns text, the tests need no files and no processes. `Cli::try_parse_from` lets them start from the words a user would type:
 
-```rust
+```rust proj=todo_cli file=src/main.rs
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -553,7 +566,7 @@ fn unknown_task_gives_exit_code_1() {
 
 ### The complete program
 
-```rust ext file=src/main.rs
+```rust ext check proj=todo_cli file=src/main.rs
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;

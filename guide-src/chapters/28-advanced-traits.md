@@ -524,7 +524,7 @@ fn main() {}
 
 `duplicate` returns `Self`. For a `dyn Duplicate`, nobody knows what `Self` is or how large it is. This is the reason `Clone` cannot be used as `dyn Clone`.
 
-The message mentions a **vtable** ("virtual method table"). That is the small table of function addresses that every trait object carries with it. Through it, the program finds the right method at run time. [Chapter 37](#memory-layout) shows what it looks like in memory.
+The message mentions a **vtable** ("virtual method table"). That is the small table of function addresses that every trait object carries with it. Through it, the program finds the right method at run time. [Chapter 40](#memory-layout) shows what it looks like in memory.
 
 You can keep such a method in a trait and still use the trait as an object, by telling the compiler that this one method is not available on trait objects:
 

@@ -18,10 +18,11 @@ To check the examples you also need a Rust toolchain (stable, plus `clippy` and
 `rustfmt`):
 
 ```sh
-tools/setup-env.sh                  # installs it under /opt/rs
+guide-src/tools/setup-env.sh      # installs it under /opt/rs
 python3 guide-src/tools/check.py                    # everything
 python3 guide-src/tools/check.py serde web          # chapters matching a word
 python3 guide-src/tools/check.py --ext              # crate examples, via cargo
+python3 guide-src/tools/check.py --projects         # multi-file & Wasm/no_std projects
 ```
 
 `guide-src/PLAN.md` is the reference for the chapter format: header fields, the
@@ -74,8 +75,8 @@ captured-output mechanism.
 - [ ] `python3 guide-src/tools/audit.py` reports **0 structural remarks**.
 - [ ] `python3 guide-src/tools/check.py` passes for every chapter you touched
       (and `--ext` if you touched a crate example).
-- [ ] Multi-file project chapters still rebuild:
-      `python3 guide-src/tools/project.py 48 shortener /tmp/shortener`.
+- [ ] Multi-file and target projects still rebuild and test:
+      `python3 guide-src/tools/check.py --projects` (or `python3 guide-src/tools/project.py 48 shortener /tmp/shortener`).
 - [ ] New prose is in British English, and every new term is explained.
 - [ ] Any claim of "complete" or "every" in your text is one you have checked.
 

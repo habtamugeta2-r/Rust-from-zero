@@ -1,5 +1,5 @@
 @id cargo
-@part p9
+@part p8
 @title Cargo in depth
 @short Cargo in depth
 @level intermediate

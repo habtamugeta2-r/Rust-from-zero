@@ -40,7 +40,7 @@ tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
 
 Instead of calling the one-line `tracing_subscriber::fmt::init()`, real applications build a **`registry()`** and compose **layers** on top of it. That lets you swap formatting between local development and production, and later plug OpenTelemetry right into the same subscriber:
 
-```rust file=src/telemetry.rs
+```rust ext check file=src/telemetry.rs
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 use tracing_subscriber::{EnvFilter, fmt};
@@ -480,7 +480,7 @@ Also keep `/health/*` and `/metrics` quiet: either attach `TraceLayer` only to y
 - Because `tracing` drops all spans when `tokio` starts
 + Because the guard stays active on the thread while the future is paused, corrupting span trees for other tasks polled on that thread
 - Because `.enter()` panics inside Tokio tasks
-= An entered guard marks the *current thread* until dropped. When an async task yields at `.await`, another task can run on that thread and inherit the wrong parent span. Use `.instrument(span)` instead.
+= An entered guard marks the *current thread* until dropped. When an async task suspends at `.await`, another task can run on that thread and inherit the wrong parent span. Use `.instrument(span)` instead.
 
 ? A handler has `#[tracing::instrument(skip(password))]` on `async fn login(email: String, password: String)`. Why is `skip(password)` essential?
 - Because `String` does not implement `Debug`
@@ -516,7 +516,7 @@ Write a small library function `charge_user(user_id: u64, card_token: &str, amou
 ::hint
 Use `#[tracing::instrument(skip(card_token))]` and check both `fmt::layer().json()` and `fmt::layer().compact()` under `tracing_subscriber::registry().with(filter)`.
 ::solution
-```rust file=src/main.rs
+```rust ext check file=src/main.rs
 use tracing::{info, instrument};
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;

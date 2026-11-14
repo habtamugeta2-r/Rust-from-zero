@@ -6,7 +6,7 @@
 @time 100
 @learn Explain requests, responses, methods and status codes | Write a web server with routes and handlers in Axum | Read paths, query strings, headers, JSON and real-time streams with extractors | Share state, load layered configuration and protect secrets | Add authentication, authorisation, security headers and rate limits | Choose between REST, gRPC and GraphQL, and compare Axum with Actix Web and Rocket
 
-A **web server** is a program that waits for requests from the network and answers them. The web sites you visit and the apps on your phone all talk to such programs. Rust is a strong choice for writing them: it can help prevent memory-safety bugs and use resources efficiently. It cannot guarantee that a server stays up; logic errors, panics, overload and operational problems still need careful design and testing.
+A **web server** is a program that waits for requests from the network and answers them. The web sites you visit and the apps on your phone all talk to such programs. Rust is a strong choice for writing them: it helps prevent memory-safety bugs and uses resources efficiently. It cannot guarantee that a server stays up, though; logic errors, panics, overload, and external outages still need careful design and testing.
 
 :::analogy A restaurant
 A guest (the client) hands an order slip (the request) to the waiter. The slip says what is wanted and for which table. The waiter (the router) looks at it and gives it to the right cook (a handler). The cook prepares a dish (the response), and the waiter brings it back. House rules apply to every order whoever cooks: orders are written in the book, and no order may take longer than twenty minutes (middleware). The pantry is shared by all cooks (state).
@@ -52,12 +52,12 @@ content-length: 36
 | Method | Meaning | Typical body use |
 |---|---|---|
 | `GET` | retrieve a representation; defined as a safe method | usually absent |
-| `POST` | submit data for the resource to process | often present |
+| `POST` | submit data for the resource to process | often present (optional for simple actions) |
 | `PUT` | create or replace the target resource's representation | often present |
 | `PATCH` | apply a partial change to the target resource | often present |
 | `DELETE` | remove the target resource | usually absent |
 
-These are conventions, not rules that require a body or forbid one. HTTP defines the semantics of each method; for example, `GET` is intended to be safe, but a server still has to implement that contract correctly. A request body on `GET` or `DELETE` has no generally defined meaning, so clients and servers should not rely on one.
+These are common HTTP **conventions**, not rules that forbid a body or require one. A server still has to implement each method's contract correctly (such as keeping `GET` safe), and many proxies, caches, and client libraries ignore or reject bodies on `GET` and `DELETE`, so REST APIs normally do not rely on them.
 
 ### Status codes
 
@@ -94,7 +94,7 @@ serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.154"
 ```
 
-```rust ext file=src/main.rs
+```rust ext check file=src/main.rs
 use axum::{routing::get, Router};
 
 async fn home() -> &'static str {
@@ -709,7 +709,7 @@ tracing = "0.1.44"
 tracing-subscriber = "0.3.23"
 ```
 
-```rust ext file=src/main.rs
+```rust ext check file=src/main.rs
 use std::time::Duration;
 
 use axum::http::StatusCode;
@@ -1621,7 +1621,7 @@ CMD ["/usr/local/bin/myserver"]
 An `ENV API_KEY=…` line, or a credentials file copied into the build stage, stays in the image for ever: anyone who can pull the image can read it, and deleting the file in a later layer does not help, because the earlier layer is still there. Pass secrets at run time — Docker secrets, Kubernetes `Secret` objects, or the secret manager of the host — and let the program read them from the environment when it starts. If a secret has ever been committed by mistake, rotate it; a rewrite of the history does not reach the copies that were already fetched. The [configuration section](#cli) of the CLI chapter covers where values should come from.
 :::
 
-**Cross-compilation.** The server does not have to run on the same kind of machine it is built on. `rustup target add x86_64-unknown-linux-musl` followed by `cargo build --release --target x86_64-unknown-linux-musl` produces a statically linked Linux binary ([chapter 39](#cargo)). A container built from that binary needs almost nothing inside it, which keeps images small and startup fast.
+**Cross-compilation.** The server does not have to run on the same kind of machine it is built on. `rustup target add x86_64-unknown-linux-musl` followed by `cargo build --release --target x86_64-unknown-linux-musl` produces a statically linked Linux binary ([chapter 34](#cargo)). A container built from that binary needs almost nothing inside it, which keeps images small and startup fast.
 
 **Nix.** Teams that want every build to be byte-identical use Nix: it pins the Rust version, the system libraries and the crate versions, and builds in a sandbox. Tools such as `crane`, `naersk` or `fenix` turn a `Cargo.lock` into a Nix derivation, and `nix develop` gives every contributor the same toolchain. The price is learning Nix itself; for a single service, the Dockerfile above is simpler.
 

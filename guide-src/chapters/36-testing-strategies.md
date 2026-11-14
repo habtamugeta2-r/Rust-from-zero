@@ -1,5 +1,5 @@
 @id testing-strategies
-@part p9
+@part p8
 @title Testing strategies for real projects
 @short Testing strategies
 @level advanced
@@ -400,7 +400,7 @@ Use coverage to find code that no test touches at all. Do not chase a percentage
 | Tool | Purpose |
 |---|---|
 | `cargo nextest` | a faster test runner: each test in its own process, clearer output, retries for flaky tests |
-| `cargo miri test` | run the tests in an interpreter that detects undefined behaviour ([chapter 35](#unsafe)) |
+| `cargo miri test` | run the tests in an interpreter that detects undefined behaviour ([chapter 38](#unsafe)) |
 | `rstest`, `test-case` | parameterised tests and fixtures through attributes |
 | `mockall` | generated mock objects for traits |
 | `wiremock`, `httpmock` | a fake HTTP server for testing code that calls web services |
@@ -418,7 +418,7 @@ Use coverage to find code that no test touches at all. Do not chase a percentage
 - **Fix or delete flaky tests.** A test that fails now and then teaches everyone to ignore failures. The usual causes are shared state, real time, real network, and dependence on the order of a `HashMap`.
 - **Keep tests fast.** A suite that takes ten minutes is not run.
 - **Name tests as statements** about behaviour: `large_orders_ship_free`.
-- **Run everything in CI**, on every change ([chapter 40](#quality-tools)).
+- **Run everything in CI**, on every change ([chapter 35](#quality-tools)).
 
 :::compare Testing tools in other languages
 Property-based testing comes from Haskell's QuickCheck and exists in most languages now: Hypothesis for Python, fast-check for JavaScript, jqwik for Java. Snapshot testing became popular through Jest in JavaScript. Fuzzing grew up around C and C++ with AFL and libFuzzer, which `cargo fuzz` uses underneath. Rust adds two things of its own: the type system removes whole categories of tests that dynamic languages need ("what if this is null?", "what if this is the wrong type?"), and a fuzzer that finds a panic in safe Rust has found a bug, and not a security hole.

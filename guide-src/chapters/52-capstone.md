@@ -184,7 +184,7 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 clap = { version = "4", features = ["derive"] }
 anyhow = "1"
-thiserror = "1"
+thiserror = "2"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
@@ -306,7 +306,9 @@ impl LibraryError {
 The store owns the SQLx pool. Every query lives here, so the rest of the program never sees SQL. A `Library` handle is cheap to clone because it holds an `Arc` inside the pool.
 
 ```rust proj=library file=src/store.rs
-use sqlx::sqlite::SqlitePoolOptions;
+use std::str::FromStr;
+
+use sqlx::sqlite::{SqliteConnectOptions, SqlitePoolOptions};
 use sqlx::FromRow;
 use sqlx::SqlitePool;
 
@@ -322,16 +324,19 @@ pub struct Store {
 impl Store {
     /// Opens (or creates) the SQLite database file and applies pending migrations.
     pub async fn open(path: &str) -> Result<Store, LibraryError> {
+        let options = SqliteConnectOptions::from_str(path)
+            .map_err(LibraryError::Database)?
+            .create_if_missing(true);
+        let connections = if path == "sqlite::memory:" { 1 } else { 5 };
         let pool = SqlitePoolOptions::new()
-            .max_connections(5)
-            .connect(path)
+            .max_connections(connections)
+            .connect_with(options)
             .await
             .map_err(LibraryError::Database)?;
 
         sqlx::migrate!()
             .run(&pool)
-            .await
-            ?;
+            .await?;
 
         Ok(Store { pool })
     }
@@ -660,7 +665,7 @@ The rules reject bad input *before* it reaches the database. `set_rating` conver
 The routes turn HTTP requests into calls on the `Library`. Errors become uniform JSON responses.
 
 ```rust proj=library file=src/routes.rs
-use axum::extract::{Path, State, Query};
+use axum::extract::{Path, Query, State};
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
 use axum::routing::get;
@@ -680,6 +685,11 @@ pub struct AppState {
 }
 
 /// One error shape for every API response.
+#[derive(serde::Serialize)]
+struct ErrorBody {
+    error: String,
+}
+
 impl IntoResponse for LibraryError {
     fn into_response(self) -> Response {
         let (status, message) = match &self {
@@ -697,7 +707,7 @@ impl IntoResponse for LibraryError {
                 )
             }
         };
-        (status, Json(json!({"error": message}))).into_response()
+        (status, Json(ErrorBody { error: message })).into_response()
     }
 }
 
@@ -1235,7 +1245,7 @@ ALTER TABLE books ADD COLUMN last_visited TEXT;
 - `thiserror` gives libraries a precise error enum; `anyhow` gives applications quick context.
 - `LibraryError::IntoResponse` turns every failure into a fitting JSON answer.
 - Settings come from environment variables; secrets never appear in source code.
-- `tokio::runtime::Runtime::block_on` connects a synchronous CLI to an async library.
+- A single `#[tokio::main]` binary drives both the terminal subcommands and `library serve` over the shared `Library`.
 - Tests hand requests straight to the router; each test gets its own in-memory database.
 - Migrations evolve the schema safely, and `build.rs` makes Cargo notice them.
 :::

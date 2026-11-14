@@ -12,22 +12,27 @@ Deliverable: `rust-guide.html` at the repository root (ONE self-contained file),
 `python3 guide-src/tools/build.py` from `chapters/*.md` + `assets/*`. Never edit the HTML by hand.
 
 ## Reader routes
-- Core path: chapters 00–26. Essential Cargo and quality-check commands are introduced in chapter 02; chapters 39–41 provide the deeper reference when needed.
-- After the core path, readers can follow goal-based routes in chapter 53. Advanced language topics and ecosystem surveys remain available as optional deep dives.
+- Core path: Parts 1–5 (chapters 01–26) + Part 8 Tooling (chapters 34–36). Essential Cargo, formatting, testing, and Clippy commands are introduced in chapter 02; chapters 34–36 provide the deeper workflow reference before Part 9 advanced topics (chapters 37–41).
+- After the core path, readers can follow goal-based routes in chapter 00 / the Home route selector (and `53-next.md`). Advanced language topics and ecosystem surveys (`49-apps`, `50-games-embedded`) remain optional deep dives.
 
 ## Tooling (not persisted between messages — reinstall if /opt/rs is missing)
 - Rust toolchain lives in /opt/rs (RUSTUP_HOME=/opt/rs/rustup, CARGO_HOME=/opt/rs/cargo, `. /opt/rs/env.sh`).
   Reinstall: see `tools/setup-env.sh`.
 - `python3 tools/check.py [name-part..]` compiles/runs every ```rust block (flags: run, wrap, check, test,
   fail [E0xxx], panic, warns, ext[=project], nocmp, noplay). `--ext` also cargo-checks crate examples in
-  /opt/rs/ext/main (Cargo.toml copy: tools/ext-main-Cargo.toml). Results cached in /opt/rs/chk.
+  /opt/rs/ext/main (Cargo.toml copy: tools/ext-main-Cargo.toml) and runs `cargo test` for `ext test` blocks.
+  `--projects` extracts every `proj=<name>` project across chapters via `tools/project.py` (including
+  chapter 23 `finder`, 33 `chat`, 44 `todo_cli`, 48 `shortener`, 49 WebAssembly/WASI targets,
+  50 Cortex-M3 `thumbv7m-none-eabi`, and 52 `library`) and runs `cargo check` / `cargo test`.
+  Results cached in /opt/rs/chk.
 - An ```output auto / ```error auto block directly after a rust block is filled with the REAL captured
   output/compiler message (stored in captured/<hash>.txt; `lines=N` truncates). Do not use hidden `# ` lines
   in fail/panic/warns blocks (line numbers must match).
-- Multi-file projects (chapters 48, 52): every listing is a fence `lang proj=<name> file=<path>` (later parts of the
-  same file add `cont`, shown as "(continued)"). `python3 tools/project.py <chapter-prefix> <name> <outdir>` rebuilds
-  the project from the chapter. `python3 tools/check-projects.py` rebuilds and runs `cargo test --all-targets` for
-  both projects. These fences have no check kind, so check.py skips them.
+- Multi-file and target projects (`proj=<name> file=<path>`, optional `target=<t1>,<t2>`, later chunks marked
+  `cont`, shown as "(continued)"): `python3 tools/project.py <chapter-prefix> <name> <outdir>` rebuilds a
+  single project from its chapter, and `python3 tools/project.py --list` lists all discovered projects.
+  `python3 tools/check.py --projects --strict-targets` verifies all of them in CI (also wrapped by
+  `tools/check-projects.py`).
 - Flag `release` on a rust block: check.py compiles it with optimisation, and Run opens the playground in release mode
   (chapter 51: timings).
 - `text`/`output` blocks with a line over 100 chars soft-wrap automatically (class `soft`), unless they contain
@@ -62,12 +67,12 @@ p4:  [x] 17-modules → modules   [x] 18-errors → errors   [x] 19-generics →
 p5:  [x] 24-closures → closures   [x] 25-iterators → iterators   [x] 26-project-report → project-report (project)
 p6:  [x] 27-smart-pointers → smart-pointers   [x] 28-advanced-traits → advanced-traits   [x] 29-type-system → type-system
 p7:  [x] 30-threads → threads   [x] 31-shared-state → shared-state   [x] 32-async → async   [x] 33-project-chat → project-chat (project)
-p8:  [x] 34-macros → macros   [x] 35-unsafe → unsafe   [x] 36-ffi → ffi   [x] 37-memory-layout → memory-layout   [x] 38-idioms → idioms
-p9:  [x] 39-cargo → cargo   [x] 40-quality-tools → quality-tools   [x] 41-testing-strategies → testing-strategies
+p8:  [x] 34-cargo → cargo   [x] 35-quality-tools → quality-tools   [x] 36-testing-strategies → testing-strategies
+p9:  [x] 37-macros → macros   [x] 38-unsafe → unsafe   [x] 39-ffi → ffi   [x] 40-memory-layout → memory-layout   [x] 41-idioms → idioms
 p10: [x] 42-crates → crates (finding crates + everyday crates)   [x] 43-serde → serde   [x] 44-cli → cli (clap; project inside)
      [x] 45-async-ecosystem → async-ecosystem (Tokio, Rayon, reqwest, tower…)   [x] 46-web → web (Axum, Actix, Rocket…)
      [x] 47-databases → databases (SQLx, Diesel, SeaORM…)   [x] 48-project-api → project-api (project)
-     [x] 49-apps → apps (WebAssembly, Leptos/Yew/Dioxus, Tauri, egui/iced/Slint)   [x] 50-games-embedded → games-embedded (Bevy, embedded, data/ML)
+     [x] 49-apps → apps (survey: WebAssembly, Leptos/Yew/Dioxus, Tauri, egui/iced/Slint)   [x] 50-games-embedded → games-embedded (survey: Bevy, embedded, data/ML)
      [x] 54-observability → observability (tracing JSON, request IDs, OpenTelemetry, metrics, health probes)
 p11:  [x] 51-performance → performance   [x] 52-capstone → capstone (project)   [x] 53-next → next (@kind orientation)
 app: [x] 90-glossary → glossary (stub exists; fill with every [[term]])   [x] 91-reference → reference   [x] 92-errors-ref → errors-ref
