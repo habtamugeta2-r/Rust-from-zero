@@ -28671,7 +28671,12 @@ tower = { version = <span class="s">"0.5"</span>, features = [<span class="s">"u
 }
 
 <span class="c">/// One error shape for every API response.
-</span><span class="k">impl</span> <span class="t">IntoResponse</span> <span class="k">for</span> <span class="t">LibraryError</span> {
+</span><span class="a">#[derive(serde::Serialize)]</span>
+<span class="k">struct</span> <span class="t">ErrorBody</span> {
+    error: <span class="t">String</span>,
+}
+
+<span class="k">impl</span> <span class="t">IntoResponse</span> <span class="k">for</span> <span class="t">LibraryError</span> {
     <span class="k">fn</span> <span class="f">into_response</span>(<span class="k">self</span>) -&gt; <span class="t">Response</span> {
         <span class="k">let</span> (status, message) = <span class="k">match</span> &amp;<span class="k">self</span> {
             <span class="t">LibraryError</span>::<span class="t">NotFound</span>(id) =&gt; (<span class="t">StatusCode</span>::<span class="n">NOT_FOUND</span>, <span class="m">format!</span>(<span class="s">"no book with id {id}"</span>)),

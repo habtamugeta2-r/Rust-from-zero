@@ -685,6 +685,11 @@ pub struct AppState {
 }
 
 /// One error shape for every API response.
+#[derive(serde::Serialize)]
+struct ErrorBody {
+    error: String,
+}
+
 impl IntoResponse for LibraryError {
     fn into_response(self) -> Response {
         let (status, message) = match &self {
