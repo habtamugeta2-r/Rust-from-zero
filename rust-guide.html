@@ -74,6 +74,8 @@ mark{background:var(--gold-soft);color:inherit;border-radius:3px;padding:0 .1em}
 
 /* layout */
 .app{display:grid;grid-template-columns:308px minmax(0,1fr);min-height:100vh}
+.app.sidebar-collapsed{grid-template-columns:minmax(0,1fr)}
+.app.sidebar-collapsed .sidebar{display:none}
 .sidebar{position:sticky;top:0;height:100vh;display:flex;flex-direction:column;background:var(--sunken);border-right:1px solid var(--line);font-family:var(--f-ui);font-size:14px;line-height:1.35;z-index:50}
 .main-col{min-width:0}
 .topbar{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:.6rem;height:52px;padding:0 18px;background:var(--bg);background:color-mix(in srgb,var(--bg) 86%,transparent);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);font-family:var(--f-ui);font-size:13.5px}
@@ -86,7 +88,9 @@ mark{background:var(--gold-soft);color:inherit;border-radius:3px;padding:0 .1em}
 .iconbtn:hover{background:var(--sunken);color:var(--ink)}
 .iconbtn.txt{font-weight:750;font-size:17px;line-height:1}
 .iconbtn.txt.sm{font-size:12.5px}
-#menu{display:none}
+#menu .menu-close{display:none}
+#menu[aria-expanded="true"] .menu-open{display:none}
+#menu[aria-expanded="true"] .menu-close{display:block}
 [data-theme="dark"] .sun,[data-theme="light"] .moon{display:none}
 .page{display:grid;grid-template-columns:minmax(0,45.5rem) 208px;gap:3.2rem;justify-content:center;padding:2.6rem 1.5rem 6rem}
 .page.wide{grid-template-columns:minmax(0,66rem)}
@@ -99,6 +103,7 @@ mark{background:var(--gold-soft);color:inherit;border-radius:3px;padding:0 .1em}
 
 /* sidebar */
 .brand{display:flex;align-items:center;gap:.65rem;padding:16px 16px 12px;color:var(--ink);text-decoration:none}
+.sidebar-close{display:none}
 .logo{width:34px;height:34px;color:var(--accent);flex:none}
 .brand b{display:block;font-size:16px;font-weight:800;letter-spacing:-.01em}
 .brand small{display:block;font-size:11.5px;color:var(--ink3);margin-top:1px}
@@ -405,25 +410,48 @@ input[type=checkbox]{accent-color:var(--accent);width:16px;height:16px;margin:0;
   .app{grid-template-columns:minmax(0,1fr)}
   .sidebar{position:fixed;left:0;top:0;bottom:0;width:min(88vw,330px);height:auto;transform:translateX(-104%);transition:transform .22s ease;box-shadow:var(--shadow)}
   .sidebar.open{transform:none}
+  .app.sidebar-collapsed .sidebar{display:flex}
+  .brand{padding-right:56px}
+  .sidebar-close{display:inline-grid;position:absolute;top:10px;right:10px;z-index:1}
   #menu{display:inline-grid}
   .topbar{padding:0 8px}
   .home .hero{grid-template-columns:minmax(0,1fr)}
-  .hero-art{min-height:300px;max-width:440px}
+  .hero-art{min-height:300px;max-width:440px;width:100%}
   .how{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 @media (max-width:640px){
   :root{--fs:17px}
-  .page{padding:1.6rem 1rem 4rem}
-  .ch-num{font-size:4rem}
+  .page{padding:clamp(1.25rem,5vw,1.6rem) clamp(.8rem,4vw,1rem) 3.5rem}
+  .topbar{gap:.35rem}
+  .top-actions{gap:0}
+  .iconbtn{width:40px;height:40px}
+  .crumb .sep{margin:0 .25em}
+  .home .hero{gap:1.25rem;padding-top:.4rem;padding-bottom:1.8rem}
+  .hero h1{font-size:clamp(2rem,10vw,3rem)}
+  .hero-art{min-height:250px;max-width:380px}
+  .art-card pre{font-size:11px;padding:.65rem .75rem .8rem}
+  .ch-num{font-size:clamp(3rem,15vw,4rem)}
   .st-mem{grid-template-columns:minmax(0,1fr)}
   .q-opts,.q-exp{margin-left:0}
   .ch-nav{grid-template-columns:minmax(0,1fr)}
   .how{grid-template-columns:minmax(0,1fr)}
+  .callout{padding:.85rem .9rem}
+  .quiz-head,.q{padding-left:.8rem;padding-right:.8rem}
+  .ex-body{padding-left:.85rem;padding-right:.85rem}
+  .st-mem{padding:.75rem}
+  .code pre{padding:.75rem}
   .path::before{left:16px}
   .path-part{grid-template-columns:34px minmax(0,1fr);gap:.7rem}
   .path-num{width:34px;height:34px;font-size:13px}
   .code pre{font-size:13px}
   .search kbd{display:none}
+}
+@media (max-width:380px){
+  .brand{padding-left:12px;padding-right:12px}
+  .hero-stats{gap:.5rem 1rem}
+  .path-body{padding:.85rem}
+  .code-head{padding-left:.65rem}
+  .code-file{max-width:44vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
 @media print{
@@ -499,6 +527,7 @@ if(!t){try{t=window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'l
       <svg class="logo" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="11" fill="none" stroke="currentColor" stroke-width="5" stroke-dasharray="4.32 4.32"/><circle cx="16" cy="16" r="8.4" fill="none" stroke="currentColor" stroke-width="2.6"/><path d="M11.5 16.2l3.2 3.2 5.8-6.4" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
       <span><b>Rust from Zero</b><small>The complete hands-on guide</small></span>
     </a>
+    <button type="button" class="iconbtn sidebar-close" id="sidebar-close" aria-label="Close navigation" title="Close navigation"><svg class="i" aria-hidden="true"><use href="#i-x"/></svg></button>
     <label class="search">
       <svg class="i" aria-hidden="true"><use href="#i-search"/></svg>
       <input id="search" type="search" placeholder="Search the whole guide" aria-label="Search the whole guide" autocomplete="off" spellcheck="false">
@@ -515,7 +544,10 @@ if(!t){try{t=window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'l
   <div class="scrim" id="scrim" hidden></div>
   <div class="main-col">
     <header class="topbar">
-      <button type="button" class="iconbtn" id="menu" aria-label="Open the table of contents" aria-controls="sidebar"><svg class="i" aria-hidden="true"><use href="#i-menu"/></svg></button>
+      <button type="button" class="iconbtn" id="menu" aria-label="Hide navigation" title="Hide navigation" aria-controls="sidebar" aria-expanded="true">
+        <svg class="i menu-open" aria-hidden="true"><use href="#i-menu"/></svg>
+        <svg class="i menu-close" aria-hidden="true"><use href="#i-x"/></svg>
+      </button>
       <div class="crumb" id="crumb"></div>
       <div class="top-actions">
         <button type="button" class="iconbtn txt sm" id="fs-down" aria-label="Smaller text" title="Smaller text">A</button>
@@ -30083,11 +30115,38 @@ Dear team of Acme Ltd.,</code></pre></figure>
 
   /* ── navigation ── */
   var current = null, sidebar = $('#sidebar'), scrim = $('#scrim'), rail = $('#rail');
+  var app = $('.app'), mainCol = $('.main-col'), menu = $('#menu');
+  var sidebarClose = $('#sidebar-close');
+  var mobileNav = window.matchMedia('(max-width: 900px)');
   var sections = $$('.chapter');
 
   function openDrawer(open) {
-    sidebar.classList.toggle('open', open); scrim.hidden = !open;
-    $('#menu').setAttribute('aria-expanded', open ? 'true' : 'false');
+    var mobile = mobileNav.matches;
+    var focusWasInSidebar = sidebar.contains(doc.activeElement);
+    if (mobile) {
+      app.classList.remove('sidebar-collapsed');
+      sidebar.classList.toggle('open', open);
+      sidebar.inert = !open;
+      mainCol.inert = open;
+      scrim.hidden = !open;
+      if (open) {
+        var firstLink = $('.toc-part-btn', sidebar);
+        if (firstLink) firstLink.focus();
+      } else if (focusWasInSidebar) {
+        menu.focus();
+      }
+    } else {
+      sidebar.classList.remove('open');
+      sidebar.inert = false;
+      mainCol.inert = false;
+      scrim.hidden = true;
+      app.classList.toggle('sidebar-collapsed', !open);
+    }
+    menu.setAttribute('aria-expanded', open ? 'true' : 'false');
+    var label = open ? (mobile ? 'Close navigation' : 'Hide navigation')
+      : (mobile ? 'Open navigation' : 'Show navigation');
+    menu.setAttribute('aria-label', label);
+    menu.title = label;
   }
 
   function show(id, anchor, opts) {
@@ -30123,7 +30182,7 @@ Dear team of Acme Ltd.,</code></pre></figure>
     try {
       if (opts.push) window.history.pushState(null, '', hash); else window.history.replaceState(null, '', hash);
     } catch (e) { }
-    openDrawer(false);
+    if (mobileNav.matches) openDrawer(false);
     if (opts.push) { var h = $('h1', target); if (h && !anchor) { try { h.focus({ preventScroll: true }); } catch (e) { } } }
     onScroll();
   }
@@ -30435,8 +30494,39 @@ Dear team of Acme Ltd.,</code></pre></figure>
   });
 
   /* ── top bar controls ── */
-  $('#menu').addEventListener('click', function () { openDrawer(!sidebar.classList.contains('open')); });
+  menu.addEventListener('click', function () {
+    openDrawer(mobileNav.matches
+      ? !sidebar.classList.contains('open')
+      : app.classList.contains('sidebar-collapsed'));
+  });
+  sidebarClose.addEventListener('click', function () { openDrawer(false); });
   scrim.addEventListener('click', function () { openDrawer(false); });
+  doc.addEventListener('keydown', function (e) {
+    if (!mobileNav.matches || !sidebar.classList.contains('open')) return;
+    if (e.key === 'Escape') {
+      openDrawer(false); return;
+    }
+    if (e.key !== 'Tab') return;
+    var focusable = $$('a[href],button:not([disabled]),input:not([disabled])', sidebar)
+      .filter(function (el) { return el.getClientRects().length > 0 && !el.closest('[hidden]'); });
+    if (!focusable.length) return;
+    var first = focusable[0], last = focusable[focusable.length - 1];
+    if (e.shiftKey && doc.activeElement === first) {
+      e.preventDefault(); last.focus();
+    } else if (!e.shiftKey && doc.activeElement === last) {
+      e.preventDefault(); first.focus();
+    }
+  });
+  if (mobileNav.addEventListener) {
+    mobileNav.addEventListener('change', function (e) {
+      if (e.matches) {
+        app.classList.remove('sidebar-collapsed');
+        openDrawer(false);
+      } else {
+        openDrawer(true);
+      }
+    });
+  }
   $('#theme').addEventListener('click', function () {
     var t = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
     root.setAttribute('data-theme', t); state.theme = t; save();
