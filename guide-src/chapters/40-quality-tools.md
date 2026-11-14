@@ -343,7 +343,18 @@ jobs:
           RUSTDOCFLAGS: -D warnings
 ```
 
-The four steps are the standard quartet: **format, lint, test, document**. The cache step keeps compiled dependencies between runs, which saves minutes. Larger projects add a matrix that runs the tests on Linux, Windows and macOS, a job on the oldest supported Rust version, and `cargo audit` on a schedule.
+The four steps are the standard quartet: **format, lint, test, document**. The `RUSTDOCFLAGS: -D warnings` line turns every documentation warning — a broken intra-doc link, a code example in a doc comment that no longer compiles — into a failed build, which is how documentation stays true.
+
+One more line earns its place in any project that reads a database:
+
+```yaml
+      - name: Test
+        run: cargo test --all-features
+        env:
+          SQLX_OFFLINE: "true"
+```
+
+`SQLX_OFFLINE=true` tells SQLx to check its queries against the saved description in the `.sqlx/` folder instead of connecting to a live database ([chapter 47](#databases)). The cache step keeps compiled dependencies between runs, which saves minutes. Larger projects add a matrix that runs the tests on Linux, Windows and macOS, a job on the oldest supported Rust version, and `cargo audit` on a schedule.
 
 Run the same commands yourself before you push. Many people put them in a script, or use a tool such as `just`, a simple command runner:
 

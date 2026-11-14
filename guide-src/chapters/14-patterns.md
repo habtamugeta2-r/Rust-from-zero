@@ -45,6 +45,10 @@ fn main() {
 
 Even the plain `let x = 5;` uses a pattern: the name `x` is a pattern that fits any value and gives it that name.
 
+:::analogy A pattern is a coin sorter
+Think of a mechanical coin sorter at a bank: a tray with shaped cutouts of exact widths. Pour mixed coins in, and each coin drops only through the slot whose shape matches it, landing in a labelled tube. A Rust pattern is that cutout: it tests whether a value has the right shape and simultaneously unpacks its inner pieces into variables.
+:::
+
 ## Patterns that can fail and patterns that cannot
 
 - A pattern that fits **every** possible value is called **irrefutable**. `x`, `(a, b)` and `Point { x, y }` are examples. `let`, `for` and function parameters need this kind, because there is no "else" to go to.

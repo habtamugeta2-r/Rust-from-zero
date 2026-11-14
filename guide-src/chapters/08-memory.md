@@ -172,6 +172,10 @@ These bugs are dangerous because the program often *keeps running* with wrong da
 
 ## Three ways to manage memory
 
+:::compare Where your language sits
+If you come from Python, Java, JavaScript, Go or C#, you have been relying on a garbage collector and have never had to free anything by hand. If you come from C or C++, you have written `free` and `delete` yourself, and you have probably met a crash caused by calling them at the wrong moment. Rust takes a third path: the compiler proves where the clean-up belongs, so the code runs at C speed while the bugs of hand-written memory management fail to compile.
+:::
+
 | Approach | Who frees the memory? | Languages | Advantages | Disadvantages |
 |---|---|---|---|---|
 | Manual | The programmer, by hand | C, older C++ | Full control, top speed | Every mistake is a possible crash or security hole |
@@ -180,6 +184,12 @@ These bugs are dangerous because the program often *keeps running* with wrong da
 
 :::plain Garbage collector
 A **garbage collector** (GC) is a part of a language's runtime that looks for data the program can no longer reach and frees it automatically. It is convenient, and it removes use-after-free and double-free bugs. It costs processor time and memory, and the program has little control over *when* the cleaning happens. That is a problem for software that must react without delay, such as games, audio, or the brakes of a car.
+:::
+
+:::compare Ownership vs manual freeing vs garbage collection
+- **C and older C++** give you raw speed, at the cost of checking every `malloc` and `free` in your own head.
+- **Python, JavaScript, Go and Java** give you memory safety automatically, at the cost of a garbage collector running alongside your code.
+- **Rust** moves the bookkeeping to compile time: the compiler inserts the clean-up at the exact line an owner goes out of scope, so you get C-like speed with no garbage-collector pauses.
 :::
 
 Rust's approach is built on one simple thought: **if every piece of heap data has exactly one clear owner, the right moment to free it is obvious**. It is the moment when the owner goes away. No one has to remember to free, so there are no leaks by forgetfulness. Nothing is freed twice, because there is only one owner. And the compiler makes sure nobody still uses the data afterwards.

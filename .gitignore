@@ -1,0 +1,33 @@
+# Rust build output
+target/
+**/*.rs.bk
+
+# Scratch and temporary databases from examples
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+
+# Python tooling
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+
+# Node tooling (screenshots, browsers)
+node_modules/
+
+# Environment and secrets
+.env
+.env.local
+
+# OS and editor clutter
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# Bookkeeping folders created by tools/check.py when RUST_CHECK_HOME is the repo
+/chk/
+/ext/

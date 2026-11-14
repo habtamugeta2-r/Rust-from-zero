@@ -406,6 +406,10 @@ Use coverage to find code that no test touches at all. Do not chase a percentage
 | `wiremock`, `httpmock` | a fake HTTP server for testing code that calls web services |
 | `testcontainers` | start a real database in a container for the duration of a test |
 | `loom` | test concurrent code by trying the possible interleavings of threads |
+| `trybuild` | compile-fail tests: assert that a bad program fails to compile *with the message you expect* |
+| `pretty_assertions` | coloured, line-by-line diffs when an `assert_eq!` fails |
+| `quickcheck`, `proptest` | generate random inputs and check properties instead of examples ([above](#testing-strategies)) |
+| `insta` | snapshot tests: compare against a reviewed, committed output ([above](#testing-strategies)) |
 
 ## Habits that keep a test suite healthy
 

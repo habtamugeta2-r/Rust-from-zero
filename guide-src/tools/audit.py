@@ -25,10 +25,33 @@ def prose_only(text):
     return re.sub(r"^```.*?^```", "", text, flags=re.M | re.S)
 
 
-def summary():
+def box_problems(text, name):
+    """Report stray or unclosed :::-box fences (a box that is never closed, or a :::
+    with nothing to close, silently swallows the rest of the chapter)."""
+    out, stack, in_fence = [], [], False
+    for i, line in enumerate(text.split("\n"), 1):
+        s = line.strip()
+        if s.startswith("```"):
+            in_fence = not in_fence
+            continue
+        if in_fence:
+            continue
+        if s == ":::":
+            if stack:
+                stack.pop()
+            else:
+                out.append(f"{name}: stray ':::' at line {i} with no box open")
+        elif s.startswith(":::") and len(s) > 4 and s[3].isalpha():
+            stack.append((s.split()[0], i))
+    for opener, i in stack:
+        out.append(f"{name}: unclosed {opener} (opened at line {i})")
+    return out
+
+
+def summary(strict=False):
     problems = []
     total = {"lines": 0, "words": 0, "rust": 0, "ex": 0, "quiz": 0}
-    print(f"{'file':<28}{'kind':<9}{'lines':>6}{'words':>7}{'rust':>5}{'chk':>5}{'ex':>4}{'quiz':>5}  boxes")
+    print(f"{'file':<28}{'kind':<12}{'lines':>6}{'words':>7}{'rust':>5}{'chk':>5}{'ex':>4}{'quiz':>5}  boxes")
     for p in CH:
         meta, text = load(p)
         kind = meta.get("kind", "chapter")
@@ -42,7 +65,7 @@ def summary():
         boxes = "".join(ch if re.search(rf"^:::{name}\b", text, flags=re.M) else "-"
                         for ch, name in (("A", "analogy"), ("C", "compare"), ("R", "recap"), ("Q", "quiz"),
                                          ("S", "stepper"), ("L", "checklist")))
-        print(f"{p.name:<28}{kind:<9}{lines:>6}{words:>7}{len(rust):>5}{len(checked):>5}{ex:>4}{quiz:>5}  {boxes}")
+        print(f"{p.name:<28}{kind:<12}{lines:>6}{words:>7}{len(rust):>5}{len(checked):>5}{ex:>4}{quiz:>5}  {boxes}")
         for k, v in (("lines", lines), ("words", words), ("rust", len(rust)), ("ex", ex), ("quiz", quiz)):
             total[k] += v
         if kind == "appendix":
@@ -72,10 +95,13 @@ def summary():
         for word in ("TODO", "FIXME", "XXX", "TBD", "lorem", "@@"):
             if word in text:
                 problems.append(f"{p.name}: contains {word!r}")
-    print(f"{'total':<37}{total['lines']:>6}{total['words']:>7}{total['rust']:>5}{'':>5}{total['ex']:>4}{total['quiz']:>5}")
+        problems.extend(box_problems(text, p.name))
+    print(f"{'total':<40}{total['lines']:>6}{total['words']:>7}{total['rust']:>5}{'':>5}{total['ex']:>4}{total['quiz']:>5}")
     print(f"\n{len(problems)} structural remark(s):")
     for pr in problems:
         print("  -", pr)
+    if strict and problems:
+        sys.exit(1)
 
 
 def outline():
@@ -115,12 +141,14 @@ def find(words):
 
 
 if __name__ == "__main__":
-    mode = sys.argv[1] if len(sys.argv) > 1 else ""
+    args = [a for a in sys.argv[1:] if not a.startswith("--")]
+    opts = set(sys.argv[1:]) - set(args)
+    mode = args[0] if args else ""
     if mode == "outline":
         outline()
     elif mode == "terms":
         terms()
     elif mode == "find":
-        find(sys.argv[2:])
+        find(args[1:])
     else:
-        summary()
+        summary(strict="--strict" in opts)

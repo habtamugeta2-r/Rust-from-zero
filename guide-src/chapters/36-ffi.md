@@ -14,6 +14,10 @@ Different countries speak different languages, but they still need to trade. The
 
 ## The common language: the C ABI
 
+:::analogy Translating through a diplomatic language
+When engineers speaking two unrelated scripts need to sign a treaty that both presses can print accurately, they agree on a single plain format with fixed rules for dates, numbers and margins. In software, each compiler arranges its own types however it likes, but almost every language knows how to read and write C's binary layout—making the C ABI the shared treaty between Rust, Python, C and everything else.
+:::
+
 For one piece of compiled code to call another, both must agree on details far below the level of source code: in which processor registers the arguments are passed, how a struct is laid out in memory, who cleans up afterwards. Such an agreement is an **ABI** (application binary interface).
 
 Rust's own ABI is not fixed. The compiler is free to change it between versions, which lets it optimise. The ABI of **C**, on the other hand, is stable and defined for every platform, and practically every language can speak it. So C is the meeting point: when Rust talks to Python, Swift or Java, both sides pretend to be C.

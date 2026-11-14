@@ -1,7 +1,15 @@
-# Rust from Zero — working plan (source of truth for the build)
+# Rust from Zero — maintainer's notes (chapter-format reference)
 
-Deliverable: /home/user/rust-guide.html (ONE self-contained file), built by `python3 tools/build.py`
-from `chapters/*.md` + `assets/*`. Never edit the HTML by hand.
+> **For readers and contributors:** the public instructions are in
+> [`../README.md`](../README.md) (build, verify, style) and
+> [`../CONTRIBUTING.md`](../CONTRIBUTING.md) (pull-request checklist).
+> This file is the internal reference for the chapter format and the checking
+> tools. Some paths here (`/opt/rs`, `/opt/pw`) describe a temporary checking
+> environment that is created by `tools/setup-env.sh` and is not part of the
+> repository.
+
+Deliverable: `rust-guide.html` at the repository root (ONE self-contained file), built by
+`python3 guide-src/tools/build.py` from `chapters/*.md` + `assets/*`. Never edit the HTML by hand.
 
 ## Reader routes
 - Core path: chapters 00–26. Essential Cargo and quality-check commands are introduced in chapter 02; chapters 39–41 provide the deeper reference when needed.
@@ -60,6 +68,7 @@ p10: [x] 42-crates → crates (finding crates + everyday crates)   [x] 43-serde 
      [x] 45-async-ecosystem → async-ecosystem (Tokio, Rayon, reqwest, tower…)   [x] 46-web → web (Axum, Actix, Rocket…)
      [x] 47-databases → databases (SQLx, Diesel, SeaORM…)   [x] 48-project-api → project-api (project)
      [x] 49-apps → apps (WebAssembly, Leptos/Yew/Dioxus, Tauri, egui/iced/Slint)   [x] 50-games-embedded → games-embedded (Bevy, embedded, data/ML)
-p11:  [x] 51-performance → performance   [x] 52-capstone → capstone (project)   [x] 53-next → next
+     [x] 54-observability → observability (tracing JSON, request IDs, OpenTelemetry, metrics, health probes)
+p11:  [x] 51-performance → performance   [x] 52-capstone → capstone (project)   [x] 53-next → next (@kind orientation)
 app: [x] 90-glossary → glossary (stub exists; fill with every [[term]])   [x] 91-reference → reference   [x] 92-errors-ref → errors-ref
      [x] 93-from-other-languages → from-other-languages

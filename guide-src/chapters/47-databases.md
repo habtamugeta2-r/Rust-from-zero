@@ -4,7 +4,7 @@
 @short Databases
 @level intermediate
 @time 100
-@learn Explain tables, rows, keys and the basic SQL statements | Query a database from Rust with SQLx and map rows to structs | Prevent SQL injection with bound parameters | Keep data consistent with transactions | Manage the schema with migrations and check queries at compile time | Compare SQLx with the ORMs Diesel and SeaORM
+@learn Explain tables, rows, keys and the basic SQL statements | Query a database from Rust with SQLx and map rows to structs | Prevent SQL injection with bound parameters | Keep data consistent with transactions and row locking | Size connection pools, paginate with cursors and avoid N+1 queries | Manage the schema with migrations and check queries at compile time | Pair SQL with Redis caching, NoSQL or embedded key-value stores
 
 So far, your programs kept their data in memory or in a file that they read and wrote as a whole. That stops working when the data grows, when several users change it at the same moment, or when you need questions answered such as "all orders of last month above 100 birr, by customer". A **database** is a program made for exactly this: it stores data safely, finds it fast, and lets many clients work at once.
 
@@ -649,6 +649,8 @@ query data written to .sqlx in the current directory; please check this into ver
 | Result | `FromRow` struct, tuple or `Row` | a generated type, or your struct with `query_as!` |
 | Needs a database to compile | no | yes, or the saved `.sqlx` data |
 
+Then set `SQLX_OFFLINE=true` wherever no database is available — CI, a Docker build, a colleague's laptop before the first `docker compose up`. The macros read the committed `.sqlx` data instead of connecting, and the build works. Commit the folder and re-run `cargo sqlx prepare` whenever a query changes; a stale `.sqlx` gives a confusing error that mentions neither the folder nor the migration. This one variable removes the most common "works locally, fails in CI" complaint about SQLx.
+
 The examples of this guide use the function form, so that they run anywhere. For a real project with a fixed schema, the macros are worth their set-up.
 
 ## A database behind a web server
@@ -965,25 +967,196 @@ Which one? If you know SQL or want to learn it, start with SQLx: there is nothin
 | | SQLite | PostgreSQL |
 |---|---|---|
 | Cargo feature | `sqlite` | `postgres` |
-| Pool type | `SqlitePool` | `PgPool` |
+| Pool type | `SqlitePool`, `PgPoolOptions` | `PgPool`, `PgPoolOptions` |
 | Address | `sqlite://app.db` | `postgres://user:password@host/database` |
 | Placeholders | `?` | `$1`, `$2`, … |
 | Auto-numbered key | `INTEGER PRIMARY KEY` | `BIGSERIAL PRIMARY KEY`, or `GENERATED ALWAYS AS IDENTITY` |
-| Types | few and flexible | many and strict: `BOOLEAN`, `TIMESTAMPTZ`, `UUID`, `JSONB`, arrays |
-| Concurrent writers | one at a time | many |
+| Types | few and flexible | many and strict: `BOOLEAN`, `TIMESTAMPTZ`, `UUID`, `JSONB`, arrays (`TEXT[]`) |
+| Concurrent writers | one at a time | many (row-level locks & MVCC) |
 
-The Rust code stays the same apart from these points. Many projects use SQLite for tests and small installations, and PostgreSQL when several servers must share one database.
+Many projects use SQLite for tests and small single-node tools, and PostgreSQL when several app instances share one database. Switching SQLx to PostgreSQL replaces `SqlitePoolOptions` with **`PgPoolOptions`** and uses `$1`, `$2` placeholders:
+
+```rust file=src/pg_pool.rs
+use std::time::Duration;
+use sqlx::postgres::PgPoolOptions;
+use sqlx::types::Json;
+
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
+struct Metadata {
+    tags: Vec<String>,
+}
+
+#[derive(Debug, Clone, Copy, sqlx::Type)]
+#[sqlx(type_name = "order_status", rename_all = "lowercase")]
+enum OrderStatus {
+    Pending,
+    Paid,
+}
+
+async fn connect_pg(database_url: &str) -> Result<sqlx::PgPool, sqlx::Error> {
+    PgPoolOptions::new()
+        .max_connections(20)
+        .min_connections(2)
+        .acquire_timeout(Duration::from_secs(3))
+        .idle_timeout(Duration::from_secs(600))
+        .max_lifetime(Duration::from_secs(1800))
+        .connect(database_url)
+        .await
+}
+```
+
+Notice how PostgreSQL's richer type system maps cleanly in SQLx:
+- **`JSONB`** maps to `sqlx::types::Json<Metadata>` without manual `serde_json` string conversions.
+- **Custom Postgres `ENUM`s** map directly via `#[derive(sqlx::Type)]`.
+- **Arrays (`TEXT[]`)** map straight to `Vec<String>`, letting you batch lookups cleanly with `WHERE id = ANY($1)` instead of loops!
+
+#### Pool sizing and timeouts
+
+Resist setting `max_connections(500)`. A PostgreSQL server handles only a modest number of active queries concurrently before context-switching and lock contention slow everything down. Size each service pool around **`(2 × CPU cores) + disk spindles`** (typically **10–25** connections per app instance), always set a bounded **`acquire_timeout`** (so overload returns `503` promptly instead of hanging forever), and place **PgBouncer** in front when running dozens of application containers.
+
+#### Preventing race conditions: `FOR UPDATE` vs optimistic locking
+
+When two concurrent checkouts read `stock = 1` at the same instant and update afterward, both succeed unless the database coordinates them:
+
+- **Pessimistic locking (`SELECT … FOR UPDATE`)**: Inside `pool.begin()`, lock the row (`SELECT stock FROM products WHERE id = $1 FOR UPDATE`). The second transaction waits until the first commits or rolls back.
+- **Optimistic concurrency control (`version` column)**: Read `version = 4`, then run `UPDATE products SET stock = stock - 1, version = version + 1 WHERE id = $1 AND version = $2`. Check `result.rows_affected() == 1`—if `0`, someone updated the row concurrently, so return a conflict (`409 Conflict`) or retry cleanly without holding row locks!
+
+#### Pagination: keyset/cursor vs `OFFSET`
+
+`LIMIT 20 OFFSET 10000` forces the database to scan and discard 10,000 rows on every page—and if a new row arrives between page 1 and page 2, items shift and appear twice! For feeds, logs, and large tables, prefer **keyset (cursor) pagination** backed by an index:
+
+```sql
+-- Page 1:
+SELECT id, created_at, title FROM posts
+ORDER BY created_at DESC, id DESC LIMIT 20;
+
+-- Next page, passing the last seen (created_at, id):
+SELECT id, created_at, title FROM posts
+WHERE (created_at, id) < ($1, $2)
+ORDER BY created_at DESC, id DESC LIMIT 20;
+```
+
+### Caching and Redis
+
+Relational databases should not answer the same hot read or session lookup ten thousand times a second. **Redis** (or Valkey) is an in-memory key-value server used for short-lived caches, distributed sessions, and rate-limit counters. In Rust, **`redis`** (with `tokio-comp`) or **`fred`** gives an async multiplexed connection you can share cheaply across handlers without a separate pool:
+
+```toml file=Cargo.toml
+[dependencies]
+redis = { version = "0.29", features = ["tokio-comp"] }
+```
+
+```rust file=src/cache.rs
+use redis::AsyncCommands;
+
+async fn cache_aside_profile(
+    conn: &mut redis::aio::MultiplexedConnection,
+    user_id: u64,
+) -> redis::RedisResult<String> {
+    let key = format!("profile:{user_id}");
+    if let Some(cached) = conn.get::<_, Option<String>>(&key).await? {
+        return Ok(cached);
+    }
+
+    // Cache miss: load from PostgreSQL, then store with a 60-second TTL (`SET EX`)
+    let fresh = String::from(r#"{"name":"Sara"}"#);
+    let _: () = conn.set_ex(&key, &fresh, 60).await?;
+    Ok(fresh)
+}
+```
+
+Always set an explicit **TTL** (`set_ex`) on cached items, and decide how writes invalidate stale entries (delete the key on update or tolerate brief staleness). Never treat an eviction-prone cache as your only source of truth.
+
+Three PostgreSQL features are worth knowing by name, because they solve problems that otherwise turn into polling loops or guesswork:
+
+- **`LISTEN` / `NOTIFY`** — a table's changes can wake other processes. `NOTIFY events_changed` inside the same transaction as the write, and every connection that ran `LISTEN events_changed` receives it after the commit. It is the cheapest way to push a change to a second service without adding a broker; the Rust side holds a connection and awaits the notifications. Ordering is not guaranteed and nothing is persisted, so use it for "something changed, go and look", not as a queue.
+- **`EXPLAIN ANALYZE`** — the answer to "why is this query slow". `EXPLAIN ANALYZE SELECT …` runs the query and prints the plan with real times per step. A sequential scan on a table with a million rows, where you expected an index, is the single most common finding.
+- **`COPY`** — bulk loading. Inserting a million rows one statement at a time takes minutes; `COPY … FROM STDIN` takes seconds, and `sqlx` can copy from a stream.
 
 ### Other kinds of storage
 
-| Need | Crates |
-|---|---|
-| A cache, or data shared between servers (Redis) | `redis`, `fred` |
-| Documents (MongoDB) | `mongodb` |
-| A key-value store inside the program, without SQL | `redb`, `fjall`, `sled` |
-| Full-text search | `tantivy` |
-| Files in cloud storage (S3 and similar) | `object_store`, `aws-sdk-s3` |
-| A low-level PostgreSQL client | `tokio-postgres` |
+A relational database is the right default: it gives you transactions, constraints and a query language that answers questions you did not plan for. These are the tools you reach for when one of those is in the way.
+
+| Need | Crates | Choose it when |
+|---|---|---|
+| A cache, or data shared between servers | `redis`, `fred` | Reads outnumber writes, the data is rebuildable, and you need it shared between processes |
+| Documents | `mongodb` | The shape varies between records, and a record is read as a whole |
+| A key-value store inside the program, without SQL | `redb`, `fjall`, `sled` | A desktop or CLI program needs durable keyed data without a server |
+| Full-text search | `tantivy` | Real ranked search over many documents; SQLite's FTS5 is the built-in alternative below a few hundred thousand rows |
+| Files in cloud storage (S3 and similar) | `object_store`, `aws-sdk-s3` | Blobs belong in an object store, never in the database |
+| A low-level PostgreSQL client | `tokio-postgres` | You need protocol features SQLx does not expose |
+| Pooling **any** driver | `deadpool`, `bb8` | You use Diesel, `tokio-postgres` or a client with no pool of its own |
+
+#### Redis: the shared memory between your servers
+
+Redis is a server that holds key–value data in memory. It is fast because it never touches the disk on the read path, and it is honest about the trade: **assume the data can disappear**, and never let Redis be the only copy of anything you cannot rebuild.
+
+```sh
+docker run --rm -p 6379:6379 redis:latest
+```
+
+The five operations that cover most uses, run from `redis-cli`:
+
+```text
+SET session:8f3c1d0e "user:42" EX 3600     # a value with a one-hour expiry
+GET session:8f3c1d0e
+INCR rate:203.0.113.7:2026-11-14T09         # a counter with a time bucket in the key
+EXPIRE rate:203.0.113.7:2026-11-14T09 120
+ZADD leaderboard 1200 "ada"                 # a sorted set: a ranking for free
+ZREVRANGE leaderboard 0 9 WITHSCORES        # the top ten
+```
+
+Three habits make Redis pleasant to live with:
+
+- **Namespace every key** — `session:`, `cache:`, `rate:` — because a shared Redis is shared, and a key called `user42` will collide with someone else's.
+- **Always set an expiry** on anything that is a cache. A cache without a TTL is a database with none of the guarantees.
+- **Use the patterns the types give you.** A sorted set is a leaderboard, `INCR` is a rate-limit counter, and `SET … EX` is a session with a timeout already in it.
+
+In Rust, `redis` is the crate. Use `redis::aio::ConnectionManager` rather than a bare client in a web service: it reconnects by itself after the server restarts, and it is cheap to clone into every handler. `fred` is the alternative with more of Redis 6 and 7 built in. The operations are commands, not SQL: `cmd("SET").arg(key).arg(value).arg("EX").arg(3600).query_async(&mut conn).await?`.
+
+#### MongoDB: documents instead of rows
+
+```json
+{
+  "_id": { "$oid": "65f1c0de8f3c1d0e" },
+  "handle": "ada",
+  "display_name": "Ada Lovelace",
+  "links": [
+    { "label": "blog", "url": "https://example.org" },
+    { "label": "code", "url": "https://example.org/code" }
+  ],
+  "created_at": { "$date": "2026-11-14T09:12:03Z" }
+}
+```
+
+A document is one self-contained record, nested as deeply as the data is. Reading it is one lookup with no `JOIN`; `bson::doc!` writes queries that look like the documents themselves; `mongodb` plus `serde` maps a document to a struct. Choose documents when each record has its own shape and you always read it whole. Choose rows when several records must agree with each other — an order and its stock level — because that is what transactions and foreign keys are for, and MongoDB's transactions are newer and more constrained than PostgreSQL's.
+
+#### Embedded key-value stores
+
+`redb`, `fjall` and `sled` are storage engines that live **inside your program**: no server, no port, one file. Choose them for a desktop application, a CLI tool that keeps state, or a cache that must survive a restart. `redb` is the simplest and most stable of the three for new work; `sled` is the best known but has been at beta for years; `fjall` is LSM-based and shines on write-heavy local workloads. All three store bytes, so pair them with `serde` and you have a durable typed store in about twenty lines. None of them give you SQL, indexes on arbitrary fields, or concurrent access from other processes. For example, **`redb`** stores typed key-value tables in a single crash-safe file:
+
+```rust file=src/kv_store.rs
+use redb::{Database, TableDefinition};
+
+const COUNTS: TableDefinition<&str, u64> = TableDefinition::new("counts");
+
+fn increment_local(db: &Database, key: &str) -> Result<u64, redb::Error> {
+    let write_txn = db.begin_write()?;
+    let next = {
+        let mut table = write_txn.open_table(COUNTS)?;
+        let current = table.get(key)?.map(|v| v.value()).unwrap_or(0);
+        table.insert(key, current + 1)?;
+        current + 1
+    };
+    write_txn.commit()?;
+    Ok(next)
+}
+```
+
+#### Object storage and full-text search
+
+Files — images, PDFs, exports, backups — belong in object storage, not in a database column: `object_store` gives one API over S3, GCS, Azure and the local filesystem, and `aws-sdk-s3` is the S3-specific official SDK. Both stream, so a 2 GB upload never has to fit in memory.
+
+For search, `tantivy` is a search engine library: you define a schema, index documents, and query with ranked results, highlights and facets, all inside your process. Below a few hundred thousand rows, SQLite's **FTS5** extension gives you keyword search with ranking in the database you already have, through a virtual table and `MATCH` — often the right first answer.
 
 :::compare Databases in other languages
 - **Python** has SQLAlchemy and Django's ORM, and **JavaScript** has Prisma and Drizzle. Mistakes in queries and in the mapping of rows show up when the program runs.
@@ -1000,7 +1173,13 @@ The Rust code stays the same apart from these points. Many projects use SQLite f
 - `JOIN` combines tables, `GROUP BY` summarises, and indexes make look-ups fast.
 - Migrations are numbered SQL files that change the schema step by step.
 - `query!` and `query_as!` check SQL against a real database at compile time.
+- Size pools modestly (`~2 × cores`, with bounded `acquire_timeout`), prefer keyset/cursor pagination over large `OFFSET`s, and use `FOR UPDATE` or optimistic `version` checks for concurrent writes.
+- Use `redis` (with explicit TTLs) for shared ephemeral caches and rate-limit counters, or `redb` for zero-server embedded key-value storage.
 - Diesel and SeaORM are ORMs that build the SQL from Rust code. rusqlite is a light, synchronous SQLite library.
+- Redis is shared memory between servers: cache, sessions, counters, rankings. Namespace the keys, and give every cache entry an expiry.
+- MongoDB stores documents instead of rows, and `redb`/`fjall`/`sled` store key–value data inside your own program with no server at all.
+- `object_store` and `s3`-style services hold blobs; `tantivy` (or SQLite's FTS5) holds a search index.
+- `SQLX_OFFLINE=true` plus a committed `.sqlx` folder is what makes compile-time-checked queries work in CI.
 :::
 
 :::quiz Check your understanding
@@ -1038,6 +1217,20 @@ The Rust code stays the same apart from these points. Many projects use SQLite f
 + It checks the SQL and the types against a real database while the program is compiled
 - It writes the SQL for you
 = The macro asks the development database (or the saved `.sqlx` data) to describe the query. Wrong column names and types become compile errors.
+
+? Why is keyset (cursor) pagination (`WHERE (created_at, id) < ($1, $2)`) usually better than `LIMIT 20 OFFSET 10000` for large tables?
+- SQL databases cannot use `OFFSET` with `ORDER BY`
++ `OFFSET` forces the database to scan and discard earlier rows on every page and can duplicate or skip items when new rows are inserted
+- `OFFSET` returns rows in random order
+- Keyset pagination requires no index
+= With an index on `(created_at, id)`, keyset pagination jumps straight to the next page in constant work per page, regardless of how deep the user scrolls.
+
+? Why should you avoid setting `max_connections(500)` on each instance of a web service's database pool?
+- SQLx caps pools at 100 connections
++ Hundreds of active connections cause lock and CPU thrashing on PostgreSQL and can exhaust server memory across multiple app replicas
+- Larger pools increase query latency by adding encryption
+- `acquire_timeout` stops working above 100 connections
+= Keeping each pool modest (around 10–25 connections with a short `acquire_timeout`, and PgBouncer in front at scale) gives far higher throughput under load than opening hundreds of idle or contending connections.
 :::
 
 :::exercise guided A table of tasks

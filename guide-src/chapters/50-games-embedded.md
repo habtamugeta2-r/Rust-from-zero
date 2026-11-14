@@ -550,7 +550,7 @@ async fn main(spawner: Spawner) {
 - Each `spawner.spawn(…)` starts a task. `pool_size = 2` reserves room for two tasks of this kind at compile time, because there is no heap to take it from.
 - `Timer::after_millis(…).await` does not spin in a loop. The task sleeps, and when all tasks sleep, the processor itself sleeps and saves power until a timer wakes it.
 
-Compiled for the Pico (target `thumbv6m-none-eabi`), the whole program, with the runtime, two tasks and the timer driver, occupies 13,224 bytes of flash memory and 516 bytes of RAM. It was not loaded onto a board for this guide. The usual tool for that step is `probe-rs`, which writes a program into the chip through a debug probe and shows its output.
+Compiled for the Pico (target `thumbv6m-none-eabi`), the whole program, with the runtime, two tasks and the timer driver, occupies 13,224 bytes of flash memory and 516 bytes of RAM. It was not loaded onto a board for this guide. The usual tool for that step is **`probe-rs`**, which flashes the binary through a debug probe and streams logs back over RTT. On tight microcontrollers, pair `probe-rs` with **`defmt`** ("deferred formatting"): instead of formatting numbers into text on the chip, the firmware emits compact numeric token IDs (`defmt::info!("temp={=i16}", t)`) and `probe-rs` formats them on your laptop, saving kilobytes of flash and cycles.
 
 ### Collections and messages without a heap
 
@@ -803,6 +803,16 @@ A machine learning library does the same with more comfort. It stores the number
 | `candle` | a small framework for running neural networks, from the company Hugging Face |
 | `ort`, `tch` | bindings to the ONNX Runtime and to the engine of PyTorch |
 | `tokenizers` | splits text into the pieces that language models read |
+| `rig-core`, `async-openai` | building LLM-powered applications, structured prompts, embeddings, and tool-calling agents |
+
+Choosing between them, in three lines each:
+
+- **`candle`** — a small, readable framework from Hugging Face for *running* models, with Metal and CUDA backends. Choose it to serve an inference endpoint or run a model on a device; the weights of most published models load directly.
+- **`burn`** — a full framework with training, a backend abstraction (CPU, GPU, browser through WebAssembly) and its own tensor library. Choose it when you are training as well as running, and want one codebase for several targets.
+- **`tch` and `ort`** — bindings to LibTorch (PyTorch's engine) and the ONNX Runtime. Choose them when you must run an existing model exactly as its authors trained it, and accept shipping a large native library alongside your binary.
+- **`linfa`** — the classic algorithms: regression, clustering, decision trees, with an API modelled on scikit-learn. Choose it for tabular prediction where a small, explainable model beats a neural network — which is most of the time.
+- **`polars`, `datafusion`, `duckdb`** — three ways to the same goal: query tables without loading them into a database. Polars is the data-frame library, DataFusion is an engine you embed in a program, DuckDB is a SQL database that reads Parquet and CSV files directly.
+- **`arrow` and `parquet`** — Arrow is the in-memory column format that Polars, DataFusion, pandas and Spark all speak; Parquet is its compressed form on disk. Together they are why a Rust data pipeline can hand its output to a Python notebook without a conversion step.
 
 :::compare Rust and Python in data science
 Python is the language in which data scientists think and try things out, and that will not change soon. But much of what makes Python fast today is Rust underneath: Polars, the `tokenizers` library, the validation core of Pydantic, the tools `ruff` and `uv`. They are Python modules built with PyO3, like the one in [chapter 36](#ffi) that was 27 times faster than its Python version. Reach for Rust when a data job must run fast and reliably day after day, when a trained model has to answer requests with little memory, when it has to run in a browser or on a device, or when a Python library needs a fast core.

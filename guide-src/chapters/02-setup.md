@@ -20,6 +20,10 @@ A borrowed kitchen lets you try a recipe quickly, but a real kitchen is what you
 
 If you cannot install software right now, use the Playground and come back to the installation later.
 
+:::analogy Setting up a workshop before building anything
+A carpenter spends the first day hanging tools on the wall. Nothing is built that day, yet every later hour is faster. Setting up Rust, a terminal and an editor is that day: dull while it lasts, paid back every day after.
+:::
+
 ## A five-minute tour of the terminal
 
 Programmers often control the computer by typing commands instead of clicking. The window where you type them is called the **terminal** (also *command line*, *console* or *shell*). It looks old-fashioned, but it is quick and exact, and Rust's tools are used through it.
@@ -136,6 +140,10 @@ edition = "2024"
 ```
 
 The `name` and `version` are your project's name and version number. The `edition` says which set of language rules to use: `2024` is the newest. Under `[dependencies]` you will later list code from other people that your project uses. It is empty for now.
+
+:::analogy `Cargo.toml` is a project recipe card
+Imagine handing a friend a kit to assemble a shelf. You do not hand them a sack of random screws and hope for the best: you include a card saying *which* board, *which* screws, and *which* instructions to follow. `Cargo.toml` is that card for your program. Anyone with Cargo and that file can reproduce the exact same build on Windows, macOS or Linux.
+:::
 
 Rust source files end in `.rs`. Cargo already wrote a small program into `src/main.rs`:
 

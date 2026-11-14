@@ -124,6 +124,10 @@ Eight threads each add one, a thousand times. The result is always exactly 8000.
 
 `lock()` returns a `Result`. If a thread panics *while it holds the lock*, the data may have been left half-changed. The mutex is then marked as **poisoned**, and every later `lock()` returns an `Err` as a warning. Calling `.unwrap()` passes the panic on, which is usually the right reaction: if one thread crashed in the middle of an update, the others should not carry on with broken data.
 
+:::note `parking_lot::Mutex` and `RwLock`
+Many production Rust codebases replace `std::sync::Mutex` and `RwLock` with **`parking_lot`**: its locks take less memory (1 byte instead of an OS-allocated lock), are faster under contention, offer fair unlocking, and **do not poison**—so `.lock()` returns the guard directly without `.unwrap()`.
+:::
+
 ### Keep the lock short
 
 While one thread holds a lock, all others that want it wait. Hold a lock only for the moment you need the data, and never during slow work such as reading a file or waiting for the network.
@@ -303,9 +307,9 @@ fn main() {
 - A shared `AtomicBool` is the usual way to tell worker threads to stop: they check it now and then.
 
 :::details What is the `Ordering` argument?
-It tells the compiler and the processor how strictly this operation must be ordered relative to operations on *other* memory. `Ordering::Relaxed` promises the least, and is enough for an independent counter or flag like the ones above. `Ordering::SeqCst` ("sequentially consistent") is the strictest and the easiest to reason about. The others (`Acquire`, `Release`, `AcqRel`) are for people who build locks and lock-free data structures.
+It tells the compiler and the processor how strictly this operation must be ordered relative to operations on *other* memory. `Ordering::Relaxed` promises atomicity on that single number only, which is enough for independent counters. **`Ordering::Release` + `Ordering::Acquire`** work as a pair for publishing data: a writer writes payload data and stores `ready.store(true, Ordering::Release)`, and a reader loads `ready.load(Ordering::Acquire)`—guaranteeing that once `true` is observed, all writes made before the `Release` store are visible. `Ordering::SeqCst` ("sequentially consistent") adds one global order across all atomic operations and is the easiest strict default.
 
-A safe rule while learning: use `Relaxed` for plain counters and statistics, and `SeqCst` whenever the value of one atomic decides what you do with other data. If you find yourself thinking hard about orderings, use a `Mutex`.
+A safe rule while learning: use `Relaxed` for plain counters and statistics, `Release`/`Acquire` for flag handoffs, and `SeqCst` whenever several atomics interact. If you find yourself thinking hard about orderings, use a `Mutex`.
 :::
 
 Atomics are faster than locks and cannot deadlock. They only protect **one value**. If two values must change together (a balance and a list of transactions), you need a mutex around both.

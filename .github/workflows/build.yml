@@ -1,0 +1,100 @@
+name: build
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    # Every Monday at 04:00 UTC: proves the examples still compile against a
+    # current stable toolchain and current crate versions.
+    - cron: "0 4 * * 1"
+
+permissions:
+  contents: read
+
+jobs:
+  guide:
+    name: Build and audit the guide
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install build dependencies
+        # Pinned: the committed rust-guide.html must be reproducible byte for byte,
+        # and pygments decides the syntax-highlighting markup.
+        run: python -m pip install --upgrade pip 'pygments==2.21.0'
+
+      - name: Rebuild rust-guide.html
+        run: python3 guide-src/tools/build.py --strict
+
+      - name: The committed HTML must match the chapters
+        run: git diff --exit-code -- rust-guide.html
+
+      - name: Structural audit must be clean
+        run: python3 guide-src/tools/audit.py --strict
+
+  examples:
+    name: Compile every Rust example
+    # Compiling ~900 examples needs a full toolchain and takes about three
+    # minutes, so it runs on pull requests, on demand, and every week — not on
+    # every push to a branch. To ask for it on a branch push, put [examples] in
+    # the commit message.
+    if: >-
+      github.event_name == 'pull_request'
+      || github.event_name == 'schedule'
+      || github.event_name == 'workflow_dispatch'
+      || (github.event_name == 'push' && contains(github.event.head_commit.message, '[examples]'))
+    runs-on: ubuntu-latest
+    env:
+      RUST_CHECK_HOME: ${{ github.workspace }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Prepare the crate-example project
+        run: |
+          mkdir -p ext
+          (cd ext && cargo new main --name extmain -q)
+          cp guide-src/tools/ext-main-Cargo.toml ext/main/Cargo.toml
+
+      # The failure output is echoed and, for the first few lines, surfaced as
+      # ::error:: annotations, so that a red run explains itself in the UI even
+      # when the raw log is not available.
+      - name: Compile and run the standard-library examples
+        run: |
+          set +e
+          python3 guide-src/tools/check.py > /tmp/std.log 2>&1
+          status=$?
+          tail -n 30 /tmp/std.log
+          if [ $status -ne 0 ]; then
+            grep -m 8 -E "^✗|^error" /tmp/std.log | sed 's/^/::error::/'
+            exit 1
+          fi
+
+      - name: Check the crate examples with cargo
+        run: |
+          set +e
+          python3 guide-src/tools/check.py --ext > /tmp/ext.log 2>&1
+          status=$?
+          tail -n 40 /tmp/ext.log
+          if [ $status -ne 0 ]; then
+            # A dependency-resolution error appears near the top; per-example
+            # compile errors are marked with a cross.
+            head -n 14 /tmp/ext.log | sed 's/^/::error::/'
+            grep -A5 -E "^✗" /tmp/ext.log | head -n 40 | sed 's/^/::error::/'
+            exit 1
+          fi
+
+      - name: Rebuild and test the multi-file projects
+        run: python3 guide-src/tools/check-projects.py

@@ -499,14 +499,14 @@ Caused by:
 **`miette`** is different. An error can carry a **diagnostic**: a severity, a help text, a link, and even a snippet of the offending source with the offending part underlined. `miette` is the choice for developer tools — linters, code generators, compilers — whose users appreciate compiler-style reports.
 
 ```toml
-eyre = "0.10"
+eyre = "0.6"
 color-eyre = "2.1"   # optional: coloured reports and source locations
-miette = "9.1"
+miette = { version = "7", features = ["fancy"] }   # `fancy` adds the rich renderer
 ```
 
-`eyre` in an application. `wrap_err` adds context; `wrap_err_with` builds the context lazily, only when there is an error:
+`eyre` in an application. `wrap_err` adds context; `wrap_err_with` builds the context lazily, only when there is an error. The program below is written deliberately without a `settings.toml`, so that you can see what the user would see:
 
-```rust ext run
+```rust ext check
 use eyre::{Context, Result};
 
 fn read_port() -> Result<u16> {
@@ -528,6 +528,8 @@ fn main() {
 could not read the settings file: No such file or directory (os error 2)
 ```
 
+Nothing in `main` formats an error: returning `Err` from `main` makes the runtime print the report, context first, and exit with a non-zero code. That is why an application's `main` returns `Result` and almost never calls `unwrap`.
+
 `color-eyre` installs itself once, at the start of `main`:
 
 ```rust
@@ -537,12 +539,12 @@ fn main() -> eyre::Result<()> {
 }
 ```
 
-After that, every error and every panic prints in colour, with the file and line where it happened.
+After that, every error and every panic prints in colour, with the file and line where it happened. Pick one application-report ecosystem for a program and stay in it; converting between `anyhow`, `eyre` and `Box<dyn Error>` at every layer adds code and loses causes.
 
 ```toml
 [dependencies]
-miette = "9.1"
-thiserror = "1.0"
+miette = { version = "7", features = ["fancy"] }
+thiserror = "2.0"
 ```
 
 `miette` in a library. The `#[derive(Diagnostic)]` attribute turns an error into a diagnostic:
@@ -657,52 +659,6 @@ There are two styles. Either the message of an error includes the message of its
 - **In a library:** define precise error enums (with `thiserror`), so that users of the library can react to each case.
 - **In an application:** use `anyhow` (or `Box<dyn Error>`) and add context, so that the person in front of the program gets a helpful message.
 :::
-
-### `eyre` and `miette`: choose the report for the audience
-
-`eyre` is an application error-reporting alternative to `anyhow`. Both provide a flexible report type and context on the way up the call stack. `eyre` is useful when an application wants to install a custom report handler; `color-eyre` is a common companion that adds color, backtraces and tracing-span context. Pick one application report ecosystem rather than converting errors back and forth without a reason.
-
-```toml
-[dependencies]
-eyre = "0.6.14"
-```
-
-```rust ext check
-use eyre::{Result, WrapErr};
-
-fn read_config(path: &str) -> Result<String> {
-    std::fs::read_to_string(path)
-        .wrap_err_with(|| format!("could not read configuration at {path}"))
-}
-
-fn main() -> Result<()> {
-    let _contents = read_config("service.toml")?;
-    Ok(())
-}
-```
-
-`path: &str` borrows the caller's path because the function only needs it while reading and formatting an error; it does not need to own the path. `WrapErr` supplies `wrap_err_with`, whose closure constructs context only on failure. The `?` operator returns the report to `main`, where an application can print the entire chain.
-
-`miette` targets human-facing diagnostics, especially for command-line programs that want error codes, help text and highlighted source snippets. Its `Diagnostic` trait complements `std::error::Error`; enabling `fancy` in the top-level application opts into its richer renderer and additional dependencies. A library should generally expose its structured error and let the binary choose how to render it.
-
-```toml
-[dependencies]
-miette = { version = "7.6.0", features = ["fancy"] }
-```
-
-```rust ext check
-fn read_config(path: &str) -> miette::Result<String> {
-    std::fs::read_to_string(path)
-        .map_err(|error| miette::miette!("could not read `{path}`: {error}"))
-}
-
-fn main() -> miette::Result<()> {
-    let _contents = read_config("service.toml")?;
-    Ok(())
-}
-```
-
-This minimal error names the failed operation. A richer diagnostic defines a type implementing `miette::Diagnostic` and attaches a source span, a stable diagnostic code and an actionable help message. Use it when that extra context helps a user fix input; use `anyhow` or `eyre` when a contextual error chain is enough. None of these application-reporting crates replaces a library's precise error variants when callers must branch on them.
 
 ## Which tool when?
 

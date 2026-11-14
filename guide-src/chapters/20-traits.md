@@ -186,6 +186,41 @@ fn main() {
 
 The real type returned here is long and awkward to write. The caller only needs to know that it can be iterated. You will use this form a lot with iterators and closures in Part 5.
 
+### What the returned type is allowed to borrow: `use<…>`
+
+An `impl Trait` return type is an opaque type, and an opaque type has to say which lifetimes it depends on. Since the **2024 edition** the rule is the simple one: **the hidden type may capture every lifetime in scope**. Before 2024 it captured only the ones it obviously needed, which caused the opposite problem — a returned iterator that *did* borrow something failed to compile until you added a lifetime nobody could see in the signature.
+
+The new rule is easier to explain and occasionally too generous: capturing a lifetime ties the returned value to a borrow it does not really need. When that happens, say precisely what the return type captures with a `use<…>` list — an empty `use<>` means "captures nothing":
+
+```rust run
+/// Returns a closure that prints the first word. The closure owns its data,
+/// so it does not borrow `words` — `use<>` says so out loud.
+fn first_word_printer(words: &[String]) -> impl FnOnce() -> String + use<> {
+    let first = words.first().cloned().unwrap_or_default();
+    move || first
+}
+
+fn main() {
+    // `words` dies at the end of this block, and `printer` outlives it.
+    let printer = {
+        let words = vec![String::from("hello"), String::from("world")];
+        first_word_printer(&words)
+    };
+    println!("{}", printer());
+}
+```
+```output
+hello
+```
+
+Without `use<>`, edition 2024 would make the return type depend on the borrow of `words`, and the program above would not compile: `printer` would be carrying a lifetime that ended with the block. The error would point at the block, not at the closure, which is why this rule surprises people who upgraded a working 2021 project.
+
+Two rules of thumb:
+
+- **You rarely need to write `use<…>`.** Write it when the compiler complains that a value is borrowed for too long, or when you are returning a closure or iterator that obviously owns everything it uses.
+- **List what the type really needs.** `use<'a>` for one lifetime, `use<'a, T>` when a generic type parameter is also involved. In edition 2024 all type parameters are captured by default, so a `use<…>` list must mention every type parameter the hidden type uses — the compiler checks this and tells you which one is missing.
+
+
 ## The standard traits you meet every day
 
 The standard library defines traits for the common abilities. Many can be derived, as you saw in [chapter 12](#structs).

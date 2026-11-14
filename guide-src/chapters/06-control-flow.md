@@ -14,6 +14,10 @@ When you reach a junction, a sign tells you which road to take. A program is the
 
 ## Decisions with `if`
 
+:::analogy `if` is a railway switch
+A train approaches a fork in the track. The signal box checks a single yes-or-no question: is the switch thrown? Depending on the answer, the train takes the left branch or the right branch—never both. `if` / `else if` / `else` works the same way: your program tests each condition in order and runs only the first matching branch.
+:::
+
 ```rust run
 fn main() {
     let temperature = 31;

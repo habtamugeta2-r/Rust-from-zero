@@ -905,6 +905,10 @@ async fn require_key(
 
 `require_key` runs before the handlers of the `admin` group. With the right key in the header, it passes the request on with `next.run(request)`. Otherwise it returns an error, and the handler never runs.
 
+:::warn Production upgrade: constant-time key comparison
+Notice `given == Some(&*state.api_key)` uses ordinary string equality (`==`), which stops at the first mismatching byte. In a production service, hash both keys with SHA-256 and compare the fixed-length digests with `subtle::ConstantTimeEq` as shown in [chapter 46](#web), so response timing never leaks how many leading bytes matched.
+:::
+
 Finally, complete `src/lib.rs`. It lists all modules, and re-exports the two names that `main` and the tests need most:
 
 ```rust proj=shortener file=src/lib.rs
@@ -923,7 +927,7 @@ pub use routes::{AppState, app};
 
 ## Step 6: settings and `main`
 
-A service should not contain its settings. The same executable must run on your laptop, on a test server and in production, and a secret in the source code ends up in the version history for ever. The custom of web services is to read settings from **environment variables**:
+A service should not contain its settings. The same executable must run on your laptop, on a test server and in production, and a secret in the source code ends up in the version history for ever. The custom of web services is to read settings from **environment variables**, which are the layer between a configuration file and a command-line flag ([the full precedence chain](#cli) is in the CLI chapter). Here it is in a few dozen lines, with no crate:
 
 | Variable | Meaning | If it is not set |
 |---|---|---|
@@ -980,7 +984,7 @@ impl Config {
 
 This file uses `anyhow`, not `ApiError`. The division follows [chapter 18](#errors): an error that some code must *tell apart and react to* gets its own type. An error that is only *reported to a human* is a job for `anyhow`. A wrong setting is reported once, to the person who starts the program, and the program ends.
 
-There is no default for `API_KEY`, on purpose. A service that starts with a well-known default secret is open to everybody who has read its source code.
+There is no default for `API_KEY`, on purpose. A service that starts with a well-known default secret is open to everybody who has read its source code. For larger services that combine TOML files, `.env` files, environment overrides, and redacted `SecretString` fields, see the layered `figment` + `secrecy` pattern in [chapter 46](#web).
 
 Now replace the content of `src/main.rs`:
 
@@ -1502,6 +1506,8 @@ A public shortener needs more than this:
 
 - **Rate limiting.** Anybody can create links as fast as they can send requests. A layer that limits requests per client address belongs in front (the crate `tower_governor` provides one).
 - **Protection against abuse.** Shorteners hide where a link leads, which makes them attractive for fraud. Real services check addresses against block lists and offer a preview page.
+- **Observability.** The service logs, but it counts nothing. A request counter and a duration histogram, exposed on `GET /metrics`, are what turn "it feels slow" into "p99 rose at 14:20" ([chapter 45](#async-ecosystem)). The `GET /health` route is a start; a separate readiness check that also asks the database is the other half.
+- **A real login.** One key for one owner works for a machine client, not for people. Sessions for a browser, signed tokens for an app, and the difference between authentication and authorisation are in [chapter 46](#web).
 - **Accounts.** One key for one owner is the simplest possible scheme. With several users, each gets a key of their own, stored as a hash like a password. Keys should also be compared in constant time (the crate `subtle` does that), so that the duration of a comparison reveals nothing about the key.
 - **A real URL parser.** `check_url` covers the basics. The crate `url` implements the complete standard.
 - **More than one machine.** SQLite is a file on one disk. To run several copies of the service, switch to PostgreSQL. Thanks to the store, only `store.rs` and the migration change.
