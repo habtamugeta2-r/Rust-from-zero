@@ -32,8 +32,9 @@ bound :: A requirement on a type parameter: `T: Display` means "any type `T` tha
 Box :: A pointer that owns a value on the heap. See [chapter 27](#smart-pointers).
 buffer :: A block of memory that collects data so that it can be read or written in large pieces, not byte by byte.
 bug :: A mistake in a program that makes it behave wrongly.
-build script :: A file `build.rs` that Cargo runs before it compiles a package, for example to compile C code. See [chapter 36](#ffi).
+build script :: A file `build.rs` that Cargo runs before it compiles a package, for example to generate code in `OUT_DIR` or compile C code. See [chapter 36](#ffi) and [chapter 39](#cargo).
 byte :: Eight bits. The unit in which memory and files are measured.
+cancellation safety :: Whether an async operation can be dropped mid-`.await` (for example in `tokio::select!`) without losing data or leaving corrupt state. See [chapter 32](#async).
 Cargo :: Rust's tool for building, testing, documenting and publishing packages, and for fetching dependencies. See [chapter 39](#cargo).
 channel :: A queue for sending values from one thread or task to another. See [chapter 30](#threads).
 CI :: Continuous integration: a server that builds and tests the project automatically after every change. See [chapter 40](#quality-tools).
@@ -77,12 +78,14 @@ function :: A named piece of code with parameters and a result. See [chapter 5](
 future :: A value that stands for a result that will be ready later. Awaiting it gives the result. See [chapter 32](#async).
 fuzzing :: Testing a function with huge numbers of random inputs to find the ones that make it crash. See [chapter 41](#testing-strategies).
 garbage collector :: A part of many languages that searches for unused memory and frees it while the program runs. Rust has none.
+GAT :: Generic associated type: an associated type inside a trait that takes lifetime or type parameters of its own, such as `type Item<'a>`. See [chapter 28](#advanced-traits).
 generic :: Written once for many types, with a type parameter such as `T`. See [chapter 19](#generics).
 guard :: A value whose only job is to undo something when it is dropped, such as the guard that unlocks a mutex. Also: an extra `if` condition on a `match` arm.
 handle :: A value that stands for something you cannot hold directly, such as an open file or a running thread.
 hash :: A number computed from a value, used to find it quickly in a `HashMap`.
 HashMap :: A collection that finds a value by its key. See [chapter 15](#collections).
 heap :: The part of memory for data whose size is not known in advance or that must live longer than one function call. See [chapter 8](#memory).
+idempotency :: Performing the same operation or delivering the same message more than once without changing the outcome beyond the first execution. See [chapter 45](#async-ecosystem).
 idiomatic :: Written the way experienced users of the language would write it. See [chapter 38](#idioms).
 immutable :: Not changeable. Variables and references are immutable unless marked `mut`.
 impl :: The block in which the methods of a type, or the implementation of a trait for a type, are written.
@@ -114,6 +117,7 @@ mutable :: Changeable. Asked for with `mut`.
 mutex :: A lock that lets only one thread at a time reach the data inside it. See [chapter 31](#shared-state).
 newtype :: A struct with a single field, made to give a value its own type: `struct Metres(f64);`. See [chapter 29](#type-system).
 no_std :: A crate that does not use the standard library, so that it can run without an operating system. See [chapter 50](#games-embedded).
+OpenAPI :: A standard JSON or YAML schema describing HTTP routes, request bodies, and responses so tools like Swagger UI can generate interactive docs. See [chapter 46](#web).
 Option :: The type for a value that may be missing: `Some(value)` or `None`. See [chapter 13](#enums).
 overflow :: A calculation whose result does not fit into the type. In a debug build Rust panics, in a release build the number wraps around.
 ownership :: Rust's central rule: every value has exactly one owner, and is freed when that owner goes out of scope. See [chapter 9](#ownership).
@@ -145,8 +149,10 @@ Send :: The marker trait for types that may be moved to another thread. See [cha
 serialisation :: Turning Rust values into a format such as JSON, for storing or sending. See [chapter 43](#serde).
 shadowing :: Declaring a new variable with the name of an existing one. The old one is hidden from then on.
 signature :: The first line of a function: its name, its parameters with their types, and its return type.
+SIMD :: Single instruction, multiple data: CPU vector instructions that operate on several numbers at once in one register. See [chapter 51](#performance).
 slice :: A view of a run of elements inside an array, a `Vec` or a string: `&[T]` or `&str`. See [chapter 11](#slices-strings).
 smart pointer :: A type that behaves like a pointer and does something more, such as owning the value (`Box`) or counting owners (`Rc`).
+span :: A timed unit of work in structured `tracing`, tracking everything that happens during one request or operation along with its fields. See [chapter 51](#observability).
 stack :: The part of memory for the local variables of the functions that are running. It is fast, and it is tidied up automatically. See [chapter 8](#memory).
 standard library :: The library that comes with Rust: collections, text, files, threads and more. A map is in [the reference appendix](#reference).
 statement :: A piece of code that does something and produces no value, such as a `let`. It ends with a semicolon.

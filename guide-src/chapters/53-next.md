@@ -1,5 +1,6 @@
 @id next
 @part p11
+@kind orientation
 @title Where to go from here
 @short Where to go from here
 @level all
@@ -54,7 +55,7 @@ This guide owes ideas to all of the following. None of them is a replacement for
 | Macros | [The Little Book of Rust Macros](https://veykril.github.io/tlborm/) | [34](#macros) |
 | Performance | [The Rust Performance Book](https://nnethercote.github.io/perf-book/) | [51](#performance) |
 | Command-line tools | [Command Line Applications in Rust](https://rust-cli.github.io/book/) | [44](#cli) |
-| Web services | *Zero To Production in Rust* by Luca Palmieri: one service, taken all the way to a server | [46](#web) to [48](#project-api) |
+| Web services | *Zero To Production in Rust* by Luca Palmieri: one service, taken all the way to a server | [46](#web) to [48](#project-api), [51](#observability) |
 | Small devices | [The Embedded Rust Book](https://docs.rust-embedded.org/book/) and the documentation of Embassy | [50](#games-embedded) |
 | Recipes for everyday tasks | [Rust Cookbook](https://rust-lang-nursery.github.io/rust-cookbook/) | [42](#crates) |
 | Language design in depth | *Rust for Rustaceans* by Jon Gjengset, and his long video series "Crust of Rust" | [28](#advanced-traits), [29](#type-system) |
@@ -301,5 +302,5 @@ Do this once and you are a contributor to the Rust ecosystem, which is a differe
 - I have picked one topic from the table and the resource for it.
 - I have run `rustup update`.
 - I have looked at the users forum or another community place.
-- I have finished the capstone project of [chapter 52](#capstone), or planned when to do it.
+- I have finished the capstone project of [chapter 53](#capstone), or planned when to do it.
 :::

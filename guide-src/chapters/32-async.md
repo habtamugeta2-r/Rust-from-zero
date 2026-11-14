@@ -102,6 +102,37 @@ The new pieces:
 
 In the first half, the tea is finished before the toast is started: 200 ms plus 100 ms. In the second half, both wait at the same time, and the total is the longer of the two. The work was not done faster. The *waiting* overlapped.
 
+When each concurrent branch returns a `Result`, **`tokio::try_join!`** runs them concurrently and stops immediately if any branch fails, dropping (cancelling) the others:
+
+```rust ext run
+use std::time::Duration;
+use tokio::time::sleep;
+
+async fn step(name: &str, ms: u64, ok: bool) -> Result<&'static str, &'static str> {
+    sleep(Duration::from_millis(ms)).await;
+    if ok {
+        Ok(if name == "a" { "alpha" } else { "beta" })
+    } else {
+        Err("step failed")
+    }
+}
+
+#[tokio::main]
+async fn main() {
+    let both = tokio::try_join!(step("a", 20, true), step("b", 10, true));
+    println!("ok: {both:?}");
+
+    let failed = tokio::try_join!(step("a", 500, true), step("b", 10, false));
+    println!("err: {failed:?}");
+}
+```
+```output
+ok: Ok(("alpha", "beta"))
+err: Err("step failed")
+```
+
+Notice the second call does not wait 500 ms for `step("a")`: as soon as `step("b")` returns `Err`, `try_join!` drops `step("a")` and returns `Err("step failed")`.
+
 ## Futures are lazy
 
 Like iterators, futures do nothing until someone drives them:
@@ -207,6 +238,10 @@ slow finished
 
 `async move { ... }` is an **async block**: a future written in place, like a closure. With `move` it takes ownership of the variables it uses, which a spawned task needs for the same reason a spawned thread does.
 
+:::tip Structured concurrency with `JoinSet`
+Dropping a plain `Vec<JoinHandle>` **detaches** those tasks: they keep running in the background with nobody waiting on them, which can leak work after a request finishes or fails. Dropping a **`JoinSet`**, by contrast, **aborts every unfinished task automatically**. Prefer `JoinSet` (or `join!` / `try_join!`) whenever spawned tasks should never outlive the scope that started them.
+:::
+
 ### Tasks must be `Send`
 
 Tokio may move a task from one thread to another whenever the task is paused. So everything a task holds **across an `.await`** must be `Send`. An `Rc` is not:
@@ -284,8 +319,12 @@ the timer came first
 
 **`select!`** waits for several futures at once and continues with whichever finishes **first**. The others are dropped. It is the tool for "wait for a message *or* a shutdown signal *or* a timer".
 
-:::key Dropping a future cancels it
-When a future is dropped before it has finished, its work simply stops at the `.await` where it was paused. That is how `timeout` and `select!` cancel the losers. There is no special cancel operation. It also means that the code after any `.await` might never run. If a task must finish a step once it has started (for example, write a complete record), do that step without an `.await` in the middle, or run it in its own spawned task.
+:::key Dropping a future cancels it — and what "cancellation safety" means
+When a future is dropped before it finishes, its work stops at whichever `.await` it was paused on. That is how `timeout` and `select!` cancel the losing branches.
+
+When using `tokio::select!` inside a **`loop`**, check whether each branch is **cancellation-safe**:
+- **Cancellation-safe**: `mpsc::Receiver::recv`, `TcpListener::accept`, and `AsyncBufReadExt::read_line` lose no partial data when dropped before completing.
+- **Not cancellation-safe**: creating a fresh `tokio::time::sleep(...)` inside each loop turn resets the timer every time another branch fires, and multi-step async functions dropped mid-way discard partial work. For a deadline across loop iterations, create the future *outside* the loop (`let timer = tokio::time::sleep(...); tokio::pin!(timer);`) and poll `&mut timer` inside `select!`, or run stateful work in its own `tokio::spawn` task.
 :::
 
 ## Channels and shared state
@@ -533,6 +572,38 @@ lift-off!
 The state machine behind an `async fn` may hold references to its own local variables. If such a value were moved to a different place in memory, those references would point to the old place. `Pin<&mut T>` is a pointer type that promises: "the value behind me will not be moved any more". `poll` requires it, so that self-referential futures are safe. In everyday code you never write `Pin` yourself. When you do need to pin something, the macro `pin!` (as above) or `Box::pin(...)` does it.
 
 Most types do not care whether they are moved: numbers, strings, vectors. They carry the marker trait **`Unpin`**, and for them `Pin` changes nothing. The futures that `async` creates are the important types that are *not* `Unpin`. That is why some functions ask you to pin a future before you hand it over, and why the compiler sometimes says that a future "cannot be unpinned".
+:::
+
+:::details Pinning structs and `pin-project-lite`
+Two common situations ask you to think about `Pin` explicitly:
+
+1. **Reusing one future across a `tokio::select!` loop.** Calling `select!` on the same future across loop iterations needs `&mut future` where `future` is pinned. `std::pin::pin!(fut)` (or `tokio::pin!(fut)`) pins it right on the stack with no heap allocation (`Box::pin`), and gives you a `Pin<&mut F>` you can poll repeatedly.
+2. **Writing a struct that wraps another `Future` or `Stream`.** Inside `fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>)`, Rust does not automatically turn `Pin<&mut Wrapper<F>>` into `Pin<&mut F>`—because you might accidentally swap `self.inner` while `Wrapper` is pinned. **Pin projection** solves this: mark the field with `#[pin]` using the zero-dependency crate `pin-project-lite`:
+
+```rust
+use std::future::Future;
+use std::pin::Pin;
+use std::task::{Context, Poll};
+use pin_project_lite::pin_project;
+
+pin_project! {
+    struct Timed<F> {
+        #[pin]
+        inner: F,
+        label: &'static str,
+    }
+}
+
+impl<F: Future> Future for Timed<F> {
+    type Output = F::Output;
+
+    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        let this = self.project();
+        // `this.inner` is safely projected to `Pin<&mut F>`, and `this.label` to `&mut &'static str`
+        this.inner.poll(cx)
+    }
+}
+```
 :::
 
 ## More async features

@@ -138,6 +138,8 @@ def inline(text, ctx=None):
             mnum = re.fullmatch(r"([Cc])hapter \d+", label)
             if mnum and NUMS.get(cid, "").isdigit():
                 label = f"{mnum.group(1)}hapter {int(NUMS[cid])}"   # keep cross-references correct automatically
+            elif re.fullmatch(r"\d+", label) and NUMS.get(cid, "").isdigit():
+                label = str(int(NUMS[cid]))
             return keep(f'<a href="#{attr(cid)}" data-nav="{attr(cid)}"{a}>', True) + label + keep("</a>")
         return (keep(f'<a href="{attr(target)}" target="_blank" rel="noopener noreferrer" class="ext">', True)
                 + label + keep("</a>"))
@@ -936,6 +938,8 @@ def build():
         print(f"{len(warnings)} warning(s):")
         for w in warnings[:60]:
             print("  -", w)
+        if "--strict" in sys.argv[1:]:
+            sys.exit(1)
 
 
 if __name__ == "__main__":

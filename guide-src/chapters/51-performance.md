@@ -217,9 +217,11 @@ There are two lessons in this. Every measuring tool disturbs what it measures, s
 | `cargo flamegraph` | builds, profiles and draws the flame graph. On Linux it uses `perf` |
 | `perf` | the profiler of Linux. `perf record` and `perf report` work with any program |
 | `samply` | records a profile and shows it in the Firefox Profiler, a viewer that runs in the browser |
-| the crate `dhat` | counts allocations and reports which lines of the code make them |
+| `dhat` (`dhat-rs`) | profiles heap allocations and reports peak live memory by call site |
+| `heaptrack`, `valgrind --tool=massif` | tracks total heap usage and memory leaks over time on Linux without modifying code |
+| `cargo-bloat` | lists the largest functions and crates inside a compiled binary to shrink executable size |
 
-Everything in this chapter was run on Linux. `cargo flamegraph` and `samply` describe macOS and Windows in their documentation too.
+Everything in this chapter was run on Linux. `cargo flamegraph` and `samply` describe macOS and Windows in their documentation too. For explicit vector processing when the compiler cannot auto-vectorise a hot inner loop, the crate `wide` provides portable **SIMD** types (`f32x4`, `u32x8`) on stable Rust (and `std::simd` on nightly).
 
 ## Rule 3: change one thing, and measure again
 

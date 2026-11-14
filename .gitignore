@@ -1,30 +1,32 @@
 # Rust build output
 target/
+**/*.rs.bk
 
-# Local toolchain and check environment (see guide-src/tools/setup-env.sh)
-/opt/rs/
+# Scratch and temporary databases from examples
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
 
-# Scratch space: throwaway projects, drafts and experiments
-scratch/
-tmp/
+# Python tooling
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
 
-# Editor and OS noise
+# Node tooling (screenshots, browsers)
+node_modules/
+
+# Environment and secrets
+.env
+.env.local
+
+# OS and editor clutter
 .DS_Store
 Thumbs.db
 *.swp
+*.swo
 *~
-.idea/
-.vscode/
-
-# Generated or downloaded artefacts
-node_modules/
-*.bak
-*.orig
-Unselected files/
-
-# Python bytecode from the build tools
-__pycache__/
-*.pyc
 
 # Bookkeeping folders created by tools/check.py when RUST_CHECK_HOME is the repo
 /chk/

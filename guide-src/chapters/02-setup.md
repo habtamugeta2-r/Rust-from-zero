@@ -141,6 +141,10 @@ edition = "2024"
 
 The `name` and `version` are your project's name and version number. The `edition` says which set of language rules to use: `2024` is the newest. Under `[dependencies]` you will later list code from other people that your project uses. It is empty for now.
 
+:::analogy `Cargo.toml` is a project recipe card
+Imagine handing a friend a kit to assemble a shelf. You do not hand them a sack of random screws and hope for the best: you include a card saying *which* board, *which* screws, and *which* instructions to follow. `Cargo.toml` is that card for your program. Anyone with Cargo and that file can reproduce the exact same build on Windows, macOS or Linux.
+:::
+
 Rust source files end in `.rs`. Cargo already wrote a small program into `src/main.rs`:
 
 ```rust run file=src/main.rs

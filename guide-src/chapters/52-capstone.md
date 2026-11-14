@@ -126,7 +126,7 @@ Create the project and add the dependencies:
 ```sh
 cargo new library
 cd library
-cargo add axum --features tokio-runtime-tcp
+cargo add axum
 cargo add tokio --features full
 cargo add sqlx --features runtime-tokio,sqlite
 cargo add serde --features derive
@@ -135,8 +135,8 @@ cargo add clap --features derive
 cargo add anyhow
 cargo add thiserror
 cargo add tracing --features attrs
-cargo add tracing-subscriber
-cargo add --build sqlx-cli
+cargo add tracing-subscriber --features env-filter
+cargo add --dev tower --features util
 cargo add --dev proptest
 ```
 
@@ -167,25 +167,23 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-axum = { version = "0.8", features = ["tokio-runtime-tcp"] }
+axum = "0.8"
 tokio = { version = "1", features = ["full"] }
 sqlx = { version = "0.9", features = ["runtime-tokio", "sqlite"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 clap = { version = "4", features = ["derive"] }
 anyhow = "1"
-thiserror = "1"
+thiserror = "2"
 tracing = { version = "0.1", features = ["attrs"] }
-tracing-subscriber = "0.3"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
 [dev-dependencies]
 proptest = "1"
-
-[build-dependencies]
-sqlx-cli = "0.9"
+tower = { version = "0.5", features = ["util"] }
 ```
 
-The `sqlx-cli` build dependency and `rerun-if-changed` line make Cargo recompile whenever a migration is added or changed, so the program never ships with outdated SQL.
+The `build.rs` `rerun-if-changed` line makes Cargo recompile whenever a migration is added or changed, so `sqlx::migrate!()` never embeds an outdated schema.
 
 ## Step 2: the data model and errors
 
@@ -323,7 +321,7 @@ impl Store {
 
     /// Adds a book and returns it with the id the database chose.
     pub async fn add_book(&self, new: NewBook) -> Result<Book, LibraryError> {
-        let book = sqlx::query_as(
+        let row: BookRow = sqlx::query_as(
             "INSERT INTO books (title, author, isbn, status, rating, created_at)
              VALUES (?, ?, ?, 'to-read', NULL, datetime('now'))
              RETURNING id, title, author, isbn, status, rating, created_at",
@@ -333,7 +331,7 @@ impl Store {
         .bind(&new.isbn)
         .fetch_one(&self.pool)
         .await?;
-        Ok(book)
+        Ok(row.into_book())
     }
 
     /// Lists books, newest first. Optional filters by status and by a search text.
@@ -350,46 +348,30 @@ impl Store {
             query.push(" AND status = ").push_bind(status.to_string());
         }
         if let Some(search) = search {
-            query.push(" AND (title LIKE ? OR author LIKE ?)");
             let like = format!("%{search}%");
-            query.push_bind(&like).push_bind(&like);
+            query
+                .push(" AND (title LIKE ")
+                .push_bind(like.clone())
+                .push(" OR author LIKE ")
+                .push_bind(like)
+                .push(")");
         }
 
         query.push(" ORDER BY id DESC");
 
         let books: Vec<BookRow> = query.build_query_as().fetch_all(&self.pool).await?;
-        Ok(books
-            .into_iter()
-            .map(|row| Book {
-                id: row.id,
-                title: row.title,
-                author: row.author,
-                isbn: row.isbn,
-                status: Status::from_str(&row.status).unwrap_or(Status::ToRead),
-                rating: row.rating.map(|r| r as u32),
-                created_at: row.created_at,
-            })
-            .collect())
+        Ok(books.into_iter().map(BookRow::into_book).collect())
     }
 
     /// Finds one book by id.
     pub async fn find_book(&self, id: i64) -> Result<Book, LibraryError> {
-        let book = sqlx::query_as(
+        let row: Option<BookRow> = sqlx::query_as(
             "SELECT id, title, author, isbn, status, rating, created_at FROM books WHERE id = ?",
         )
         .bind(id)
         .fetch_optional(&self.pool)
         .await?;
-        book.map(|row: BookRow| Book {
-            id: row.id,
-            title: row.title,
-            author: row.author,
-            isbn: row.isbn,
-            status: Status::from_str(&row.status).unwrap_or(Status::ToRead),
-            rating: row.rating.map(|r| r as u32),
-            created_at: row.created_at,
-        })
-        .ok_or(LibraryError::NotFound(id))
+        row.map(BookRow::into_book).ok_or(LibraryError::NotFound(id))
     }
 
     /// Changes the status and/or rating of a book.
@@ -439,6 +421,20 @@ struct BookRow {
     status: String,
     rating: Option<i64>,
     created_at: String,
+}
+
+impl BookRow {
+    fn into_book(self) -> Book {
+        Book {
+            id: self.id,
+            title: self.title,
+            author: self.author,
+            isbn: self.isbn,
+            status: Status::from_str(&self.status).unwrap_or(Status::ToRead),
+            rating: self.rating.map(|r| r as u32),
+            created_at: self.created_at,
+        }
+    }
 }
 ```
 
@@ -513,16 +509,19 @@ Each test uses its own in-memory database, so tests never interfere and run in p
 The rules layer sits between the store and the outside world. It knows nothing about HTTP or the command line — it takes values and returns values.
 
 ```rust proj=library file=src/lib.rs
-mod error;
-mod model;
-mod routes;
-mod store;
+pub mod cli;
+pub mod config;
+pub mod error;
+pub mod model;
+pub mod routes;
+pub mod store;
 
 pub use error::LibraryError;
 pub use model::{Book, NewBook, Rating, Status};
 pub use store::Store;
 
 /// The public API of the library. A `Library` wraps a `Store` and adds rule checks.
+#[derive(Clone)]
 pub struct Library {
     store: Store,
 }
@@ -753,7 +752,7 @@ pub fn router() -> Router<AppState> {
 
 ## Step 6: settings and `main`
 
-Settings come from environment variables, never from the source code. `main` wires everything together: logging, the store, the router, and the server. For the full precedence chain — flags over environment over file over defaults, with `figment`, `dotenvy` and `secrecy` — see [the configuration section](#cli) of the CLI chapter.
+Settings come from environment variables, never from the source code. For multi-environment config files, `.env` loading, and `secrecy::SecretString` redaction, see [chapter 46](#web) and [the configuration section](#cli) of the CLI chapter; for separating `/health/live` and `/health/ready`, see [chapter 51](#observability). `main` wires everything together: logging, the store, the router, and the server.
 
 ```rust proj=library file=src/config.rs
 use std::env;
@@ -778,13 +777,13 @@ impl Config {
 ```
 
 ```rust proj=library file=src/cli.rs
-use clap::{Parser, Subcommand};
+use clap::Parser;
 use std::path::PathBuf;
 
 /// A personal library manager: add, list and track books.
 #[derive(Debug, Parser)]
 #[command(name = "library")]
-enum Command {
+pub enum Command {
     /// Add a book
     Add {
         /// The book's title
@@ -822,6 +821,8 @@ enum Command {
         #[arg(short, long)]
         output: Option<PathBuf>,
     },
+    /// Start the HTTP API server
+    Serve,
 }
 ```
 
@@ -829,17 +830,8 @@ enum Command {
 use anyhow::Result;
 use clap::Parser;
 use library::cli::Command;
+use library::config::Config;
 use library::{Library, NewBook, Status, Store};
-use routes::AppState;
-
-mod cli;
-mod config;
-mod error;
-mod model;
-mod routes;
-mod store;
-
-use config::Config;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -854,7 +846,6 @@ async fn main() -> Result<()> {
     tracing::info!("opening database {}", config.database_url);
     let store = Store::open(&config.database_url).await?;
     let library = Library::new(store);
-    let state = AppState { library };
 
     match Command::parse() {
         Command::Add {
@@ -862,23 +853,23 @@ async fn main() -> Result<()> {
             author,
             isbn,
         } => {
-            let runtime = tokio::runtime::Runtime::new()?;
-            let book = runtime.block_on(library.add_book(NewBook {
-                title,
-                author,
-                isbn,
-            }))?;
+            let book = library
+                .add_book(NewBook {
+                    title,
+                    author,
+                    isbn,
+                })
+                .await?;
             println!("Added book {}: {} by {}", book.id, book.title, book.author);
         }
         Command::List { status } => {
-            let runtime = tokio::runtime::Runtime::new()?;
             let status = status.as_deref().and_then(|s| match s {
                 "to-read" => Some(Status::ToRead),
                 "reading" => Some(Status::Reading),
                 "read" => Some(Status::Read),
                 _ => None,
             });
-            let books = runtime.block_on(library.list_books(status, None))?;
+            let books = library.list_books(status, None).await?;
             println!("id  title        author           status    rating");
             for book in &books {
                 let rating = book
@@ -892,17 +883,15 @@ async fn main() -> Result<()> {
             }
         }
         Command::Read { id, rating } => {
-            let runtime = tokio::runtime::Runtime::new()?;
             if let Some(rating) = rating {
-                runtime.block_on(library.set_rating(id, rating))?;
+                library.set_rating(id, rating).await?;
             } else {
-                runtime.block_on(library.set_status(id, Status::Read))?;
+                library.set_status(id, Status::Read).await?;
             }
             println!("Marked book {id} as read.");
         }
         Command::Remove { id } => {
-            let runtime = tokio::runtime::Runtime::new()?;
-            let removed = runtime.block_on(library.delete_book(id))?;
+            let removed = library.delete_book(id).await?;
             if removed {
                 println!("Removed book {id}.");
             } else {
@@ -910,8 +899,7 @@ async fn main() -> Result<()> {
             }
         }
         Command::Export { output } => {
-            let runtime = tokio::runtime::Runtime::new()?;
-            let books = runtime.block_on(library.list_books(None, None))?;
+            let books = library.list_books(None, None).await?;
             let json = serde_json::to_string_pretty(&books)?;
             if let Some(path) = output {
                 std::fs::write(&path, &json)?;
@@ -920,23 +908,25 @@ async fn main() -> Result<()> {
                 println!("{json}");
             }
         }
+        Command::Serve => {
+            tracing::info!("listening on {}", config.bind_address);
+            library::run_server(library, &config.bind_address).await?;
+        }
     }
 
     Ok(())
 }
 ```
 
-`main` parses the command line. When a command needs the database it creates a short-lived Tokio runtime with `block_on` — the bridge from synchronous code into async code from [chapter 45](#async-ecosystem). The same `Library` value also serves the web API when `start_server` is called.
-
-Note how `Library` is shared: the CLI uses it directly, and `AppState` puts it behind `State<AppState>` for Axum. One set of rules, two interfaces.
+`main` runs inside `#[tokio::main]` and calls the async `Library` directly for both CLI commands and `library serve`. The same `Library` handle drives the terminal commands and sits behind `State<AppState>` for Axum: one set of rules, two interfaces.
 
 ```rust proj=library file=src/lib.rs cont
 
-/// Runs the web API. Used by `main` when the program is started as a server.
-pub async fn run_server(library: Library, bind_address: &str) -> Result<(), axum::Error> {
+/// Runs the web API until Ctrl+C.
+pub async fn run_server(library: Library, bind_address: &str) -> std::io::Result<()> {
     use crate::routes::AppState;
     let state = AppState { library };
-    let listener = std::net::TcpListener::bind(bind_address)?;
+    let listener = tokio::net::TcpListener::bind(bind_address).await?;
     axum::serve(listener, routes::router().with_state(state))
         .with_graceful_shutdown(async {
             tokio::signal::ctrl_c().await.expect("could not listen for ctrl+c");
@@ -945,14 +935,12 @@ pub async fn run_server(library: Library, bind_address: &str) -> Result<(), axum
 }
 ```
 
-(In a tidier version, `run_server` and `main` share the server-starting code; they are shown separately here so each file's purpose stays clear.)
-
 ## Try it
 
 Build and run the server in one terminal:
 
 ```sh
-cargo run
+cargo run -- serve
 ```
 
 Then in another:
@@ -1035,7 +1023,7 @@ async fn post_json(app: &AppState, path: &str, body: &str) -> (StatusCode, Strin
         .unwrap();
     let response = router()
         .clone()
-        .with_state(app.library.clone())
+        .with_state(app.clone())
         .oneshot(request)
         .await
         .unwrap();
@@ -1054,7 +1042,7 @@ async fn health_answers_ok() {
         .unwrap();
     let response = router()
         .clone()
-        .with_state(app.library.clone())
+        .with_state(app.clone())
         .oneshot(request)
         .await
         .unwrap();
@@ -1080,7 +1068,7 @@ async fn add_and_get_a_book() {
         .unwrap();
     let response = router()
         .clone()
-        .with_state(app.library.clone())
+        .with_state(app.clone())
         .oneshot(request)
         .await
         .unwrap();
@@ -1097,7 +1085,7 @@ async fn missing_book_is_404() {
         .unwrap();
     let response = router()
         .clone()
-        .with_state(app.library.clone())
+        .with_state(app.clone())
         .oneshot(request)
         .await
         .unwrap();
@@ -1215,7 +1203,7 @@ ALTER TABLE books ADD COLUMN last_visited TEXT;
 - `thiserror` gives libraries a precise error enum; `anyhow` gives applications quick context.
 - `LibraryError::IntoResponse` turns every failure into a fitting JSON answer.
 - Settings come from environment variables; secrets never appear in source code.
-- `tokio::runtime::Runtime::block_on` connects a synchronous CLI to an async library.
+- A single `#[tokio::main]` binary drives both the terminal subcommands and `library serve` over the shared `Library`.
 - Tests hand requests straight to the router; each test gets its own in-memory database.
 - Migrations evolve the schema safely, and `build.rs` makes Cargo notice them.
 :::
@@ -1234,6 +1222,4 @@ ALTER TABLE books ADD COLUMN last_visited TEXT;
 
 ## What comes next
 
-You have reached the end of the last part of the guide, and the last of its eight projects. You now know how to build command-line tools, web services, database-backed programs, graphical applications and embedded software in Rust. The next chapter points you at the resources that take you further: the books, the crates and the communities where Rust developers keep learning.
-
-[chapter 53](#next)
+You have reached the end of Part 11 and of this guide, and the last of its eight projects. You now know how to build command-line tools, web services, database-backed programs, graphical applications, observability pipelines, and embedded software in Rust. Head to [chapter 54](#next) for the books, crates, and communities where Rust developers keep learning.

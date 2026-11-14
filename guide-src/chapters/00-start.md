@@ -22,11 +22,11 @@ It is worth knowing the size of what you are starting, so that you can plan.
 
 | | |
 |---|---|
-| Chapters | 54, of which 8 are complete projects you build file by file |
+| Chapters | 55, of which 8 are complete projects you build file by file |
 | Appendices | 4: a glossary, a reference, a catalogue of compiler errors, and Rust for people who know other languages |
-| Rust examples | 875, **every one compiled and run** by a real compiler, with its real output shown |
-| Exercises | 187, each with a hint and a worked solution |
-| Quiz questions | 229, each with an explanation |
+| Rust examples | 913 across 1,163 code listings, with real compiled output and diagnostics |
+| Exercises | 190, each with a hint and a worked solution |
+| Quiz questions | 238, each with an explanation |
 
 Nothing here is a mock-up. When the guide shows a compiler error, that is the message the compiler really printed, on the line number it really pointed at. When it shows program output, the program really produced it. This is checked automatically, for every example, on every change to the guide.
 
@@ -109,8 +109,8 @@ fn main() {
 }
 ```
 
-:::note Every example was tested
-Every Rust example in this guide was compiled with the real Rust compiler (version 1.100, November 2026). The outputs you see were produced by running the code. The examples marked as failing were checked too: they fail in exactly the way the text says.
+:::note Tested examples and reference code
+Standard-library examples and core crate examples marked for verification are compiled against the Rust compiler (edition 2024, targeting Rust 1.100) by `tools/check.py`, and failing examples fail in the way the text describes. Larger multi-file snippets or examples that talk to external services (such as databases, message brokers, or telemetry collectors) are shown as complete reference code.
 :::
 
 ## Exercises, hints and solutions

@@ -14,6 +14,10 @@ A trait is like a job description: it says what a type must be able to do. Assoc
 
 ## Associated types
 
+:::analogy A country's power socket vs a universal adapter
+Every `Iterator` implementation has one natural element type (`Item`), just as each country's wall socket delivers one fixed voltage: you plug in and ask for `Self::Item` without listing extra parameters. By contrast, a generic trait parameter (`From<T>`) is like a travel adapter that can have many implementations (`From<&str>`, `From<char>`, `From<Box<str>>`) for the very same `String` type.
+:::
+
 The `Iterator` trait has a line `type Item;`. That is an **associated type**: a type that each implementation of the trait chooses, once.
 
 ```rust run

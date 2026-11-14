@@ -29,6 +29,10 @@ On the command line, `cargo search json` searches the registry, and `cargo info 
 
 ## Judging a crate
 
+:::analogy Choosing parts for a bridge
+Before bolting a third-party girder into a bridge, an engineer checks who manufactured it, whether it has been stress-tested on other bridges, and whether the supplier still answers the phone. Picking a crate from crates.io works the same way: download counts, maintenance activity, documentation, dependency tree weight and licence tell you within two minutes whether you can trust a dependency in production.
+:::
+
 Anyone can publish a crate, so you need to look before you depend on one. A checklist that takes two minutes:
 
 1. **Is it widely used?** The download numbers and the list of "dependents" on crates.io tell you. A crate used by thousands of others has had its bugs found.
@@ -214,25 +218,46 @@ Almost every date bug comes from mixing up three questions that look like one. A
 2. **Which zone should the reader see it in?** A display decision, made at the edge, from the user's setting — not stored.
 3. **How is it written down?** One format on the wire, chosen once for the whole system.
 
-The consequence: **store UTC, display local, and always store an instant rather than a wall-clock time.** `2026-11-14T09:12:03Z` and `2026-11-14T12:12:03+03:00` are the same moment written two ways. That format is **RFC 3339** (a profile of ISO 8601), and it is what JSON APIs and HTTP headers use, because it is sortable as text, unambiguous, and readable by a human. In PostgreSQL the column type is `TIMESTAMPTZ`; in SQLite, store the RFC 3339 string or a Unix timestamp as an integer.
+The consequence: **store UTC, display local, and always store an instant rather than a wall-clock time.** `2026-11-14T09:12:03Z` and `2026-11-14T12:12:03+03:00` are the same moment written two ways. That format is **RFC 3339** (a profile of ISO 8601), and it is what JSON APIs and HTTP headers use, because it is sortable as text, unambiguous, and readable by a human. In PostgreSQL the column type is `TIMESTAMPTZ`; in SQLite, store the RFC 3339 string or a Unix timestamp as an integer. Always parse incoming offset strings with `DateTime::parse_from_rfc3339` and normalise immediately to **`DateTime<Utc>`**:
+
+```rust ext run
+use chrono::{DateTime, Days, Months, NaiveDate, Utc};
+
+fn main() -> Result<(), chrono::ParseError> {
+    // Parse an offset timestamp from an API and normalise to UTC
+    let raw = "2026-11-14T18:30:00+03:00";
+    let utc: DateTime<Utc> = DateTime::parse_from_rfc3339(raw)?.with_timezone(&Utc);
+    println!("UTC: {}", utc.to_rfc3339());
+
+    // Calendar-aware month addition clamps at month-end instead of overflowing
+    let jan31 = NaiveDate::from_ymd_opt(2026, 1, 31).unwrap();
+    let feb28 = jan31.checked_add_months(Months::new(1)).unwrap();
+    let plus_ten = jan31.checked_add_days(Days::new(10)).unwrap();
+    println!("+1 month: {feb28}, +10 days: {plus_ten}");
+    Ok(())
+}
+```
+```output
+UTC: 2026-11-14T15:30:00+00:00
++1 month: 2026-02-28, +10 days: 2026-02-10
+```
 
 A **time zone** is more than an offset: it is a set of rules that a government can change. That is why the rules ship as a database (`tzdata`, the IANA list) and why a program that calculates "9 a.m. tomorrow in Berlin" needs one. `chrono-tz` provides the zone list for `chrono`.
 
 Two traps worth naming:
 
-- **Daylight saving.** One hour of the year is skipped and one is lived twice. A local time such as 02:30 on a changeover day may not exist, or may exist twice. Arithmetic on local *wall-clock* times is therefore ambiguous — do it in UTC or on an `Instant`, and convert only for display. A zone with no daylight saving, such as East Africa Time (UTC+03:00 all year), does not have this problem, which is why code written there can look fine and fail in Berlin.
+- **Daylight saving.** One hour of the year is skipped and one is lived twice. A local time such as 02:30 on a changeover day may not exist (`LocalResult::None`), or may exist twice (`LocalResult::Ambiguous`). Never call `.unwrap()` when converting a `NaiveDateTime` into a zoned local time. Arithmetic on local *wall-clock* times is therefore ambiguous — do it in UTC or on an `Instant`, and convert only for display. A zone with no daylight saving, such as East Africa Time (UTC+03:00 all year), does not have this problem, which is why code written there can look fine and fail in Berlin.
 - **A birthday is not an instant.** A birth date, an invoice date or a business day is a *calendar date*: `NaiveDate` in `chrono`, `Date` in `jiff`. Storing it as a timestamp at midnight UTC makes it the wrong day for half the planet.
 
 The three crates, honestly compared:
 
 | Crate | Strength | Choose it when |
 |---|---|---|
-| `chrono` | The most widely used, with the widest ecosystem support and the examples in this book | You want the default, and the docs you will find everywhere |
+| `chrono` | The most widely used, with the widest ecosystem support (`sqlx`, `serde`, `uuid`) and the examples in this book | You want the default, and the docs you will find everywhere |
 | `time` | Stricter API, no implicit local-time reading, good formatting | You want compile-time checks on formats and a smaller surface |
-| `jiff` | Modern design, correct-by-default time zone handling, RFC 3339 as the native format | Time zones and human-facing dates are central to the program. For new code in 2025 onwards, a good first choice |
+| `jiff` | Modern design, built-in IANA TZDB (`Zoned`), RFC 3339 as the native format | Time zones and human-facing dates are central to the program. For new code in 2025 onwards, a good first choice |
 
 For the wire: with the `serde` feature, `chrono`'s `DateTime<Utc>` serialises to an RFC 3339 string and parses back from one, which is exactly what you want in JSON. Durations in configuration are best written for humans — `"30s"`, `"5m"`, `"2h"` — and parsed with `humantime` (or `humantime_serde` as a serde attribute) rather than a raw number of milliseconds that nobody can read six months later.
-
 
 ### `itertools`: more iterator tools
 
@@ -389,6 +414,8 @@ hides `info` and `debug`. The filter is a pattern: `mycrate=debug` shows debug m
 | What you write | one message per call | messages with fields, inside named spans |
 | Async tasks | hard to tell which task said what | spans follow the task (`#[instrument]`) |
 | Best fit | small tools, command-line programs | services, servers, async code |
+
+This chapter introduces the basics for scripts and small programs. For structured JSON logging in production, request IDs across async tasks, OpenTelemetry distributed traces, Prometheus metrics, and health probes, see [chapter 51](#observability).
 
 :::compare Logging, not printing
 A library logs; an application decides where the logs go. `log` and `tracing` both leave the decision to `main`. A library that calls `println!` forces its output on everybody.

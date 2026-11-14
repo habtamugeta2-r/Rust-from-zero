@@ -838,6 +838,17 @@ sorted: apple fig pear
 - **Arguments are passed one by one**, with `arg` or `args`. No shell is involved, so a file name with spaces or with a `;` in it is passed on exactly as it is. Do not build one long command string and hand it to `sh -c`. With text from a user, that is the same mistake as building SQL from input ([chapter 47](#databases)).
 - **Close the input when you are done.** `sort` waits for the end of its input. Dropping the handle closes the pipe.
 
+### Configuration files and precedence
+
+Well-behaved command-line tools combine three sources in a predictable order, where each layer overrides the one below it:
+
+1. **Built-in defaults** (for example, `color = "auto"`).
+2. **User configuration file** in the operating system's standard folder—found portably with `directories::ProjectDirs::from("", "", "myapp")` (`~/.config/myapp/config.toml` on Linux, `~/Library/Application Support/…` on macOS, `%APPDATA%` on Windows).
+3. **Environment variables** (with `clap`'s `#[arg(env = "MYAPP_FORMAT")]`).
+4. **Command-line flags** (`--format json`), which always win for a single invocation.
+
+See [chapter 46](#web) for layered configuration with `figment` and protecting secret settings with `secrecy`.
+
 ### More crates for the terminal
 
 | Crate | Purpose |
