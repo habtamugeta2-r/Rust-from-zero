@@ -46,7 +46,7 @@ jobs:
     name: Compile every Rust example
     # Compiling ~900 examples needs a full toolchain and takes many minutes, so
     # it runs on a schedule and on demand rather than on every pull request.
-    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/arena/6fcb4a83-rust-from-zero'
     runs-on: ubuntu-latest
     env:
       RUST_CHECK_HOME: ${{ github.workspace }}
