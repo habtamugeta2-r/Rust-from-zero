@@ -6,6 +6,7 @@ edition = "2024"
 [dependencies]
 anyhow = "1.0.104"
 argon2 = { version = "0.6.0", features = ["getrandom"] }
+actix-web = "4"
 axum = { version = "0.8.9", features = ["macros", "ws", "multipart"] }
 bincode = "1.3"
 chrono = { version = "0.4.45", features = ["serde"] }

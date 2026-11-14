@@ -19,14 +19,24 @@ $ library list
 id  title        author           status    rating
 1   Dune         Frank Herbert    to-read   -
 
-$ library status 1 --read --rating 5
+$ library read 1 --rating 5
 Marked book 1 as read.
 
-$ library export --format json
-[{"id":1,"title":"Dune","author":"Frank Herbert","isbn":"9780441172719","status":"read","rating":5}]
+$ library export
+[
+  {
+    "id": 1,
+    "title": "Dune",
+    "author": "Frank Herbert",
+    "isbn": "9780441172719",
+    "status": "read",
+    "rating": 5,
+    "created_at": "…"
+  }
+]
 
 $ curl http://localhost:3000/books
-[{"id":1,"title":"Dune","author":"Frank Herbert","isbn":"9780441172719","status":"read","rating":5}]
+[{"id":1,"title":"Dune","author":"Frank Herbert","isbn":"9780441172719","status":"read","rating":5,"created_at":"…"}]
 ```
 
 Both the command and the web API talk to the same database. The command-line tool is useful for bulk work; the web API is useful for a small web page or a phone app.
@@ -128,13 +138,13 @@ cargo new library
 cd library
 cargo add axum
 cargo add tokio --features full
-cargo add sqlx --features runtime-tokio,sqlite
+cargo add sqlx --features runtime-tokio,sqlite,macros,migrate
 cargo add serde --features derive
 cargo add serde_json
 cargo add clap --features derive
 cargo add anyhow
 cargo add thiserror
-cargo add tracing --features attributes
+cargo add tracing
 cargo add tracing-subscriber --features env-filter
 cargo add --dev tower --features util
 cargo add --dev proptest
@@ -169,13 +179,13 @@ edition = "2024"
 [dependencies]
 axum = "0.8"
 tokio = { version = "1", features = ["full"] }
-sqlx = { version = "0.9", features = ["runtime-tokio", "sqlite"] }
+sqlx = { version = "0.9", features = ["runtime-tokio", "sqlite", "macros", "migrate"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 clap = { version = "4", features = ["derive"] }
 anyhow = "1"
 thiserror = "2"
-tracing = { version = "0.1", features = ["attributes"] }
+tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
 [dev-dependencies]
@@ -183,7 +193,7 @@ proptest = "1"
 tower = { version = "0.5", features = ["util"] }
 ```
 
-The `build.rs` `rerun-if-changed` line makes Cargo recompile whenever a migration is added or changed, so `sqlx::migrate!()` never embeds an outdated schema.
+The `rerun-if-changed` line tells Cargo to rerun the build script when a migration file changes. SQLx's `migrate!()` macro embeds the migration files in the program at compile time.
 
 ## Step 2: the data model and errors
 
@@ -211,6 +221,7 @@ pub struct NewBook {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
 pub enum Status {
     ToRead,
     Reading,
@@ -275,6 +286,12 @@ pub enum LibraryError {
 
     #[error("database error: {0}")]
     Database(#[from] sqlx::Error),
+
+    #[error("migration error: {0}")]
+    Migration(#[from] sqlx::migrate::MigrateError),
+
+    #[error("invalid data in the database: {0}")]
+    InvalidData(String),
 }
 
 impl LibraryError {
@@ -296,7 +313,7 @@ use sqlx::FromRow;
 use sqlx::SqlitePool;
 
 use crate::error::LibraryError;
-use crate::model::{Book, NewBook, Status};
+use crate::model::{Book, NewBook, Rating, Status};
 
 /// All database access for the library, in one place.
 #[derive(Clone)]
@@ -319,8 +336,7 @@ impl Store {
 
         sqlx::migrate!()
             .run(&pool)
-            .await
-            .map_err(sqlx::Error::from)?;
+            .await?;
 
         Ok(Store { pool })
     }
@@ -337,7 +353,7 @@ impl Store {
         .bind(&new.isbn)
         .fetch_one(&self.pool)
         .await?;
-        Ok(row.into_book())
+        row.into_book()
     }
 
     /// Lists books, newest first. Optional filters by status and by a search text.
@@ -366,18 +382,23 @@ impl Store {
         query.push(" ORDER BY id DESC");
 
         let books: Vec<BookRow> = query.build_query_as().fetch_all(&self.pool).await?;
-        Ok(books.into_iter().map(BookRow::into_book).collect())
+        books
+            .into_iter()
+            .map(BookRow::into_book)
+            .collect()
     }
 
     /// Finds one book by id.
     pub async fn find_book(&self, id: i64) -> Result<Book, LibraryError> {
-        let row: Option<BookRow> = sqlx::query_as(
+        let book = sqlx::query_as(
             "SELECT id, title, author, isbn, status, rating, created_at FROM books WHERE id = ?",
         )
         .bind(id)
         .fetch_optional(&self.pool)
         .await?;
-        row.map(BookRow::into_book).ok_or(LibraryError::NotFound(id))
+        book.map(BookRow::into_book)
+        .transpose()?
+        .ok_or(LibraryError::NotFound(id))
     }
 
     /// Changes the status and/or rating of a book.
@@ -430,16 +451,28 @@ struct BookRow {
 }
 
 impl BookRow {
-    fn into_book(self) -> Book {
-        Book {
+    fn into_book(self) -> Result<Book, LibraryError> {
+        let status = Status::from_str(&self.status)
+            .map_err(LibraryError::InvalidData)?;
+        let rating = self
+            .rating
+            .map(|value| {
+                u32::try_from(value)
+                    .ok()
+                    .and_then(|value| Rating::try_from(value).ok())
+                    .map(|rating| rating.0)
+                    .ok_or_else(|| LibraryError::InvalidData("invalid book rating".into()))
+            })
+            .transpose()?;
+        Ok(Book {
             id: self.id,
             title: self.title,
             author: self.author,
             isbn: self.isbn,
-            status: Status::from_str(&self.status).unwrap_or(Status::ToRead),
-            rating: self.rating.map(|r| r as u32),
+            status,
+            rating,
             created_at: self.created_at,
-        }
+        })
     }
 }
 ```
@@ -517,10 +550,10 @@ The rules layer sits between the store and the outside world. It knows nothing a
 ```rust proj=library file=src/lib.rs
 pub mod cli;
 pub mod config;
-pub mod error;
-pub mod model;
+mod error;
+mod model;
 pub mod routes;
-pub mod store;
+mod store;
 
 pub use error::LibraryError;
 pub use model::{Book, NewBook, Rating, Status};
@@ -652,11 +685,6 @@ pub struct AppState {
 }
 
 /// One error shape for every API response.
-#[derive(serde::Serialize)]
-struct ErrorBody {
-    error: String,
-}
-
 impl IntoResponse for LibraryError {
     fn into_response(self) -> Response {
         let (status, message) = match &self {
@@ -664,7 +692,9 @@ impl IntoResponse for LibraryError {
             LibraryError::Validation(message) => {
                 (StatusCode::UNPROCESSABLE_ENTITY, message.clone())
             }
-            LibraryError::Database(_) => {
+            LibraryError::Database(_)
+            | LibraryError::Migration(_)
+            | LibraryError::InvalidData(_) => {
                 tracing::error!("database error: {self}");
                 (
                     StatusCode::INTERNAL_SERVER_ERROR,
@@ -766,6 +796,7 @@ use std::env;
 pub struct Config {
     pub database_url: String,
     pub bind_address: String,
+    #[allow(dead_code)]
     pub api_key: Option<String>,
 }
 
@@ -836,8 +867,8 @@ pub enum Command {
 use anyhow::Result;
 use clap::Parser;
 use library::cli::Command;
-use library::config::Config;
 use library::{Library, NewBook, Status, Store};
+use library::config::Config;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -854,18 +885,19 @@ async fn main() -> Result<()> {
     let library = Library::new(store);
 
     match Command::parse() {
+        Command::Serve => {
+            library::run_server(library, &config.bind_address).await?;
+        }
         Command::Add {
             title,
             author,
             isbn,
         } => {
-            let book = library
-                .add_book(NewBook {
-                    title,
-                    author,
-                    isbn,
-                })
-                .await?;
+            let book = library.add_book(NewBook {
+                title,
+                author,
+                isbn,
+            }).await?;
             println!("Added book {}: {} by {}", book.id, book.title, book.author);
         }
         Command::List { status } => {
@@ -914,22 +946,20 @@ async fn main() -> Result<()> {
                 println!("{json}");
             }
         }
-        Command::Serve => {
-            tracing::info!("listening on {}", config.bind_address);
-            library::run_server(library, &config.bind_address).await?;
-        }
     }
 
     Ok(())
 }
 ```
 
-`main` runs inside `#[tokio::main]` and calls the async `Library` directly for both CLI commands and `library serve`. The same `Library` handle drives the terminal commands and sits behind `State<AppState>` for Axum: one set of rules, two interfaces.
+`main` parses the command line inside Tokio's async runtime. The same `Library` value also serves the web API when `serve` is called.
+
+Note how `Library` is shared: the CLI uses it directly, and `AppState` puts it behind `State<AppState>` for Axum. One set of rules, two interfaces.
 
 ```rust proj=library file=src/lib.rs cont
 
-/// Runs the web API until Ctrl+C.
-pub async fn run_server(library: Library, bind_address: &str) -> std::io::Result<()> {
+/// Runs the web API. Used by `main` when the program is started as a server.
+pub async fn run_server(library: Library, bind_address: &str) -> anyhow::Result<()> {
     use crate::routes::AppState;
     let state = AppState { library };
     let listener = tokio::net::TcpListener::bind(bind_address).await?;
@@ -937,7 +967,8 @@ pub async fn run_server(library: Library, bind_address: &str) -> std::io::Result
         .with_graceful_shutdown(async {
             tokio::signal::ctrl_c().await.expect("could not listen for ctrl+c");
         })
-        .await
+        .await?;
+    Ok(())
 }
 ```
 
@@ -1123,7 +1154,7 @@ The `AppState` clone is cheap: `Library` holds an `Arc`-backed pool. Each test g
 - There is no pagination: `GET /books` returns every book.
 - No authentication: anybody may add or delete books.
 - No protection against a very large request body.
-- The CLI and the server are separate entry points; a real program might share one binary with a `--server` flag.
+- The `serve` subcommand starts the web API, while the other subcommands operate on the same database.
 
 ## Make it better
 

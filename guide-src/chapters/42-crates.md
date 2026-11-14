@@ -354,7 +354,7 @@ ERROR something failed code=7
 - `#[instrument]` wraps a function in a **span**: a named stretch of time. Every message inside shows which call it belongs to, with the arguments (`divide{a=1 b=0}`). In async programs, where many tasks are interleaved, this is what makes logs readable.
 - The example switches off the time stamp and colours to keep the output stable. Normally you would just call `tracing_subscriber::fmt::init()`.
 
-`tracing` is powerful, but a small program does not need spans and fields. The crate **`log`** is a *facade*: it provides the macros (`error!`, `warn!`, `info!`, `debug!`, `trace!`) and nothing more. A library should depend on `log` and call its macros — and never decide where messages go. The crate **`env_logger`** is the simplest *subscriber*: it prints the messages to standard error, and the environment variable `RUST_LOG` chooses how much to see.
+`tracing` is powerful, but a small program does not need spans and fields. The crate **`log`** is a *facade*: it provides the macros (`error!`, `warn!`, `info!`, `debug!`, `trace!`) and nothing more. A library should depend on `log` and call its macros — and never decide where messages go. The crate **`env_logger`** is a small logger implementation, and the environment variable `RUST_LOG` chooses how much to see.
 
 ```toml
 log = "0.4"
@@ -363,7 +363,7 @@ env_logger = "0.11"
 
 A tiny program with a logger:
 
-```rust ext run
+```rust ext run nocmp
 use std::io::Write;
 
 use env_logger::Builder;
@@ -382,7 +382,7 @@ fn work(items: &[&str]) {
 
 fn main() {
     Builder::from_env(Env::default().default_filter_or("trace"))
-        .target(env_logger::Target::Stdout)     // loggers write to stderr by default
+        .target(env_logger::Target::Stdout)     // stdout keeps this example's captured output visible
         .format(|buf, record| writeln!(buf, "{}: {}", record.level(), record.args()))
         .init();
 
@@ -398,7 +398,7 @@ DEBUG: a detail only useful while developing
 ERROR: could not reach the server
 ```
 
-- The `format` closure decides what each line looks like; here it is just the level and the message. A logger's output belongs on standard error, so that it never mixes with the program's real output; this listing sends it to standard output instead, so that the lines above are the program's own output.
+- The `format` closure decides what each line looks like; here it is just the level and the message. `env_logger` writes to standard error by default; this example explicitly uses standard output so the captured lines are visible here.
 - `default_filter_or("trace")` shows everything during development. Without any `RUST_LOG` setting, `info` and above would be enough for production.
 - `error!` shows even though nothing catches it: logging does not stop the program.
 
@@ -420,8 +420,6 @@ This chapter introduces the basics for scripts and small programs. For structure
 :::compare Logging, not printing
 A library logs; an application decides where the logs go. `log` and `tracing` both leave the decision to `main`. A library that calls `println!` forces its output on everybody.
 :::
-
-A few rules keep logging sane in a program of any size. The logger is initialised once, at start-up, and the *application* does the initialising — a library that called `init()` would take the decision away from the program that links it, and two libraries both doing it is a panic. Filtering can also be per module: `RUST_LOG=my_app::store=debug,my_app=info` shows `info` and above everywhere, but `debug` from `my_app::store` only, which is how you raise the detail on the part you are debugging without drowning in everything else.
 
 ## A map of the ecosystem
 

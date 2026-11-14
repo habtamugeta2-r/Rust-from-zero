@@ -11,6 +11,10 @@
 Deliverable: `rust-guide.html` at the repository root (ONE self-contained file), built by
 `python3 guide-src/tools/build.py` from `chapters/*.md` + `assets/*`. Never edit the HTML by hand.
 
+## Reader routes
+- Core path: Parts 1–5 (chapters 01–26) + Part 8 Tooling (chapters 34–36). Essential Cargo, formatting, testing, and Clippy commands are introduced in chapter 02; chapters 34–36 provide the deeper workflow reference before Part 9 advanced topics (chapters 37–41).
+- After the core path, readers can follow goal-based routes in chapter 00 / the Home route selector (and `53-next.md`). Advanced language topics and ecosystem surveys (`49-apps`, `50-games-embedded`) remain optional deep dives.
+
 ## Tooling (not persisted between messages — reinstall if /opt/rs is missing)
 - Rust toolchain lives in /opt/rs (RUSTUP_HOME=/opt/rs/rustup, CARGO_HOME=/opt/rs/cargo, `. /opt/rs/env.sh`).
   Reinstall: see `tools/setup-env.sh`.
@@ -27,7 +31,8 @@ Deliverable: `rust-guide.html` at the repository root (ONE self-contained file),
 - Multi-file and target projects (`proj=<name> file=<path>`, optional `target=<t1>,<t2>`, later chunks marked
   `cont`, shown as "(continued)"): `python3 tools/project.py <chapter-prefix> <name> <outdir>` rebuilds a
   single project from its chapter, and `python3 tools/project.py --list` lists all discovered projects.
-  `python3 tools/check.py --projects --strict-targets` verifies all of them in CI.
+  `python3 tools/check.py --projects --strict-targets` verifies all of them in CI (also wrapped by
+  `tools/check-projects.py`).
 - Flag `release` on a rust block: check.py compiles it with optimisation, and Run opens the playground in release mode
   (chapter 51: timings).
 - `text`/`output` blocks with a line over 100 chars soft-wrap automatically (class `soft`), unless they contain

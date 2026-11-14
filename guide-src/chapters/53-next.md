@@ -9,6 +9,18 @@
 
 You have worked through the whole language, the tools around it, and eight projects. This chapter is a map of what lies beyond: the books and courses that go deeper than this guide, places to practise, and ways to stay in touch with a language that gets a new version every six weeks.
 
+You do not need to cover every topic to move forward. Keep the core path from [chapter 1](#what-is-rust) through [chapter 26](#project-report), then choose the route closest to what you want to build:
+
+| Goal | A focused next route |
+|---|---|
+| Command-line tools | [Cargo](#cargo), [error handling](#errors), [Serde](#serde), [Clap](#cli) |
+| Web services and APIs | [async Rust](#async), [Tokio and the async ecosystem](#async-ecosystem), [Axum](#web), [databases](#databases), then the [API project](#project-api) |
+| Browser or desktop apps | [Serde](#serde), then [WebAssembly and app interfaces](#apps) |
+| Embedded devices or games | [memory and ownership](#memory), [smart pointers](#smart-pointers), [unsafe Rust](#unsafe), then [games and embedded Rust](#games-embedded) |
+| Deeper language understanding | [advanced traits](#advanced-traits), [type design](#type-system), [memory layout](#memory-layout), and [idioms](#idioms) |
+
+Treat these as starting points, not prerequisites. Follow a link when a project needs that skill, and return to the route later.
+
 :::analogy After the driving test
 A driving licence does not make an experienced driver. It means that you can now learn safely on your own, on real roads. You are at that point with Rust: you can read the documentation of any crate, understand what the compiler tells you, and build things. The experience comes from kilometres driven.
 :::

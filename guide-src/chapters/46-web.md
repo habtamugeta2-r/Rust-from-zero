@@ -6,7 +6,7 @@
 @time 100
 @learn Explain requests, responses, methods and status codes | Write a web server with routes and handlers in Axum | Read paths, query strings, headers, JSON and real-time streams with extractors | Share state, load layered configuration and protect secrets | Add authentication, authorisation, security headers and rate limits | Choose between REST, gRPC and GraphQL, and compare Axum with Actix Web and Rocket
 
-A **web server** is a program that waits for requests from the network and answers them. The web sites you visit and the apps on your phone all talk to such programs. Rust is a strong choice for writing them: the servers are fast, use little memory, and avoid whole classes of memory bugs and data races at compile time—though keeping a server up in production still requires handling panics, logic errors, overload, and external outages.
+A **web server** is a program that waits for requests from the network and answers them. The web sites you visit and the apps on your phone all talk to such programs. Rust is a strong choice for writing them: it helps prevent memory-safety bugs and uses resources efficiently. It cannot guarantee that a server stays up, though; logic errors, panics, overload, and external outages still need careful design and testing.
 
 :::analogy A restaurant
 A guest (the client) hands an order slip (the request) to the waiter. The slip says what is wanted and for which table. The waiter (the router) looks at it and gives it to the right cook (a handler). The cook prepares a dish (the response), and the waiter brings it back. House rules apply to every order whoever cooks: orders are written in the book, and no order may take longer than twenty minutes (middleware). The pantry is shared by all cooks (state).
@@ -49,15 +49,15 @@ content-length: 36
 
 ### Methods
 
-| Method | Meaning | Typical request body |
+| Method | Meaning | Typical body use |
 |---|---|---|
-| `GET` | read something. Must not change anything | usually none |
-| `POST` | create something, or start an action | usually yes (optional for simple actions) |
-| `PUT` | replace something | usually yes |
-| `PATCH` | change part of something | usually yes |
-| `DELETE` | remove something | usually none |
+| `GET` | retrieve a representation; defined as a safe method | usually absent |
+| `POST` | submit data for the resource to process | often present (optional for simple actions) |
+| `PUT` | create or replace the target resource's representation | often present |
+| `PATCH` | apply a partial change to the target resource | often present |
+| `DELETE` | remove the target resource | usually absent |
 
-That third column reflects common HTTP **conventions**, not hard protocol bans. HTTP does not forbid a request body on `GET` or `DELETE`, nor require one on `POST` (actions such as `POST /logout` often send an empty body). However, many proxies, caches, and client libraries ignore or reject bodies on `GET` and `DELETE`, so REST APIs normally follow the conventions above.
+These are common HTTP **conventions**, not rules that forbid a body or require one. A server still has to implement each method's contract correctly (such as keeping `GET` safe), and many proxies, caches, and client libraries ignore or reject bodies on `GET` and `DELETE`, so REST APIs normally do not rely on them.
 
 ### Status codes
 

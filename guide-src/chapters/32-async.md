@@ -401,7 +401,7 @@ The ordinary `std::sync::Mutex` is the right choice in async code as long as the
 
 ## The golden rule: never block the runtime
 
-The runtime has a few threads, and each of them serves thousands of tasks. A task can give its thread back only at an `.await`, and it actually yields only when the awaited future returns `Pending` (not ready yet). If a task awaits a future that is already ready, it normally keeps running, and if a task does slow work **without** awaiting at all, the runtime gets no chance to switch tasks—leaving every other task on that thread stuck behind it.
+The runtime has a few threads, and each of them serves many tasks. A task yields its thread at an `.await` when the awaited future is not ready (`Pending`); if it is already ready, execution continues immediately. A slow blocking operation does not return control to the runtime, leaving every other task on that thread waiting behind it.
 
 Things that block:
 
@@ -719,7 +719,7 @@ async fn main() {
 - `join!` waits for all, `select!` for the first, `timeout` limits the wait, `tokio::spawn` starts a background task.
 - Dropping a future cancels it at its current `.await`.
 - Spawned tasks must be `Send`. Use `Arc`, and async channels to communicate.
-- Never block the runtime. Use async I/O and `spawn_blocking`.
+- Avoid blocking a runtime thread. Use async I/O, or move blocking work to `spawn_blocking`.
 - Underneath, a future is a state machine with a `poll` method, and a runtime is a loop that polls.
 :::
 
@@ -743,7 +743,7 @@ async fn main() {
 - It is less precise
 + It blocks the whole thread, so all other tasks that share that thread stop too
 - It cancels the task
-= A runtime thread serves many tasks and can switch away only at an `.await` when a future is not ready (`Pending`). A blocking call holds the thread hostage. Use `tokio::time::sleep(...).await`.
+= An `.await` yields control only when its future is not ready (`Pending`). A blocking call keeps the runtime thread busy, so other tasks on it cannot run. Use `tokio::time::sleep(...).await` instead of `std::thread::sleep`.
 
 ? What happens to the slower branch of a `tokio::select!`?
 - It keeps running in the background

@@ -104,14 +104,25 @@ python3 guide-src/tools/check.py --projects # rebuild & test all multi-file and 
 python3 guide-src/tools/project.py --list
 python3 guide-src/tools/project.py 48 shortener /tmp/shortener
 (cd /tmp/shortener && cargo test)
+
+# Rebuild and test both complete projects (chapters 48 and 52).
+python3 guide-src/tools/check-projects.py
 ```
 
 CI checks two things (see [`.github/workflows/build.yml`](./.github/workflows/build.yml)):
+<<<<<<< HEAD
 the build is fresh and the structure is clean on every push, and **every verified example
 and extracted project is compiled and tested** — standard library, crate examples, multi-file
 projects, WebAssembly/WASI examples, and Cortex-M3 `no_std` firmware — on every pull
 request and once a week. The latest weekly run is the honest answer to "do the
 examples still compile?".
+=======
+the build is fresh and the structure is clean on every push, and **every example
+and both multi-file projects are checked** — standard library and crate examples
+are compiled and run, while each project's tests are run — on every pull request
+and once a week. The latest weekly run is the honest answer to "do the examples
+still compile?".
+>>>>>>> origin/main
 
 ## How examples are marked
 

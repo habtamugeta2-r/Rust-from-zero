@@ -6,7 +6,7 @@
 @time 55
 @learn Convert between types safely with `From`, `TryFrom`, `FromStr` and `AsRef` | Use newtypes and type aliases to make code clearer and safer | Explain the never type, zero-sized types and dynamically sized types | Encode rules in types so that wrong programs do not compile (the typestate pattern) | Apply "parse, don't validate" and "make invalid states unrepresentable"
 
-So far you have used types to describe data. Experienced Rust programmers use them for something more: to make mistakes **impossible to write**. The compiler checks types on every build, for every line, at no cost when the program runs. Every rule you can express as a type is a rule that never needs a test and can never be forgotten.
+So far you have used types to describe data. Experienced Rust programmers use them for something more: to make certain mistakes **impossible to write**. The compiler checks type rules before the program runs, at no cost while it runs. Types can enforce many important rules, but they complement tests rather than replace them.
 
 This chapter first completes the picture of conversions between types, then presents the less obvious types of the language, and ends with the design techniques that tie them together.
 
@@ -45,7 +45,7 @@ Use `as` when losing information is intended or cannot happen: a small integer t
 
 ### `From` and `Into`: conversions that cannot fail
 
-`From` is implemented only where the conversion always works and loses nothing:
+`From` is for conversions that always succeed and are intended to preserve meaning:
 
 ```rust run
 fn main() {
@@ -65,7 +65,7 @@ fn main() {
 42 7 233 hello hello [1, 2, 3] 42
 ```
 
-There is no `i32::from(some_i64)` and no `f32::from(some_f64)`. Those conversions could lose data, so the standard library does not offer them through `From`. The absence is the safety feature.
+There is no `i32::from(some_i64)` and no `f32::from(some_f64)`. For a narrowing integer conversion, use `TryFrom` to check the range; for a float conversion, use an explicit cast only when its behavior is acceptable. The standard library avoids providing potentially lossy conversions through `From`.
 
 ### `TryFrom` and `TryInto`: conversions that may fail
 
@@ -192,7 +192,7 @@ LITERAL OWNED
 Some("txt") Some("gz")
 ```
 
-`AsRef<Path>` is the reason the functions in `std::fs` take `&str`, `String`, `Path` and `PathBuf` alike.
+`AsRef<Path>` lets many functions in `std::fs` accept values such as `&str`, `String`, `Path` and `PathBuf` through one parameter type.
 
 | I have … and want … | Use |
 |---|---|
@@ -336,13 +336,13 @@ fn main() {
 8 8
 ```
 
-The second line confirms that a newtype is free. The third shows a neat optimisation: an `Option<&T>` is no bigger than a `&T`. A reference can never be zero, so Rust uses the address zero to mean `None`.
+The second line confirms that a newtype is free. The third shows that `Option<&T>` is no bigger than `&T`: because references cannot be null, Rust can use the null-pointer representation for `None`.
 
 Zero-sized types are useful as **markers**: types that exist only to tell things apart at compile time. They are the basis of the typestate pattern below.
 
 ### Dynamically sized types
 
-`str`, `[T]` and `dyn Trait` have no size known at compile time. They always live behind a pointer, and that pointer is twice the usual size. It is called a **fat pointer**: it carries the address, plus the length (for `str` and slices) or the address of the method table (for `dyn Trait`).
+`str`, `[T]` and `dyn Trait` have no size known at compile time, so they cannot be stored directly where a fixed-size value is required. References to them are **fat pointers**: they carry an address plus metadata, usually a length for `str` and slices or a pointer to a method table for `dyn Trait`. On a 64-bit target, these references are typically twice the size of a thin pointer.
 
 ```rust run
 use std::mem::size_of;
@@ -623,12 +623,12 @@ The check happens once, at the edge of the program. From then on, the type `Emai
 :::compare Type systems compared
 - **Python, JavaScript, Ruby** are dynamically typed: values have types, variables do not, and a type mistake shows up when the faulty line runs, perhaps in production. Type checkers such as mypy and TypeScript add static checks on top.
 - **C** has static types but lets you convert almost anything to anything, and has no way to say "this pointer is never null".
-- **Java, C#, Go** have static types with null references that the type system does not track (C# and Kotlin have since added nullable types). Their enums cannot carry different data per variant, so "one of several shapes" needs class hierarchies.
-- **Rust** belongs to the same family as **Haskell**, **OCaml**, **F#** and **Swift**: enums with data, exhaustive matching, no null, and generics checked through traits. Rust adds ownership and lifetimes to that tradition.
+- **Java, C#, Go** are statically typed too, but each has different tools for representing nullable values and alternatives. Rust models absence explicitly with `Option<T>` and can put different data in each enum variant.
+- **Rust** shares design ideas with **Haskell**, **OCaml**, **F#** and **Swift**: data-carrying enums, exhaustive matching, and generics checked through traits. In safe Rust, references cannot be null; Rust also adds ownership and lifetimes.
 :::
 
 :::recap
-- `as` always succeeds and may change the value. `From`/`Into` cannot fail and lose nothing. `TryFrom`/`TryInto` return a `Result`. `FromStr` powers `.parse()`. `AsRef` makes parameters flexible.
+- `as` always succeeds and may change the value. `From`/`Into` cannot fail and are intended for value-preserving conversions. `TryFrom`/`TryInto` return a `Result`. `FromStr` powers `.parse()`. `AsRef` makes parameters flexible.
 - A newtype gives a meaning its own type, at no run-time cost. A type alias is only a shorter name.
 - `()` has one value. `!` has none and fits anywhere. Structs without fields take no memory. `str`, `[T]` and `dyn Trait` live behind fat pointers.
 - `PhantomData<T>` adds a type parameter that exists only at compile time.
@@ -746,7 +746,10 @@ impl FromStr for Minutes {
             (text, 1)
         };
         let number: u32 = digits.parse().map_err(|_| format!("'{text}' is not a duration"))?;
-        Ok(Minutes(number * factor))
+        let minutes = number
+            .checked_mul(factor)
+            .ok_or_else(|| format!("'{text}' is too large"))?;
+        Ok(Minutes(minutes))
     }
 }
 
@@ -755,6 +758,7 @@ fn main() {
     println!("{:?}", "45m".parse::<Minutes>());
     println!("{:?}", " 2h ".parse::<Minutes>());
     println!("{:?}", "soon".parse::<Minutes>());
+    println!("{:?}", "71582789h".parse::<Minutes>());
 }
 ```
 ```output
@@ -762,9 +766,10 @@ Ok(Minutes(90))
 Ok(Minutes(45))
 Ok(Minutes(120))
 Err("'soon' is not a duration")
+Err("'71582789h' is too large")
 ```
 
-Implementing `FromStr` plugs the type into the standard `.parse()` method, and into every library that builds on it. The command-line parser `clap` ([chapter 44](#cli)), for example, can accept a `Minutes` argument directly. The `if let … else if let … else` chain produces a pair, which is taken apart in the same `let`.
+Implementing `FromStr` plugs the type into the standard `.parse()` method, and into every library that builds on it. The command-line parser `clap` ([chapter 44](#cli)), for example, can accept a `Minutes` argument directly. The `if let … else if let … else` chain produces a pair, which is taken apart in the same `let`. `checked_mul` turns an out-of-range hour count into an error instead of allowing an overflow.
 :::
 
 :::exercise practice Remove the impossible states

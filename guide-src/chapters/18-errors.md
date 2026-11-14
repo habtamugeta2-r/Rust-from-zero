@@ -509,18 +509,23 @@ miette = { version = "7", features = ["fancy"] }   # `fancy` adds the rich rende
 ```rust ext check
 use eyre::{Context, Result};
 
-fn main() -> Result<()> {
+fn read_port() -> Result<u16> {
     let text = std::fs::read_to_string("settings.toml")
         .wrap_err("could not read the settings file")?;
-    let port: u16 = text.trim().parse()
-        .wrap_err_with(|| format!("the port '{text}' is not a number"))?;
-    println!("port is {port}");
-    Ok(())
+    text.trim().parse()
+        .wrap_err_with(|| format!("the port '{text}' is not a number"))
+}
+
+fn main() {
+    match read_port() {
+        Ok(port) => println!("port is {port}"),
+        Err(error) => println!("{error:#}"),
+    }
 }
 ```
 
 ```output
-Error: could not read the settings file: No such file or directory (os error 2)
+could not read the settings file: No such file or directory (os error 2)
 ```
 
 Nothing in `main` formats an error: returning `Err` from `main` makes the runtime print the report, context first, and exit with a non-zero code. That is why an application's `main` returns `Result` and almost never calls `unwrap`.

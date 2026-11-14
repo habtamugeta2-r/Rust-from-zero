@@ -243,11 +243,9 @@ Putting `//` in front of a line of code switches it off without deleting it. Pro
 | `cargo build --release` | Compiles a slower-to-build but much faster-running version | When you give the program to others |
 | `cargo test` | Runs your unit and integration tests | After every change once you write tests |
 | `cargo fmt` | Tidies the layout of your code | Before you save your work |
-| `cargo clippy` | Checks for common mistakes and suggests cleaner Rust | Regularly as your code grows |
+| `cargo clippy` | Checks for common mistakes and suggests cleaner Rust | Regularly before sharing your code |
 
-Notice that formatting (`cargo fmt`), linting (`cargo clippy`), and testing (`cargo test`) are built in from day one. You will use `cargo fmt` and `cargo test` long before you need any advanced Rust features, and Part 8 ([chapter 34](#cargo) through [chapter 36](#testing-strategies)) covers this everyday engineering workflow in depth.
-
-The finished program is an ordinary file. `cargo build` puts it in the `target/debug` folder (named `hello_rust`, or `hello_rust.exe` on Windows). You could copy that one file to a friend with the same kind of computer and they could run it without installing Rust.
+Formatting (`cargo fmt --check`), testing (`cargo test`), and linting (`cargo clippy`) are built in from day one. You will use these commands long before any advanced Rust features, and Part 8 ([chapter 34](#cargo) through [chapter 36](#testing-strategies)) covers this everyday engineering workflow in depth.
 
 :::plain Debug and release
 A **debug build** (the default) compiles quickly but runs slowly, and it contains extra information that helps you find bugs. A **release build** (`--release`) takes longer to compile because the compiler works hard to make the program fast. Use debug while you develop and release for the final program. The speed difference can be ten times or more.
