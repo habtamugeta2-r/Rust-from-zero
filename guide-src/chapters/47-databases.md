@@ -69,7 +69,7 @@ You will meet `JOIN`, `GROUP BY` and transactions further down.
 
 ## SQLx: SQL with Rust types
 
-**SQLx** is the most popular database library for async Rust. You write plain SQL, and SQLx sends it, fills in the parameters, and converts the rows into Rust values. It supports SQLite, PostgreSQL and MySQL.
+**SQLx** is a widely used SQL toolkit for async Rust. You write plain SQL, and SQLx sends it, fills in the parameters, and converts the rows into Rust values. It supports SQLite, PostgreSQL and MySQL.
 
 ```toml
 [dependencies]

@@ -8,8 +8,8 @@
 
 You have used Cargo since chapter 2: `cargo new`, `cargo run`, `cargo test`, `cargo add`. Cargo is Rust's build tool and package manager in one, and one of the main reasons the language is pleasant to use. This chapter covers the rest of what a working Rust programmer needs from it.
 
-:::analogy A kitchen and its order list
-A restaurant kitchen works because every tool has an appointed place and the order list says what to buy and in what quantity. `Cargo.toml` is that list: what the project is, which ingredients it needs and in which versions, and which cooking modes it supports. `cargo` is the kitchen that reads the list and does the work.
+:::analogy A project control tower
+Cargo is the system that keeps the whole airport moving: which package is in the build, which versions are allowed, which features are active, and which test command the team is running. It turns a pile of files into a repeatable build.
 :::
 
 ## The layout of a package

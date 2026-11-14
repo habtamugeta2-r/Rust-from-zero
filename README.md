@@ -27,6 +27,11 @@ output you see in the guide is that captured real output — not something typed
 by hand. Compiler error messages are real diagnostics from a real compiler, on
 the real line numbers.
 
+The ecosystem moves faster than any book: a crate's current version, feature
+flags and supported platforms belong in its own documentation, and every crate
+this guide names is linked to it. Use the guide for the map and the reasons, and
+upstream docs for today's exact numbers.
+
 ## What it deliberately does not cover
 
 "The whole Rust ecosystem" is unbounded, so this guide has a written coverage

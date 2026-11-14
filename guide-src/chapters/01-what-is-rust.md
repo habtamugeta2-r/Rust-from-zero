@@ -185,28 +185,15 @@ You also thought about what could go wrong (no tea bag). That is error handling,
 :::exercise practice Pick your goal
 Write down one thing you would like to build once you know Rust. It can be small: a tool that renames your photo files, a simple game, a website that tracks your reading. Keep the note. A concrete goal makes it much easier to keep going.
 ::hint
-Do not aim for "an app". Aim for the smallest version of it that would already be useful to you on a Tuesday: one screen, one job, no login.
+Choose a project you already care about. A personal problem is easier to motivate than a generic toy project.
 ::solution
 There is no wrong answer. If you cannot think of anything yet, borrow one of these: a quiz game in the terminal, a tool that counts the words in a file, a personal expense tracker, or a small website for a club. You will build something similar to each of them in this guide.
 :::
 
-:::exercise guided Run it, then break it
-You do not need to understand any code yet to do this, and you cannot damage anything. Open the [Rust Playground](https://play.rust-lang.org), replace whatever is in the editor with the program below, and press **Run**:
-
-```rust run
-fn main() {
-    println!("My name is Ada.");
-}
-```
-```output
-My name is Ada.
-```
-
-Now change the words between the quote marks to your own name and run it again. Then delete the closing `"` on the `println!` line and press Run once more. Read what the compiler says before you fix it.
+:::exercise practice Choose the first kind of Rust program you want to build
+Pick a category for your first project: command-line tool, web service, terminal game, desktop app, or small library. Write one sentence explaining why that category fits your goal.
 ::hint
-Only the text inside the double quotes is data. Everything else is punctuation that the compiler needs: the round brackets belong to `println!`, the semicolon ends the instruction, and the quote marks say where the text starts and stops.
+Think about what you want to do with the program, not about the syntax. A CLI is easier to start with if you want a tool for files and folders.
 ::solution
-Your version should print your own sentence, and the guide's version prints `My name is Ada.` because that is the text between the quotes.
-
-When you removed the closing quote, the compiler refused to build the program, and it pointed at the line. The message says, in effect, that a text string was opened and never closed, so the compiler cannot tell where the text ends. Note what happened next: because no program was produced, nothing ran and nothing printed. That is the pattern you will see thousands of times — **a mistake found before the program runs cannot become a bug in a running program**. Fix the quote and the program works again.
+A good answer is specific and connected to a real task. For example: "I want a command-line tool that renames my photos by date, because I have many files and I want a quicker way to organise them." The purpose of the exercise is to turn a vague wish into a project you can finish and learn from.
 :::

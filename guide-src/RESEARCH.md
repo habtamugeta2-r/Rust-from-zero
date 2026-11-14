@@ -113,3 +113,36 @@ Updated as the work goes on. `[x]` = written, compiled with `check.py`, built.
 - [x] **44 cli** — "When the reader leaves early" (broken pipe, verified: `println!` panics with exit code 101, `writeln!` version exits 0); "Running other programs" (`std::process::Command`). *Ideas from: Command Line Applications in Rust, Rust by Example, Rust Cookbook.*
 - [x] **51 performance** — "Smaller tools from the same box": bounds checks (own test: no difference, about 260 ns in all three versions), inlining, `smallvec`, reading machine code, profile-guided optimisation. *Idea from: Performance Book.*
 - [x] Warnings removed from examples in 09, 12, 13; chapter 39 comment on `lto`; chapter 50 sentence on `delta_secs`.
+
+## 4. Audit against the requested ecosystem scope (2026-11-14)
+
+The workspace contains 57 existing source chapters before this update, plus the generated HTML, tools, captured compiler output, drafts and planning/research notes. The editable guide is in `chapters/` and `assets/`; the generated `rust-guide.html` is a bundle and should not be hand-edited. This table records actual depth rather than treating a mention in a comparison table as a complete tutorial.
+
+| Area | Existing coverage | Gap after this update |
+|---|---|---|
+| Language and tools | Ownership, borrowing, lifetimes, traits, generics, async, macros and unsafe have dedicated chapters. Cargo, rustup, Clippy, rustfmt, rust-analyzer and Miri appear in tooling chapters. | Broadly covered, with specialist topics such as Miri's model and advanced compiler/toolchain internals better served by their primary docs. |
+| Web | Axum has the deepest server walkthrough and is used by the API project. Actix Web and Rocket already had runnable route handlers; this update adds setup/run examples. Warp now has a standalone filter-based server. | Axum remains substantially deeper. The other three do not yet each have a production-scale, database-backed project, exhaustive error/middleware walkthrough and deployment track. |
+| Async runtimes | Tokio has a dedicated chapter and production service examples. smol is introduced as an alternative; Embassy is covered in embedded material. | async-std is discontinued, not a recommended new-runtime track. There is no separate end-to-end smol application; runtime interoperability needs project-specific validation. |
+| Databases and ORM | SQLx has extensive SQL, migrations, tests and a working SQLite service. Diesel and SeaORM have examples and comparisons. | Diesel and SeaORM do not have complete parallel projects; the SQLx project remains the reference path. |
+| Serialization | Serde covers JSON, TOML and CSV, with JSON persistence in a CLI project. This update adds a MessagePack round trip and a maintenance warning for bincode. | Postcard is mapped and its use case explained, but there is no complete embedded wire-protocol project or compatibility matrix. |
+| CLI | clap has a full to-do application. This update adds a Dialoguer confirmation and Indicatif progress example. | The prompt/progress sample demonstrates integration and a dry run, not a full interactive application or terminal-width/accessibility treatment. |
+| Errors and logging | `Result`, `thiserror`, `anyhow` and `tracing` already have applied examples. This update adds eyre, miette and `log`/`env_logger` usage. | Advanced custom miette diagnostics and production telemetry/metrics/export pipelines remain topics for upstream references. |
+| Testing and HTTP clients | Built-in tests, property testing, Mockall and Criterion have examples. reqwest has practical async requests; this update adds a synchronous ureq example. | Existing mocks and benchmarks are not expanded here into a single larger, multi-service testing project. |
+| FFI and interop | C ABI, wasm-bindgen and PyO3 are covered in the FFI and applications chapters. | The examples introduce the boundaries but do not constitute a complete maintained Python package release and cross-language integration suite. |
+| Embedded and no_std | no_std layers, embedded-hal, Embassy and an emulator are covered. | Hardware-specific steps vary by board. Physical-board validation and production firmware updates are outside the emulator walkthrough. |
+| GUI and games | egui, iced, Bevy and a small playable game are represented with runnable or tested examples. This update adds current maturity cautions. | Packaging, long-term toolkit migrations, accessibility and platform signing are not end-to-end for each toolkit. |
+| Delivery and operations | The existing guide has CI and container introductions. This update adds a release capstone with workflow, container, Nix development shell and cross-compilation steps. | Cloud-specific deployment, secret-manager setup, orchestration, real release publication, observability and disaster recovery remain operator-specific. |
+
+### Outdated material corrected
+
+- `async-std` documentation now explicitly says the project is discontinued and recommends migration to smol; the guide marks it as legacy rather than a new-project default.
+- The current bincode crate documentation says it is unmaintained; current serialization guidance no longer recommends it for new work.
+- The old `rustwasm.github.io` wasm-bindgen docs domain is no longer maintained. The chapter points to `wasm-bindgen.github.io`.
+- Unsupported popularity superlatives were softened. Project use and fitness should be chosen from requirements, not benchmark or adoption claims alone.
+- The plan's output paths and screenshot helper were made repository-relative instead of relying on `/home/user/rust-guide.html`.
+
+### Sources checked for this update
+
+The Rust Book, Reference, Rustonomicon, Rust by Example, Cargo Book and rustup documentation; the official Tokio, Axum, Actix Web, Rocket, Warp, SQLx, Diesel, SeaORM, Serde, clap, error-reporting, logging, testing, HTTP, wasm-bindgen, PyO3, embedded-hal, Embassy, egui, iced and Bevy documentation; the crates.io package metadata for version and maintenance checks; Zero To Production in Rust; Are We Web Yet?; Awesome Rust; Cross, GitHub Actions, Docker and Nix documentation. Direct links are collected in [chapter 91](./chapters/91-reference.md).
+
+The prose and examples added for this update are original explanations and demonstrations; upstream materials are linked for verification rather than copied. Crate versions and support change independently of the Rust language. Recheck a crate's changelog, MSRV, target support, features, license and maintenance before adopting it.

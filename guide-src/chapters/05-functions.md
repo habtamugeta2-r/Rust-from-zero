@@ -243,12 +243,12 @@ fn mystery(a: i32) -> i32 {
 - Because functions run faster with types
 = The compiler infers types inside function bodies, but signatures are fixed contracts. You can understand how to use a function from its signature alone.
 
-? A function promises `-> i32`, but its body ends with `b + 1;` — with a semicolon. What happens?
-- Nothing; the semicolon is ignored
-+ The compiler reports a type mismatch: the function produces `()` but promised `i32`
-- The program panics when it runs
-- The function returns `b`
-= A semicolon turns the final expression into a statement, and a statement produces no value. The function's value is then `()`, the empty tuple, which is not an `i32`. Delete the semicolon and the mismatch disappears — this is one of the most common early Rust mistakes.
+? Why does returning a value usually make a function easier to reuse?
+- Because a function can print only once
+- Because return values are stored on the stack automatically
++ Because the caller can decide what to do with the result and combine it with other work
+- Because printing values is faster than computing them
+= A function that returns a value can be used in expressions, assigned to variables, or tested. That makes it composable.
 :::
 
 :::exercise guided Your first function with a result

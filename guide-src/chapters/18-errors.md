@@ -4,7 +4,7 @@
 @short Error handling
 @level intermediate
 @time 55
-@learn Tell apart errors a program should recover from and bugs that should stop it | Return, handle and pass on errors with `Result` and the `?` operator | Read and write files | Define your own error type | Choose between `panic!`, `Option` and `Result`, and know the crates `anyhow` and `thiserror`
+@learn Tell apart errors a program should recover from and bugs that should stop it | Return, handle and pass on errors with `Result` and the `?` operator | Read and write files | Define your own error type | Choose between `panic!`, `Option` and `Result`, and compare `anyhow`, `thiserror`, `eyre` and `miette`
 
 Things go wrong. A file is missing, the user types letters where a number belongs, the network is down. A good program expects this and reacts sensibly. Rust takes an unusual and very deliberate approach: errors are **ordinary values** that functions return, and the compiler makes sure you do not ignore them.
 
@@ -499,9 +499,9 @@ Caused by:
 **`miette`** is different. An error can carry a **diagnostic**: a severity, a help text, a link, and even a snippet of the offending source with the offending part underlined. `miette` is the choice for developer tools — linters, code generators, compilers — whose users appreciate compiler-style reports.
 
 ```toml
-eyre = "0.10"
+eyre = "0.6"
 color-eyre = "2.1"   # optional: coloured reports and source locations
-miette = "9.1"
+miette = { version = "7", features = ["fancy"] }   # `fancy` adds the rich renderer
 ```
 
 `eyre` in an application. `wrap_err` adds context; `wrap_err_with` builds the context lazily, only when there is an error. The program below is written deliberately without a `settings.toml`, so that you can see what the user would see:
@@ -534,12 +534,12 @@ fn main() -> eyre::Result<()> {
 }
 ```
 
-After that, every error and every panic prints in colour, with the file and line where it happened.
+After that, every error and every panic prints in colour, with the file and line where it happened. Pick one application-report ecosystem for a program and stay in it; converting between `anyhow`, `eyre` and `Box<dyn Error>` at every layer adds code and loses causes.
 
 ```toml
 [dependencies]
-miette = "9.1"
-thiserror = "1.0"
+miette = { version = "7", features = ["fancy"] }
+thiserror = "2.0"
 ```
 
 `miette` in a library. The `#[derive(Diagnostic)]` attribute turns an error into a diagnostic:
@@ -683,6 +683,7 @@ Avoid patterns that throw an error away without a decision: `let _ = risky();`, 
 - `std::fs` reads and writes files. Every operation returns a `Result`.
 - A custom error enum lists the ways a function can fail. `Display` gives the message, and `From` lets `?` convert other errors into it. `thiserror` generates this code.
 - `Box<dyn Error>` and `anyhow` hold any error, which is convenient in applications.
+- `eyre` is another flexible application report with customizable handlers; `miette` is useful when a command-line user benefits from structured diagnostics and source snippets.
 :::
 
 :::quiz Check your understanding

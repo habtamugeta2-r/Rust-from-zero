@@ -10,8 +10,8 @@ So far you have used types to describe data. Experienced Rust programmers use th
 
 This chapter first completes the picture of conversions between types, then presents the less obvious types of the language, and ends with the design techniques that tie them together.
 
-:::analogy A form that must be stamped in order
-An airport check-in form has boxes: luggage paid, seat chosen, boarding pass issued. You cannot have the last box stamped first, because the form is not yet the right shape. The typestate pattern later in this chapter does that with types: each stamp is a new type, and the compiler refuses any step taken out of order.
+:::analogy Labels on shipping boxes
+Every value in Rust carries a type label. A newtype is a label that says, "this is not just a number; it is a percentage, a distance, or an amount in a specific unit." The compiler checks the label before the code runs, so many dangerous mistakes are impossible to write.
 :::
 
 ## Converting between types

@@ -8,8 +8,8 @@
 
 [Chapter 20](#traits) covered the everyday use of traits. This chapter collects the features you meet when you read the standard library, design a library of your own, or wonder how `a + b` works for your own type. You can read it once now and come back when you need a particular tool.
 
-:::analogy One delivery company, many vehicles
-A trait says "anything that delivers". With an associated type, each company fits its own vehicle and the caller finds out which one only by asking the company. With a generic parameter, *you* choose the vehicle at the call site. The trait is the same; the difference is who gets to pick the details, and that one decision changes which types you are able to write.
+:::analogy A manager with special rules
+A trait is like a job description: it says what a type must be able to do. Associated types are the extra details that each person in that role supplies, like "this team produces numbers, that team produces strings".
 :::
 
 ## Associated types

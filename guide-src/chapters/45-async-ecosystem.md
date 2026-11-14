@@ -1,10 +1,10 @@
 @id async-ecosystem
 @part p10
-@title Concurrency in practice: Rayon, Tokio, streams, reqwest and tower
-@short Rayon, Tokio, reqwest, tower
+@title Concurrency in practice: Rayon, Tokio, streams, HTTP clients and tower
+@short Rayon, Tokio, HTTP clients, tower
 @level advanced
 @time 80
-@learn Use all processor cores for a computation with Rayon | Set up a Tokio runtime, run heavy work beside it, and shut it down cleanly | Process values that arrive over time with streams | Call web APIs with reqwest | Add timeouts and limits with tower layers
+@learn Use all processor cores for a computation with Rayon | Set up a Tokio runtime, run heavy work beside it, and shut it down cleanly | Process values that arrive over time with streams | Call web APIs with async reqwest or blocking ureq | Add timeouts and limits with tower layers
 
 Part 7 explained the machinery of concurrency: threads, locks, channels and async tasks. In daily work you rarely build on that machinery directly. A handful of crates package the common patterns, and this chapter is a tour of them.
 
@@ -908,59 +908,6 @@ is_decode: true
 reqwest has no time limit by default. A request to a server that never answers waits for ever, and so does your task. Set `.timeout(…)` on the client.
 :::
 
-### A smaller client: `ureq`
-
-reqwest is powerful, and it needs Tokio. A script or a command-line tool often does not want an async runtime at all. **ureq** is a minimal, blocking HTTP client: one call does the whole request and waits for the answer.
-
-```toml
-ureq = "2.11"
-```
-
-A tiny server and a client that talks to it, all in one program:
-
-```rust ext run
-use std::io::Write;
-use std::net::TcpListener;
-use std::thread;
-
-fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let listener = TcpListener::bind("127.0.0.1:0")?;
-    let address = listener.local_addr()?;
-
-    thread::spawn(move || {
-        if let Ok((mut stream, _)) = listener.accept() {
-            let _ = stream.write_all(
-                b"HTTP/1.1 200 OK\r\ncontent-type: text/plain\r\ncontent-length: 11\r\n\r\nhello, ureq",
-            );
-        }
-    });
-
-    let response = ureq::get(&format!("http://{address}/"))
-        .timeout(std::time::Duration::from_secs(5))
-        .call()?;
-
-    println!("status: {}", response.status());
-    println!("{}", response.into_string()?);
-    Ok(())
-}
-```
-
-```output
-status: 200
-hello, ureq
-```
-
-- `.call()` performs the request and waits. No `async`, no `await`, no runtime.
-- `response.status()` is the status code, and `into_string()` reads the whole body as text.
-- `timeout` sets an upper bound: a server that never answers does not wait forever.
-- Other builders: `.set("header", "value")` for headers, `.send_json(&value)` for a JSON body, and `ureq::Agent` to reuse connections across many requests (the equivalent of reqwest's `Client`).
-
-| | reqwest | ureq |
-|---|---|---|
-| Async | yes, on Tokio | no |
-| Best fit | services, many requests at once | scripts and command-line tools |
-
-Choose reqwest for a server or for many requests at once; choose ureq when a small dependency and no runtime matter more.
 
 
 ### Many requests at once
@@ -1077,6 +1024,34 @@ The practice server answers number 5 only after two seconds, and number 7 with a
 :::note Encrypted connections
 An address that starts with `https://` is encrypted with **TLS**. reqwest handles this for you. In version 0.13 it uses `rustls` by default, a TLS library written in Rust, so that no system library has to be installed. For a small script that needs no async code, `reqwest::blocking` offers the same API without `await` (enable the feature `blocking`). The crate `ureq` is a smaller, blocking alternative.
 :::
+
+### `ureq`: a synchronous HTTP client
+
+Choose `ureq` when a command-line program makes a few HTTP calls and a blocking request is simpler than introducing an async runtime. It is not a faster way to make many concurrent requests: while a call waits, its current thread is blocked. Its `Agent` owns reusable client configuration and a connection pool; borrow one agent across calls instead of rebuilding a client each time.
+
+```toml
+[dependencies]
+ureq = "3.5.2"
+```
+
+```rust ext check
+use std::error::Error;
+
+fn main() -> Result<(), Box<dyn Error>> {
+    let agent = ureq::agent();
+    let mut response = agent
+        .get("https://example.com")
+        .header("accept", "text/html")
+        .call()?;
+
+    let status = response.status();
+    let body = response.body_mut().read_to_string()?;
+    println!("HTTP {status}, {} bytes", body.len());
+    Ok(())
+}
+```
+
+`call()` and body reading both return errors, so `?` reports connection, protocol and I/O failures. Check the returned status before treating a body as successful application data; an HTTP response such as 404 is not the same kind of failure as a DNS or TLS error. Configure request timeouts and response-size limits for the service you call. In an async Tokio handler, do not call this blocking client directly on an executor thread; use async `reqwest` or deliberately isolate blocking work with `spawn_blocking`.
 
 ## tower: layers around a service
 
@@ -1354,7 +1329,11 @@ A brand-new service does not need a full observability stack. It needs: one stru
 | Cheap shared byte buffers | `bytes` (`Bytes`, `BytesMut`) |
 | E-mail | `lettre` |
 | DNS | `hickory-resolver` |
-| Other async runtimes | `smol` (small and simple), `embassy` (for microcontrollers, [chapter 50](#games-embedded)) |
+| Other async runtimes | `smol` (small and composable), `async-std` (legacy projects; discontinued), `embassy` (microcontrollers, [chapter 50](#games-embedded)) |
+
+:::warn Runtime status matters
+`async-std` is discontinued: its maintainers recommend that existing users migrate to `smol` rather than expecting continued development. It remains relevant when reading older projects or a dependency that still supports it, but it is not a good default for a new application. `smol` is a small runtime assembled from focused crates; it is not a drop-in promise that every Tokio library can run unchanged. Check each library's runtime features and I/O traits before mixing ecosystems. For a new network service, Tokio remains the broadest default in this guide.
+:::
 
 ## When services talk by message
 
@@ -1443,6 +1422,7 @@ You will meet the type in compiler messages before you meet it in documentation 
 - `CancellationToken` and `TaskTracker` give a graceful shutdown.
 - A stream is an async iterator. `map(…).buffer_unordered(n)` runs up to `n` operations at once.
 - reqwest sends HTTP requests. Reuse one `Client`, set a timeout, and check the status.
+- `ureq` is a synchronous client for simple programs; do not block a Tokio executor thread with it.
 - tower wraps services in layers such as timeouts and limits. The same layers work across the ecosystem.
 - Production needs three signals: logs (what happened), metrics (how much, how fast) and traces (where the time went). Metrics find the problem, traces locate it, logs explain it.
 - Log one structured JSON line per event, never log secrets, and expose RED metrics with a duration histogram. Averages hide latency; look at p99.

@@ -10,8 +10,8 @@ Rust's standard library is small on purpose. It has no random numbers, no regula
 
 This chapter shows how to find and judge crates, and introduces the ones you will use in almost every project. The chapters after it go deeper into the main areas: data formats, command-line tools, async and web, databases, and applications.
 
-:::analogy A hardware shop, not a forge
-You could mine the iron and forge every screw yourself. You do not: you buy the screw, because a specialist makes a better screw than you will this afternoon. Crates are those screws. The skill is not making them. It is walking into the shop knowing which shelf to go to, and how to check that the box has not been tampered with.
+:::analogy A toolbox with a label on every drawer
+The standard library is the set of tools that comes with the workbench. Crates are the tools you choose for a particular job. A label helps you reach for the right tool, but before using one you still check that it fits, is maintained, and has no hidden damage. In the same way, learn a crate's job and check its source, docs, dependencies and release history before trusting it in a project.
 :::
 
 ## Where to look
@@ -394,6 +394,8 @@ hides `info` and `debug`. The filter is a pattern: `mycrate=debug` shows debug m
 A library logs; an application decides where the logs go. `log` and `tracing` both leave the decision to `main`. A library that calls `println!` forces its output on everybody.
 :::
 
+A few rules keep logging sane in a program of any size. The logger is initialised once, at start-up, and the *application* does the initialising — a library that called `init()` would take the decision away from the program that links it, and two libraries both doing it is a panic. Filtering can also be per module: `RUST_LOG=my_app::store=debug,my_app=info` shows `info` and above everywhere, but `debug` from `my_app::store` only, which is how you raise the detail on the part you are debugging without drowning in everything else.
+
 ## A map of the ecosystem
 
 The standard choice for each common task. Where two are listed, both are good, and the first is the more widely used.
@@ -401,7 +403,7 @@ The standard choice for each common task. Where two are listed, both are good, a
 | Task | Crates |
 |---|---|
 | Error handling | `anyhow` (applications), `thiserror` (libraries) |
-| Serialisation | `serde` with `serde_json`, `toml`, `serde_yaml`, `csv`, `bincode`, `postcard` |
+| Serialisation | `serde` with `serde_json`, `toml`, `csv`, `rmp-serde`, `postcard` |
 | Command-line arguments | `clap` |
 | Terminal output | `indicatif` (progress bars), `colored` or `owo-colors`, `ratatui` (full-screen interfaces) |
 | Async runtime | `tokio` |
@@ -475,6 +477,7 @@ Each dependency is code you did not write, running with all the rights of your p
 - The standard library is small. Most functionality comes from crates on crates.io, documented on docs.rs.
 - Judge a crate by use, maintenance, documentation, dependencies, licence and version.
 - `rand` for randomness, `regex` for text patterns, `chrono` for dates, `itertools` for extra iterator methods, `tracing` for logging.
+- `log` is a logging facade for libraries; an application can install `env_logger` and let `RUST_LOG` control its output.
 - For every common task there is a well-known standard crate. The table in this chapter is your map.
 - Keep dependencies few, current and audited.
 :::

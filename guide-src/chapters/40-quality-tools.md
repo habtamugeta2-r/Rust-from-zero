@@ -8,8 +8,8 @@
 
 A compiler that catches many mistakes is the first layer of quality. Rust's standard tools add more layers, and all of them come with the normal installation. Professional Rust projects run them on every change. Learning them early also makes you a better Rust programmer, because they explain what they find.
 
-:::analogy Spell check, grammar check, then a human editor
-A word processor fixes spelling as you type, suggests grammar after that, and a person still reads the result before it is published. Rust gives you those three layers: `rustfmt` for spelling (layout), Clippy for grammar (suspicious and unidiomatic code), and tests for meaning (does it do the job). Each layer sees a class of mistake the others cannot.
+:::analogy A kitchen check before service
+A chef does not wait until the restaurant is full to inspect the pans. Quality tools are the same: they scan the code before the pressure is high, telling you if the style is consistent or if something looks suspicious.
 :::
 
 ## rustfmt: one style for everyone

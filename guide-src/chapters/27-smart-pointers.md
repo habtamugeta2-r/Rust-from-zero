@@ -8,8 +8,8 @@
 
 A reference (`&T`) borrows a value and does nothing else. A **smart pointer** is a type that also points to data, but in addition **owns** it and adds some extra ability. You already know two: `String` and `Vec<T>` own a block of heap memory and manage it for you. This chapter introduces the smart pointers that are about ownership itself.
 
-:::analogy Four kinds of key to the same store room
-`Box` is your own locked room with one key: whoever holds the key owns everything inside, and the room is emptied when they leave. `Rc` is a shared flat where every flatmate gets a copy of the key, and the room is cleared only when the last of them leaves. `Weak` is a visitor pass: it can look in, but it does not keep the room alive. `RefCell` is a room with a sign on the door, "free" or "occupied", checked while you are there rather than at the door.
+:::analogy A smart keycard
+A smart pointer is like a keycard that both opens a room and keeps track of who is allowed to use it. It points to the right place and carries extra rules about ownership, borrowing and cleanup.
 :::
 
 | Type | In one sentence |

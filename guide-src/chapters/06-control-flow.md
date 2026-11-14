@@ -8,8 +8,8 @@
 
 A program that always runs the same lines in the same order cannot do much. Real programs **decide** (if the password is right, let the user in) and **repeat** (do this for every item in the list). Together these are called **control flow**: they control which line runs next. With sequence, decision and repetition you can express any computation.
 
-:::analogy A recipe with branches
-"Beat the eggs. If the mixture looks dry, add a spoonful of milk; otherwise leave it." A recipe is not one straight list of steps. It hands you a small decision, and which step comes next depends on what you find in the bowl. Programs are full of such forks.
+:::analogy A crossroads with signs
+When you reach a junction, a sign tells you which road to take. A program is the same. It reaches a condition and chooses one path, not several. The road signs are the `if`, `else if`, and `else` branches.
 :::
 
 ## Decisions with `if`
