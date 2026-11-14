@@ -6198,7 +6198,7 @@ Caused by:
 <figure class="code lang-toml"><figcaption class="code-head"><span class="code-lang">TOML</span><span class="code-actions"><button type="button" class="cbtn btn-copy" title="Copy this code"><svg class="i " aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button></span></figcaption><pre><code>eyre = <span class="s">"0.10"</span>
 color-eyre = <span class="s">"2.1"</span>   <span class="c"># optional: coloured reports and source locations</span>
 miette = <span class="s">"9.1"</span></code></pre></figure>
-<p><code>eyre</code> in an application. <code>wrap_err</code> adds context; <code>wrap_err_with</code> builds the context lazily, only when there is an error:</p>
+<p><code>eyre</code> in an application. <code>wrap_err</code> adds context; <code>wrap_err_with</code> builds the context lazily, only when there is an error. The program below is written deliberately without a <code>settings.toml</code>, so that you can see what the user would see:</p>
 <figure class="code lang-rust"><figcaption class="code-head"><span class="code-lang">Rust</span><span class="code-actions"><button type="button" class="cbtn btn-copy" title="Copy this code"><svg class="i " aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button></span></figcaption><pre><code><span class="k">use</span> eyre::{<span class="t">Context</span>, <span class="t">Result</span>};
 
 <span class="k">fn</span> <span class="f">main</span>() -&gt; <span class="t">Result</span>&lt;()&gt; {
@@ -6210,6 +6210,7 @@ miette = <span class="s">"9.1"</span></code></pre></figure>
     <span class="t">Ok</span>(())
 }</code></pre></figure>
 <figure class="code lang-output out"><figcaption class="code-head"><span class="code-lang">Output</span><span class="code-actions"></span></figcaption><pre><code>Error: could not read the settings file: No such file or directory (os error 2)</code></pre></figure>
+<p>Nothing in <code>main</code> formats an error: returning <code>Err</code> from <code>main</code> makes the runtime print the report, context first, and exit with a non-zero code. That is why an application’s <code>main</code> returns <code>Result</code> and almost never calls <code>unwrap</code>.</p>
 <p><code>color-eyre</code> installs itself once, at the start of <code>main</code>:</p>
 <figure class="code lang-rust"><figcaption class="code-head"><span class="code-lang">Rust</span><span class="code-actions"><button type="button" class="cbtn btn-copy" title="Copy this code"><svg class="i " aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button></span></figcaption><pre><code><span class="k">fn</span> <span class="f">main</span>() -&gt; eyre::<span class="t">Result</span>&lt;()&gt; {
     color_eyre::<span class="f">install</span>()?;

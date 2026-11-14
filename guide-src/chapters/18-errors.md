@@ -504,9 +504,9 @@ color-eyre = "2.1"   # optional: coloured reports and source locations
 miette = "9.1"
 ```
 
-`eyre` in an application. `wrap_err` adds context; `wrap_err_with` builds the context lazily, only when there is an error:
+`eyre` in an application. `wrap_err` adds context; `wrap_err_with` builds the context lazily, only when there is an error. The program below is written deliberately without a `settings.toml`, so that you can see what the user would see:
 
-```rust ext run
+```rust ext check
 use eyre::{Context, Result};
 
 fn main() -> Result<()> {
@@ -522,6 +522,8 @@ fn main() -> Result<()> {
 ```output
 Error: could not read the settings file: No such file or directory (os error 2)
 ```
+
+Nothing in `main` formats an error: returning `Err` from `main` makes the runtime print the report, context first, and exit with a non-zero code. That is why an application's `main` returns `Result` and almost never calls `unwrap`.
 
 `color-eyre` installs itself once, at the start of `main`:
 
