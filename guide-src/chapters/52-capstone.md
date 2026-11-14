@@ -289,7 +289,9 @@ impl LibraryError {
 The store owns the SQLx pool. Every query lives here, so the rest of the program never sees SQL. A `Library` handle is cheap to clone because it holds an `Arc` inside the pool.
 
 ```rust proj=library file=src/store.rs
-use sqlx::sqlite::SqlitePoolOptions;
+use std::str::FromStr;
+
+use sqlx::sqlite::{SqliteConnectOptions, SqlitePoolOptions};
 use sqlx::FromRow;
 use sqlx::SqlitePool;
 
@@ -305,17 +307,20 @@ pub struct Store {
 impl Store {
     /// Opens (or creates) the SQLite database file and applies pending migrations.
     pub async fn open(path: &str) -> Result<Store, LibraryError> {
+        let options = SqliteConnectOptions::from_str(path)
+            .map_err(LibraryError::Database)?
+            .create_if_missing(true);
         let connections = if path == "sqlite::memory:" { 1 } else { 5 };
         let pool = SqlitePoolOptions::new()
             .max_connections(connections)
-            .connect(path)
+            .connect_with(options)
             .await
             .map_err(LibraryError::Database)?;
 
         sqlx::migrate!()
             .run(&pool)
             .await
-            .map_err(LibraryError::Database)?;
+            .map_err(sqlx::Error::from)?;
 
         Ok(Store { pool })
     }
@@ -627,10 +632,10 @@ The rules reject bad input *before* it reaches the database. `set_rating` conver
 The routes turn HTTP requests into calls on the `Library`. Errors become uniform JSON responses.
 
 ```rust proj=library file=src/routes.rs
-use axum::extract::{Path, State, Query};
+use axum::extract::{Path, Query, State};
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
-use axum::routing::{delete, get, patch, post};
+use axum::routing::get;
 use axum::{Json, Router};
 use serde::Deserialize;
 use serde_json::json;
@@ -667,7 +672,7 @@ impl IntoResponse for LibraryError {
                 )
             }
         };
-        (status, Json(json!({"error": message}))).into_response()
+        (status, Json(ErrorBody { error: message })).into_response()
     }
 }
 

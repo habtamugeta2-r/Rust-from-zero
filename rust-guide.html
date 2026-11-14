@@ -28219,7 +28219,9 @@ tower = { version = <span class="s">"0.5"</span>, features = [<span class="s">"u
 }</code></pre></figure>
 <h2 id="capstone--step-3-the-store">Step 3: the store</h2>
 <p>The store owns the SQLx pool. Every query lives here, so the rest of the program never sees SQL. A <code>Library</code> handle is cheap to clone because it holds an <code>Arc</code> inside the pool.</p>
-<figure class="code lang-rust"><figcaption class="code-head"><span class="code-lang">Rust</span><span class="code-file">src/store.rs</span><span class="code-actions"><button type="button" class="cbtn btn-copy" title="Copy this code"><svg class="i " aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button></span></figcaption><pre><code><span class="k">use</span> sqlx::sqlite::<span class="t">SqlitePoolOptions</span>;
+<figure class="code lang-rust"><figcaption class="code-head"><span class="code-lang">Rust</span><span class="code-file">src/store.rs</span><span class="code-actions"><button type="button" class="cbtn btn-copy" title="Copy this code"><svg class="i " aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button></span></figcaption><pre><code><span class="k">use</span> std::<span class="t">str</span>::<span class="t">FromStr</span>;
+
+<span class="k">use</span> sqlx::sqlite::{<span class="t">SqliteConnectOptions</span>, <span class="t">SqlitePoolOptions</span>};
 <span class="k">use</span> sqlx::<span class="t">FromRow</span>;
 <span class="k">use</span> sqlx::<span class="t">SqlitePool</span>;
 
@@ -28235,17 +28237,20 @@ tower = { version = <span class="s">"0.5"</span>, features = [<span class="s">"u
 <span class="k">impl</span> <span class="t">Store</span> {
     <span class="c">/// Opens (or creates) the SQLite database file and applies pending migrations.
 </span>    <span class="k">pub</span> <span class="k">async</span> <span class="k">fn</span> <span class="f">open</span>(path: &amp;<span class="t">str</span>) -&gt; <span class="t">Result</span>&lt;<span class="t">Store</span>, <span class="t">LibraryError</span>&gt; {
+        <span class="k">let</span> options = <span class="t">SqliteConnectOptions</span>::<span class="f">from_str</span>(path)
+            .<span class="f">map_err</span>(<span class="t">LibraryError</span>::<span class="t">Database</span>)?
+            .<span class="f">create_if_missing</span>(<span class="k">true</span>);
         <span class="k">let</span> connections = <span class="k">if</span> path == <span class="s">"sqlite::memory:"</span> { <span class="n">1</span> } <span class="k">else</span> { <span class="n">5</span> };
         <span class="k">let</span> pool = <span class="t">SqlitePoolOptions</span>::<span class="f">new</span>()
             .<span class="f">max_connections</span>(connections)
-            .<span class="f">connect</span>(path)
+            .<span class="f">connect_with</span>(options)
             .<span class="k">await</span>
             .<span class="f">map_err</span>(<span class="t">LibraryError</span>::<span class="t">Database</span>)?;
 
         sqlx::<span class="m">migrate</span>!()
             .<span class="f">run</span>(&amp;pool)
             .<span class="k">await</span>
-            .<span class="f">map_err</span>(<span class="t">LibraryError</span>::<span class="t">Database</span>)?;
+            .<span class="f">map_err</span>(sqlx::<span class="t">Error</span>::from)?;
 
         <span class="t">Ok</span>(<span class="t">Store</span> { pool })
     }
@@ -28538,10 +28543,10 @@ tower = { version = <span class="s">"0.5"</span>, features = [<span class="s">"u
 <p>The rules reject bad input <em>before</em> it reaches the database. <code>set_rating</code> converts a plain <code>u32</code> into a <code>Rating</code>, which is only valid between 1 and 5 — so a book can never have a rating of 0 or 99, whatever calls the rules.</p>
 <h2 id="capstone--step-5-the-routes">Step 5: the routes</h2>
 <p>The routes turn HTTP requests into calls on the <code>Library</code>. Errors become uniform JSON responses.</p>
-<figure class="code lang-rust"><figcaption class="code-head"><span class="code-lang">Rust</span><span class="code-file">src/routes.rs</span><span class="code-actions"><button type="button" class="cbtn btn-copy" title="Copy this code"><svg class="i " aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button></span></figcaption><pre><code><span class="k">use</span> axum::extract::{<span class="t">Path</span>, <span class="t">State</span>, <span class="t">Query</span>};
+<figure class="code lang-rust"><figcaption class="code-head"><span class="code-lang">Rust</span><span class="code-file">src/routes.rs</span><span class="code-actions"><button type="button" class="cbtn btn-copy" title="Copy this code"><svg class="i " aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button></span></figcaption><pre><code><span class="k">use</span> axum::extract::{<span class="t">Path</span>, <span class="t">Query</span>, <span class="t">State</span>};
 <span class="k">use</span> axum::http::<span class="t">StatusCode</span>;
 <span class="k">use</span> axum::response::{<span class="t">IntoResponse</span>, <span class="t">Response</span>};
-<span class="k">use</span> axum::routing::{delete, get, patch, post};
+<span class="k">use</span> axum::routing::get;
 <span class="k">use</span> axum::{<span class="t">Json</span>, <span class="t">Router</span>};
 <span class="k">use</span> serde::<span class="t">Deserialize</span>;
 <span class="k">use</span> serde_json::json;
@@ -28578,7 +28583,7 @@ tower = { version = <span class="s">"0.5"</span>, features = [<span class="s">"u
                 )
             }
         };
-        (status, <span class="t">Json</span>(<span class="m">json</span>!({<span class="s">"error"</span>: message}))).<span class="f">into_response</span>()
+        (status, <span class="t">Json</span>(<span class="t">ErrorBody</span> { error: message })).<span class="f">into_response</span>()
     }
 }
 
