@@ -1364,7 +1364,7 @@ The four things a queue buys you:
 - **Load levelling.** Ten thousand uploads in a minute become ten thousand jobs in a queue, processed at the rate the workers can manage, instead of ten thousand timeouts.
 - **Decoupling.** The service that creates the order does not need to know which services care. It publishes `order.created`; the e-mail service, the warehouse and the analytics pipeline subscribe.
 - **Retries.** A message that fails is redelivered later, without the user pressing the button again.
-- **Backpressure with a memory.** The queue holds the overflow, and its depth is a gauge you can watch ([the section above](#async-ecosystem)).
+- **Backpressure with a memory.** The queue holds the overflow, and its depth is a value you can expose as a gauge (the section above shows how).
 
 ### The vocabulary
 
