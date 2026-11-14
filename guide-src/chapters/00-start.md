@@ -1,6 +1,7 @@
 @id start
 @part welcome
 @title How to use this guide
+@short How to use this guide
 @level beginner
 @time 8
 @learn Find your way around the guide and its interactive parts | Follow a study routine that makes new knowledge stick | Know what to do when you get stuck
@@ -80,8 +81,8 @@ fn main() {
 }
 ```
 
-:::note Every example was tested
-Every Rust example in this guide was compiled with the real Rust compiler (version 1.100, November 2026). The outputs you see were produced by running the code. The examples marked as failing were checked too: they fail in exactly the way the text says.
+:::note Tested examples and reference code
+Standard-library examples and core crate examples marked for verification are compiled against the Rust compiler (edition 2024, targeting Rust 1.100) by `tools/check.py`, and failing examples fail in the way the text describes. Larger multi-file snippets or examples that talk to external services (such as databases, message brokers, or telemetry collectors) are shown as complete reference code.
 :::
 
 ## Exercises, hints and solutions

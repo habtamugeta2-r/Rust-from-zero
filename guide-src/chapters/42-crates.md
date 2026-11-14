@@ -25,6 +25,10 @@ On the command line, `cargo search json` searches the registry, and `cargo info 
 
 ## Judging a crate
 
+:::analogy Choosing parts for a bridge
+Before bolting a third-party girder into a bridge, an engineer checks who manufactured it, whether it has been stress-tested on other bridges, and whether the supplier still answers the phone. Picking a crate from crates.io works the same way: download counts, maintenance activity, documentation, dependency tree weight and licence tell you within two minutes whether you can trust a dependency in production.
+:::
+
 Anyone can publish a crate, so you need to look before you depend on one. A checklist that takes two minutes:
 
 1. **Is it widely used?** The download numbers and the list of "dependents" on crates.io tell you. A crate used by thousands of others has had its bugs found.
@@ -202,6 +206,45 @@ true
 Keep and compare moments in UTC (or as timestamps), and convert to the user's time zone only for display. Mixing local times causes bugs around daylight saving changes. The standard library's `std::time::Instant` is the right tool for measuring how long something takes. Besides `chrono`, the crates `time` and `jiff` are good modern choices. `jiff` is especially careful about time zones.
 :::
 
+#### Parsing RFC 3339, calendar math, and daylight-saving traps
+
+Real APIs exchange timestamps in **RFC 3339 / ISO 8601** (`"2026-11-14T15:30:00Z"` or `"2026-11-14T18:30:00+03:00"`). Always parse timestamps with `DateTime::parse_from_rfc3339` and convert immediately to **`DateTime<Utc>`**:
+
+```rust ext run
+use chrono::{DateTime, Days, Months, NaiveDate, Utc};
+
+fn main() -> Result<(), chrono::ParseError> {
+    // Parse an offset timestamp from an API and normalise to UTC
+    let raw = "2026-11-14T18:30:00+03:00";
+    let utc: DateTime<Utc> = DateTime::parse_from_rfc3339(raw)?.with_timezone(&Utc);
+    println!("UTC: {}", utc.to_rfc3339());
+
+    // Calendar-aware month addition clamps at month-end instead of overflowing
+    let jan31 = NaiveDate::from_ymd_opt(2026, 1, 31).unwrap();
+    let feb28 = jan31.checked_add_months(Months::new(1)).unwrap();
+    let plus_ten = jan31.checked_add_days(Days::new(10)).unwrap();
+    println!("+1 month: {feb28}, +10 days: {plus_ten}");
+    Ok(())
+}
+```
+```output
+UTC: 2026-11-14T15:30:00+00:00
++1 month: 2026-02-28, +10 days: 2026-02-10
+```
+
+Watch out for **daylight saving time (DST)** whenever you convert a naive wall-clock time (`NaiveDateTime`) into a local or named time zone (with `chrono-tz`):
+
+- **A skipped hour ("spring forward")**: `02:30` does not exist on the morning clocks jump from `02:00` to `03:00` — `.from_local_datetime(...)` returns `LocalResult::None`.
+- **A repeated hour ("fall back")**: `01:30` happens twice on the night clocks jump back from `02:00` to `01:00` — `.from_local_datetime(...)` returns `LocalResult::Ambiguous(early, late)`.
+
+Never call `.unwrap()` when turning a naive user-typed local time into a zoned instant; match on `LocalResult::Single`, `Ambiguous`, or `None` (or use `jiff::civil` + `jiff::tz`, which handles IANA time zones and DST transitions cleanly out of the box).
+
+| Crate | Strengths |
+|---|---|
+| **`chrono`** | Widest ecosystem support (`sqlx`, `serde`, `uuid`); `DateTime<Utc>`, `NaiveDate`; add `chrono-tz` for named IANA zones |
+| **`time`** | Strict compile-time format macros, small API, zero-surprise UTC types |
+| **`jiff`** | Built-in IANA TZDB (`Zoned`), clean separation of civil dates from physical instants, first-class DST handling |
+
 ### `itertools`: more iterator tools
 
 ```toml
@@ -356,6 +399,8 @@ hides `info` and `debug`. The filter is a pattern: `mycrate=debug` shows debug m
 | What you write | one message per call | messages with fields, inside named spans |
 | Async tasks | hard to tell which task said what | spans follow the task (`#[instrument]`) |
 | Best fit | small tools, command-line programs | services, servers, async code |
+
+This chapter introduces the basics for scripts and small programs. For structured JSON logging in production, request IDs across async tasks, OpenTelemetry distributed traces, Prometheus metrics, and health probes, see [chapter 51](#observability).
 
 :::compare Logging, not printing
 A library logs; an application decides where the logs go. `log` and `tracing` both leave the decision to `main`. A library that calls `println!` forces its output on everybody.

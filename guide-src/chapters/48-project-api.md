@@ -905,6 +905,10 @@ async fn require_key(
 
 `require_key` runs before the handlers of the `admin` group. With the right key in the header, it passes the request on with `next.run(request)`. Otherwise it returns an error, and the handler never runs.
 
+:::warn Production upgrade: constant-time key comparison
+Notice `given == Some(&*state.api_key)` uses ordinary string equality (`==`), which stops at the first mismatching byte. In a production service, hash both keys with SHA-256 and compare the fixed-length digests with `subtle::ConstantTimeEq` as shown in [chapter 46](#web), so response timing never leaks how many leading bytes matched.
+:::
+
 Finally, complete `src/lib.rs`. It lists all modules, and re-exports the two names that `main` and the tests need most:
 
 ```rust proj=shortener file=src/lib.rs
@@ -980,7 +984,7 @@ impl Config {
 
 This file uses `anyhow`, not `ApiError`. The division follows [chapter 18](#errors): an error that some code must *tell apart and react to* gets its own type. An error that is only *reported to a human* is a job for `anyhow`. A wrong setting is reported once, to the person who starts the program, and the program ends.
 
-There is no default for `API_KEY`, on purpose. A service that starts with a well-known default secret is open to everybody who has read its source code.
+There is no default for `API_KEY`, on purpose. A service that starts with a well-known default secret is open to everybody who has read its source code. For larger services that combine TOML files, `.env` files, environment overrides, and redacted `SecretString` fields, see the layered `figment` + `secrecy` pattern in [chapter 46](#web).
 
 Now replace the content of `src/main.rs`:
 

@@ -550,7 +550,7 @@ async fn main(spawner: Spawner) {
 - Each `spawner.spawn(…)` starts a task. `pool_size = 2` reserves room for two tasks of this kind at compile time, because there is no heap to take it from.
 - `Timer::after_millis(…).await` does not spin in a loop. The task sleeps, and when all tasks sleep, the processor itself sleeps and saves power until a timer wakes it.
 
-Compiled for the Pico (target `thumbv6m-none-eabi`), the whole program, with the runtime, two tasks and the timer driver, occupies 13,224 bytes of flash memory and 516 bytes of RAM. It was not loaded onto a board for this guide. The usual tool for that step is `probe-rs`, which writes a program into the chip through a debug probe and shows its output.
+Compiled for the Pico (target `thumbv6m-none-eabi`), the whole program, with the runtime, two tasks and the timer driver, occupies 13,224 bytes of flash memory and 516 bytes of RAM. It was not loaded onto a board for this guide. The usual tool for that step is **`probe-rs`**, which flashes the binary through a debug probe and streams logs back over RTT. On tight microcontrollers, pair `probe-rs` with **`defmt`** ("deferred formatting"): instead of formatting numbers into text on the chip, the firmware emits compact numeric token IDs (`defmt::info!("temp={=i16}", t)`) and `probe-rs` formats them on your laptop, saving kilobytes of flash and cycles.
 
 ### Collections and messages without a heap
 
@@ -803,6 +803,7 @@ A machine learning library does the same with more comfort. It stores the number
 | `candle` | a small framework for running neural networks, from the company Hugging Face |
 | `ort`, `tch` | bindings to the ONNX Runtime and to the engine of PyTorch |
 | `tokenizers` | splits text into the pieces that language models read |
+| `rig-core`, `async-openai` | building LLM-powered applications, structured prompts, embeddings, and tool-calling agents |
 
 :::compare Rust and Python in data science
 Python is the language in which data scientists think and try things out, and that will not change soon. But much of what makes Python fast today is Rust underneath: Polars, the `tokenizers` library, the validation core of Pydantic, the tools `ruff` and `uv`. They are Python modules built with PyO3, like the one in [chapter 36](#ffi) that was 27 times faster than its Python version. Reach for Rust when a data job must run fast and reliably day after day, when a trained model has to answer requests with little memory, when it has to run in a browser or on a device, or when a Python library needs a fast core.

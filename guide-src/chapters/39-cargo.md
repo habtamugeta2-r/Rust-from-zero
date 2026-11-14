@@ -30,6 +30,10 @@ my_package/
 
 ## The manifest
 
+:::analogy The blueprint vs the parts list
+`Cargo.toml` is your project's blueprint ("I need a `serde` crate of version 1.0 or newer"), while `Cargo.lock` is the exact shipping manifest from the warehouse ("this build used `serde` 1.0.229 with this exact checksum"). Sharing `Cargo.toml` lets libraries stay compatible; keeping `Cargo.lock` for applications guarantees every machine compiles the exact same bytes.
+:::
+
 ```toml
 [package]
 name = "weather"
@@ -81,9 +85,11 @@ Tutorials, answers on the web and old crates are often written for an earlier ed
 | 2015 | `extern crate serde;` at the top of files. `try!(…)` where you would write `?`. Trait objects without `dyn`: `Box<Error>`. Paths in `use` without `crate::`. |
 | 2018 | `async`, `await` and `dyn` become keywords. `use crate::…` paths as in this guide. `extern crate` is no longer needed. |
 | 2021 | A closure captures only the fields it uses, not the whole struct. `array.into_iter()` gives the values. `TryFrom`, `TryInto` and `FromIterator` can be used without a `use` line. |
-| 2024 | `unsafe extern` blocks and `#[unsafe(no_mangle)]`. Every unsafe operation inside an `unsafe fn` needs its own `unsafe` block. References to a `static mut` are refused. `if let` chains with `&&`. `std::env::set_var` is `unsafe`. `gen` is reserved as a keyword. |
+| 2024 | `unsafe extern` blocks and `#[unsafe(no_mangle)]`. Every unsafe operation inside an `unsafe fn` needs its own `unsafe` block. References to a `static mut` are refused. `-> impl Trait` captures all in-scope lifetimes by default unless narrowed with `use<…>` ([chapter 20](#traits)). Temporaries in `if let` scrutinees drop immediately if the pattern fails, and tail-expression temporaries drop before local variables. `let` chains (`if let … && let …`). `std::env::set_var` is `unsafe`. `gen` is reserved as a keyword. Cargo defaults to `resolver = "3"` (MSRV-aware). |
 
 Code from every edition compiles with today's compiler, as long as its `Cargo.toml` names the edition it was written for. If you paste old code into a new project and get puzzling errors, the edition is the first thing to check.
+
+Why did Rust 2024 change temporary drop order? In older editions, `if let Some(x) = lock.borrow() { … } else { … }` kept the temporary lock guard alive throughout the `else` branch, causing unexpected borrows or deadlocks if `else` tried to lock again. In Edition 2024, temporaries created in the `if let` condition drop before entering `else`, and temporaries in a block's final expression drop before local variables in that block.
 :::
 
 ## Dependencies and versions
@@ -500,7 +506,28 @@ rustup target add aarch64-unknown-linux-gnu
 cargo build --release --target aarch64-unknown-linux-gnu
 ```
 
-Pure Rust code usually cross-compiles without more ado. When C libraries or a linker for the other system are needed, the tools `cross` and `cargo-zigbuild` take care of the setup.
+Pure Rust code usually cross-compiles without more ado. When C libraries or a linker for the other system are needed, the tools `cross` and `cargo-zigbuild` take care of the setup. For shipping prebuilt binaries, checksums, and installers on GitHub Releases automatically, `cargo-dist` generates the release workflow directly from `Cargo.toml`.
+
+### Build scripts (`build.rs`)
+
+When a crate needs generated code at compile time (Protobufs via `tonic-build`, C libraries via `cc`, SQLx migration tracking, or embedding the Git commit hash), Cargo runs **`build.rs`** before compiling the package. Generated files belong inside **`OUT_DIR`**, and instructions back to Cargo use `cargo::` directives printed to standard output:
+
+```rust file=build.rs
+use std::path::PathBuf;
+
+fn main() {
+    // Only re-run this script when `migrations/` changes, not on every Rust edit
+    println!("cargo::rerun-if-changed=migrations");
+
+    let out_dir = PathBuf::from(std::env::var("OUT_DIR").unwrap());
+    std::fs::write(out_dir.join("generated.rs"), "pub const BUILD_KIND: &str = \"release-ready\";\n").unwrap();
+
+    // Pass compile-time environment values into `env!("...")` in your crate
+    println!("cargo::rustc-env=APP_SCHEMA_VERSION=2");
+}
+```
+
+Include generated files inside `src/lib.rs` with `include!(concat!(env!("OUT_DIR"), "/generated.rs"));`, and always emit `cargo::rerun-if-changed=...` so Cargo does not re-run the build script on unrelated edits.
 
 ## Useful extensions
 
@@ -517,6 +544,9 @@ Cargo can be extended with extra commands, installed with `cargo install`:
 | `cargo-semver-checks` | detect accidental breaking changes before publishing |
 | `cargo-bloat` | show what takes up space in a binary |
 | `cargo-binstall` | install tools from ready-made binaries, without compiling |
+| `cargo-dist` | automate multi-platform binary releases and installers |
+
+For supply-chain hygiene in CI, pair `cargo audit` (vulnerability checks against RustSec) with **`cargo deny check`** configured by a `deny.toml` file in the repository root—allowing your team to permit only approved open-source licences (`MIT`, `Apache-2.0`), block unmaintained or duplicate crates, and fail pull requests automatically when a security advisory lands.
 
 :::compare Build tools elsewhere
 - **C and C++** have no standard build tool or package manager. Projects use Make, CMake, Meson, Bazel, vcpkg, Conan and others, and combining libraries that use different ones is a well-known source of pain.

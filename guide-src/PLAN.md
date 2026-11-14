@@ -56,6 +56,7 @@ p10: [x] 42-crates → crates (finding crates + everyday crates)   [x] 43-serde 
      [x] 45-async-ecosystem → async-ecosystem (Tokio, Rayon, reqwest, tower…)   [x] 46-web → web (Axum, Actix, Rocket…)
      [x] 47-databases → databases (SQLx, Diesel, SeaORM…)   [x] 48-project-api → project-api (project)
      [x] 49-apps → apps (WebAssembly, Leptos/Yew/Dioxus, Tauri, egui/iced/Slint)   [x] 50-games-embedded → games-embedded (Bevy, embedded, data/ML)
-p11:  [x] 51-performance → performance   [x] 52-capstone → capstone (project)   [x] 53-next → next
+     [x] 54-observability → observability (tracing JSON, request IDs, OpenTelemetry, metrics, health probes)
+p11:  [x] 51-performance → performance   [x] 52-capstone → capstone (project)   [x] 53-next → next (@kind orientation)
 app: [x] 90-glossary → glossary (stub exists; fill with every [[term]])   [x] 91-reference → reference   [x] 92-errors-ref → errors-ref
      [x] 93-from-other-languages → from-other-languages

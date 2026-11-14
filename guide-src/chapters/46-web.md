@@ -4,7 +4,7 @@
 @short Web servers with Axum
 @level intermediate
 @time 100
-@learn Explain requests, responses, methods and status codes | Write a web server with routes and handlers in Axum | Read paths, query strings, headers and JSON bodies with extractors | Share state and return proper errors | Add logging, limits and timeouts with middleware | Compare Axum with Actix Web and Rocket
+@learn Explain requests, responses, methods and status codes | Write a web server with routes and handlers in Axum | Read paths, query strings, headers, JSON and real-time streams with extractors | Share state, load layered configuration and protect secrets | Add authentication, authorisation, security headers and rate limits | Choose between REST, gRPC and GraphQL, and compare Axum with Actix Web and Rocket
 
 A **web server** is a program that waits for requests from the network and answers them. The web sites you visit and the apps on your phone all talk to such programs. Rust is a strong choice for writing them: the servers are fast, use little memory, and stay up, because whole classes of crashes are ruled out at compile time.
 
@@ -832,17 +832,115 @@ The visitor typed `Sara <b>` as the name. The function `escape` turned `<` into 
 Text from a visitor that lands in a page as it is can contain `<script>` tags. The script then runs in the browser of everyone who sees the page. This attack is called **cross-site scripting** (XSS). Escape all such text, or better, use a template library that escapes by default.
 :::
 
-For real pages, use a **template engine**: `askama` (templates are checked at compile time), `minijinja`, `tera` or `maud`. Files such as style sheets and images are served with `ServeDir` from `tower-http`:
+For real pages, use a **template engine**: `askama` (templates are checked at compile time), `minijinja`, `tera` or `maud`. Combined with **HTMX** (check the `HX-Request` header to return either an HTML fragment or a full layout), server-rendered Axum apps stay snappy without a separate JavaScript build step—just pair every cookie-authenticated `<form>` with a per-session CSRF token or `SameSite=Lax` cookie protection.
+
+Files such as style sheets, images, and compiled single-page apps (React, Svelte, Vue) are served with `ServeDir` and `ServeFile` from `tower-http`, or baked right into the binary with `rust-embed`:
 
 ```rust
-use tower_http::services::ServeDir;
+use tower_http::services::{ServeDir, ServeFile};
+
+// Serve `/assets/*` from disk, and fall back to `index.html` for client-side SPA routes:
+let spa = ServeDir::new("dist").fallback(ServeFile::new("dist/index.html"));
 
 let app = Router::new()
-    .route("/", get(home))
-    .nest_service("/static", ServeDir::new("static"));
+    .route("/api/health", get(health))
+    .nest_service("/static", ServeDir::new("static"))
+    .fallback_service(spa);
 ```
 
-Axum also supports **WebSockets** (`axum::extract::ws`, a lasting two-way connection, right for chats and live updates) and **server-sent events** (`axum::response::sse`, a stream of messages from the server to the browser).
+## Real-time and uploads: WebSockets, SSE, and multipart
+
+REST answers one request with one response. Three standard mechanisms cover live updates and binary uploads in Axum:
+
+- **WebSockets (`axum::extract::ws`)** upgrade an HTTP connection into a lasting, two-way message channel—ideal for chat rooms, live collaboration, and binary streams.
+- **Server-Sent Events (`axum::response::sse`)** push a one-way stream of text events from server to browser over ordinary HTTP, with automatic reconnect built into `EventSource`.
+- **Multipart uploads (`axum::extract::Multipart`)** stream browser `<input type="file">` uploads chunk by chunk without buffering an entire 50 MB file in RAM.
+
+**WebSocket echo handler** (requires Axum's `"ws"` feature):
+
+```rust file=src/ws.rs
+use axum::extract::ws::{Message, WebSocket, WebSocketUpgrade};
+use axum::response::IntoResponse;
+
+async fn ws_handler(ws: WebSocketUpgrade) -> impl IntoResponse {
+    ws.on_upgrade(handle_socket)
+}
+
+async fn handle_socket(mut socket: WebSocket) {
+    while let Some(Ok(msg)) = socket.recv().await {
+        match msg {
+            Message::Text(text) => {
+                if socket.send(Message::Text(format!("echo: {text}").into())).await.is_err() {
+                    break;
+                }
+            }
+            Message::Close(_) => break,
+            _ => {}
+        }
+    }
+}
+```
+
+Notice `.into()` on `format!("echo: {text}")`: Axum 0.8 stores text frames in `Utf8Bytes`, converted cheaply from `String` or `&'static str`. Always handle client disconnect errors (`is_err()`) and `Message::Close` so finished connections drop cleanly.
+
+**Server-Sent Events (SSE):**
+
+```rust ext run nocmp
+use std::convert::Infallible;
+use std::time::Duration;
+
+use axum::response::sse::{Event, KeepAlive, Sse};
+use axum::routing::get;
+use axum::Router;
+use futures::stream::{self, Stream, StreamExt};
+use tower::ServiceExt;
+
+async fn events() -> Sse<impl Stream<Item = Result<Event, Infallible>>> {
+    let stream = stream::iter(1..=3).map(|n| Ok(Event::default().data(format!("tick {n}"))));
+    Sse::new(stream).keep_alive(KeepAlive::new().interval(Duration::from_secs(15)))
+}
+
+#[tokio::main]
+async fn main() {
+    let app = Router::new().route("/events", get(events));
+    let req = axum::http::Request::builder().uri("/events").body(axum::body::Body::empty()).unwrap();
+    let res = app.oneshot(req).await.unwrap();
+    let bytes = axum::body::to_bytes(res.into_body(), usize::MAX).await.unwrap();
+    print!("{}", String::from_utf8_lossy(&bytes));
+}
+```
+```output
+data: tick 1
+
+data: tick 2
+
+data: tick 3
+```
+
+**Streaming multipart file uploads** (enable Axum's `"multipart"` feature, and raise `DefaultBodyLimit` only on the upload route rather than globally!):
+
+```rust file=src/upload.rs
+use axum::extract::{DefaultBodyLimit, Multipart};
+use axum::http::StatusCode;
+use axum::routing::post;
+use axum::Router;
+
+async fn upload_file(mut multipart: Multipart) -> Result<String, StatusCode> {
+    let mut total_bytes = 0_usize;
+    while let Some(mut field) = multipart.next_field().await.map_err(|_| StatusCode::BAD_REQUEST)? {
+        while let Some(chunk) = field.chunk().await.map_err(|_| StatusCode::BAD_REQUEST)? {
+            total_bytes += chunk.len();
+        }
+    }
+    Ok(format!("uploaded {total_bytes} bytes"))
+}
+
+fn upload_router() -> Router {
+    Router::new()
+        .route("/upload", post(upload_file))
+        .layer(DefaultBodyLimit::max(10 * 1024 * 1024)) // 10 MB cap for uploads only
+}
+```
 
 ## Security basics
 
@@ -895,15 +993,416 @@ wrong password: false
 
 The stored string contains the algorithm, its settings, the salt and the hash, so `verify_password` needs nothing else. Hashing takes some tens of milliseconds by design. In an async handler, run it inside `tokio::task::spawn_blocking`.
 
-**More rules:**
+### Authentication: sessions vs JWTs
 
-- **Keep secrets out of the code.** Read keys and passwords from environment variables or a secret store, never from the source code or the repository.
-- **Check who is asking.** After a login, the client proves who it is with each request, by a session cookie (`tower-sessions`, `axum-login`) or a signed token (`jsonwebtoken`). Check rights on the server for every request. A hidden button is no protection.
-- **Validate input** beyond its type: lengths, ranges, formats. Do it by hand, or with a crate such as `validator` or `garde`.
-- **Never build SQL from strings.** The next chapter shows the safe way.
-- **Do not show internals.** Log the details of an error on the server, and send the client a general message. A database error text in a response helps attackers.
-- **Set limits**, as shown above.
-- **Keep dependencies current**, and run `cargo audit`.
+Once a password check passes, the client must prove who it is on later requests without sending its password again. Web services solve this in one of two ways:
+
+| Choice | How it works | Best for | Trade-off |
+|---|---|---|---|
+| **Server-side session cookie** (`tower-sessions`) | Server stores session data in Redis or PostgreSQL and sends an opaque random ID in a cookie | Browser apps, instant logout/revocation | Requires a shared store lookup per request |
+| **Signed token / JWT** (`jsonwebtoken`) | Server signs claims (`sub`, `exp`, `role`) with a secret or private key; client sends `Authorization: Bearer <token>` | Service-to-service APIs, mobile clients | Cannot revoke an individual access token before `exp` without a blocklist |
+
+**Opaque sessions with `tower-sessions`:**
+
+```toml file=Cargo.toml
+[dependencies]
+tower-sessions = "0.14"
+```
+
+```rust file=src/sessions.rs
+use axum::routing::{get, post};
+use axum::Router;
+use tower_sessions::cookie::SameSite;
+use tower_sessions::{Expiry, MemoryStore, Session, SessionManagerLayer};
+
+async fn login(session: Session) -> &'static str {
+    // Store the authenticated user ID on the server side; the browser holds only a random ID
+    session.insert("user_id", 42_u64).await.unwrap();
+    "logged in"
+}
+
+async fn whoami(session: Session) -> String {
+    match session.get::<u64>("user_id").await.unwrap() {
+        Some(id) => format!("user {id}"),
+        None => String::from("anonymous"),
+    }
+}
+
+fn app_with_sessions() -> Router {
+    let store = MemoryStore::default(); // Use RedisStore or PostgresStore in production
+    let session_layer = SessionManagerLayer::new(store)
+        .with_secure(true)            // HTTPS only
+        .with_http_only(true)         // hidden from JavaScript (`document.cookie`)
+        .with_same_site(SameSite::Lax)
+        .with_expiry(Expiry::OnInactivity(time::Duration::hours(24)));
+
+    Router::new()
+        .route("/login", post(login))
+        .route("/whoami", get(whoami))
+        .layer(session_layer)
+}
+```
+
+**Stateless JWT verification with `jsonwebtoken`:**
+
+Always keep access tokens short-lived (minutes, paired with a revocable refresh token stored hashed in your database), and explicitly pin the allowed signing algorithm so attackers cannot substitute `"alg": "none"` or swap an asymmetric public key into an HMAC secret:
+
+```toml file=Cargo.toml
+[dependencies]
+jsonwebtoken = { version = "10", features = ["rust_crypto"] }
+serde = { version = "1.0", features = ["derive"] }
+```
+
+```rust file=src/jwt.rs
+use jsonwebtoken::{Algorithm, DecodingKey, EncodingKey, Header, Validation, decode, encode};
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Serialize, Deserialize)]
+struct Claims {
+    sub: String,   // user ID
+    role: String,
+    iss: String,   // who issued the token
+    aud: String,   // who may accept the token
+    exp: usize,    // expiry (Unix timestamp in seconds)
+}
+
+fn issue_token(user_id: &str, role: &str, secret: &[u8], now_secs: usize) -> jsonwebtoken::errors::Result<String> {
+    let claims = Claims {
+        sub: user_id.to_owned(),
+        role: role.to_owned(),
+        iss: String::from("auth.example.com"),
+        aud: String::from("api.example.com"),
+        exp: now_secs + 900, // 15 minutes
+    };
+    encode(&Header::new(Algorithm::HS256), &claims, &EncodingKey::from_secret(secret))
+}
+
+fn verify_token(token: &str, secret: &[u8]) -> jsonwebtoken::errors::Result<Claims> {
+    let mut validation = Validation::new(Algorithm::HS256);
+    validation.set_issuer(&["auth.example.com"]);
+    validation.set_audience(&["api.example.com"]);
+    let data = decode::<Claims>(token, &DecodingKey::from_secret(secret), &validation)?;
+    Ok(data.claims)
+}
+```
+
+### Authorisation, extractors, and preventing IDOR
+
+**Authentication** asks *"who are you?"* (`401 Unauthorized` if missing or invalid). **Authorisation** asks *"are you allowed to touch this resource?"* (`403 Forbidden` if logged in without permission).
+
+In Axum, put token or session verification inside a custom **`FromRequestParts`** extractor so every protected handler receives a verified `AuthUser` automatically—and check ownership on every resource query:
+
+```rust file=src/auth.rs
+use axum::extract::FromRequestParts;
+use axum::http::StatusCode;
+use axum::http::request::Parts;
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+enum Role {
+    Member,
+    Admin,
+}
+
+#[derive(Debug, Clone)]
+struct AuthUser {
+    user_id: i64,
+    role: Role,
+}
+
+impl<S: Send + Sync> FromRequestParts<S> for AuthUser {
+    type Rejection = StatusCode;
+
+    async fn from_request_parts(parts: &mut Parts, _state: &S) -> Result<Self, Self::Rejection> {
+        let header = parts
+            .headers
+            .get(axum::http::header::AUTHORIZATION)
+            .and_then(|v| v.to_str().ok())
+            .and_then(|s| s.strip_prefix("Bearer "))
+            .ok_or(StatusCode::UNAUTHORIZED)?;
+
+        // In production: decode and verify JWT or look up hashed token / session
+        if header == "demo-member-token" {
+            Ok(AuthUser { user_id: 7, role: Role::Member })
+        } else {
+            Err(StatusCode::UNAUTHORIZED)
+        }
+    }
+}
+
+async fn delete_note_handler(auth: AuthUser, note_owner_id: i64) -> Result<StatusCode, StatusCode> {
+    if note_owner_id != auth.user_id && auth.role != Role::Admin {
+        return Err(StatusCode::FORBIDDEN);
+    }
+    Ok(StatusCode::NO_CONTENT)
+}
+```
+
+:::warn Always scope queries to the authenticated owner
+One of the most common web bugs is **IDOR** (Insecure Direct Object Reference): checking that the caller is logged in, then running `SELECT * FROM invoices WHERE id = $1` without checking who owns invoice `id`. An attacker simply tries `/invoices/101`, `/invoices/102`, and reads everyone's data. Enforce ownership right in the SQL query (`WHERE id = $1 AND user_id = $2`) or check the owner before returning the row.
+:::
+
+### Constant-time comparison of secrets
+
+Comparing an API key or HMAC signature with `==` returns `false` on the **first** mismatched byte. An attacker measuring thousands of responses can spot the tiny timing difference when more prefix bytes match and recover a secret byte by byte.
+
+Use **`subtle::ConstantTimeEq`**—and hash API keys with SHA-256 before comparing fixed-length digests so even length mismatches never leak timing information:
+
+```toml file=Cargo.toml
+[dependencies]
+sha2 = "0.10"
+subtle = "2.6"
+```
+
+```rust file=src/secret_cmp.rs
+use sha2::{Digest, Sha256};
+use subtle::ConstantTimeEq;
+
+/// Compares two API keys without leaking prefix matches through timing.
+fn keys_match(presented_key: &str, stored_sha256: &[u8; 32]) -> bool {
+    let presented_digest: [u8; 32] = Sha256::digest(presented_key.as_bytes()).into();
+    bool::from(presented_digest.ct_eq(stored_sha256))
+}
+```
+
+### Cookies and CSRF protection
+
+If you authenticate users with a cookie, browsers automatically send that cookie on **cross-site** requests too—including a hidden `<form>` submitted from `evil.example` to `yourapp.example/transfer`. That attack is **Cross-Site Request Forgery (CSRF)**.
+
+Follow four rules whenever cookies carry sessions:
+
+1. Mark session cookies **`HttpOnly`** (scripts cannot steal them via XSS), **`Secure`** (never sent over plain HTTP), and **`SameSite=Lax`** (or `Strict` for admin panels; blocks cross-site `POST` requests in modern browsers). Prefix sensitive cookies with `__Host-` so subdomains cannot overwrite them.
+2. **Never mutate state on `GET`**. `SameSite=Lax` still sends cookies on top-level `GET` navigation, so `/logout` or `/delete` must be `POST`/`DELETE`.
+3. For HTML forms and older browsers, require an anti-CSRF synchronizer token (`axum-csrf`) stored in the session and validated in a hidden form field or `x-csrf-token` header.
+4. For JSON APIs called from another origin, combine explicit `CorsLayer::new().allow_origin(...)` (never `CorsLayer::permissive()` alongside `.allow_credentials(true)`) with `Origin` / `Sec-Fetch-Site` verification.
+
+### Security headers
+
+Browsers rely on response headers to disable risky content sniffing, clickjacking, and plain-HTTP downgrades. `tower_http::set_header::SetResponseHeaderLayer` attaches them globally in one place:
+
+```rust file=src/security_headers.rs
+use axum::Router;
+use axum::http::{HeaderValue, header};
+use tower::ServiceBuilder;
+use tower_http::set_header::SetResponseHeaderLayer;
+
+fn add_security_headers(app: Router) -> Router {
+    app.layer(
+        ServiceBuilder::new()
+            .layer(SetResponseHeaderLayer::overriding(
+                header::X_CONTENT_TYPE_OPTIONS,
+                HeaderValue::from_static("nosniff"),
+            ))
+            .layer(SetResponseHeaderLayer::overriding(
+                header::X_FRAME_OPTIONS,
+                HeaderValue::from_static("DENY"),
+            ))
+            .layer(SetResponseHeaderLayer::overriding(
+                header::REFERRER_POLICY,
+                HeaderValue::from_static("strict-origin-when-cross-origin"),
+            ))
+            .layer(SetResponseHeaderLayer::overriding(
+                header::STRICT_TRANSPORT_SECURITY,
+                HeaderValue::from_static("max-age=63072000; includeSubDomains"),
+            ))
+            .layer(SetResponseHeaderLayer::overriding(
+                header::CONTENT_SECURITY_POLICY,
+                HeaderValue::from_static("default-src 'self'; frame-ancestors 'none'"),
+            )),
+    )
+}
+```
+
+### Validating input beyond types
+
+Serde proves that `age` is a `u16` and `email` is a `String`, not that `email` looks valid or `bio` is under 500 characters. Combine **`DefaultBodyLimit::max(...)`** (bounding raw bytes before parsing) with a validation crate such as **`garde`** or **`validator`**:
+
+```toml file=Cargo.toml
+[dependencies]
+garde = { version = "0.22", features = ["derive", "email"] }
+```
+
+```rust file=src/validate_input.rs
+use axum::Json;
+use axum::http::StatusCode;
+use garde::Validate;
+use serde::Deserialize;
+
+#[derive(Debug, Deserialize, Validate)]
+struct RegisterRequest {
+    #[garde(email)]
+    email: String,
+    #[garde(length(min = 3, max = 32), ascii)]
+    username: String,
+    #[garde(length(min = 12, max = 128))]
+    password: String,
+}
+
+async fn register(Json(body): Json<RegisterRequest>) -> Result<StatusCode, (StatusCode, String)> {
+    body.validate()
+        .map_err(|report| (StatusCode::UNPROCESSABLE_ENTITY, report.to_string()))?;
+    Ok(StatusCode::CREATED)
+}
+```
+
+### Rate limiting and abuse protection
+
+Without rate limits, one script can hammer `/login` with ten thousand guesses per second or starve worker tasks. Add **`tower_governor`** (token-bucket rate limiting) alongside `tower::limit::ConcurrencyLimitLayer`, with **stricter limits on `/login` and password-reset endpoints** than on normal read endpoints:
+
+```rust file=src/rate_limit.rs
+use std::sync::Arc;
+use axum::Router;
+use axum::routing::post;
+use tower_governor::GovernorLayer;
+use tower_governor::governor::GovernorConfigBuilder;
+
+fn rate_limited_login(app_login: Router) -> Router {
+    let config = Arc::new(
+        GovernorConfigBuilder::default()
+            .per_second(2)     // replenish 1 token every 2 seconds
+            .burst_size(5)     // allow short burst of 5 attempts
+            .finish()
+            .expect("valid governor config"),
+    );
+    app_login.layer(GovernorLayer::new(config))
+}
+```
+
+:::warn Do not blindly trust `X-Forwarded-For`
+By default, `PeerIpKeyExtractor` reads the TCP socket IP. Behind a load balancer, every request arrives from the proxy's IP, so teams switch to `SmartIpKeyExtractor` (which checks `Forwarded` / `X-Forwarded-For`). Only enable header-based IP extraction when your server listens solely behind a **trusted reverse proxy** that strips and rewrites those headers—otherwise any client can spoof `X-Forwarded-For: 1.2.3.4` on every request and bypass your rate limiter completely.
+:::
+
+### Signing and retrying outbound webhooks
+
+When your server sends webhook callbacks to customer URLs, two problems arise: the receiver must verify the payload really came from you, and temporary receiver outages should not drop events silently. Sign `<timestamp>.<body>` with **HMAC-SHA256** (`hmac` + `sha2`) in an `X-Signature-256` header (rejecting stale timestamps to stop replays), and retry transient `5xx`/network failures with exponential backoff plus jitter (`backon`), never unbounded loops:
+
+```rust file=src/webhook.rs
+use hmac::{Hmac, Mac};
+use sha2::Sha256;
+
+type HmacSha256 = Hmac<Sha256>;
+
+fn sign_webhook(secret: &[u8], timestamp: i64, body: &[u8]) -> String {
+    let mut mac = HmacSha256::new_from_slice(secret).expect("HMAC accepts any key size");
+    mac.update(timestamp.to_string().as_bytes());
+    mac.update(b".");
+    mac.update(body);
+    let sig: Vec<String> = mac.finalize().into_bytes().iter().map(|b| format!("{b:02x}")).collect();
+    format!("v1={}", sig.join(""))
+}
+```
+
+**Checklist for every production web service:**
+
+- **Keep secrets out of the code.** Load signing keys, database URLs, and API keys from environment variables or a secret manager.
+- **Never build SQL from strings.** [Chapter 47](#databases) shows parameterised queries.
+- **Do not leak internal errors.** Log full details with `tracing` on the server; send the client a stable status code and safe error message.
+- **Audit dependencies regularly** with `cargo audit` and `cargo deny`.
+
+## Configuration and secrets
+
+Reading `std::env::var` one field at a time works for three variables. Once an application has database timeouts, cookie domains, OTLP endpoints, and feature flags, **layered configuration** gives one clear precedence order:
+
+**CLI flags > environment variables (`APP_*`) > environment file (`config/prod.toml`) > base defaults (`config/default.toml`)**
+
+In Rust, **`figment`** (or `config`) merges TOML files and prefixed environment variables cleanly into one typed `Settings` struct at startup—so typos or missing values fail immediately on boot, before a request ever arrives. For local development only, **`dotenvy::dotenv().ok()`** loads `.env` into process variables (never commit `.env`; commit `.env.example` instead).
+
+```toml file=Cargo.toml
+[dependencies]
+dotenvy = "0.15"
+figment = { version = "0.10", features = ["toml", "env"] }
+secrecy = { version = "0.10", features = ["serde"] }
+serde = { version = "1.0", features = ["derive"] }
+```
+
+Wrap passwords, signing keys, and database URLs in **`secrecy::SecretString`**: its `Debug` implementation prints `[REDACTED]`, preventing accidental leaks if anyone logs `tracing::info!(?settings)` on startup:
+
+```rust file=src/settings.rs
+use figment::Figment;
+use figment::providers::{Env, Format, Toml};
+use secrecy::{ExposeSecret, SecretString};
+use serde::Deserialize;
+
+#[derive(Debug, Deserialize)]
+struct Settings {
+    port: u16,
+    database_url: SecretString,
+    jwt_secret: SecretString,
+}
+
+fn load_settings() -> Result<Settings, figment::Error> {
+    let _ = dotenvy::dotenv(); // Optional `.env` for local development only
+    let env_name = std::env::var("APP_ENV").unwrap_or_else(|_| String::from("dev"));
+
+    let settings: Settings = Figment::new()
+        .merge(Toml::file("config/default.toml"))
+        .merge(Toml::file(format!("config/{env_name}.toml")))
+        .merge(Env::prefixed("APP_").split("__"))
+        .extract()?;
+
+    // Access secret bytes only at the exact point of use:
+    let _db_conn_str = settings.database_url.expose_secret();
+    Ok(settings)
+}
+```
+
+## Choosing an API style: REST, gRPC, or GraphQL
+
+| Style | Transport / format | Best for | Main Rust crate |
+|---|---|---|---|
+| **REST** | HTTP + JSON | Public APIs, CRUD services, web & mobile clients | `axum` |
+| **gRPC** | HTTP/2 + Protobuf | Low-latency service-to-service RPCs and streaming ([chapter 45](#async-ecosystem)) | `tonic` |
+| **GraphQL** | Single HTTP `POST /graphql` + schema | Complex nested UI views where clients choose fields without over-fetching | `async-graphql` |
+
+GraphQL shines when a dashboard needs user profile + recent orders + billing status in one round trip without adding bespoke REST endpoints. **`async-graphql`** (paired with `async-graphql-axum`) derives the GraphQL schema directly from Rust structs and methods:
+
+```rust file=src/graphql.rs
+use async_graphql::{Context, Object, Schema, EmptyMutation, EmptySubscription};
+use async_graphql_axum::{GraphQLRequest, GraphQLResponse};
+use axum::extract::State;
+use axum::routing::post;
+use axum::Router;
+
+struct QueryRoot;
+
+#[Object]
+impl QueryRoot {
+    async fn api_version(&self, _ctx: &Context<'_>) -> &'static str {
+        "1.0"
+    }
+}
+
+type AppSchema = Schema<QueryRoot, EmptyMutation, EmptySubscription>;
+
+async fn graphql_handler(State(schema): State<AppSchema>, req: GraphQLRequest) -> GraphQLResponse {
+    schema.execute(req.into_inner()).await.into()
+}
+```
+
+If you adopt GraphQL on relational tables, pair resolvers with `async_graphql::dataloader::DataLoader` to batch ID lookups—otherwise nested GraphQL lists trigger the same N+1 SQL query problem described in [chapter 47](#databases).
+
+### Documenting REST APIs with OpenAPI (`utoipa`)
+
+For REST APIs consumed by frontend teams or external partners, handwritten docs go stale quickly. **`utoipa`** derives an **OpenAPI 3** schema directly from your Rust request/response structs and Axum handlers, and **`utoipa-swagger-ui`** serves interactive docs at `/swagger-ui`:
+
+```rust file=src/openapi.rs
+use axum::Json;
+use serde::Serialize;
+use utoipa::{OpenApi, ToSchema};
+
+#[derive(Serialize, ToSchema)]
+struct Health {
+    status: &'static str,
+}
+
+#[utoipa::path(get, path = "/health", responses((status = 200, body = Health)))]
+async fn health() -> Json<Health> {
+    Json(Health { status: "ok" })
+}
+
+#[derive(OpenApi)]
+#[openapi(paths(health), components(schemas(Health)))]
+struct ApiDoc;
+```
 
 ## Other frameworks
 
@@ -1002,27 +1501,33 @@ The ideas are the same in all three: routes, typed extractors as function parame
 
 ## From your machine to the world
 
-A Rust server is one executable file. Deploying it is simple by the standards of web development:
+A Rust server is one executable file. Deploying it well in production takes a few deliberate habits:
 
-1. Build with `cargo build --release`. The result is `target/release/<name>`.
-2. Copy that file to a Linux server, or put it in a container.
-3. Let the program listen on `0.0.0.0`, and take the port and all settings from environment variables.
-4. Put a reverse proxy with HTTPS in front.
-5. Write logs to standard output, where the host collects them. Offer a route such as `GET /health` that answers 200, so that the host can check that the program is alive.
-
-A typical `Dockerfile` builds in one image and copies only the executable into a small second one:
+1. **Bind `0.0.0.0` and read settings from config/env**, with a reverse proxy handling public TLS.
+2. **Expose separate liveness and readiness probes.** `/healthz` returns `200 OK` unconditionally while the event loop runs; `/readyz` checks critical dependencies (for example `SELECT 1` on the database pool) and returns `503 Service Unavailable` during startup or DB outages so the load balancer routes traffic away cleanly.
+3. **Drain in-flight requests on `SIGTERM` / {{Ctrl}}+{{C}}.** Wait for `axum::serve(listener, app).with_graceful_shutdown(shutdown_signal()).await`, then call `pool.close().await` before exiting so active requests finish instead of snapping mid-response.
+4. **Use a cached multi-stage `Dockerfile` with a non-root user.** Rebuilding 200 crates from scratch on every one-line source change wastes minutes; **`cargo-chef`** splits dependency compilation from application compilation so Docker reuses the cached dependency layer whenever `Cargo.lock` hasn't changed:
 
 ```text
-FROM rust:1.100 AS build
+FROM lukemathwalker/cargo-chef:latest-rust-1 AS chef
 WORKDIR /app
-COPY . .
-RUN cargo build --release
 
-FROM debian:trixie-slim
-COPY --from=build /app/target/release/myserver /usr/local/bin/myserver
+FROM chef AS planner
+COPY . .
+RUN cargo chef prepare --recipe-path recipe.json
+
+FROM chef AS builder
+COPY --from=planner /app/recipe.json recipe.json
+RUN cargo chef cook --release --recipe-path recipe.json
+COPY . .
+RUN cargo build --release --bin myserver
+
+FROM gcr.io/distroless/cc-debian12:nonroot
+COPY --from=builder /app/target/release/myserver /usr/local/bin/myserver
+USER nonroot
 ENV PORT=8080
 EXPOSE 8080
-CMD ["myserver"]
+CMD ["/usr/local/bin/myserver"]
 ```
 
 **Cross-compilation.** The server does not have to run on the same kind of machine it is built on. `rustup target add x86_64-unknown-linux-musl` followed by `cargo build --release --target x86_64-unknown-linux-musl` produces a statically linked Linux binary ([chapter 39](#cargo)). A container built from that binary needs almost nothing inside it, which keeps images small and startup fast.
@@ -1045,9 +1550,11 @@ The final image contains your program and a minimal system, with no compiler and
 - Extractors (`Path`, `Query`, `Json`, `State`, …) declare what a handler needs. Bad requests are rejected before your code runs.
 - Anything that implements `IntoResponse` can be returned. A custom error type with `IntoResponse` gives uniform error responses.
 - Shared data lives in a state value, passed with `with_state` and received with `State<T>`.
-- Middleware wraps routes: `from_fn` for your own, and `tower-http` for logging, timeouts, compression and CORS.
-- Public servers need limits, HTTPS, hashed passwords, validated input and safe error messages.
-- Actix Web and Rocket follow the same ideas with a different style.
+- Middleware wraps routes: `from_fn` for your own, and `tower-http` for logging, timeouts, compression, CORS, and security headers.
+- Axum handles real-time and large payloads via `ws`, `sse`, and streaming `Multipart` with bounded `DefaultBodyLimit`.
+- Load typed settings with layered precedence (`figment` + optional local `dotenvy`) and wrap sensitive values in `secrecy::SecretString`.
+- Protect routes with `tower-sessions` cookies (`HttpOnly`, `Secure`, `SameSite=Lax`) or short-lived `jsonwebtoken` tokens, enforce per-owner authorisation checks (preventing IDOR), validate inputs, rate-limit login routes, and compare secrets in constant time with `subtle`.
+- Choose REST (`axum`), gRPC (`tonic`), or GraphQL (`async-graphql`) by client needs; Actix Web and Rocket follow similar ideas with a different style.
 :::
 
 :::quiz Check your understanding
@@ -1085,6 +1592,27 @@ The final image contains your program and a minimal system, with no compiler and
 + A salted hash made by a slow password hash function such as Argon2
 - A plain SHA-256 hash of the password
 = A slow, salted hash cannot be reversed, and guessing is expensive. Fast hashes such as SHA-256 can be tried billions of times per second.
+
+? Why compare API keys using `subtle::ConstantTimeEq` over SHA-256 hashes instead of plain `==`?
+- Because `==` is not implemented on strings in Rust
++ Because `==` returns early on the first mismatched byte, leaking matching prefix bytes via timing differences
+- Because `subtle` automatically rotates the API key on every request
+- Because `==` runs on a separate thread
+= Timing side-channels let an attacker measure tiny response-time differences to guess secrets byte by byte. Hashing plus constant-time comparison removes both length and prefix leaks.
+
+? Which combination best protects a browser session cookie against both XSS theft and CSRF attacks?
+- Storing the JWT in `localStorage` without HTTPS
+- Setting `SameSite=None` without `Secure`
++ Setting `HttpOnly`, `Secure`, and `SameSite=Lax` (plus CSRF tokens on state-changing HTML forms, and never mutating state on `GET`)
+- Turning on `CorsLayer::permissive()` with credentials allowed
+= `HttpOnly` keeps JavaScript from reading the cookie after XSS, `Secure` restricts it to HTTPS, and `SameSite=Lax` blocks cross-site `POST` form submissions.
+
+? Why wrap fields like `database_url` and `jwt_secret` in `secrecy::SecretString` instead of plain `String` inside a `Settings` struct?
+- It encrypts the string in RAM on every read
++ Its `Debug` implementation prints `[REDACTED]`, preventing accidental leaks when logging or formatting the settings struct
+- It automatically reads `.env` files on startup
+- It turns compile-time TOML errors into warnings
+= Plain `String` fields print verbatim under `{settings:?}`, which commonly dumps credentials into startup logs or crash reports. `SecretString` forces explicit `.expose_secret()` calls only where the raw secret is required.
 :::
 
 :::exercise guided A temperature API

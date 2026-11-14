@@ -10,6 +10,10 @@
 
 ## Associated types
 
+:::analogy A country's power socket vs a universal adapter
+Every `Iterator` implementation has one natural element type (`Item`), just as each country's wall socket delivers one fixed voltage: you plug in and ask for `Self::Item` without listing extra parameters. By contrast, a generic trait parameter (`From<T>`) is like a travel adapter that can have many implementations (`From<&str>`, `From<char>`, `From<Box<str>>`) for the very same `String` type.
+:::
+
 The `Iterator` trait has a line `type Item;`. That is an **associated type**: a type that each implementation of the trait chooses, once.
 
 ```rust run
@@ -116,6 +120,62 @@ A square has 4 sides.
 ```
 
 `describe` has no `self` parameter. It is an associated function of the trait and is called on the type: `Triangle::describe()`.
+
+### Generic associated types (GATs)
+
+Sometimes an associated type itself needs a lifetime or type parameter—for example, when a trait method returns a value borrowing from `&mut self`. Plain `type Item;` cannot name `'a` because `'a` changes on every call. A **generic associated type (GAT)** attaches `<'a>` (or `<T>`) directly to the associated type:
+
+```rust run
+trait LendingWindows {
+    type Window<'a>
+    where
+        Self: 'a;
+
+    fn next_window<'a>(&'a mut self) -> Option<Self::Window<'a>>;
+}
+
+struct SlidingWindow {
+    data: Vec<i32>,
+    size: usize,
+    pos: usize,
+}
+
+impl LendingWindows for SlidingWindow {
+    type Window<'a> = &'a mut [i32];
+
+    fn next_window<'a>(&'a mut self) -> Option<Self::Window<'a>> {
+        if self.pos + self.size > self.data.len() {
+            return None;
+        }
+        let slice = &mut self.data[self.pos..self.pos + self.size];
+        self.pos += 1;
+        Some(slice)
+    }
+}
+
+fn main() {
+    let mut windows = SlidingWindow {
+        data: vec![1, 2, 3, 4],
+        size: 2,
+        pos: 0,
+    };
+    while let Some(win) = windows.next_window() {
+        win[0] += 10;
+        println!("{win:?}");
+    }
+    println!("after: {:?}", windows.data);
+}
+```
+```output
+[11, 2]
+[12, 3]
+[13, 4]
+after: [11, 12, 13, 4]
+```
+
+Why could standard `Iterator` never return `&mut [i32]` slices that overlap like this? Because `Iterator::next` guarantees yielded items do not borrow `self`—otherwise `.collect::<Vec<_>>()` could hold two overlapping mutable slices into the same `Vec` at once. GATs tie the output lifetime `'a` directly to `&'a mut self`, so the borrow checker enforces that you finish with one window before asking for the next. Notice `where Self: 'a`: it promises the compiler that `Self` lives at least as long as any reference `'a` borrowed from it.
+
+GATs also appear in traits that abstract over *type constructors* (for instance, choosing whether a library stores items in `Rc<T>` or `Arc<T>` via `type Pointer<T>`).
 
 ## Operator overloading
 
@@ -651,6 +711,13 @@ AB AB
 - Generic parameters are not allowed in traits
 - So that iterators can be endless
 = With `Iterator<T>`, one type could implement `Iterator<u32>` and `Iterator<String>` at once, and every call of `next` would be ambiguous. An associated type fixes the item type per implementation.
+
+? When do you need a generic associated type (GAT) like `type Window<'a> where Self: 'a;`?
+- Whenever a trait defines a constant value
++ When the associated type depends on a lifetime or generic parameter of each method call, such as returning a slice borrowed from `&'a mut self`
+- Whenever you overload `+` for a struct
+- Whenever you want dynamic dispatch with `dyn Trait`
+= Plain `type Item;` is fixed for the whole `impl`. Adding `<'a>` lets each call tie the returned type to the lifetime of `&'a self` or `&'a mut self`.
 
 ? What must you implement so that `a + b` works for your type `Money`?
 - A method called `plus`

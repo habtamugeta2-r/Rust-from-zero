@@ -1,0 +1,25 @@
+# Cargo and Rust build artifacts
+target/
+**/*.rs.bk
+
+# Local SQLite databases created while running examples
+*.db
+*.db-shm
+*.db-wal
+
+# Python caches and virtual environments
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+
+# Node packages for local tooling
+node_modules/
+
+# OS and editor clutter
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+.env

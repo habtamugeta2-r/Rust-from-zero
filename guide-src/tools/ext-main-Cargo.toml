@@ -6,8 +6,8 @@ edition = "2024"
 [dependencies]
 anyhow = "1.0.104"
 argon2 = { version = "0.6.0", features = ["getrandom"] }
-axum = { version = "0.8.9", features = ["macros"] }
-chrono = "0.4.45"
+axum = { version = "0.8.9", features = ["macros", "ws", "multipart"] }
+chrono = { version = "0.4.45", features = ["serde"] }
 clap = { version = "4.6.7", features = ["derive"] }
 crossbeam = "0.8.5"
 csv = "1.4.0"
@@ -35,7 +35,7 @@ toml = "1.2.1"
 tower = { version = "0.5.3", features = ["util", "timeout", "limit", "retry"] }
 tower-http = { version = "0.7.1", features = ["trace", "cors", "timeout", "limit", "compression-gzip", "fs", "request-id"] }
 tracing = "0.1.44"
-tracing-subscriber = "0.3.23"
+tracing-subscriber = { version = "0.3.23", features = ["env-filter", "json"] }
 
 # Smaller and faster example builds: no debug information
 [profile.dev]

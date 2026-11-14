@@ -186,6 +186,39 @@ fn main() {
 
 The real type returned here is long and awkward to write. The caller only needs to know that it can be iterated. You will use this form a lot with iterators and closures in Part 5.
 
+#### Choosing which lifetimes `-> impl Trait` captures (`use<...>`)
+
+In Rust 2024, a return type like `-> impl Iterator<Item = &str>` automatically captures **every** generic parameter and lifetime in the function signature—even parameters that the returned iterator never keeps a reference to. When a caller passes a temporary helper argument and drops it before consuming the iterator, the compiler complains that the helper is still borrowed.
+
+Adding **`+ use<'a>`** (called **precise capturing**) tells the compiler explicitly which parameters the returned value may borrow:
+
+```rust run
+// Without `+ use<'a>`, Rust 2024 assumes the returned iterator borrows `needle` too.
+// Because we copy `needle` into an owned `String`, the iterator borrows only `'a`.
+fn matching_items<'a>(items: &'a [String], needle: &str) -> impl Iterator<Item = &'a str> + use<'a> {
+    let needle = needle.to_owned();
+    items.iter().map(|s| s.as_str()).filter(move |s| s.contains(needle.as_str()))
+}
+
+fn main() {
+    let items = vec![
+        String::from("rust-core"),
+        String::from("async-io"),
+        String::from("rust-web"),
+    ];
+    let temp_filter = String::from("rust");
+    let iter = matching_items(&items, &temp_filter);
+    drop(temp_filter); // Allowed only because `+ use<'a>` did not capture `&temp_filter`!
+    let results: Vec<&str> = iter.collect();
+    println!("{results:?}");
+}
+```
+```output
+["rust-core", "rust-web"]
+```
+
+You write `use<...>` most often on methods returning `impl Iterator` or `impl Future` (including methods in traits: `fn list(&self, filter: &str) -> impl Iterator<Item = &str> + use<'_>`). Inside `use<...>`, list every type parameter (`T`) and only the lifetimes (`'a` or `'_`) that the hidden return type actually holds onto.
+
 ## The standard traits you meet every day
 
 The standard library defines traits for the common abilities. Many can be derived, as you saw in [chapter 12](#structs).

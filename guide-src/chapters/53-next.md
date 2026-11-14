@@ -1,12 +1,13 @@
 @id next
 @part p11
+@kind orientation
 @title Where to go from here
 @short Where to go from here
 @level all
 @time 25
 @learn Choose what to study next, by goal and by level | Find the best book or course for each topic | Practise with small tasks and with real projects | Stay up to date and take part in the Rust community
 
-You have worked through the whole language, the tools around it, and seven projects. This chapter is a map of what lies beyond: the books and courses that go deeper than this guide, places to practise, and ways to stay in touch with a language that gets a new version every six weeks.
+You have worked through the whole language, the tools around it, and eight projects. This chapter is a map of what lies beyond: the books and courses that go deeper than this guide, places to practise, and ways to stay in touch with a language that gets a new version every six weeks.
 
 :::analogy After the driving test
 A driving licence does not make an experienced driver. It means that you can now learn safely on your own, on real roads. You are at that point with Rust: you can read the documentation of any crate, understand what the compiler tells you, and build things. The experience comes from kilometres driven.
@@ -50,7 +51,7 @@ This guide owes ideas to all of the following. None of them is a replacement for
 | Macros | [The Little Book of Rust Macros](https://veykril.github.io/tlborm/) | [34](#macros) |
 | Performance | [The Rust Performance Book](https://nnethercote.github.io/perf-book/) | [51](#performance) |
 | Command-line tools | [Command Line Applications in Rust](https://rust-cli.github.io/book/) | [44](#cli) |
-| Web services | *Zero To Production in Rust* by Luca Palmieri: one service, taken all the way to a server | [46](#web) to [48](#project-api) |
+| Web services | *Zero To Production in Rust* by Luca Palmieri: one service, taken all the way to a server | [46](#web) to [48](#project-api), [51](#observability) |
 | Small devices | [The Embedded Rust Book](https://docs.rust-embedded.org/book/) and the documentation of Embassy | [50](#games-embedded) |
 | Recipes for everyday tasks | [Rust Cookbook](https://rust-lang-nursery.github.io/rust-cookbook/) | [42](#crates) |
 | Language design in depth | *Rust for Rustaceans* by Jon Gjengset, and his long video series "Crust of Rust" | [28](#advanced-traits), [29](#type-system) |
@@ -127,5 +128,5 @@ Open-source projects need more than code. Good first contributions are a fix in 
 - I have picked one topic from the table and the resource for it.
 - I have run `rustup update`.
 - I have looked at the users forum or another community place.
-- I have finished the capstone project of [chapter 52](#capstone), or planned when to do it.
+- I have finished the capstone project of [chapter 53](#capstone), or planned when to do it.
 :::

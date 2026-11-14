@@ -10,6 +10,10 @@ Code can be correct and still feel foreign. Every language has its own way of sa
 
 This chapter gathers the habits of experienced Rust programmers. Most of the pieces you have seen already. Here they are side by side, as a reference to come back to.
 
+:::analogy Textbook sentences vs speaking like a local
+You can speak a foreign language with flawless grammar and still sound awkward if you translate word by word from your mother tongue. Idioms are the phrasing locals actually reach for: shorter, clearer, and immediately understood by other speakers. In Rust, idioms like `?`, `Option` combinators, newtypes and RAII guards turn clumsy hand-written plumbing into code other Rust programmers read at a glance.
+:::
+
 ## Names
 
 The compiler warns about the first group. The second group is convention, and it carries real information.

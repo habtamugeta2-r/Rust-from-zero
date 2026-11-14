@@ -8,6 +8,10 @@
 
 A compiler that catches many mistakes is the first layer of quality. Rust's standard tools add more layers, and all of them come with the normal installation. Professional Rust projects run them on every change. Learning them early also makes you a better Rust programmer, because they explain what they find.
 
+:::analogy The safety inspector, the carpenter's rule, and the senior reviewer
+Think of building a house with three helpers on site. `rustc` checks whether the walls will stand (`compile`), `rustfmt` lines up every tile and timber to the exact millimetre so any carpenter can step in, and Clippy is the experienced builder walking the site pointing out awkward joints that are technically legal but likely to leak later.
+:::
+
 ## rustfmt: one style for everyone
 
 `cargo fmt` rewrites your source files in the official Rust style: indentation, spaces, line breaks, the order of imports. Take this cramped code:

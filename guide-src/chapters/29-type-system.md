@@ -10,6 +10,10 @@ So far you have used types to describe data. Experienced Rust programmers use th
 
 This chapter first completes the picture of conversions between types, then presents the less obvious types of the language, and ends with the design techniques that tie them together.
 
+:::analogy Boarding passes that check themselves
+At an airport, a green boarding pass means "security cleared" and a gate scanner physically refuses an unchecked ticket. Encoding states and rules into distinct Rust types works the same way: instead of checking boolean flags inside every function at run time, you make an unchecked value a different type so wrong calls simply cannot pass the compiler's gate.
+:::
+
 ## Converting between types
 
 ### `as`: quick and quiet

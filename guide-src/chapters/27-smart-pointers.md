@@ -15,6 +15,10 @@ A reference (`&T`) borrows a value and does nothing else. A **smart pointer** is
 | `RefCell<T>` | borrowing rules checked while the program runs, not at compile time |
 | `Arc<T>`, `Mutex<T>` | the same ideas, safe to use from several threads ([chapter 31](#shared-state)) |
 
+:::analogy A visitor badge vs a shared locker key
+A normal reference (`&T`) is a visitor badge: it lets you read what is in a room, but it cannot keep the building open after the owner locks up and leaves. A smart pointer like `Box<T>` or `Rc<T>` is a deed or shared key card that actually keeps the data alive until the last holder steps out and closes the door.
+:::
+
 ## `Box<T>`: a value on the heap
 
 `Box::new(value)` moves a value to the heap and gives you a pointer to it. The box is the single owner. When the box goes out of scope, the heap memory is freed.

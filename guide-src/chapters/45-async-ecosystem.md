@@ -214,6 +214,32 @@ fn main() {
 
 The two closures borrow `left` and `right` from the caller. That is allowed because `join` returns only when both are finished, as with scoped threads. Below 1,000 items the function stops splitting, because handing out very small pieces costs more than computing them.
 
+### Dynamic scoped tasks with `rayon::scope`
+
+`rayon::join` runs two tasks. When the number of parallel pieces is known only at run time (for example, traversing a tree or updating chunks of a slice) and those tasks need to borrow local data, use **`rayon::scope`**:
+
+```rust ext run
+fn main() {
+    let mut out = [0_u64; 3];
+    let inputs = [10_u64, 20, 30];
+
+    rayon::scope(|s| {
+        for (slot, &val) in out.iter_mut().zip(&inputs) {
+            s.spawn(move |_| {
+                *slot = val * val;
+            });
+        }
+    });
+
+    println!("{out:?}");
+}
+```
+```output
+[100, 400, 900]
+```
+
+Like `std::thread::scope`, `rayon::scope` guarantees every task spawned inside finishes before `scope` returns—so closures can hold short-lived `&` and disjoint `&mut` borrows safely without `'static` bounds or `Arc`.
+
 ### When Rayon does not help
 
 - **Small jobs.** Handing work to other threads costs time. Measured on the test machine: adding up 1,000 numbers, repeated 1,000 times, took 0.05 milliseconds with `iter()` and 20 milliseconds with `par_iter()`. That is 400 times *slower*. Parallelism pays when each call has real work to do: roughly, when the sequential version takes at least a tenth of a millisecond.
@@ -496,6 +522,77 @@ all at once, in order: ["page 1", "page 2", "page 3", "page 4", "page 5", "page 
 | `.for_each_concurrent(n, f)` | run `f` for each item, up to `n` at a time, with no results |
 
 Why limit at all? Ten thousand downloads at once would overload your network, the other server, or the limit on open files. A limit of some tens keeps the speed and stays polite.
+
+### `FuturesUnordered` and custom `Stream`s
+
+When you want to poll a dynamic set of futures inside the **current** task—without spawning them onto Tokio (so they can borrow local variables and do not even need to be `Send`)—reach for **`FuturesUnordered`** from `futures::stream`:
+
+```rust ext run nocmp
+use std::time::Duration;
+use futures::stream::{FuturesUnordered, StreamExt};
+
+#[tokio::main]
+async fn main() {
+    let mut pending = FuturesUnordered::new();
+    for (label, ms) in [("third", 120), ("first", 10), ("second", 50)] {
+        pending.push(async move {
+            tokio::time::sleep(Duration::from_millis(ms)).await;
+            label
+        });
+    }
+
+    let mut order = Vec::new();
+    while let Some(label) = pending.next().await {
+        order.push(label);
+    }
+    println!("{order:?}");
+}
+```
+```output
+["first", "second", "third"]
+```
+
+Choose between the three dynamic concurrency tools like this:
+
+| Tool | Runs where | Bounds required | Cancellation on drop |
+|---|---|---|---|
+| `tokio::task::JoinSet` | Spawned across Tokio worker threads | Futures must be `Send + 'static` | Aborts all spawned tasks when dropped |
+| `FuturesUnordered` | Polled cooperatively inside the current task | Can borrow local data; no `Send` needed | Drops all inner futures when dropped |
+| `.map(f).buffer_unordered(n)` | Polled inside the current task with concurrency cap `n` | Driven lazily as you pull from the stream | Stops polling remaining items when dropped |
+
+You can also implement `futures::Stream` on your own wrapper type by projecting `Pin<&mut Self>` with `pin-project-lite` ([chapter 32](#async)):
+
+```rust
+use std::pin::Pin;
+use std::task::{Context, Poll};
+use futures::Stream;
+use pin_project_lite::pin_project;
+
+pin_project! {
+    /// Wraps any stream and counts yielded items.
+    struct CountedStream<S> {
+        #[pin]
+        inner: S,
+        seen: usize,
+    }
+}
+
+impl<S: Stream> Stream for CountedStream<S> {
+    type Item = (usize, S::Item);
+
+    fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+        let this = self.project();
+        match this.inner.poll_next(cx) {
+            Poll::Ready(Some(item)) => {
+                *this.seen += 1;
+                Poll::Ready(Some((*this.seen, item)))
+            }
+            Poll::Ready(None) => Poll::Ready(None),
+            Poll::Pending => Poll::Pending,
+        }
+    }
+}
+```
 
 ### Channels and timers as streams
 
@@ -1226,6 +1323,101 @@ requests seen: 3
 ```
 
 The `Service` trait has two methods. `poll_ready` says whether the service can accept a request now. `call` takes the request and returns a future. `Count<S>` is generic over the inner service `S`, so it wraps any service at all. That is all there is to middleware: a struct that holds the next service, does something, and passes the request on. For simple cases, Axum offers a shorter way with an async function, as the next chapter shows.
+:::
+
+## gRPC services with `tonic`
+
+Between internal backend services, HTTP + JSON is sometimes slower or looser than you want: every field name is repeated as text on the wire, and clients and servers only discover schema mismatches when parsing fails. **gRPC** solves both with **Protocol Buffers** (`.proto` schemas) over HTTP/2: compact binary frames, generated client and server structs in Rust, and bidirectional streaming built in.
+
+In Rust, **`tonic`** (built on Tokio, Hyper, and Tower) is the standard gRPC crate, paired with **`prost`** and `tonic-build`:
+
+```protobuf file=proto/greeter.proto
+syntax = "proto3";
+package greeter;
+
+service Greeter {
+  rpc SayHello (HelloRequest) returns (HelloReply);
+}
+
+message HelloRequest { string name = 1; }
+message HelloReply   { string message = 1; }
+```
+
+```rust file=build.rs
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    tonic_build::compile_protos("proto/greeter.proto")?;
+    Ok(())
+}
+```
+
+```rust file=src/main.rs
+use tonic::{Request, Response, Status, transport::Server};
+
+pub mod greeter {
+    tonic::include_proto!("greeter");
+}
+
+use greeter::greeter_server::{Greeter, GreeterServer};
+use greeter::{HelloReply, HelloRequest};
+
+#[derive(Default)]
+struct MyGreeter;
+
+#[tonic::async_trait]
+impl Greeter for MyGreeter {
+    async fn say_hello(&self, request: Request<HelloRequest>) -> Result<Response<HelloReply>, Status> {
+        let name = request.into_inner().name;
+        Ok(Response::new(HelloReply { message: format!("Hello, {name}!") }))
+    }
+}
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let addr = "0.0.0.0:50051".parse()?;
+    Server::builder()
+        .add_service(GreeterServer::new(MyGreeter))
+        .serve(addr)
+        .await?;
+    Ok(())
+}
+```
+
+Because `tonic` runs on `tower`, timeouts, concurrency limits, and request-ID / OpenTelemetry layers attach to a gRPC server the exact same way as to Axum. Choose **REST/JSON** for public browser APIs and simple integrations; choose **gRPC (`tonic`)** for high-throughput internal service-to-service contracts and streaming RPCs.
+
+## Background jobs, queues, and messaging
+
+Spawning a background task with `tokio::spawn` works for fire-and-forget work inside a single process, **until the server restarts or crashes**: anything sitting only in memory vanishes. Production services separate accepting a request from doing slow work (sending email, resizing images, syncing billing) using durable queues and message brokers:
+
+- **Durable job queues on your existing database** (`sqlx` + `SELECT ... FOR UPDATE SKIP LOCKED`, or the `apalis` crate): workers claim pending rows in SQL transactions. Zero new infrastructure, ACID guarantees, and survived restarts.
+- **Task queues / pub-sub (`lapin` for RabbitMQ, `async-nats` for NATS)**: route messages between independent services with explicit acknowledgements (**ACK** after the work succeeds, **NACK** / dead-letter queue after repeated failures).
+- **Distributed event logs (`rdkafka` for Kafka / Redpanda)**: append-only partitioned logs when multiple consumer groups need to replay days of events independently.
+
+```rust file=src/worker.rs
+use futures::StreamExt;
+use tokio_util::sync::CancellationToken;
+
+async fn run_nats_worker(client: async_nats::Client, stop: CancellationToken) -> Result<(), Box<dyn std::error::Error>> {
+    let mut subscriber = client.subscribe("orders.created").await?;
+
+    loop {
+        tokio::select! {
+            _ = stop.cancelled() => {
+                // Stop reading new messages and flush any in-flight work
+                break;
+            }
+            Some(msg) = subscriber.next() => {
+                // Handlers must be idempotent: redelivering the same event_id
+                // after a network glitch must not charge a customer twice.
+                println!("received {} bytes on {}", msg.payload.len(), msg.subject);
+            }
+        }
+    }
+    Ok(())
+}
+```
+
+:::warn Design message handlers to be idempotent
+Virtually every queue delivers messages **at least once**: if a worker processes a job and crashes a millisecond before sending the ACK, the broker hands the same message to another worker. Store a unique `idempotency_key` (or processed event ID in a `UNIQUE` database column) inside the same transaction so duplicate deliveries become harmless no-ops.
 :::
 
 ## More crates for networking

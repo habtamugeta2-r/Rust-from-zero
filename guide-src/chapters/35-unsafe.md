@@ -394,6 +394,54 @@ fn main() {
 `assume_init` is the unsafe step: you promise that a value has been written. In old code you may see `std::mem::uninitialized()`. It is deprecated, because almost every use of it was undefined behaviour.
 :::
 
+### Controlling drop order: `ManuallyDrop<T>`
+
+Normally Rust runs `Drop` automatically on every field when a struct leaves scope, in declaration order. Sometimes you need to suppress automatic dropping—for instance, to put a non-`Copy` field inside a `union`, hand ownership across FFI without double-freeing, or drop fields in an explicit custom order before releasing an allocator or lock.
+
+`std::mem::ManuallyDrop<T>` wraps `T` with zero memory overhead and **never drops `T` automatically**. Unlike `std::mem::forget` (which consumes ownership permanently and leaks), `ManuallyDrop<T>` lets you keep reading and mutating `T` via `Deref`/`DerefMut` and explicitly run `ManuallyDrop::drop` inside `unsafe` (or extract the value back out safely with `ManuallyDrop::into_inner`):
+
+```rust run
+use std::mem::ManuallyDrop;
+
+struct Logger(&'static str);
+
+impl Drop for Logger {
+    fn drop(&mut self) {
+        println!("dropping {}", self.0);
+    }
+}
+
+struct OrderedPair {
+    second: ManuallyDrop<Logger>,
+    first: ManuallyDrop<Logger>,
+}
+
+impl Drop for OrderedPair {
+    fn drop(&mut self) {
+        // SAFETY: both fields are initialised and dropped exactly once here.
+        unsafe {
+            ManuallyDrop::drop(&mut self.first);
+            ManuallyDrop::drop(&mut self.second);
+        }
+    }
+}
+
+fn main() {
+    let pair = OrderedPair {
+        second: ManuallyDrop::new(Logger("second field")),
+        first: ManuallyDrop::new(Logger("first field")),
+    };
+    println!("created {}", pair.first.0);
+}
+```
+```output
+created first field
+dropping first field
+dropping second field
+```
+
+`ManuallyDrop::drop(&mut x)` runs the destructor in place without moving `x`, so you must guarantee nothing touches `x` afterwards and it is never dropped a second time.
+
 ## The other three abilities
 
 ### Mutable statics
