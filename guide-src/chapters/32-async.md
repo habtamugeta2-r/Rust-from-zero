@@ -362,7 +362,7 @@ The ordinary `std::sync::Mutex` is the right choice in async code as long as the
 
 ## The golden rule: never block the runtime
 
-The runtime has a few threads, and each of them serves thousands of tasks. A task gives its thread back only at an `.await`. If a task does something slow **without** awaiting, every other task on that thread is stuck behind it.
+Each runtime thread serves many tasks. When a task is polled, it runs until it finishes or returns control to the runtime. An `.await` may return control if the awaited future is not ready; if it is already ready, execution continues immediately. A slow blocking operation does not return control, so other tasks on that thread must wait.
 
 Things that block:
 
@@ -632,7 +632,7 @@ async fn main() {
 - `join!` waits for all, `select!` for the first, `timeout` limits the wait, `tokio::spawn` starts a background task.
 - Dropping a future cancels it at its current `.await`.
 - Spawned tasks must be `Send`. Use `Arc`, and async channels to communicate.
-- Never block the runtime. Use async I/O and `spawn_blocking`.
+- Avoid blocking a runtime thread. Use async I/O, or move blocking work to `spawn_blocking`.
 - Underneath, a future is a state machine with a `poll` method, and a runtime is a loop that polls.
 :::
 
@@ -656,7 +656,7 @@ async fn main() {
 - It is less precise
 + It blocks the whole thread, so all other tasks that share that thread stop too
 - It cancels the task
-= A runtime thread serves many tasks and gets control back only at an `.await`. A blocking call holds it hostage. Use `tokio::time::sleep(...).await`.
+= An `.await` yields only when its future is not ready. A blocking call keeps the runtime thread busy, so other tasks on it cannot run. Use `tokio::time::sleep(...).await` instead of `std::thread::sleep`.
 
 ? What happens to the slower branch of a `tokio::select!`?
 - It keeps running in the background

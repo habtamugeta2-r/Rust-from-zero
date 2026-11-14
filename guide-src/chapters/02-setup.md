@@ -234,8 +234,12 @@ Putting `//` in front of a line of code switches it off without deleting it. Pro
 | `cargo build` | Compiles without running | When you only want the finished program |
 | `cargo build --release` | Compiles a slower-to-build but much faster-running version | When you give the program to others |
 | `cargo fmt` | Tidies the layout of your code | Before you save your work |
+| `cargo test` | Runs the project's tests | Whenever you change behavior |
+| `cargo clippy` | Reports common mistakes and improvements | Before sharing your code |
 
 The finished program is an ordinary file. `cargo build` puts it in the `target/debug` folder (named `hello_rust`, or `hello_rust.exe` on Windows). You could copy that one file to a friend with the same kind of computer and they could run it without installing Rust.
+
+For a quick project check, run `cargo fmt --check`, `cargo test` and `cargo clippy`. The first checks formatting without changing files; the others check behavior and flag common pitfalls. The later [quality tools chapter](#quality-tools) explains how to use these checks in a team.
 
 :::plain Debug and release
 A **debug build** (the default) compiles quickly but runs slowly, and it contains extra information that helps you find bugs. A **release build** (`--release`) takes longer to compile because the compiler works hard to make the program fast. Use debug while you develop and release for the final program. The speed difference can be ten times or more.

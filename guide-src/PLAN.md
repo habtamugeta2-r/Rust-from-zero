@@ -3,6 +3,10 @@
 Deliverable: /home/user/rust-guide.html (ONE self-contained file), built by `python3 tools/build.py`
 from `chapters/*.md` + `assets/*`. Never edit the HTML by hand.
 
+## Reader routes
+- Core path: chapters 00–26. Essential Cargo and quality-check commands are introduced in chapter 02; chapters 39–41 provide the deeper reference when needed.
+- After the core path, readers can follow goal-based routes in chapter 53. Advanced language topics and ecosystem surveys remain available as optional deep dives.
+
 ## Tooling (not persisted between messages — reinstall if /opt/rs is missing)
 - Rust toolchain lives in /opt/rs (RUSTUP_HOME=/opt/rs/rustup, CARGO_HOME=/opt/rs/cargo, `. /opt/rs/env.sh`).
   Reinstall: see `tools/setup-env.sh`.
@@ -14,8 +18,8 @@ from `chapters/*.md` + `assets/*`. Never edit the HTML by hand.
   in fail/panic/warns blocks (line numbers must match).
 - Multi-file projects (chapters 48, 52): every listing is a fence `lang proj=<name> file=<path>` (later parts of the
   same file add `cont`, shown as "(continued)"). `python3 tools/project.py <chapter-prefix> <name> <outdir>` rebuilds
-  the project from the chapter; `cargo test` there (and `diff -r` against the tested scratch project) proves the
-  chapter is complete. These fences have no check kind, so check.py skips them.
+  the project from the chapter. `python3 tools/check-projects.py` rebuilds and runs `cargo test --all-targets` for
+  both projects. These fences have no check kind, so check.py skips them.
 - Flag `release` on a rust block: check.py compiles it with optimisation, and Run opens the playground in release mode
   (chapter 51: timings).
 - `text`/`output` blocks with a line over 100 chars soft-wrap automatically (class `soft`), unless they contain

@@ -14,6 +14,10 @@ Finish every chapter, exercise and project and you will be able to build real so
 
 This guide is intentionally scoped to the core Rust language, its tooling, the most important crates and ecosystem patterns, and the practical projects in this book. It does not pretend to cover every niche branch of the ecosystem: blockchain, kernel programming, robotics and other specialised domains are outside the main path of a from-zero guide. The point is to give you a solid foundation before you choose a deeper specialism.
 
+## Choose a learning route
+
+You do not have to study every topic before building useful software. If you are new to Rust, follow the chapters in order through [chapter 26](#project-report), then use the short tool commands from [chapter 2](#setup) and consult the deeper guides in [chapters 39–41](#cargo) as your projects need them. After that, choose a goal-specific route in [chapter 53](#next). The advanced language and ecosystem chapters are there when your work calls for them.
+
 Learning to program is like learning to cook or to play an instrument. Reading alone does not work. **Each chapter gives you something to do, and the doing is where the learning happens.**
 
 ## How a chapter is built

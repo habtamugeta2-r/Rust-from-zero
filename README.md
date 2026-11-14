@@ -23,3 +23,5 @@ python3 guide-src/tools/build.py
 This writes the generated `rust-guide.html` at the repository root. Edit the source chapters and assets rather than editing the generated HTML directly.
 
 To check the generated guide structure, run `python3 guide-src/tools/audit.py`. Rust examples can be checked with `python3 guide-src/tools/check.py`; see the source plan for checker options and the extra setup needed for crate-backed examples.
+
+To rebuild and test the multi-file projects from their chapter listings, run `python3 guide-src/tools/check-projects.py`. The GitHub Actions workflow runs the structure audit, Rust example checks, project tests, and guide build on pushes and pull requests.

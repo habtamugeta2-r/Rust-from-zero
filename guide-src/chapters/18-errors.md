@@ -509,18 +509,23 @@ miette = "9.1"
 ```rust ext run
 use eyre::{Context, Result};
 
-fn main() -> Result<()> {
+fn read_port() -> Result<u16> {
     let text = std::fs::read_to_string("settings.toml")
         .wrap_err("could not read the settings file")?;
-    let port: u16 = text.trim().parse()
-        .wrap_err_with(|| format!("the port '{text}' is not a number"))?;
-    println!("port is {port}");
-    Ok(())
+    text.trim().parse()
+        .wrap_err_with(|| format!("the port '{text}' is not a number"))
+}
+
+fn main() {
+    match read_port() {
+        Ok(port) => println!("port is {port}"),
+        Err(error) => println!("{error:#}"),
+    }
 }
 ```
 
 ```output
-Error: could not read the settings file: No such file or directory (os error 2)
+could not read the settings file: No such file or directory (os error 2)
 ```
 
 `color-eyre` installs itself once, at the start of `main`:
@@ -562,7 +567,7 @@ fn main() -> Result<(), miette::Report> {
 ```
 
 ```output
-error: the colour 'snake' is not known
+the colour 'snake' is not known
 ```
 
 With miette's own report handler the same error also prints its help line and its error code; the handler is what gives you compiler-style reports, including source snippets when you add `#[label]` spans.

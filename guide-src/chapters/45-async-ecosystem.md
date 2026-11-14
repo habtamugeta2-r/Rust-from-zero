@@ -913,7 +913,7 @@ reqwest has no time limit by default. A request to a server that never answers w
 reqwest is powerful, and it needs Tokio. A script or a command-line tool often does not want an async runtime at all. **ureq** is a minimal, blocking HTTP client: one call does the whole request and waits for the answer.
 
 ```toml
-ureq = "2.11"
+ureq = "3.5"
 ```
 
 A tiny server and a client that talks to it, all in one program:
@@ -936,24 +936,26 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     });
 
     let response = ureq::get(&format!("http://{address}/"))
-        .timeout(std::time::Duration::from_secs(5))
+        .config()
+        .timeout_global(Some(std::time::Duration::from_secs(5)))
+        .build()
         .call()?;
 
     println!("status: {}", response.status());
-    println!("{}", response.into_string()?);
+    println!("{}", response.into_body().read_to_string()?);
     Ok(())
 }
 ```
 
 ```output
-status: 200
+status: 200 OK
 hello, ureq
 ```
 
 - `.call()` performs the request and waits. No `async`, no `await`, no runtime.
-- `response.status()` is the status code, and `into_string()` reads the whole body as text.
-- `timeout` sets an upper bound: a server that never answers does not wait forever.
-- Other builders: `.set("header", "value")` for headers, `.send_json(&value)` for a JSON body, and `ureq::Agent` to reuse connections across many requests (the equivalent of reqwest's `Client`).
+- `response.status()` is the status code, and `into_body().read_to_string()` reads the whole body as text.
+- `timeout_global` sets an upper bound: a server that never answers does not wait forever. In ureq 3, set it with `.config().timeout_global(Some(duration)).build()`.
+- Other builders: `.header("header", "value")` for headers, `.send_json(&value)` for a JSON body, and `ureq::Agent` to reuse connections across many requests (the equivalent of reqwest's `Client`).
 
 | | reqwest | ureq |
 |---|---|---|

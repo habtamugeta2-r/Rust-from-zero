@@ -310,7 +310,7 @@ env_logger = "0.11"
 
 A tiny program with a logger:
 
-```rust ext run
+```rust ext run nocmp
 use std::io::Write;
 
 use env_logger::Builder;
@@ -343,6 +343,8 @@ WARN: skipping an empty item
 DEBUG: a detail only useful while developing
 ERROR: could not reach the server
 ```
+
+`env_logger` writes to standard error by default. These log lines are shown separately from a program's ordinary output.
 
 - The `format` closure decides what each line looks like; here it is just the level and the message.
 - `default_filter_or("trace")` shows everything during development. Without any `RUST_LOG` setting, `info` and above would be enough for production.
@@ -382,7 +384,7 @@ fn main() {
     env_logger::Builder::from_default_env().init();
 
     info!("starting import");
-    debug!(records = 12, "parsed input");
+    debug!("parsed input: {} records", 12);
     warn!("one optional field was missing");
     error!("the import stopped");
 }

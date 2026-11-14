@@ -584,6 +584,8 @@ Hello, you!
 <h2 id="start--what-you-will-be-able-to-do">What you will be able to do</h2>
 <p>Finish every chapter, exercise and project and you will be able to build real software in Rust: command-line tools, web services backed by a database, programs that do many things at once. You will also understand ideas that apply to every programming language: how memory works, how to organise a large program, how to handle errors, and how to test that your code is right.</p>
 <p>This guide is intentionally scoped to the core Rust language, its tooling, the most important crates and ecosystem patterns, and the practical projects in this book. It does not pretend to cover every niche branch of the ecosystem: blockchain, kernel programming, robotics and other specialised domains are outside the main path of a from-zero guide. The point is to give you a solid foundation before you choose a deeper specialism.</p>
+<h2 id="start--choose-a-learning-route">Choose a learning route</h2>
+<p>You do not have to study every topic before building useful software. If you are new to Rust, follow the chapters in order through <a href="#project-report" data-nav="project-report">chapter 26</a>, then use the short tool commands from <a href="#setup" data-nav="setup">chapter 2</a> and consult the deeper guides in <a href="#cargo" data-nav="cargo">chapters 39–41</a> as your projects need them. After that, choose a goal-specific route in <a href="#next" data-nav="next">chapter 53</a>. The advanced language and ecosystem chapters are there when your work calls for them.</p>
 <p>Learning to program is like learning to cook or to play an instrument. Reading alone does not work. <strong>Each chapter gives you something to do, and the doing is where the learning happens.</strong></p>
 <h2 id="start--how-a-chapter-is-built">How a chapter is built</h2>
 <p>Every chapter follows the same rhythm:</p>
@@ -778,8 +780,9 @@ This is a new line.</code></pre></figure>
 <figure class="code lang-output out"><figcaption class="code-head"><span class="code-lang">Output</span><span class="code-actions"></span></figcaption><pre><code>Welcome!</code></pre></figure>
 <p>Putting <code>//</code> in front of a line of code switches it off without deleting it. Programmers call this <em>commenting out</em> a line.</p>
 <h2 id="setup--the-cargo-commands-you-need-every-day">The Cargo commands you need every day</h2>
-<div class="table-wrap"><table><thead><tr><th>Command</th><th>What it does</th><th>When to use it</th></tr></thead><tbody><tr><td><code>cargo new name</code></td><td>Creates a new project in a folder called <code>name</code></td><td>Once per project</td></tr><tr><td><code>cargo run</code></td><td>Compiles the project and runs it</td><td>All the time</td></tr><tr><td><code>cargo check</code></td><td>Only checks the code for errors. Much faster than a full compile</td><td>While writing, to find mistakes quickly</td></tr><tr><td><code>cargo build</code></td><td>Compiles without running</td><td>When you only want the finished program</td></tr><tr><td><code>cargo build --release</code></td><td>Compiles a slower-to-build but much faster-running version</td><td>When you give the program to others</td></tr><tr><td><code>cargo fmt</code></td><td>Tidies the layout of your code</td><td>Before you save your work</td></tr></tbody></table></div>
+<div class="table-wrap"><table><thead><tr><th>Command</th><th>What it does</th><th>When to use it</th></tr></thead><tbody><tr><td><code>cargo new name</code></td><td>Creates a new project in a folder called <code>name</code></td><td>Once per project</td></tr><tr><td><code>cargo run</code></td><td>Compiles the project and runs it</td><td>All the time</td></tr><tr><td><code>cargo check</code></td><td>Only checks the code for errors. Much faster than a full compile</td><td>While writing, to find mistakes quickly</td></tr><tr><td><code>cargo build</code></td><td>Compiles without running</td><td>When you only want the finished program</td></tr><tr><td><code>cargo build --release</code></td><td>Compiles a slower-to-build but much faster-running version</td><td>When you give the program to others</td></tr><tr><td><code>cargo fmt</code></td><td>Tidies the layout of your code</td><td>Before you save your work</td></tr><tr><td><code>cargo test</code></td><td>Runs the project’s tests</td><td>Whenever you change behavior</td></tr><tr><td><code>cargo clippy</code></td><td>Reports common mistakes and improvements</td><td>Before sharing your code</td></tr></tbody></table></div>
 <p>The finished program is an ordinary file. <code>cargo build</code> puts it in the <code>target/debug</code> folder (named <code>hello_rust</code>, or <code>hello_rust.exe</code> on Windows). You could copy that one file to a friend with the same kind of computer and they could run it without installing Rust.</p>
+<p>For a quick project check, run <code>cargo fmt --check</code>, <code>cargo test</code> and <code>cargo clippy</code>. The first checks formatting without changing files; the others check behavior and flag common pitfalls. The later <a href="#quality-tools" data-nav="quality-tools">quality tools chapter</a> explains how to use these checks in a team.</p>
 <aside class="callout c-plain"><div class="callout-label"><svg class="i " aria-hidden="true"><use href="#i-chat"/></svg>In plain English</div><div class="callout-title">Debug and release</div><div class="callout-body"><p>A <strong>debug build</strong> (the default) compiles quickly but runs slowly, and it contains extra information that helps you find bugs. A <strong>release build</strong> (<code>--release</code>) takes longer to compile because the compiler works hard to make the program fast. Use debug while you develop and release for the final program. The speed difference can be ten times or more.</p></div></aside>
 <h2 id="setup--when-something-goes-wrong">When something goes wrong</h2>
 <p>Sooner or later you will make a typing mistake. Let us make one on purpose. Remove the <code>!</code> after <code>println</code>:</p>
@@ -2898,14 +2901,14 @@ EL!</code></pre></figure>
     <span class="k">let</span> first = word[<span class="n">0</span>];
 }</code></pre></figure>
 <figure class="code lang-error err"><figcaption class="code-head"><span class="code-lang">Compiler message</span><span class="code-actions"></span></figcaption><pre><code><span class="er">error[E0277]</span>: the type `str` cannot be indexed by `{integer}`
- <span class="hl">--&gt;</span> src/main.rs:3:22
-  |
-3 |     let first = word[0];
-  |                      <span class="er">^ string indices are ranges of `usize`</span>
-  |
-  = <span class="hl">help</span>: the trait `SliceIndex&lt;str&gt;` is not implemented for `{integer}`
-  = <span class="hl">note</span>: you can use `.chars().nth()` or `.bytes().nth()`
-          for more information, see chapter 8 in The Book: &lt;https://doc.rust-lang.org/book/ch08-02-strings.html#indexing-into-strings&gt;
+   <span class="hl">--&gt;</span> src/main.rs:3:22
+    |
+  3 |     let first = word[0];
+    |                      <span class="er">^ string indices are ranges of `usize`</span>
+    |
+    = <span class="hl">help</span>: the trait `SliceIndex&lt;str&gt;` is not implemented for `{integer}`
+    = <span class="hl">note</span>: you can use `.chars().nth()` or `.bytes().nth()`
+            for more information, see chapter 8 in The Book: &lt;https://doc.rust-lang.org/book/ch08-02-strings.html#indexing-into-strings&gt;
 ...</code></pre></figure>
 <p>What should <code>word[0]</code> be? The first byte is only a third of the first letter. Finding the first <em>character</em> means reading the text from the start, which gets slower the longer the text is. Rust refuses to hide that. You say what you mean instead:</p>
 <figure class="code lang-rust"><figcaption class="code-head"><span class="code-lang">Rust</span><span class="code-actions"><button type="button" class="cbtn btn-copy" title="Copy this code"><svg class="i " aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button><button type="button" class="cbtn btn-run" title="Open this example in the online Rust Playground"><svg class="i " aria-hidden="true"><use href="#i-play"/></svg><span>Run</span></button></span></figcaption><pre><code><span class="k">fn</span> <span class="f">main</span>() {
@@ -3826,12 +3829,12 @@ Not found.</code></pre></figure>
     <span class="k">let</span> sum = maybe + <span class="n">1</span>;
 }</code></pre></figure>
 <figure class="code lang-error err"><figcaption class="code-head"><span class="code-lang">Compiler message</span><span class="code-actions"></span></figcaption><pre><code><span class="er">error[E0369]</span>: cannot add `{integer}` to `Option&lt;i32&gt;`
- <span class="hl">--&gt;</span> src/main.rs:3:21
-  |
-3 |     let sum = maybe + 1;
-  |               <span class="er">----- ^ - {integer}</span>
-  |               <span class="hl">|</span>
-  |               Option&lt;i32&gt;
+   <span class="hl">--&gt;</span> src/main.rs:3:21
+    |
+  3 |     let sum = maybe + 1;
+    |               <span class="er">----- ^ - {integer}</span>
+    |               <span class="hl">|</span>
+    |               Option&lt;i32&gt;
 ...</code></pre></figure>
 <p>The compiler will not let you forget the “nothing” case. A crash from an unexpected null cannot happen, because the type system makes “may be missing” visible and forces a decision.</p>
 <h3 id="enums--ways-to-get-at-the-value-inside">Ways to get at the value inside</h3>
@@ -6187,15 +6190,20 @@ miette = <span class="s">"9.1"</span></code></pre></figure>
 <p><code>eyre</code> in an application. <code>wrap_err</code> adds context; <code>wrap_err_with</code> builds the context lazily, only when there is an error:</p>
 <figure class="code lang-rust"><figcaption class="code-head"><span class="code-lang">Rust</span><span class="code-actions"><button type="button" class="cbtn btn-copy" title="Copy this code"><svg class="i " aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button></span></figcaption><pre><code><span class="k">use</span> eyre::{<span class="t">Context</span>, <span class="t">Result</span>};
 
-<span class="k">fn</span> <span class="f">main</span>() -&gt; <span class="t">Result</span>&lt;()&gt; {
+<span class="k">fn</span> <span class="f">read_port</span>() -&gt; <span class="t">Result</span>&lt;<span class="t">u16</span>&gt; {
     <span class="k">let</span> text = std::fs::<span class="f">read_to_string</span>(<span class="s">"settings.toml"</span>)
         .<span class="f">wrap_err</span>(<span class="s">"could not read the settings file"</span>)?;
-    <span class="k">let</span> port: <span class="t">u16</span> = text.<span class="f">trim</span>().<span class="f">parse</span>()
-        .<span class="f">wrap_err_with</span>(|| <span class="m">format!</span>(<span class="s">"the port '{text}' is not a number"</span>))?;
-    <span class="m">println!</span>(<span class="s">"port is {port}"</span>);
-    <span class="t">Ok</span>(())
+    text.<span class="f">trim</span>().<span class="f">parse</span>()
+        .<span class="f">wrap_err_with</span>(|| <span class="m">format!</span>(<span class="s">"the port '{text}' is not a number"</span>))
+}
+
+<span class="k">fn</span> <span class="f">main</span>() {
+    <span class="k">match</span> <span class="f">read_port</span>() {
+        <span class="t">Ok</span>(port) =&gt; <span class="m">println!</span>(<span class="s">"port is {port}"</span>),
+        <span class="t">Err</span>(error) =&gt; <span class="m">println!</span>(<span class="s">"{error:#}"</span>),
+    }
 }</code></pre></figure>
-<figure class="code lang-output out"><figcaption class="code-head"><span class="code-lang">Output</span><span class="code-actions"></span></figcaption><pre><code>Error: could not read the settings file: No such file or directory (os error 2)</code></pre></figure>
+<figure class="code lang-output out"><figcaption class="code-head"><span class="code-lang">Output</span><span class="code-actions"></span></figcaption><pre><code>could not read the settings file: No such file or directory (os error 2)</code></pre></figure>
 <p><code>color-eyre</code> installs itself once, at the start of <code>main</code>:</p>
 <figure class="code lang-rust"><figcaption class="code-head"><span class="code-lang">Rust</span><span class="code-actions"><button type="button" class="cbtn btn-copy" title="Copy this code"><svg class="i " aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button></span></figcaption><pre><code><span class="k">fn</span> <span class="f">main</span>() -&gt; eyre::<span class="t">Result</span>&lt;()&gt; {
     color_eyre::<span class="f">install</span>()?;
@@ -6222,7 +6230,7 @@ thiserror = <span class="s">"1.0"</span></code></pre></figure>
     <span class="m">println!</span>(<span class="s">"{report}"</span>);
     <span class="t">Ok</span>(())
 }</code></pre></figure>
-<figure class="code lang-output out"><figcaption class="code-head"><span class="code-lang">Output</span><span class="code-actions"></span></figcaption><pre><code>error: the colour 'snake' is not known</code></pre></figure>
+<figure class="code lang-output out"><figcaption class="code-head"><span class="code-lang">Output</span><span class="code-actions"></span></figcaption><pre><code>the colour 'snake' is not known</code></pre></figure>
 <p>With miette’s own report handler the same error also prints its help line and its error code; the handler is what gives you compiler-style reports, including source snippets when you add <code>#[label]</code> spans.</p>
 <div class="table-wrap"><table><thead><tr><th></th><th>Best for</th><th>What it adds</th></tr></thead><tbody><tr><td><code>thiserror</code></td><td>libraries</td><td>precise error enums callers can <code>match</code> on</td></tr><tr><td><code>anyhow</code></td><td>applications</td><td>one error type, <code>context</code> and <code>bail!</code></td></tr><tr><td><code>eyre</code></td><td>applications, especially CLIs</td><td>coloured reports and source locations via <code>color-eyre</code></td></tr><tr><td><code>miette</code></td><td>developer tools</td><td>compiler-style diagnostics: codes, help text, source snippets</td></tr></tbody></table></div>
 <aside class="callout c-compare"><div class="callout-label"><svg class="i " aria-hidden="true"><use href="#i-scale"/></svg>How other languages do it</div><div class="callout-title">Which error crate today?</div><div class="callout-body"><ul><li>Writing a library: <code>thiserror</code>, so callers can react to each case.</li><li>Writing an application: <code>anyhow</code>, quick context for every error.</li><li>Writing a CLI tool that people run: <code>eyre</code>; add <code>color-eyre</code> for coloured reports.</li><li>Writing a tool that parses or generates code or config: <code>miette</code>.</li></ul></div></aside>
@@ -11112,7 +11120,7 @@ true</code></pre></figure>
 2</code></pre></figure>
 <p><code>Index</code> returns a reference (<code>&amp;f64</code>). Rust adds the <code>*</code> for you when you write <code>m[(r, c)]</code>, and the same expression on the left of <code>=</code> uses <code>IndexMut</code>. The parameter pattern <code>(r, c): (usize, usize)</code> takes the tuple apart right in the signature.</p>
 <p><code>Mul</code> is implemented for <code>&amp;Matrix</code>, a reference, so <code>&amp;a * &amp;b</code> borrows both operands and leaves them usable. An implementation for <code>Matrix</code> by value would consume both matrices on every multiplication. Whether sizes fit is checked at run time here, with <code>assert_eq!</code>. With const generics (<a href="#generics" data-nav="generics">chapter 19</a>), a <code>Matrix&lt;const R: usize, const C: usize&gt;</code> could let the compiler check it.</p></div></details></div></div><div class="ch-done"><div><b>Finished this chapter?</b><span>Mark it complete to track your progress through the guide.</span></div><button type="button" class="btn primary btn-done" data-done="advanced-traits"><svg class="i " aria-hidden="true"><use href="#i-check"/></svg><span>Mark as complete</span></button></div><nav class="ch-nav" aria-label="Chapter navigation"><a class="ch-nav-a prev" href="#smart-pointers" data-nav="smart-pointers"><svg class="i " aria-hidden="true"><use href="#i-arrow-left"/></svg><span><small>Previous</small><b>Smart pointers: <code>Box</code>, <code>Rc</code>, <code>RefCell</code> and friends</b></span></a><a class="ch-nav-a next" href="#type-system" data-nav="type-system"><span><small>Next</small><b>The type system as a design tool</b></span><svg class="i " aria-hidden="true"><use href="#i-arrow-right"/></svg></a></nav></section>
-<section class="chapter kind-chapter" id="ch-type-system" data-id="type-system" hidden><header class="ch-head"><div class="ch-kicker"><span>Part 6 · Memory and types mastery</span><span class="lvl lvl-advanced">Advanced</span><span class="ch-time">about 55 min</span></div><div class="ch-num" aria-hidden="true">29</div><h1 tabindex="-1">The type system as a design tool</h1><div class="ch-learn"><div class="ch-learn-h">By the end of this chapter you will be able to</div><ul><li><svg class="i " aria-hidden="true"><use href="#i-check"/></svg><span>Convert between types safely with <code>From</code>, <code>TryFrom</code>, <code>FromStr</code> and <code>AsRef</code></span></li><li><svg class="i " aria-hidden="true"><use href="#i-check"/></svg><span>Use newtypes and type aliases to make code clearer and safer</span></li><li><svg class="i " aria-hidden="true"><use href="#i-check"/></svg><span>Explain the never type, zero-sized types and dynamically sized types</span></li><li><svg class="i " aria-hidden="true"><use href="#i-check"/></svg><span>Encode rules in types so that wrong programs do not compile (the typestate pattern)</span></li><li><svg class="i " aria-hidden="true"><use href="#i-check"/></svg><span>Apply “parse, don’t validate” and “make invalid states unrepresentable”</span></li></ul></div></header><div class="ch-body"><p>So far you have used types to describe data. Experienced Rust programmers use them for something more: to make mistakes <strong>impossible to write</strong>. The compiler checks types on every build, for every line, at no cost when the program runs. Every rule you can express as a type is a rule that never needs a test and can never be forgotten.</p>
+<section class="chapter kind-chapter" id="ch-type-system" data-id="type-system" hidden><header class="ch-head"><div class="ch-kicker"><span>Part 6 · Memory and types mastery</span><span class="lvl lvl-advanced">Advanced</span><span class="ch-time">about 55 min</span></div><div class="ch-num" aria-hidden="true">29</div><h1 tabindex="-1">The type system as a design tool</h1><div class="ch-learn"><div class="ch-learn-h">By the end of this chapter you will be able to</div><ul><li><svg class="i " aria-hidden="true"><use href="#i-check"/></svg><span>Convert between types safely with <code>From</code>, <code>TryFrom</code>, <code>FromStr</code> and <code>AsRef</code></span></li><li><svg class="i " aria-hidden="true"><use href="#i-check"/></svg><span>Use newtypes and type aliases to make code clearer and safer</span></li><li><svg class="i " aria-hidden="true"><use href="#i-check"/></svg><span>Explain the never type, zero-sized types and dynamically sized types</span></li><li><svg class="i " aria-hidden="true"><use href="#i-check"/></svg><span>Encode rules in types so that wrong programs do not compile (the typestate pattern)</span></li><li><svg class="i " aria-hidden="true"><use href="#i-check"/></svg><span>Apply “parse, don’t validate” and “make invalid states unrepresentable”</span></li></ul></div></header><div class="ch-body"><p>So far you have used types to describe data. Experienced Rust programmers use them for something more: to make certain mistakes <strong>impossible to write</strong>. The compiler checks type rules before the program runs, at no cost while it runs. Types can enforce many important rules, but they complement tests rather than replace them.</p>
 <p>This chapter first completes the picture of conversions between types, then presents the less obvious types of the language, and ends with the design techniques that tie them together.</p>
 <aside class="callout c-analogy"><div class="callout-label"><svg class="i " aria-hidden="true"><use href="#i-bulb"/></svg>Real-world analogy</div><div class="callout-title">Labels on shipping boxes</div><div class="callout-body"><p>Every value in Rust carries a type label. A newtype is a label that says, “this is not just a number; it is a percentage, a distance, or an amount in a specific unit.” The compiler checks the label before the code runs, so many dangerous mistakes are impossible to write.</p></div></aside>
 <h2 id="type-system--converting-between-types">Converting between types</h2>
@@ -11136,7 +11144,7 @@ true</code></pre></figure>
 a</code></pre></figure>
 <p>Use <code>as</code> when losing information is intended or cannot happen: a small integer type to a bigger one, or an integer to a float for a division. For everything else there are conversions that cannot lose data, and conversions that report failure.</p>
 <h3 id="type-system--from-and-into-conversions-that-cannot-fail"><code>From</code> and <code>Into</code>: conversions that cannot fail</h3>
-<p><code>From</code> is implemented only where the conversion always works and loses nothing:</p>
+<p><code>From</code> is for conversions that always succeed and are intended to preserve meaning:</p>
 <figure class="code lang-rust"><figcaption class="code-head"><span class="code-lang">Rust</span><span class="code-actions"><button type="button" class="cbtn btn-copy" title="Copy this code"><svg class="i " aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button><button type="button" class="cbtn btn-run" title="Open this example in the online Rust Playground"><svg class="i " aria-hidden="true"><use href="#i-play"/></svg><span>Run</span></button></span></figcaption><pre><code><span class="k">fn</span> <span class="f">main</span>() {
     <span class="k">let</span> wide: <span class="t">i64</span> = <span class="t">i64</span>::<span class="f">from</span>(<span class="n">42_</span><span class="k">i32</span>);            <span class="c">// every i32 fits into an i64
 </span>    <span class="k">let</span> float: <span class="t">f64</span> = <span class="t">f64</span>::<span class="f">from</span>(<span class="n">7_</span><span class="k">u32</span>);            <span class="c">// every u32 has an exact f64
@@ -11150,7 +11158,7 @@ a</code></pre></figure>
     <span class="m">println!</span>(<span class="s">"{wide} {float} {code} {text} {boxed} {:?} {also_wide}"</span>, list);
 }</code></pre></figure>
 <figure class="code lang-output out"><figcaption class="code-head"><span class="code-lang">Output</span><span class="code-actions"></span></figcaption><pre><code>42 7 233 hello hello [1, 2, 3] 42</code></pre></figure>
-<p>There is no <code>i32::from(some_i64)</code> and no <code>f32::from(some_f64)</code>. Those conversions could lose data, so the standard library does not offer them through <code>From</code>. The absence is the safety feature.</p>
+<p>There is no <code>i32::from(some_i64)</code> and no <code>f32::from(some_f64)</code>. For a narrowing integer conversion, use <code>TryFrom</code> to check the range; for a float conversion, use an explicit cast only when its behavior is acceptable. The standard library avoids providing potentially lossy conversions through <code>From</code>.</p>
 <h3 id="type-system--tryfrom-and-tryinto-conversions-that-may-fail"><code>TryFrom</code> and <code>TryInto</code>: conversions that may fail</h3>
 <p>When a conversion works only for some values, it returns a <code>Result</code>:</p>
 <figure class="code lang-rust"><figcaption class="code-head"><span class="code-lang">Rust</span><span class="code-actions"><button type="button" class="cbtn btn-copy" title="Copy this code"><svg class="i " aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button><button type="button" class="cbtn btn-run" title="Open this example in the online Rust Playground"><svg class="i " aria-hidden="true"><use href="#i-play"/></svg><span>Run</span></button></span></figcaption><pre><code><span class="k">fn</span> <span class="f">main</span>() {
@@ -11247,7 +11255,7 @@ Err("invalid digit found in string")</code></pre></figure>
 }</code></pre></figure>
 <figure class="code lang-output out"><figcaption class="code-head"><span class="code-lang">Output</span><span class="code-actions"></span></figcaption><pre><code>LITERAL OWNED
 Some("txt") Some("gz")</code></pre></figure>
-<p><code>AsRef&lt;Path&gt;</code> is the reason the functions in <code>std::fs</code> take <code>&amp;str</code>, <code>String</code>, <code>Path</code> and <code>PathBuf</code> alike.</p>
+<p><code>AsRef&lt;Path&gt;</code> lets many functions in <code>std::fs</code> accept values such as <code>&amp;str</code>, <code>String</code>, <code>Path</code> and <code>PathBuf</code> through one parameter type.</p>
 <div class="table-wrap"><table><thead><tr><th>I have … and want …</th><th>Use</th></tr></thead><tbody><tr><td>a number, in a bigger number type</td><td><code>i64::from(x)</code> or <code>x.into()</code></td></tr><tr><td>a number, in a type where it might not fit</td><td><code>u8::try_from(x)</code></td></tr><tr><td>a number, and I accept cutting it off</td><td><code>x as u8</code></td></tr><tr><td>text, and want a value</td><td><code>text.parse::&lt;T&gt;()</code> (<code>FromStr</code>)</td></tr><tr><td>a value, and want text</td><td><code>value.to_string()</code> (<code>Display</code>)</td></tr><tr><td>my type from another type, always possible</td><td><code>impl From&lt;Other&gt; for Mine</code></td></tr><tr><td>my type from another type, with a check</td><td><code>impl TryFrom&lt;Other&gt; for Mine</code></td></tr><tr><td>a parameter that accepts several text or path types</td><td><code>impl AsRef&lt;str&gt;</code>, <code>impl AsRef&lt;Path&gt;</code></td></tr></tbody></table></div>
 <h2 id="type-system--newtypes-different-meanings-different-types">Newtypes: different meanings, different types</h2>
 <p>A function with the signature <code>fn transfer(from: u64, to: u64, amount: u64)</code> takes three numbers of the same type. Nothing stops a caller from passing them in the wrong order. The mistake compiles, and moves the wrong amount from the wrong account.</p>
@@ -11364,10 +11372,10 @@ fn main() {
 <figure class="code lang-output out"><figcaption class="code-head"><span class="code-lang">Output</span><span class="code-actions"></span></figcaption><pre><code>0 0 0
 8 8
 8 8</code></pre></figure>
-<p>The second line confirms that a newtype is free. The third shows a neat optimisation: an <code>Option&lt;&amp;T&gt;</code> is no bigger than a <code>&amp;T</code>. A reference can never be zero, so Rust uses the address zero to mean <code>None</code>.</p>
+<p>The second line confirms that a newtype is free. The third shows that <code>Option&lt;&amp;T&gt;</code> is no bigger than <code>&amp;T</code>: because references cannot be null, Rust can use the null-pointer representation for <code>None</code>.</p>
 <p>Zero-sized types are useful as <strong>markers</strong>: types that exist only to tell things apart at compile time. They are the basis of the typestate pattern below.</p>
 <h3 id="type-system--dynamically-sized-types">Dynamically sized types</h3>
-<p><code>str</code>, <code>[T]</code> and <code>dyn Trait</code> have no size known at compile time. They always live behind a pointer, and that pointer is twice the usual size. It is called a <strong>fat pointer</strong>: it carries the address, plus the length (for <code>str</code> and slices) or the address of the method table (for <code>dyn Trait</code>).</p>
+<p><code>str</code>, <code>[T]</code> and <code>dyn Trait</code> have no size known at compile time, so they cannot be stored directly where a fixed-size value is required. References to them are <strong>fat pointers</strong>: they carry an address plus metadata, usually a length for <code>str</code> and slices or a pointer to a method table for <code>dyn Trait</code>. On a 64-bit target, these references are typically twice the size of a thin pointer.</p>
 <figure class="code lang-rust"><figcaption class="code-head"><span class="code-lang">Rust</span><span class="code-actions"><button type="button" class="cbtn btn-copy" title="Copy this code"><svg class="i " aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button><button type="button" class="cbtn btn-run" title="Open this example in the online Rust Playground"><svg class="i " aria-hidden="true"><use href="#i-play"/></svg><span>Run</span></button></span></figcaption><pre><code><span class="k">use</span> std::mem::size_of;
 
 <span class="k">fn</span> <span class="f">main</span>() {
@@ -11597,8 +11605,8 @@ online at 10.0.0.5 (session 77)
 error: 'not-an-address' is not an e-mail address</code></pre></figure>
 <p>The check happens once, at the edge of the program. From then on, the type <code>Email</code> is the proof. <code>send_welcome</code> needs no check and no error case of its own. You have followed this principle in every project so far: the <code>Command</code> enum of the to-do list, the <code>Config</code> of the search tool, the <code>Sale</code> of the report.</p>
 <p>(The check here is deliberately simple. Real address validation has more rules.)</p>
-<aside class="callout c-compare"><div class="callout-label"><svg class="i " aria-hidden="true"><use href="#i-scale"/></svg>How other languages do it</div><div class="callout-title">Type systems compared</div><div class="callout-body"><ul><li><strong>Python, JavaScript, Ruby</strong> are dynamically typed: values have types, variables do not, and a type mistake shows up when the faulty line runs, perhaps in production. Type checkers such as mypy and TypeScript add static checks on top.</li><li><strong>C</strong> has static types but lets you convert almost anything to anything, and has no way to say “this pointer is never null”.</li><li><strong>Java, C#, Go</strong> have static types with null references that the type system does not track (C# and Kotlin have since added nullable types). Their enums cannot carry different data per variant, so “one of several shapes” needs class hierarchies.</li><li><strong>Rust</strong> belongs to the same family as <strong>Haskell</strong>, <strong>OCaml</strong>, <strong>F#</strong> and <strong>Swift</strong>: enums with data, exhaustive matching, no null, and generics checked through traits. Rust adds ownership and lifetimes to that tradition.</li></ul></div></aside>
-<aside class="callout c-recap"><div class="callout-label"><svg class="i " aria-hidden="true"><use href="#i-list"/></svg>Recap</div><div class="callout-body"><ul><li><code>as</code> always succeeds and may change the value. <code>From</code>/<code>Into</code> cannot fail and lose nothing. <code>TryFrom</code>/<code>TryInto</code> return a <code>Result</code>. <code>FromStr</code> powers <code>.parse()</code>. <code>AsRef</code> makes parameters flexible.</li><li>A newtype gives a meaning its own type, at no run-time cost. A type alias is only a shorter name.</li><li><code>()</code> has one value. <code>!</code> has none and fits anywhere. Structs without fields take no memory. <code>str</code>, <code>[T]</code> and <code>dyn Trait</code> live behind fat pointers.</li><li><code>PhantomData&lt;T&gt;</code> adds a type parameter that exists only at compile time.</li><li>The typestate pattern makes each state a type, so that operations in the wrong state do not compile.</li><li>Make invalid states unrepresentable: prefer one enum to several flags and options.</li><li>Parse, don’t validate: turn checked input into a type that proves the check.</li></ul></div></aside>
+<aside class="callout c-compare"><div class="callout-label"><svg class="i " aria-hidden="true"><use href="#i-scale"/></svg>How other languages do it</div><div class="callout-title">Type systems compared</div><div class="callout-body"><ul><li><strong>Python, JavaScript, Ruby</strong> are dynamically typed: values have types, variables do not, and a type mistake shows up when the faulty line runs, perhaps in production. Type checkers such as mypy and TypeScript add static checks on top.</li><li><strong>C</strong> has static types but lets you convert almost anything to anything, and has no way to say “this pointer is never null”.</li><li><strong>Java, C#, Go</strong> are statically typed too, but each has different tools for representing nullable values and alternatives. Rust models absence explicitly with <code>Option&lt;T&gt;</code> and can put different data in each enum variant.</li><li><strong>Rust</strong> shares design ideas with <strong>Haskell</strong>, <strong>OCaml</strong>, <strong>F#</strong> and <strong>Swift</strong>: data-carrying enums, exhaustive matching, and generics checked through traits. In safe Rust, references cannot be null; Rust also adds ownership and lifetimes.</li></ul></div></aside>
+<aside class="callout c-recap"><div class="callout-label"><svg class="i " aria-hidden="true"><use href="#i-list"/></svg>Recap</div><div class="callout-body"><ul><li><code>as</code> always succeeds and may change the value. <code>From</code>/<code>Into</code> cannot fail and are intended for value-preserving conversions. <code>TryFrom</code>/<code>TryInto</code> return a <code>Result</code>. <code>FromStr</code> powers <code>.parse()</code>. <code>AsRef</code> makes parameters flexible.</li><li>A newtype gives a meaning its own type, at no run-time cost. A type alias is only a shorter name.</li><li><code>()</code> has one value. <code>!</code> has none and fits anywhere. Structs without fields take no memory. <code>str</code>, <code>[T]</code> and <code>dyn Trait</code> live behind fat pointers.</li><li><code>PhantomData&lt;T&gt;</code> adds a type parameter that exists only at compile time.</li><li>The typestate pattern makes each state a type, so that operations in the wrong state do not compile.</li><li>Make invalid states unrepresentable: prefer one enum to several flags and options.</li><li>Parse, don’t validate: turn checked input into a type that proves the check.</li></ul></div></aside>
 <div class="quiz" data-quiz="type-system-q1"><div class="quiz-head"><svg class="i " aria-hidden="true"><use href="#i-help"/></svg><span>Check your understanding</span><span class="quiz-score" aria-live="polite"></span><button type="button" class="quiz-reset" hidden>Try again</button></div><div class="q" data-q="0"><div class="q-text"><span class="q-num">1</span><div><p>What does <code>300_i32 as u8</code> produce?</p></div></div><div class="q-opts"><button type="button" class="opt" data-ok="0"><span class="key">A</span><span>A compile error</span></button><button type="button" class="opt" data-ok="0"><span class="key">B</span><span>A panic</span></button><button type="button" class="opt" data-ok="1"><span class="key">C</span><span>44, because the value is cut down to the lowest 8 bits</span></button><button type="button" class="opt" data-ok="0"><span class="key">D</span><span>255</span></button></div><div class="q-exp" hidden><strong class="q-verdict"></strong> <p><code>as</code> never fails. It keeps the lowest 8 bits: 300 − 256 = 44. Use <code>u8::try_from(300)</code> to get an error value in such a case.</p></div></div><div class="q" data-q="1"><div class="q-text"><span class="q-num">2</span><div><p>Why is there <code>i64::from(x)</code> for an <code>i32</code>, but no <code>i32::from(x)</code> for an <code>i64</code>?</p></div></div><div class="q-opts"><button type="button" class="opt" data-ok="0"><span class="key">A</span><span>An oversight in the standard library</span></button><button type="button" class="opt" data-ok="1"><span class="key">B</span><span><code>From</code> is only implemented for conversions that always succeed without loss. An <code>i64</code> may not fit into an <code>i32</code></span></button><button type="button" class="opt" data-ok="0"><span class="key">C</span><span><code>i32</code> is older than <code>i64</code></span></button><button type="button" class="opt" data-ok="0"><span class="key">D</span><span><code>From</code> only works with strings</span></button></div><div class="q-exp" hidden><strong class="q-verdict"></strong> <p>For the direction that can fail, the standard library offers <code>TryFrom</code>, which returns a <code>Result</code>.</p></div></div><div class="q" data-q="2"><div class="q-text"><span class="q-num">3</span><div><p>What is the difference between <code>type Metres = f64;</code> and <code>struct Metres(f64);</code>?</p></div></div><div class="q-opts"><button type="button" class="opt" data-ok="0"><span class="key">A</span><span>There is none</span></button><button type="button" class="opt" data-ok="0"><span class="key">B</span><span>The alias is faster</span></button><button type="button" class="opt" data-ok="1"><span class="key">C</span><span>The alias is only another name for <code>f64</code>. The struct is a new, distinct type that cannot be mixed up with other <code>f64</code> values</span></button><button type="button" class="opt" data-ok="0"><span class="key">D</span><span>The struct uses more memory</span></button></div><div class="q-exp" hidden><strong class="q-verdict"></strong> <p>An alias gives no protection: <code>Metres</code> and <code>f64</code> are interchangeable. A newtype is checked by the compiler and has the same size as its content.</p></div></div><div class="q" data-q="3"><div class="q-text"><span class="q-num">4</span><div><p>Why may one arm of a <code>match</code> be <code>panic!("…")</code> while the other arms are <code>u32</code>?</p></div></div><div class="q-opts"><button type="button" class="opt" data-ok="0"><span class="key">A</span><span><code>panic!</code> returns 0</span></button><button type="button" class="opt" data-ok="0"><span class="key">B</span><span>The compiler ignores that arm</span></button><button type="button" class="opt" data-ok="1"><span class="key">C</span><span><code>panic!</code> has the never type <code>!</code>, which fits where any type is expected</span></button><button type="button" class="opt" data-ok="0"><span class="key">D</span><span><code>match</code> arms may have different types</span></button></div><div class="q-exp" hidden><strong class="q-verdict"></strong> <p>An expression of type <code>!</code> never produces a value, so it can stand wherever any type is required.</p></div></div><div class="q" data-q="4"><div class="q-text"><span class="q-num">5</span><div><p>In the typestate pattern, why do the transition methods take <code>self</code> by value?</p></div></div><div class="q-opts"><button type="button" class="opt" data-ok="0"><span class="key">A</span><span>It is faster</span></button><button type="button" class="opt" data-ok="1"><span class="key">B</span><span>The old state is consumed, so no one can go on using the object in its previous state</span></button><button type="button" class="opt" data-ok="0"><span class="key">C</span><span>Methods cannot take <code>&amp;self</code> in generic types</span></button><button type="button" class="opt" data-ok="0"><span class="key">D</span><span>To allow cloning</span></button></div><div class="q-exp" hidden><strong class="q-verdict"></strong> <p>Moving <code>self</code> into the method ends the life of the old state. The only thing the caller has afterwards is the value of the new type.</p></div></div></div>
 <div class="exercise" data-ex="type-system-x1"><div class="ex-head"><span class="ex-kind guided"><svg class="i " aria-hidden="true"><use href="#i-pencil"/></svg>Guided exercise</span><span class="ex-title">A username that is always valid</span><label class="ex-done"><input type="checkbox" data-save="type-system-x1"> Done</label></div><div class="ex-body"><p>Write <code>struct Username(String)</code> with <code>impl TryFrom&lt;&amp;str&gt; for Username</code>. The rules: 3 to 16 characters, only ASCII letters, digits and <code>_</code>. The error type is <code>String</code> and says which rule was broken. Add <code>as_str(&amp;self) -&gt; &amp;str</code>. Test with <code>"sara_92"</code>, <code>"ab"</code> and <code>"no spaces"</code>.</p></div><details class="ex-more ex-hint"><summary><svg class="i " aria-hidden="true"><use href="#i-bulb"/></svg>Need a hint?</summary><div class="d-body"><p><code>impl TryFrom&lt;&amp;str&gt; for Username { type Error = String; fn try_from(value: &amp;str) -&gt; Result&lt;Self, Self::Error&gt; { ... } }</code>. Check the length with <code>value.chars().count()</code>, and the characters with <code>value.chars().all(|c| c.is_ascii_alphanumeric() || c == '_')</code>.</p></div></details><details class="ex-more ex-sol"><summary><svg class="i " aria-hidden="true"><use href="#i-check"/></svg>Show solution and explanation</summary><div class="d-body"><figure class="code lang-rust"><figcaption class="code-head"><span class="code-lang">Rust</span><span class="code-actions"><button type="button" class="cbtn btn-copy" title="Copy this code"><svg class="i " aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button><button type="button" class="cbtn btn-run" title="Open this example in the online Rust Playground"><svg class="i " aria-hidden="true"><use href="#i-play"/></svg><span>Run</span></button></span></figcaption><pre><code><span class="a">#[derive(Debug, Clone, PartialEq)]</span>
 <span class="k">struct</span> <span class="t">Username</span>(<span class="t">String</span>);
@@ -11654,7 +11662,10 @@ error: 'no spaces' may only contain letters, digits and _</code></pre></figure>
             (text, <span class="n">1</span>)
         };
         <span class="k">let</span> number: <span class="t">u32</span> = digits.<span class="f">parse</span>().<span class="f">map_err</span>(|_| <span class="m">format!</span>(<span class="s">"'{text}' is not a duration"</span>))?;
-        <span class="t">Ok</span>(<span class="t">Minutes</span>(number * factor))
+        <span class="k">let</span> minutes = number
+            .<span class="f">checked_mul</span>(factor)
+            .<span class="f">ok_or_else</span>(|| <span class="m">format!</span>(<span class="s">"'{text}' is too large"</span>))?;
+        <span class="t">Ok</span>(<span class="t">Minutes</span>(minutes))
     }
 }
 
@@ -11663,12 +11674,14 @@ error: 'no spaces' may only contain letters, digits and _</code></pre></figure>
     <span class="m">println!</span>(<span class="s">"{:?}"</span>, <span class="s">"45m"</span>.parse::&lt;<span class="t">Minutes</span>&gt;());
     <span class="m">println!</span>(<span class="s">"{:?}"</span>, <span class="s">" 2h "</span>.parse::&lt;<span class="t">Minutes</span>&gt;());
     <span class="m">println!</span>(<span class="s">"{:?}"</span>, <span class="s">"soon"</span>.parse::&lt;<span class="t">Minutes</span>&gt;());
+    <span class="m">println!</span>(<span class="s">"{:?}"</span>, <span class="s">"71582789h"</span>.parse::&lt;<span class="t">Minutes</span>&gt;());
 }</code></pre></figure>
 <figure class="code lang-output out"><figcaption class="code-head"><span class="code-lang">Output</span><span class="code-actions"></span></figcaption><pre><code>Ok(Minutes(90))
 Ok(Minutes(45))
 Ok(Minutes(120))
-Err("'soon' is not a duration")</code></pre></figure>
-<p>Implementing <code>FromStr</code> plugs the type into the standard <code>.parse()</code> method, and into every library that builds on it. The command-line parser <code>clap</code> (<a href="#cli" data-nav="cli">chapter 44</a>), for example, can accept a <code>Minutes</code> argument directly. The <code>if let … else if let … else</code> chain produces a pair, which is taken apart in the same <code>let</code>.</p></div></details></div>
+Err("'soon' is not a duration")
+Err("'71582789h' is too large")</code></pre></figure>
+<p>Implementing <code>FromStr</code> plugs the type into the standard <code>.parse()</code> method, and into every library that builds on it. The command-line parser <code>clap</code> (<a href="#cli" data-nav="cli">chapter 44</a>), for example, can accept a <code>Minutes</code> argument directly. The <code>if let … else if let … else</code> chain produces a pair, which is taken apart in the same <code>let</code>. <code>checked_mul</code> turns an out-of-range hour count into an error instead of allowing an overflow.</p></div></details></div>
 <div class="exercise" data-ex="type-system-x3"><div class="ex-head"><span class="ex-kind practice"><svg class="i " aria-hidden="true"><use href="#i-pencil"/></svg>Practice</span><span class="ex-title">Remove the impossible states</span><label class="ex-done"><input type="checkbox" data-save="type-system-x3"> Done</label></div><div class="ex-body"><p>This struct describes a payment. List at least three combinations of field values that make no sense. Then redesign it as an enum in which only meaningful states can be written, and write a function <code>summary(&amp;Payment) -&gt; String</code>.</p>
 <figure class="code lang-rust"><figcaption class="code-head"><span class="code-lang">Rust</span><span class="code-actions"><button type="button" class="cbtn btn-copy" title="Copy this code"><svg class="i " aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button></span></figcaption><pre><code><span class="k">struct</span> <span class="t">Payment</span> {
     is_paid: <span class="t">bool</span>,
@@ -12010,19 +12023,19 @@ the channel is closed</code></pre></figure>
     handle.<span class="f">join</span>().<span class="f">unwrap</span>();
 }</code></pre></figure>
 <figure class="code lang-error err"><figcaption class="code-head"><span class="code-lang">Compiler message</span><span class="code-actions"></span></figcaption><pre><code><span class="er">error[E0277]</span>: `Rc&lt;i32&gt;` cannot be sent between threads safely
- <span class="hl">--&gt;</span> src/main.rs:7:32
-  |
-7 |       let handle = thread::spawn(move || {
-  |                    <span class="er">------------- ^------</span>
-  |                    <span class="hl">|             |</span>
-  |  __________________|_____________within this `{closure@src/main.rs:7:32: 7:39}`
-  | <span class="hl">|                  |</span>
-  | <span class="hl">|                  required by a bound introduced by this call</span>
-8 | <span class="hl">|         println!("{shared}");</span>
-9 | <span class="hl">|     });</span>
-  | <span class="er">|_____^ `Rc&lt;i32&gt;` cannot be sent between threads safely</span>
-  |
-  = <span class="hl">help</span>: within `{closure@src/main.rs:7:32: 7:39}`, the trait `Send` is not implemented for `Rc&lt;i32&gt;`
+   <span class="hl">--&gt;</span> src/main.rs:7:32
+    |
+  7 |       let handle = thread::spawn(move || {
+    |                    <span class="er">------------- ^------</span>
+    |                    <span class="hl">|             |</span>
+    |  __________________|_____________within this `{closure@main.rs:7:32}`
+    | <span class="hl">|                  |</span>
+    | <span class="hl">|                  required by a bound introduced by this call</span>
+  8 | <span class="hl">|         println!("{shared}");</span>
+  9 | <span class="hl">|     });</span>
+    | <span class="er">|_____^ `Rc&lt;i32&gt;` cannot be sent between threads safely</span>
+    |
+    = <span class="hl">help</span>: within `{closure@main.rs:7:32}`, the trait `Send` is not implemented for `Rc&lt;i32&gt;`
 ...</code></pre></figure>
 <p>In C++, the same mistake with a non-atomic counter compiles without complaint and fails rarely and mysteriously. In Rust, it is the message above. The next chapter introduces <code>Arc</code>, the version of <code>Rc</code> that is safe to share.</p>
 <p><code>RefCell</code> and <code>Cell</code> are <code>Send</code> but not <code>Sync</code>: you may give one to another thread, but two threads may not use the same one together, because their borrow tracking is not protected either.</p>
@@ -12983,7 +12996,7 @@ the timer came first</code></pre></figure>
 <figure class="code lang-output out"><figcaption class="code-head"><span class="code-lang">Output</span><span class="code-actions"></span></figcaption><pre><code>100</code></pre></figure>
 <aside class="callout c-tip"><div class="callout-label"><svg class="i " aria-hidden="true"><use href="#i-spark"/></svg>Tip</div><div class="callout-title">Which mutex?</div><div class="callout-body"><p>The ordinary <code>std::sync::Mutex</code> is the right choice in async code as long as the lock is taken and released <strong>without an <code>.await</code> in between</strong>, as above. If you must keep a lock while awaiting something, use <code>tokio::sync::Mutex</code>, whose <code>lock()</code> is async. Holding a standard mutex guard across an <code>.await</code> either fails to compile (the guard is not <code>Send</code>) or risks blocking the runtime.</p></div></aside>
 <h2 id="async--the-golden-rule-never-block-the-runtime">The golden rule: never block the runtime</h2>
-<p>The runtime has a few threads, and each of them serves thousands of tasks. A task gives its thread back only at an <code>.await</code>. If a task does something slow <strong>without</strong> awaiting, every other task on that thread is stuck behind it.</p>
+<p>Each runtime thread serves many tasks. When a task is polled, it runs until it finishes or returns control to the runtime. An <code>.await</code> may return control if the awaited future is not ready; if it is already ready, execution continues immediately. A slow blocking operation does not return control, so other tasks on that thread must wait.</p>
 <p>Things that block:</p>
 <ul><li><code>std::thread::sleep</code> (use <code>tokio::time::sleep</code>),</li><li>the file and network functions of the standard library, such as <code>std::fs::read_to_string</code> (use <code>tokio::fs</code>, <code>tokio::net</code>),</li><li>long calculations,</li><li>waiting on a <code>std::sync::mpsc</code> channel or a busy <code>std::sync::Mutex</code>.</li></ul>
 <p>For work that is truly blocking or heavy, hand it to a thread that is meant for it with <code>spawn_blocking</code>:</p>
@@ -13164,8 +13177,8 @@ missing: None</code></pre></figure>
 <h2 id="async--pitfalls-to-remember">Pitfalls to remember</h2>
 <ul><li><strong>A forgotten <code>.await</code>.</strong> The future is created and silently does nothing. Heed the compiler’s warning.</li><li><strong>Blocking in a task.</strong> <code>std::thread::sleep</code>, heavy loops, synchronous file access. Use the async versions or <code>spawn_blocking</code>.</li><li><strong>Async is contagious.</strong> An <code>async fn</code> can only be awaited from other async code, so the choice spreads up through the callers to <code>main</code>. This is sometimes called <em>function colouring</em>. Keep the plain logic of your program in ordinary functions and put the async layer around it. That also keeps the logic easy to test.</li><li><strong>Async does not speed up calculations.</strong> For CPU-bound work, use threads or Rayon.</li><li><strong>Unlimited spawning.</strong> A loop that spawns a task for every incoming item, without any limit, can exhaust memory under load. Use bounded channels or a <code>tokio::sync::Semaphore</code> to cap the number of tasks at work.</li></ul>
 <aside class="callout c-compare"><div class="callout-label"><svg class="i " aria-hidden="true"><use href="#i-scale"/></svg>How other languages do it</div><div class="callout-title">Async in other languages</div><div class="callout-body"><ul><li><strong>JavaScript</strong> has one thread and an event loop built into the language. <code>async</code>/<code>await</code> there looks almost the same, and a blocking loop freezes everything, for the same reason as in Rust.</li><li><strong>Python</strong> (<code>asyncio</code>) and <strong>C#</strong> (<code>Task</code>) follow the same model with a runtime that ships with the language.</li><li><strong>Go</strong> hides the difference: every function may pause, and the runtime moves “goroutines” between threads without <code>async</code> or <code>await</code>. That is simpler to use. The price is a runtime in every program, and less control.</li><li><strong>Rust</strong> compiles each async function to a state machine with no heap allocation of its own, leaves the choice of runtime to you, and runs the same async code on a server with 64 cores and on a microcontroller with 16 kilobytes of memory. It asks for more understanding in return.</li></ul></div></aside>
-<aside class="callout c-recap"><div class="callout-label"><svg class="i " aria-hidden="true"><use href="#i-list"/></svg>Recap</div><div class="callout-body"><ul><li>Async is for many tasks that mostly wait. Threads are for heavy calculations.</li><li><code>async fn</code> returns a future. Nothing runs until it is awaited or spawned. <code>.await</code> pauses the task while it waits, and frees the thread.</li><li>A runtime such as Tokio runs the tasks. <code>#[tokio::main]</code> starts it.</li><li><code>join!</code> waits for all, <code>select!</code> for the first, <code>timeout</code> limits the wait, <code>tokio::spawn</code> starts a background task.</li><li>Dropping a future cancels it at its current <code>.await</code>.</li><li>Spawned tasks must be <code>Send</code>. Use <code>Arc</code>, and async channels to communicate.</li><li>Never block the runtime. Use async I/O and <code>spawn_blocking</code>.</li><li>Underneath, a future is a state machine with a <code>poll</code> method, and a runtime is a loop that polls.</li></ul></div></aside>
-<div class="quiz" data-quiz="async-q1"><div class="quiz-head"><svg class="i " aria-hidden="true"><use href="#i-help"/></svg><span>Check your understanding</span><span class="quiz-score" aria-live="polite"></span><button type="button" class="quiz-reset" hidden>Try again</button></div><div class="q" data-q="0"><div class="q-text"><span class="q-num">1</span><div><p>What does calling an <code>async fn</code> do, by itself?</p></div></div><div class="q-opts"><button type="button" class="opt" data-ok="0"><span class="key">A</span><span>It runs the function in a new thread</span></button><button type="button" class="opt" data-ok="0"><span class="key">B</span><span>It runs the function until the first <code>.await</code></span></button><button type="button" class="opt" data-ok="1"><span class="key">C</span><span>It creates a future. Nothing runs until the future is awaited or spawned</span></button><button type="button" class="opt" data-ok="0"><span class="key">D</span><span>It blocks until the function is finished</span></button></div><div class="q-exp" hidden><strong class="q-verdict"></strong> <p>Futures are lazy. The call only builds the value that describes the work.</p></div></div><div class="q" data-q="1"><div class="q-text"><span class="q-num">2</span><div><p>Two futures each wait 100 ms on a timer. How long does <code>tokio::join!(a, b)</code> take, roughly?</p></div></div><div class="q-opts"><button type="button" class="opt" data-ok="0"><span class="key">A</span><span>200 ms</span></button><button type="button" class="opt" data-ok="1"><span class="key">B</span><span>100 ms</span></button><button type="button" class="opt" data-ok="0"><span class="key">C</span><span>50 ms</span></button><button type="button" class="opt" data-ok="0"><span class="key">D</span><span>It depends on the number of processor cores</span></button></div><div class="q-exp" hidden><strong class="q-verdict"></strong> <p><code>join!</code> drives both at once. Their waiting times overlap, so the total is the longer of the two, even on a single thread.</p></div></div><div class="q" data-q="2"><div class="q-text"><span class="q-num">3</span><div><p>Why must you not call <code>std::thread::sleep</code> inside an async task?</p></div></div><div class="q-opts"><button type="button" class="opt" data-ok="0"><span class="key">A</span><span>It does not compile</span></button><button type="button" class="opt" data-ok="0"><span class="key">B</span><span>It is less precise</span></button><button type="button" class="opt" data-ok="1"><span class="key">C</span><span>It blocks the whole thread, so all other tasks that share that thread stop too</span></button><button type="button" class="opt" data-ok="0"><span class="key">D</span><span>It cancels the task</span></button></div><div class="q-exp" hidden><strong class="q-verdict"></strong> <p>A runtime thread serves many tasks and gets control back only at an <code>.await</code>. A blocking call holds it hostage. Use <code>tokio::time::sleep(...).await</code>.</p></div></div><div class="q" data-q="3"><div class="q-text"><span class="q-num">4</span><div><p>What happens to the slower branch of a <code>tokio::select!</code>?</p></div></div><div class="q-opts"><button type="button" class="opt" data-ok="0"><span class="key">A</span><span>It keeps running in the background</span></button><button type="button" class="opt" data-ok="0"><span class="key">B</span><span>It is paused and continues at the next <code>select!</code></span></button><button type="button" class="opt" data-ok="1"><span class="key">C</span><span>Its future is dropped, which cancels it at the <code>.await</code> where it was waiting</span></button><button type="button" class="opt" data-ok="0"><span class="key">D</span><span>It panics</span></button></div><div class="q-exp" hidden><strong class="q-verdict"></strong> <p><code>select!</code> continues with the first finished branch and drops the rest. Dropping a future is how cancellation works in async Rust.</p></div></div><div class="q" data-q="4"><div class="q-text"><span class="q-num">5</span><div><p>Which task is async the <strong>wrong</strong> tool for?</p></div></div><div class="q-opts"><button type="button" class="opt" data-ok="0"><span class="key">A</span><span>A chat server with 20,000 open connections</span></button><button type="button" class="opt" data-ok="0"><span class="key">B</span><span>Downloading 500 web pages</span></button><button type="button" class="opt" data-ok="1"><span class="key">C</span><span>Rendering a large image, which needs minutes of pure calculation</span></button><button type="button" class="opt" data-ok="0"><span class="key">D</span><span>Waiting for messages from several sources</span></button></div><div class="q-exp" hidden><strong class="q-verdict"></strong> <p>Async helps when tasks wait. A long calculation never waits, and gains nothing. It needs threads on several cores.</p></div></div></div>
+<aside class="callout c-recap"><div class="callout-label"><svg class="i " aria-hidden="true"><use href="#i-list"/></svg>Recap</div><div class="callout-body"><ul><li>Async is for many tasks that mostly wait. Threads are for heavy calculations.</li><li><code>async fn</code> returns a future. Nothing runs until it is awaited or spawned. <code>.await</code> pauses the task while it waits, and frees the thread.</li><li>A runtime such as Tokio runs the tasks. <code>#[tokio::main]</code> starts it.</li><li><code>join!</code> waits for all, <code>select!</code> for the first, <code>timeout</code> limits the wait, <code>tokio::spawn</code> starts a background task.</li><li>Dropping a future cancels it at its current <code>.await</code>.</li><li>Spawned tasks must be <code>Send</code>. Use <code>Arc</code>, and async channels to communicate.</li><li>Avoid blocking a runtime thread. Use async I/O, or move blocking work to <code>spawn_blocking</code>.</li><li>Underneath, a future is a state machine with a <code>poll</code> method, and a runtime is a loop that polls.</li></ul></div></aside>
+<div class="quiz" data-quiz="async-q1"><div class="quiz-head"><svg class="i " aria-hidden="true"><use href="#i-help"/></svg><span>Check your understanding</span><span class="quiz-score" aria-live="polite"></span><button type="button" class="quiz-reset" hidden>Try again</button></div><div class="q" data-q="0"><div class="q-text"><span class="q-num">1</span><div><p>What does calling an <code>async fn</code> do, by itself?</p></div></div><div class="q-opts"><button type="button" class="opt" data-ok="0"><span class="key">A</span><span>It runs the function in a new thread</span></button><button type="button" class="opt" data-ok="0"><span class="key">B</span><span>It runs the function until the first <code>.await</code></span></button><button type="button" class="opt" data-ok="1"><span class="key">C</span><span>It creates a future. Nothing runs until the future is awaited or spawned</span></button><button type="button" class="opt" data-ok="0"><span class="key">D</span><span>It blocks until the function is finished</span></button></div><div class="q-exp" hidden><strong class="q-verdict"></strong> <p>Futures are lazy. The call only builds the value that describes the work.</p></div></div><div class="q" data-q="1"><div class="q-text"><span class="q-num">2</span><div><p>Two futures each wait 100 ms on a timer. How long does <code>tokio::join!(a, b)</code> take, roughly?</p></div></div><div class="q-opts"><button type="button" class="opt" data-ok="0"><span class="key">A</span><span>200 ms</span></button><button type="button" class="opt" data-ok="1"><span class="key">B</span><span>100 ms</span></button><button type="button" class="opt" data-ok="0"><span class="key">C</span><span>50 ms</span></button><button type="button" class="opt" data-ok="0"><span class="key">D</span><span>It depends on the number of processor cores</span></button></div><div class="q-exp" hidden><strong class="q-verdict"></strong> <p><code>join!</code> drives both at once. Their waiting times overlap, so the total is the longer of the two, even on a single thread.</p></div></div><div class="q" data-q="2"><div class="q-text"><span class="q-num">3</span><div><p>Why must you not call <code>std::thread::sleep</code> inside an async task?</p></div></div><div class="q-opts"><button type="button" class="opt" data-ok="0"><span class="key">A</span><span>It does not compile</span></button><button type="button" class="opt" data-ok="0"><span class="key">B</span><span>It is less precise</span></button><button type="button" class="opt" data-ok="1"><span class="key">C</span><span>It blocks the whole thread, so all other tasks that share that thread stop too</span></button><button type="button" class="opt" data-ok="0"><span class="key">D</span><span>It cancels the task</span></button></div><div class="q-exp" hidden><strong class="q-verdict"></strong> <p>An <code>.await</code> yields only when its future is not ready. A blocking call keeps the runtime thread busy, so other tasks on it cannot run. Use <code>tokio::time::sleep(...).await</code> instead of <code>std::thread::sleep</code>.</p></div></div><div class="q" data-q="3"><div class="q-text"><span class="q-num">4</span><div><p>What happens to the slower branch of a <code>tokio::select!</code>?</p></div></div><div class="q-opts"><button type="button" class="opt" data-ok="0"><span class="key">A</span><span>It keeps running in the background</span></button><button type="button" class="opt" data-ok="0"><span class="key">B</span><span>It is paused and continues at the next <code>select!</code></span></button><button type="button" class="opt" data-ok="1"><span class="key">C</span><span>Its future is dropped, which cancels it at the <code>.await</code> where it was waiting</span></button><button type="button" class="opt" data-ok="0"><span class="key">D</span><span>It panics</span></button></div><div class="q-exp" hidden><strong class="q-verdict"></strong> <p><code>select!</code> continues with the first finished branch and drops the rest. Dropping a future is how cancellation works in async Rust.</p></div></div><div class="q" data-q="4"><div class="q-text"><span class="q-num">5</span><div><p>Which task is async the <strong>wrong</strong> tool for?</p></div></div><div class="q-opts"><button type="button" class="opt" data-ok="0"><span class="key">A</span><span>A chat server with 20,000 open connections</span></button><button type="button" class="opt" data-ok="0"><span class="key">B</span><span>Downloading 500 web pages</span></button><button type="button" class="opt" data-ok="1"><span class="key">C</span><span>Rendering a large image, which needs minutes of pure calculation</span></button><button type="button" class="opt" data-ok="0"><span class="key">D</span><span>Waiting for messages from several sources</span></button></div><div class="q-exp" hidden><strong class="q-verdict"></strong> <p>Async helps when tasks wait. A long calculation never waits, and gains nothing. It needs threads on several cores.</p></div></div></div>
 <div class="exercise" data-ex="async-x1"><div class="ex-head"><span class="ex-kind guided"><svg class="i " aria-hidden="true"><use href="#i-pencil"/></svg>Guided exercise</span><span class="ex-title">Three things at once</span><label class="ex-done"><input type="checkbox" data-save="async-x1"> Done</label></div><div class="ex-body"><p>Write three async functions that each wait a different time (100, 200 and 300 ms) and return a number. Run all three with <code>tokio::join!</code>, add up the results, and show that the total time is close to 300 ms and not 600.</p></div><details class="ex-more ex-hint"><summary><svg class="i " aria-hidden="true"><use href="#i-bulb"/></svg>Need a hint?</summary><div class="d-body"><p>Each function is <code>async fn one() -&gt; u32 { sleep(Duration::from_millis(100)).await; 1 }</code>. Measure with <code>Instant::now()</code> and <code>.elapsed()</code>. To get an output that is the same on every run, print whether the time was below 450 ms.</p></div></details><details class="ex-more ex-sol"><summary><svg class="i " aria-hidden="true"><use href="#i-check"/></svg>Show solution and explanation</summary><div class="d-body"><figure class="code lang-rust"><figcaption class="code-head"><span class="code-lang">Rust</span><span class="code-actions"><button type="button" class="cbtn btn-copy" title="Copy this code"><svg class="i " aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button></span></figcaption><pre><code><span class="k">use</span> std::time::{<span class="t">Duration</span>, <span class="t">Instant</span>};
 <span class="k">use</span> tokio::time::sleep;
 
@@ -18163,6 +18176,7 @@ env_logger = <span class="s">"0.11"</span></code></pre></figure>
 WARN: skipping an empty item
 DEBUG: a detail only useful while developing
 ERROR: could not reach the server</code></pre></figure>
+<p><code>env_logger</code> writes to standard error by default. These log lines are shown separately from a program’s ordinary output.</p>
 <ul><li>The <code>format</code> closure decides what each line looks like; here it is just the level and the message.</li><li><code>default_filter_or("trace")</code> shows everything during development. Without any <code>RUST_LOG</code> setting, <code>info</code> and above would be enough for production.</li><li><code>error!</code> shows even though nothing catches it: logging does not stop the program.</li></ul>
 <figure class="code lang-text"><figcaption class="code-head"><span class="code-lang">Text</span><span class="code-actions"><button type="button" class="cbtn btn-copy" title="Copy this code"><svg class="i " aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button></span></figcaption><pre><code>$ RUST_LOG=warn myprogram
 WARN: skipping an empty item
@@ -18181,7 +18195,7 @@ log = <span class="s">"0.4.35"</span></code></pre></figure>
     env_logger::<span class="t">Builder</span>::<span class="f">from_default_env</span>().<span class="f">init</span>();
 
     <span class="m">info</span>!(<span class="s">"starting import"</span>);
-    <span class="m">debug</span>!(records = <span class="n">12</span>, <span class="s">"parsed input"</span>);
+    <span class="m">debug</span>!(<span class="s">"parsed input: {} records"</span>, <span class="n">12</span>);
     <span class="m">warn</span>!(<span class="s">"one optional field was missing"</span>);
     <span class="m">error</span>!(<span class="s">"the import stopped"</span>);
 }</code></pre></figure>
@@ -20340,7 +20354,7 @@ is_decode: true</code></pre></figure>
 <aside class="callout c-warn"><div class="callout-label"><svg class="i " aria-hidden="true"><use href="#i-alert"/></svg>Watch out</div><div class="callout-title">Always set a timeout</div><div class="callout-body"><p>reqwest has no time limit by default. A request to a server that never answers waits for ever, and so does your task. Set <code>.timeout(…)</code> on the client.</p></div></aside>
 <h3 id="async-ecosystem--a-smaller-client-ureq">A smaller client: <code>ureq</code></h3>
 <p>reqwest is powerful, and it needs Tokio. A script or a command-line tool often does not want an async runtime at all. <strong>ureq</strong> is a minimal, blocking HTTP client: one call does the whole request and waits for the answer.</p>
-<figure class="code lang-toml"><figcaption class="code-head"><span class="code-lang">TOML</span><span class="code-actions"><button type="button" class="cbtn btn-copy" title="Copy this code"><svg class="i " aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button></span></figcaption><pre><code>ureq = <span class="s">"2.11"</span></code></pre></figure>
+<figure class="code lang-toml"><figcaption class="code-head"><span class="code-lang">TOML</span><span class="code-actions"><button type="button" class="cbtn btn-copy" title="Copy this code"><svg class="i " aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button></span></figcaption><pre><code>ureq = <span class="s">"3.5"</span></code></pre></figure>
 <p>A tiny server and a client that talks to it, all in one program:</p>
 <figure class="code lang-rust"><figcaption class="code-head"><span class="code-lang">Rust</span><span class="code-actions"><button type="button" class="cbtn btn-copy" title="Copy this code"><svg class="i " aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button></span></figcaption><pre><code><span class="k">use</span> std::io::<span class="t">Write</span>;
 <span class="k">use</span> std::net::<span class="t">TcpListener</span>;
@@ -20359,16 +20373,18 @@ is_decode: true</code></pre></figure>
     });
 
     <span class="k">let</span> response = ureq::<span class="f">get</span>(&amp;<span class="m">format!</span>(<span class="s">"http://{address}/"</span>))
-        .<span class="f">timeout</span>(std::time::<span class="t">Duration</span>::<span class="f">from_secs</span>(<span class="n">5</span>))
+        .<span class="f">config</span>()
+        .<span class="f">timeout_global</span>(<span class="t">Some</span>(std::time::<span class="t">Duration</span>::<span class="f">from_secs</span>(<span class="n">5</span>)))
+        .<span class="f">build</span>()
         .<span class="f">call</span>()?;
 
     <span class="m">println!</span>(<span class="s">"status: {}"</span>, response.<span class="f">status</span>());
-    <span class="m">println!</span>(<span class="s">"{}"</span>, response.<span class="f">into_string</span>()?);
+    <span class="m">println!</span>(<span class="s">"{}"</span>, response.<span class="f">into_body</span>().<span class="f">read_to_string</span>()?);
     <span class="t">Ok</span>(())
 }</code></pre></figure>
-<figure class="code lang-output out"><figcaption class="code-head"><span class="code-lang">Output</span><span class="code-actions"></span></figcaption><pre><code>status: 200
+<figure class="code lang-output out"><figcaption class="code-head"><span class="code-lang">Output</span><span class="code-actions"></span></figcaption><pre><code>status: 200 OK
 hello, ureq</code></pre></figure>
-<ul><li><code>.call()</code> performs the request and waits. No <code>async</code>, no <code>await</code>, no runtime.</li><li><code>response.status()</code> is the status code, and <code>into_string()</code> reads the whole body as text.</li><li><code>timeout</code> sets an upper bound: a server that never answers does not wait forever.</li><li>Other builders: <code>.set("header", "value")</code> for headers, <code>.send_json(&amp;value)</code> for a JSON body, and <code>ureq::Agent</code> to reuse connections across many requests (the equivalent of reqwest’s <code>Client</code>).</li></ul>
+<ul><li><code>.call()</code> performs the request and waits. No <code>async</code>, no <code>await</code>, no runtime.</li><li><code>response.status()</code> is the status code, and <code>into_body().read_to_string()</code> reads the whole body as text.</li><li><code>timeout_global</code> sets an upper bound: a server that never answers does not wait forever. In ureq 3, set it with <code>.config().timeout_global(Some(duration)).build()</code>.</li><li>Other builders: <code>.header("header", "value")</code> for headers, <code>.send_json(&amp;value)</code> for a JSON body, and <code>ureq::Agent</code> to reuse connections across many requests (the equivalent of reqwest’s <code>Client</code>).</li></ul>
 <div class="table-wrap"><table><thead><tr><th></th><th>reqwest</th><th>ureq</th></tr></thead><tbody><tr><td>Async</td><td>yes, on Tokio</td><td>no</td></tr><tr><td>Best fit</td><td>services, many requests at once</td><td>scripts and command-line tools</td></tr></tbody></table></div>
 <p>Choose reqwest for a server or for many requests at once; choose ureq when a small dependency and no runtime matter more.</p>
 <h3 id="async-ecosystem--many-requests-at-once">Many requests at once</h3>
@@ -20711,7 +20727,7 @@ users    Up
 <p>The function <code>check</code> never returns an error. It turns every outcome into a <code>Health</code> value, because for a health checker a failure is a result, not an accident. The <code>match</code> with guards reads like the specification: answered well, answered badly, too slow, or not reachable.</p>
 <p>The checks run concurrently on a single task. <code>buffer_unordered(3)</code> holds three futures at a time and polls them in turn. The futures borrow <code>client</code> and the URLs, which is allowed because they all live inside <code>main</code>’s future. With <code>tokio::spawn</code>, every task would need owned copies. The whole report takes about as long as the slowest check, around 300 milliseconds, and not the sum of all of them.</p>
 <p>Since the results arrive in the order of completion, the program sorts them before printing. A report whose order changes from run to run would be hard to read and to test.</p></div></details></div></div><div class="ch-done"><div><b>Finished this chapter?</b><span>Mark it complete to track your progress through the guide.</span></div><button type="button" class="btn primary btn-done" data-done="async-ecosystem"><svg class="i " aria-hidden="true"><use href="#i-check"/></svg><span>Mark as complete</span></button></div><nav class="ch-nav" aria-label="Chapter navigation"><a class="ch-nav-a prev" href="#cli" data-nav="cli"><svg class="i " aria-hidden="true"><use href="#i-arrow-left"/></svg><span><small>Previous</small><b>Command-line tools with clap</b></span></a><a class="ch-nav-a next" href="#web" data-nav="web"><span><small>Next</small><b>Web servers with Axum</b></span><svg class="i " aria-hidden="true"><use href="#i-arrow-right"/></svg></a></nav></section>
-<section class="chapter kind-chapter" id="ch-web" data-id="web" hidden><header class="ch-head"><div class="ch-kicker"><span>Part 10 · The ecosystem</span><span class="lvl lvl-intermediate">Intermediate</span><span class="ch-time">about 100 min</span></div><div class="ch-num" aria-hidden="true">46</div><h1 tabindex="-1">Web servers with Axum</h1><div class="ch-learn"><div class="ch-learn-h">By the end of this chapter you will be able to</div><ul><li><svg class="i " aria-hidden="true"><use href="#i-check"/></svg><span>Explain requests, responses, methods and status codes</span></li><li><svg class="i " aria-hidden="true"><use href="#i-check"/></svg><span>Write a web server with routes and handlers in Axum</span></li><li><svg class="i " aria-hidden="true"><use href="#i-check"/></svg><span>Read paths, query strings, headers and JSON bodies with extractors</span></li><li><svg class="i " aria-hidden="true"><use href="#i-check"/></svg><span>Share state and return proper errors</span></li><li><svg class="i " aria-hidden="true"><use href="#i-check"/></svg><span>Add logging, limits and timeouts with middleware</span></li><li><svg class="i " aria-hidden="true"><use href="#i-check"/></svg><span>Compare Axum with Actix Web and Rocket</span></li></ul></div></header><div class="ch-body"><p>A <strong>web server</strong> is a program that waits for requests from the network and answers them. The web sites you visit and the apps on your phone all talk to such programs. Rust is a strong choice for writing them: the servers are fast, use little memory, and stay up, because whole classes of crashes are ruled out at compile time.</p>
+<section class="chapter kind-chapter" id="ch-web" data-id="web" hidden><header class="ch-head"><div class="ch-kicker"><span>Part 10 · The ecosystem</span><span class="lvl lvl-intermediate">Intermediate</span><span class="ch-time">about 100 min</span></div><div class="ch-num" aria-hidden="true">46</div><h1 tabindex="-1">Web servers with Axum</h1><div class="ch-learn"><div class="ch-learn-h">By the end of this chapter you will be able to</div><ul><li><svg class="i " aria-hidden="true"><use href="#i-check"/></svg><span>Explain requests, responses, methods and status codes</span></li><li><svg class="i " aria-hidden="true"><use href="#i-check"/></svg><span>Write a web server with routes and handlers in Axum</span></li><li><svg class="i " aria-hidden="true"><use href="#i-check"/></svg><span>Read paths, query strings, headers and JSON bodies with extractors</span></li><li><svg class="i " aria-hidden="true"><use href="#i-check"/></svg><span>Share state and return proper errors</span></li><li><svg class="i " aria-hidden="true"><use href="#i-check"/></svg><span>Add logging, limits and timeouts with middleware</span></li><li><svg class="i " aria-hidden="true"><use href="#i-check"/></svg><span>Compare Axum with Actix Web and Rocket</span></li></ul></div></header><div class="ch-body"><p>A <strong>web server</strong> is a program that waits for requests from the network and answers them. The web sites you visit and the apps on your phone all talk to such programs. Rust is a strong choice for writing them: it can help prevent memory-safety bugs and use resources efficiently. It cannot guarantee that a server stays up; logic errors, panics, overload and operational problems still need careful design and testing.</p>
 <aside class="callout c-analogy"><div class="callout-label"><svg class="i " aria-hidden="true"><use href="#i-bulb"/></svg>Real-world analogy</div><div class="callout-title">A restaurant</div><div class="callout-body"><p>A guest (the client) hands an order slip (the request) to the waiter. The slip says what is wanted and for which table. The waiter (the router) looks at it and gives it to the right cook (a handler). The cook prepares a dish (the response), and the waiter brings it back. House rules apply to every order whoever cooks: orders are written in the book, and no order may take longer than twenty minutes (middleware). The pantry is shared by all cooks (state).</p></div></aside>
 <h2 id="web--how-the-web-works">How the web works</h2>
 <p>The previous chapter introduced HTTP from the client’s side. A server sees the same exchange from the other end, so here it is in more detail.</p>
@@ -20734,7 +20750,8 @@ content-length: 36
 
 {"id":1,"text":"water the plants"}</code></pre></figure>
 <h3 id="web--methods">Methods</h3>
-<div class="table-wrap"><table><thead><tr><th>Method</th><th>Meaning</th><th>Has a body</th></tr></thead><tbody><tr><td><code>GET</code></td><td>read something. Must not change anything</td><td>no</td></tr><tr><td><code>POST</code></td><td>create something, or start an action</td><td>yes</td></tr><tr><td><code>PUT</code></td><td>replace something</td><td>yes</td></tr><tr><td><code>PATCH</code></td><td>change part of something</td><td>yes</td></tr><tr><td><code>DELETE</code></td><td>remove something</td><td>no</td></tr></tbody></table></div>
+<div class="table-wrap"><table><thead><tr><th>Method</th><th>Meaning</th><th>Typical body use</th></tr></thead><tbody><tr><td><code>GET</code></td><td>retrieve a representation; defined as a safe method</td><td>usually absent</td></tr><tr><td><code>POST</code></td><td>submit data for the resource to process</td><td>often present</td></tr><tr><td><code>PUT</code></td><td>create or replace the target resource’s representation</td><td>often present</td></tr><tr><td><code>PATCH</code></td><td>apply a partial change to the target resource</td><td>often present</td></tr><tr><td><code>DELETE</code></td><td>remove the target resource</td><td>usually absent</td></tr></tbody></table></div>
+<p>These are conventions, not rules that require a body or forbid one. HTTP defines the semantics of each method; for example, <code>GET</code> is intended to be safe, but a server still has to implement that contract correctly. A request body on <code>GET</code> or <code>DELETE</code> has no generally defined meaning, so clients and servers should not rely on one.</p>
 <h3 id="web--status-codes">Status codes</h3>
 <div class="table-wrap"><table><thead><tr><th>Group</th><th>Meaning</th><th>Common codes</th></tr></thead><tbody><tr><td>2xx</td><td>success</td><td>200 OK, 201 Created, 204 No Content</td></tr><tr><td>3xx</td><td>look elsewhere</td><td>301 and 308 moved for good, 302 and 307 moved for now, 304 not modified</td></tr><tr><td>4xx</td><td>the client made a mistake</td><td>400 Bad Request, 401 Unauthorized (not logged in), 403 Forbidden (not allowed), 404 Not Found, 405 Method Not Allowed, 409 Conflict, 422 Unprocessable Entity, 429 Too Many Requests</td></tr><tr><td>5xx</td><td>the server failed</td><td>500 Internal Server Error, 502 Bad Gateway, 503 Service Unavailable</td></tr></tbody></table></div>
 <h3 id="web--apis-and-rest">APIs and REST</h3>
@@ -26605,7 +26622,7 @@ $ curl http://localhost:3000/books
 <p>Create the project and add the dependencies:</p>
 <figure class="code lang-sh"><figcaption class="code-head"><span class="code-lang">Terminal</span><span class="code-actions"><button type="button" class="cbtn btn-copy" title="Copy this code"><svg class="i " aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button></span></figcaption><pre><code><span class="o">cargo new library</span>
 <span class="o">cd library</span>
-<span class="o">cargo add axum --features tokio-runtime-tcp</span>
+<span class="o">cargo add axum</span>
 <span class="o">cargo add tokio --features full</span>
 <span class="o">cargo add sqlx --features runtime-tokio,sqlite</span>
 <span class="o">cargo add serde --features derive</span>
@@ -26613,9 +26630,8 @@ $ curl http://localhost:3000/books
 <span class="o">cargo add clap --features derive</span>
 <span class="o">cargo add anyhow</span>
 <span class="o">cargo add thiserror</span>
-<span class="o">cargo add tracing --features attrs</span>
+<span class="o">cargo add tracing</span>
 <span class="o">cargo add tracing-subscriber</span>
-<span class="o">cargo add --build sqlx-cli</span>
 <span class="o">cargo add --dev proptest</span></code></pre></figure>
 <p>Then create the migration and the build script so that Cargo notices new migration files:</p>
 <figure class="code lang-sql"><figcaption class="code-head"><span class="code-lang">SQL</span><span class="code-file">migrations/20261114120000_create_books.sql</span><span class="code-actions"><button type="button" class="cbtn btn-copy" title="Copy this code"><svg class="i " aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button></span></figcaption><pre><code><span class="k">CREATE</span> <span class="k">TABLE</span> books (
@@ -26636,7 +26652,7 @@ version = <span class="s">"0.1.0"</span>
 edition = <span class="s">"2024"</span>
 
 <span class="k">[dependencies]</span>
-axum = { version = <span class="s">"0.8"</span>, features = [<span class="s">"tokio-runtime-tcp"</span>] }
+axum = <span class="s">"0.8"</span>
 tokio = { version = <span class="s">"1"</span>, features = [<span class="s">"full"</span>] }
 sqlx = { version = <span class="s">"0.9"</span>, features = [<span class="s">"runtime-tokio"</span>, <span class="s">"sqlite"</span>] }
 serde = { version = <span class="s">"1"</span>, features = [<span class="s">"derive"</span>] }
@@ -26644,15 +26660,13 @@ serde_json = <span class="s">"1"</span>
 clap = { version = <span class="s">"4"</span>, features = [<span class="s">"derive"</span>] }
 anyhow = <span class="s">"1"</span>
 thiserror = <span class="s">"1"</span>
-tracing = { version = <span class="s">"0.1"</span>, features = [<span class="s">"attrs"</span>] }
-tracing-subscriber = <span class="s">"0.3"</span>
+tracing = <span class="s">"0.1"</span>
+tracing-subscriber = { version = <span class="s">"0.3"</span>, features = [<span class="s">"env-filter"</span>] }
 
 <span class="k">[dev-dependencies]</span>
 proptest = <span class="s">"1"</span>
-
-<span class="k">[build-dependencies]</span>
-sqlx-cli = <span class="s">"0.9"</span></code></pre></figure>
-<p>The <code>sqlx-cli</code> build dependency and <code>rerun-if-changed</code> line make Cargo recompile whenever a migration is added or changed, so the program never ships with outdated SQL.</p>
+tower = { version = <span class="s">"0.5"</span>, features = [<span class="s">"util"</span>] }</code></pre></figure>
+<p>The <code>rerun-if-changed</code> line tells Cargo to rerun the build script when a migration file changes. SQLx’s <code>migrate!()</code> macro then embeds the migration files in the program at compile time.</p>
 <h2 id="capstone--step-2-the-data-model-and-errors">Step 2: the data model and errors</h2>
 <p>The model types are shared by the store, the routes and the CLI. Keeping them in one file means a change to a book’s shape is made in one place.</p>
 <figure class="code lang-rust"><figcaption class="code-head"><span class="code-lang">Rust</span><span class="code-file">src/model.rs</span><span class="code-actions"><button type="button" class="cbtn btn-copy" title="Copy this code"><svg class="i " aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button></span></figcaption><pre><code><span class="k">use</span> serde::{<span class="t">Deserialize</span>, <span class="t">Serialize</span>};
@@ -26676,6 +26690,7 @@ sqlx-cli = <span class="s">"0.9"</span></code></pre></figure>
 }
 
 <span class="a">#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]</span>
+<span class="a">#[serde(rename_all = </span><span class="s">"kebab-case"</span><span class="a">)]</span>
 <span class="k">pub</span> <span class="k">enum</span> <span class="t">Status</span> {
     <span class="t">ToRead</span>,
     <span class="t">Reading</span>,
@@ -26735,6 +26750,12 @@ sqlx-cli = <span class="s">"0.9"</span></code></pre></figure>
 
     <span class="a">#[error(</span><span class="s">"database error: {0}"</span><span class="a">)]</span>
     <span class="t">Database</span>(<span class="a">#[from]</span> sqlx::<span class="t">Error</span>),
+
+    <span class="a">#[error(</span><span class="s">"migration error: {0}"</span><span class="a">)]</span>
+    <span class="t">Migration</span>(<span class="a">#[from]</span> sqlx::migrate::<span class="t">MigrateError</span>),
+
+    <span class="a">#[error(</span><span class="s">"invalid data in the database: {0}"</span><span class="a">)]</span>
+    <span class="t">InvalidData</span>(<span class="t">String</span>),
 }
 
 <span class="k">impl</span> <span class="t">LibraryError</span> {
@@ -26769,14 +26790,14 @@ sqlx-cli = <span class="s">"0.9"</span></code></pre></figure>
         sqlx::<span class="m">migrate</span>!()
             .<span class="f">run</span>(&amp;pool)
             .<span class="k">await</span>
-            .<span class="f">map_err</span>(<span class="t">LibraryError</span>::<span class="t">Database</span>)?;
+            ?;
 
         <span class="t">Ok</span>(<span class="t">Store</span> { pool })
     }
 
     <span class="c">/// Adds a book and returns it with the id the database chose.
 </span>    <span class="k">pub</span> <span class="k">async</span> <span class="k">fn</span> <span class="f">add_book</span>(&amp;<span class="k">self</span>, new: <span class="t">NewBook</span>) -&gt; <span class="t">Result</span>&lt;<span class="t">Book</span>, <span class="t">LibraryError</span>&gt; {
-        <span class="k">let</span> book = sqlx::<span class="f">query_as</span>(
+        <span class="k">let</span> row: <span class="t">BookRow</span> = sqlx::<span class="f">query_as</span>(
             <span class="s">"INSERT INTO books (title, author, isbn, status, rating, created_at)
              VALUES (?, ?, ?, 'to-read', NULL, datetime('now'))
              RETURNING id, title, author, isbn, status, rating, created_at"</span>,
@@ -26786,7 +26807,7 @@ sqlx-cli = <span class="s">"0.9"</span></code></pre></figure>
         .<span class="f">bind</span>(&amp;new.isbn)
         .<span class="f">fetch_one</span>(&amp;<span class="k">self</span>.pool)
         .<span class="k">await</span>?;
-        <span class="t">Ok</span>(book)
+        <span class="f">book_from_row</span>(row)
     }
 
     <span class="c">/// Lists books, newest first. Optional filters by status and by a search text.
@@ -26811,37 +26832,19 @@ sqlx-cli = <span class="s">"0.9"</span></code></pre></figure>
         query.<span class="f">push</span>(<span class="s">" ORDER BY id DESC"</span>);
 
         <span class="k">let</span> books: <span class="t">Vec</span>&lt;<span class="t">BookRow</span>&gt; = query.<span class="f">build_query_as</span>().<span class="f">fetch_all</span>(&amp;<span class="k">self</span>.pool).<span class="k">await</span>?;
-        <span class="t">Ok</span>(books
-            .<span class="f">into_iter</span>()
-            .<span class="f">map</span>(|row| <span class="t">Book</span> {
-                id: row.id,
-                title: row.title,
-                author: row.author,
-                isbn: row.isbn,
-                status: <span class="t">Status</span>::<span class="f">from_str</span>(&amp;row.status).<span class="f">unwrap_or</span>(<span class="t">Status</span>::<span class="t">ToRead</span>),
-                rating: row.rating.<span class="f">map</span>(|r| r <span class="k">as</span> <span class="t">u32</span>),
-                created_at: row.created_at,
-            })
-            .<span class="f">collect</span>())
+        books.<span class="f">into_iter</span>().<span class="f">map</span>(book_from_row).<span class="f">collect</span>()
     }
 
     <span class="c">/// Finds one book by id.
 </span>    <span class="k">pub</span> <span class="k">async</span> <span class="k">fn</span> <span class="f">find_book</span>(&amp;<span class="k">self</span>, id: <span class="t">i64</span>) -&gt; <span class="t">Result</span>&lt;<span class="t">Book</span>, <span class="t">LibraryError</span>&gt; {
-        <span class="k">let</span> book = sqlx::<span class="f">query_as</span>(
+        <span class="k">let</span> book: <span class="t">Option</span>&lt;<span class="t">BookRow</span>&gt; = sqlx::<span class="f">query_as</span>(
             <span class="s">"SELECT id, title, author, isbn, status, rating, created_at FROM books WHERE id = ?"</span>,
         )
         .<span class="f">bind</span>(id)
         .<span class="f">fetch_optional</span>(&amp;<span class="k">self</span>.pool)
         .<span class="k">await</span>?;
-        book.<span class="f">map</span>(|row: <span class="t">BookRow</span>| <span class="t">Book</span> {
-            id: row.id,
-            title: row.title,
-            author: row.author,
-            isbn: row.isbn,
-            status: <span class="t">Status</span>::<span class="f">from_str</span>(&amp;row.status).<span class="f">unwrap_or</span>(<span class="t">Status</span>::<span class="t">ToRead</span>),
-            rating: row.rating.<span class="f">map</span>(|r| r <span class="k">as</span> <span class="t">u32</span>),
-            created_at: row.created_at,
-        })
+        book.<span class="f">map</span>(book_from_row)
+        .<span class="f">transpose</span>()?
         .<span class="f">ok_or</span>(<span class="t">LibraryError</span>::<span class="t">NotFound</span>(id))
     }
 
@@ -26892,6 +26895,25 @@ sqlx-cli = <span class="s">"0.9"</span></code></pre></figure>
     status: <span class="t">String</span>,
     rating: <span class="t">Option</span>&lt;<span class="t">i64</span>&gt;,
     created_at: <span class="t">String</span>,
+}
+
+<span class="k">fn</span> <span class="f">book_from_row</span>(row: <span class="t">BookRow</span>) -&gt; <span class="t">Result</span>&lt;<span class="t">Book</span>, <span class="t">LibraryError</span>&gt; {
+    <span class="k">let</span> status = <span class="t">Status</span>::<span class="f">from_str</span>(&amp;row.status).<span class="f">map_err</span>(<span class="t">LibraryError</span>::<span class="t">InvalidData</span>)?;
+    <span class="k">let</span> rating = row
+        .rating
+        .<span class="f">map</span>(<span class="t">u32</span>::try_from)
+        .<span class="f">transpose</span>()
+        .<span class="f">map_err</span>(|_| <span class="t">LibraryError</span>::<span class="t">InvalidData</span>(<span class="t">String</span>::<span class="f">from</span>(<span class="s">"rating is negative"</span>)))?;
+
+    <span class="t">Ok</span>(<span class="t">Book</span> {
+        id: row.id,
+        title: row.title,
+        author: row.author,
+        isbn: row.isbn,
+        status,
+        rating,
+        created_at: row.created_at,
+    })
 }</code></pre></figure>
 <p><code>BookRow</code> is a private helper: SQLx maps a row into it, and <code>find_book</code> converts it into the public <code>Book</code>. The conversion point is where the database’s <code>rating: Option&lt;i64&gt;</code> becomes the model’s <code>Option&lt;u32&gt;</code>, and where the status text is parsed. All SQL stays in this file.</p>
 <p>The <code>sqlx::migrate!()</code> call runs automatically when the program starts. Migrations that were already applied are skipped.</p>
@@ -26955,7 +26977,7 @@ sqlx-cli = <span class="s">"0.9"</span></code></pre></figure>
 <p>The rules layer sits between the store and the outside world. It knows nothing about HTTP or the command line — it takes values and returns values.</p>
 <figure class="code lang-rust"><figcaption class="code-head"><span class="code-lang">Rust</span><span class="code-file">src/lib.rs</span><span class="code-actions"><button type="button" class="cbtn btn-copy" title="Copy this code"><svg class="i " aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button></span></figcaption><pre><code><span class="k">mod</span> error;
 <span class="k">mod</span> model;
-<span class="k">mod</span> routes;
+<span class="k">pub</span> <span class="k">mod</span> routes;
 <span class="k">mod</span> store;
 
 <span class="k">pub</span> <span class="k">use</span> error::<span class="t">LibraryError</span>;
@@ -26963,7 +26985,8 @@ sqlx-cli = <span class="s">"0.9"</span></code></pre></figure>
 <span class="k">pub</span> <span class="k">use</span> store::<span class="t">Store</span>;
 
 <span class="c">/// The public API of the library. A `Library` wraps a `Store` and adds rule checks.
-</span><span class="k">pub</span> <span class="k">struct</span> <span class="t">Library</span> {
+</span><span class="a">#[derive(Clone)]</span>
+<span class="k">pub</span> <span class="k">struct</span> <span class="t">Library</span> {
     store: <span class="t">Store</span>,
 }
 
@@ -27064,7 +27087,7 @@ sqlx-cli = <span class="s">"0.9"</span></code></pre></figure>
 <figure class="code lang-rust"><figcaption class="code-head"><span class="code-lang">Rust</span><span class="code-file">src/routes.rs</span><span class="code-actions"><button type="button" class="cbtn btn-copy" title="Copy this code"><svg class="i " aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button></span></figcaption><pre><code><span class="k">use</span> axum::extract::{<span class="t">Path</span>, <span class="t">State</span>, <span class="t">Query</span>};
 <span class="k">use</span> axum::http::<span class="t">StatusCode</span>;
 <span class="k">use</span> axum::response::{<span class="t">IntoResponse</span>, <span class="t">Response</span>};
-<span class="k">use</span> axum::routing::{delete, get, patch, post};
+<span class="k">use</span> axum::routing::get;
 <span class="k">use</span> axum::{<span class="t">Json</span>, <span class="t">Router</span>};
 <span class="k">use</span> serde::<span class="t">Deserialize</span>;
 <span class="k">use</span> serde_json::json;
@@ -27081,19 +27104,16 @@ sqlx-cli = <span class="s">"0.9"</span></code></pre></figure>
 }
 
 <span class="c">/// One error shape for every API response.
-</span><span class="a">#[derive(serde::Serialize)]</span>
-<span class="k">struct</span> <span class="t">ErrorBody</span> {
-    error: <span class="t">String</span>,
-}
-
-<span class="k">impl</span> <span class="t">IntoResponse</span> <span class="k">for</span> <span class="t">LibraryError</span> {
+</span><span class="k">impl</span> <span class="t">IntoResponse</span> <span class="k">for</span> <span class="t">LibraryError</span> {
     <span class="k">fn</span> <span class="f">into_response</span>(<span class="k">self</span>) -&gt; <span class="t">Response</span> {
         <span class="k">let</span> (status, message) = <span class="k">match</span> &amp;<span class="k">self</span> {
             <span class="t">LibraryError</span>::<span class="t">NotFound</span>(id) =&gt; (<span class="t">StatusCode</span>::<span class="n">NOT_FOUND</span>, <span class="m">format!</span>(<span class="s">"no book with id {id}"</span>)),
             <span class="t">LibraryError</span>::<span class="t">Validation</span>(message) =&gt; {
                 (<span class="t">StatusCode</span>::<span class="n">UNPROCESSABLE_ENTITY</span>, message.<span class="f">clone</span>())
             }
-            <span class="t">LibraryError</span>::<span class="t">Database</span>(_) =&gt; {
+            <span class="t">LibraryError</span>::<span class="t">Database</span>(_)
+            | <span class="t">LibraryError</span>::<span class="t">Migration</span>(_)
+            | <span class="t">LibraryError</span>::<span class="t">InvalidData</span>(_) =&gt; {
                 tracing::<span class="m">error</span>!(<span class="s">"database error: {self}"</span>);
                 (
                     <span class="t">StatusCode</span>::<span class="n">INTERNAL_SERVER_ERROR</span>,
@@ -27189,6 +27209,7 @@ sqlx-cli = <span class="s">"0.9"</span></code></pre></figure>
 <span class="k">pub</span> <span class="k">struct</span> <span class="t">Config</span> {
     <span class="k">pub</span> database_url: <span class="t">String</span>,
     <span class="k">pub</span> bind_address: <span class="t">String</span>,
+    <span class="a">#[allow(dead_code)]</span>
     <span class="k">pub</span> api_key: <span class="t">Option</span>&lt;<span class="t">String</span>&gt;,
 }
 
@@ -27203,13 +27224,16 @@ sqlx-cli = <span class="s">"0.9"</span></code></pre></figure>
         }
     }
 }</code></pre></figure>
-<figure class="code lang-rust"><figcaption class="code-head"><span class="code-lang">Rust</span><span class="code-file">src/cli.rs</span><span class="code-actions"><button type="button" class="cbtn btn-copy" title="Copy this code"><svg class="i " aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button></span></figcaption><pre><code><span class="k">use</span> clap::{<span class="t">Parser</span>, <span class="t">Subcommand</span>};
+<figure class="code lang-rust"><figcaption class="code-head"><span class="code-lang">Rust</span><span class="code-file">src/cli.rs</span><span class="code-actions"><button type="button" class="cbtn btn-copy" title="Copy this code"><svg class="i " aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button></span></figcaption><pre><code><span class="k">use</span> clap::<span class="t">Parser</span>;
 <span class="k">use</span> std::path::<span class="t">PathBuf</span>;
 
 <span class="c">/// A personal library manager: add, list and track books.
 </span><span class="a">#[derive(Debug, Parser)]</span>
 <span class="a">#[command(name = </span><span class="s">"library"</span><span class="a">)]</span>
-<span class="k">enum</span> <span class="t">Command</span> {
+<span class="k">pub</span> <span class="k">enum</span> <span class="t">Command</span> {
+    <span class="c">/// Start the web API
+</span>    <span class="t">Serve</span>,
+
     <span class="c">/// Add a book
 </span>    <span class="t">Add</span> {
         <span class="c">/// The book's title
@@ -27250,16 +27274,11 @@ sqlx-cli = <span class="s">"0.9"</span></code></pre></figure>
 }</code></pre></figure>
 <figure class="code lang-rust"><figcaption class="code-head"><span class="code-lang">Rust</span><span class="code-file">src/main.rs</span><span class="code-actions"><button type="button" class="cbtn btn-copy" title="Copy this code"><svg class="i " aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button></span></figcaption><pre><code><span class="k">use</span> anyhow::<span class="t">Result</span>;
 <span class="k">use</span> clap::<span class="t">Parser</span>;
-<span class="k">use</span> library::cli::<span class="t">Command</span>;
+<span class="k">use</span> cli::<span class="t">Command</span>;
 <span class="k">use</span> library::{<span class="t">Library</span>, <span class="t">NewBook</span>, <span class="t">Status</span>, <span class="t">Store</span>};
-<span class="k">use</span> routes::<span class="t">AppState</span>;
 
 <span class="k">mod</span> cli;
 <span class="k">mod</span> config;
-<span class="k">mod</span> error;
-<span class="k">mod</span> model;
-<span class="k">mod</span> routes;
-<span class="k">mod</span> store;
 
 <span class="k">use</span> config::<span class="t">Config</span>;
 
@@ -27276,31 +27295,31 @@ sqlx-cli = <span class="s">"0.9"</span></code></pre></figure>
     tracing::<span class="m">info</span>!(<span class="s">"opening database {}"</span>, config.database_url);
     <span class="k">let</span> store = <span class="t">Store</span>::<span class="f">open</span>(&amp;config.database_url).<span class="k">await</span>?;
     <span class="k">let</span> library = <span class="t">Library</span>::<span class="f">new</span>(store);
-    <span class="k">let</span> state = <span class="t">AppState</span> { library };
 
     <span class="k">match</span> <span class="t">Command</span>::<span class="f">parse</span>() {
+        <span class="t">Command</span>::<span class="t">Serve</span> =&gt; {
+            library::<span class="f">run_server</span>(library, &amp;config.bind_address).<span class="k">await</span>?;
+        }
         <span class="t">Command</span>::<span class="t">Add</span> {
             title,
             author,
             isbn,
         } =&gt; {
-            <span class="k">let</span> runtime = tokio::runtime::<span class="t">Runtime</span>::<span class="f">new</span>()?;
-            <span class="k">let</span> book = runtime.<span class="f">block_on</span>(library.<span class="f">add_book</span>(<span class="t">NewBook</span> {
+            <span class="k">let</span> book = library.<span class="f">add_book</span>(<span class="t">NewBook</span> {
                 title,
                 author,
                 isbn,
-            }))?;
+            }).<span class="k">await</span>?;
             <span class="m">println!</span>(<span class="s">"Added book {}: {} by {}"</span>, book.id, book.title, book.author);
         }
         <span class="t">Command</span>::<span class="t">List</span> { status } =&gt; {
-            <span class="k">let</span> runtime = tokio::runtime::<span class="t">Runtime</span>::<span class="f">new</span>()?;
             <span class="k">let</span> status = status.<span class="f">as_deref</span>().<span class="f">and_then</span>(|s| <span class="k">match</span> s {
                 <span class="s">"to-read"</span> =&gt; <span class="t">Some</span>(<span class="t">Status</span>::<span class="t">ToRead</span>),
                 <span class="s">"reading"</span> =&gt; <span class="t">Some</span>(<span class="t">Status</span>::<span class="t">Reading</span>),
                 <span class="s">"read"</span> =&gt; <span class="t">Some</span>(<span class="t">Status</span>::<span class="t">Read</span>),
                 _ =&gt; <span class="t">None</span>,
             });
-            <span class="k">let</span> books = runtime.<span class="f">block_on</span>(library.<span class="f">list_books</span>(status, <span class="t">None</span>))?;
+            <span class="k">let</span> books = library.<span class="f">list_books</span>(status, <span class="t">None</span>).<span class="k">await</span>?;
             <span class="m">println!</span>(<span class="s">"id  title        author           status    rating"</span>);
             <span class="k">for</span> book <span class="k">in</span> &amp;books {
                 <span class="k">let</span> rating = book
@@ -27314,17 +27333,15 @@ sqlx-cli = <span class="s">"0.9"</span></code></pre></figure>
             }
         }
         <span class="t">Command</span>::<span class="t">Read</span> { id, rating } =&gt; {
-            <span class="k">let</span> runtime = tokio::runtime::<span class="t">Runtime</span>::<span class="f">new</span>()?;
             <span class="k">if</span> <span class="k">let</span> <span class="t">Some</span>(rating) = rating {
-                runtime.<span class="f">block_on</span>(library.<span class="f">set_rating</span>(id, rating))?;
+                library.<span class="f">set_rating</span>(id, rating).<span class="k">await</span>?;
             } <span class="k">else</span> {
-                runtime.<span class="f">block_on</span>(library.<span class="f">set_status</span>(id, <span class="t">Status</span>::<span class="t">Read</span>))?;
+                library.<span class="f">set_status</span>(id, <span class="t">Status</span>::<span class="t">Read</span>).<span class="k">await</span>?;
             }
             <span class="m">println!</span>(<span class="s">"Marked book {id} as read."</span>);
         }
         <span class="t">Command</span>::<span class="t">Remove</span> { id } =&gt; {
-            <span class="k">let</span> runtime = tokio::runtime::<span class="t">Runtime</span>::<span class="f">new</span>()?;
-            <span class="k">let</span> removed = runtime.<span class="f">block_on</span>(library.<span class="f">delete_book</span>(id))?;
+            <span class="k">let</span> removed = library.<span class="f">delete_book</span>(id).<span class="k">await</span>?;
             <span class="k">if</span> removed {
                 <span class="m">println!</span>(<span class="s">"Removed book {id}."</span>);
             } <span class="k">else</span> {
@@ -27332,8 +27349,7 @@ sqlx-cli = <span class="s">"0.9"</span></code></pre></figure>
             }
         }
         <span class="t">Command</span>::<span class="t">Export</span> { output } =&gt; {
-            <span class="k">let</span> runtime = tokio::runtime::<span class="t">Runtime</span>::<span class="f">new</span>()?;
-            <span class="k">let</span> books = runtime.<span class="f">block_on</span>(library.<span class="f">list_books</span>(<span class="t">None</span>, <span class="t">None</span>))?;
+            <span class="k">let</span> books = library.<span class="f">list_books</span>(<span class="t">None</span>, <span class="t">None</span>).<span class="k">await</span>?;
             <span class="k">let</span> json = serde_json::<span class="f">to_string_pretty</span>(&amp;books)?;
             <span class="k">if</span> <span class="k">let</span> <span class="t">Some</span>(path) = output {
                 std::fs::<span class="f">write</span>(&amp;path, &amp;json)?;
@@ -27346,23 +27362,23 @@ sqlx-cli = <span class="s">"0.9"</span></code></pre></figure>
 
     <span class="t">Ok</span>(())
 }</code></pre></figure>
-<p><code>main</code> parses the command line. When a command needs the database it creates a short-lived Tokio runtime with <code>block_on</code> — the bridge from synchronous code into async code from <a href="#async-ecosystem" data-nav="async-ecosystem">chapter 45</a>. The same <code>Library</code> value also serves the web API when <code>start_server</code> is called.</p>
-<p>Note how <code>Library</code> is shared: the CLI uses it directly, and <code>AppState</code> puts it behind <code>State&lt;AppState&gt;</code> for Axum. One set of rules, two interfaces.</p>
+<p><code>main</code> parses the command line and uses the Tokio runtime created by <code>#[tokio::main]</code> for database operations. The <code>serve</code> command starts the web API; the other commands use the same <code>Library</code> rules and database.</p>
+<p>The CLI and the web API share the same <code>Library</code> implementation, so validation behaves the same through either interface.</p>
 <figure class="code lang-rust"><figcaption class="code-head"><span class="code-lang">Rust</span><span class="code-file">src/lib.rs (continued)</span><span class="code-actions"><button type="button" class="cbtn btn-copy" title="Copy this code"><svg class="i " aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button></span></figcaption><pre><code><span class="c">/// Runs the web API. Used by `main` when the program is started as a server.
-</span><span class="k">pub</span> <span class="k">async</span> <span class="k">fn</span> <span class="f">run_server</span>(library: <span class="t">Library</span>, bind_address: &amp;<span class="t">str</span>) -&gt; <span class="t">Result</span>&lt;(), axum::<span class="t">Error</span>&gt; {
+</span><span class="k">pub</span> <span class="k">async</span> <span class="k">fn</span> <span class="f">run_server</span>(library: <span class="t">Library</span>, bind_address: &amp;<span class="t">str</span>) -&gt; std::io::<span class="t">Result</span>&lt;()&gt; {
     <span class="k">use</span> <span class="k">crate</span>::routes::<span class="t">AppState</span>;
     <span class="k">let</span> state = <span class="t">AppState</span> { library };
-    <span class="k">let</span> listener = std::net::<span class="t">TcpListener</span>::<span class="f">bind</span>(bind_address)?;
+    <span class="k">let</span> listener = tokio::net::<span class="t">TcpListener</span>::<span class="f">bind</span>(bind_address).<span class="k">await</span>?;
     axum::<span class="f">serve</span>(listener, routes::<span class="f">router</span>().<span class="f">with_state</span>(state))
         .<span class="f">with_graceful_shutdown</span>(<span class="k">async</span> {
             tokio::signal::<span class="f">ctrl_c</span>().<span class="k">await</span>.<span class="f">expect</span>(<span class="s">"could not listen for ctrl+c"</span>);
         })
-        .<span class="k">await</span>
+        .<span class="k">await</span>?;
+    <span class="t">Ok</span>(())
 }</code></pre></figure>
-<p>(In a tidier version, <code>run_server</code> and <code>main</code> share the server-starting code; they are shown separately here so each file’s purpose stays clear.)</p>
 <h2 id="capstone--try-it">Try it</h2>
 <p>Build and run the server in one terminal:</p>
-<figure class="code lang-sh"><figcaption class="code-head"><span class="code-lang">Terminal</span><span class="code-actions"><button type="button" class="cbtn btn-copy" title="Copy this code"><svg class="i " aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button></span></figcaption><pre><code><span class="o">cargo run</span></code></pre></figure>
+<figure class="code lang-sh"><figcaption class="code-head"><span class="code-lang">Terminal</span><span class="code-actions"><button type="button" class="cbtn btn-copy" title="Copy this code"><svg class="i " aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button></span></figcaption><pre><code><span class="o">cargo run -- serve</span></code></pre></figure>
 <p>Then in another:</p>
 <figure class="code lang-text soft"><figcaption class="code-head"><span class="code-lang">Text</span><span class="code-actions"><button type="button" class="cbtn btn-copy" title="Copy this code"><svg class="i " aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button></span></figcaption><pre><code>$ curl http://localhost:3000/health
 {"status":"ok"}
@@ -27431,7 +27447,7 @@ $ library export
         .<span class="f">unwrap</span>();
     <span class="k">let</span> response = <span class="f">router</span>()
         .<span class="f">clone</span>()
-        .<span class="f">with_state</span>(app.library.<span class="f">clone</span>())
+        .<span class="f">with_state</span>(app.<span class="f">clone</span>())
         .<span class="f">oneshot</span>(request)
         .<span class="k">await</span>
         .<span class="f">unwrap</span>();
@@ -27450,7 +27466,7 @@ $ library export
         .<span class="f">unwrap</span>();
     <span class="k">let</span> response = <span class="f">router</span>()
         .<span class="f">clone</span>()
-        .<span class="f">with_state</span>(app.library.<span class="f">clone</span>())
+        .<span class="f">with_state</span>(app.<span class="f">clone</span>())
         .<span class="f">oneshot</span>(request)
         .<span class="k">await</span>
         .<span class="f">unwrap</span>();
@@ -27476,7 +27492,7 @@ $ library export
         .<span class="f">unwrap</span>();
     <span class="k">let</span> response = <span class="f">router</span>()
         .<span class="f">clone</span>()
-        .<span class="f">with_state</span>(app.library.<span class="f">clone</span>())
+        .<span class="f">with_state</span>(app.<span class="f">clone</span>())
         .<span class="f">oneshot</span>(request)
         .<span class="k">await</span>
         .<span class="f">unwrap</span>();
@@ -27493,7 +27509,7 @@ $ library export
         .<span class="f">unwrap</span>();
     <span class="k">let</span> response = <span class="f">router</span>()
         .<span class="f">clone</span>()
-        .<span class="f">with_state</span>(app.library.<span class="f">clone</span>())
+        .<span class="f">with_state</span>(app.<span class="f">clone</span>())
         .<span class="f">oneshot</span>(request)
         .<span class="k">await</span>
         .<span class="f">unwrap</span>();
@@ -27508,7 +27524,7 @@ $ library export
 <p><strong>Solid:</strong></p>
 <ul><li>One error enum gives every failure a status code and a uniform JSON body.</li><li>All SQL lives in <code>store.rs</code>; the rules and routes never touch it.</li><li>Bad input is rejected by the rules before it reaches the database.</li><li>Database errors are logged, not shown to the client.</li><li>Settings come from environment variables.</li><li>The program shuts down gracefully on Ctrl+C.</li><li>Tests cover the API without a network.</li></ul>
 <p><strong>Missing (deliberately, for the exercises):</strong></p>
-<ul><li><code>list_books</code> ignores the <code>status</code> and <code>search</code> filters in the CLI-only path (they work in the web API).</li><li>There is no pagination: <code>GET /books</code> returns every book.</li><li>No authentication: anybody may add or delete books.</li><li>No protection against a very large request body.</li><li>The CLI and the server are separate entry points; a real program might share one binary with a <code>--server</code> flag.</li></ul>
+<ul><li><code>list_books</code> ignores the <code>status</code> and <code>search</code> filters in the CLI-only path (they work in the web API).</li><li>There is no pagination: <code>GET /books</code> returns every book.</li><li>No authentication: anybody may add or delete books.</li><li>No protection against a very large request body.</li><li>The <code>serve</code> subcommand starts the web API, while the other subcommands operate on the same database.</li></ul>
 <h2 id="capstone--make-it-better">Make it better</h2>
 <div class="exercise" data-ex="capstone-x1"><div class="ex-head"><span class="ex-kind practice"><svg class="i " aria-hidden="true"><use href="#i-pencil"/></svg>Practice</span><span class="ex-title">Add the missing filters</span><label class="ex-done"><input type="checkbox" data-save="capstone-x1"> Done</label></div><div class="ex-body"><p>Make <code>GET /books?status=read</code> and <code>GET /books?q=dune</code> work. The route already parses them and passes them to <code>list_books</code>; the store already builds a dynamic query with <code>QueryBuilder</code>.</p></div><details class="ex-more ex-hint"><summary><svg class="i " aria-hidden="true"><use href="#i-bulb"/></svg>Need a hint?</summary><div class="d-body"><p>Check that the <code>status</code> query parameter maps to <code>Status::ToRead</code>, <code>Status::Reading</code> or <code>Status::Read</code>, and that <code>q</code> is passed as a search string. Add tests that request <code>?status=read</code> and check that only read books come back.</p></div></details><details class="ex-more ex-sol"><summary><svg class="i " aria-hidden="true"><use href="#i-check"/></svg>Show solution and explanation</summary><div class="d-body"><figure class="code lang-rust"><figcaption class="code-head"><span class="code-lang">Rust</span><span class="code-actions"><button type="button" class="cbtn btn-copy" title="Copy this code"><svg class="i " aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button></span></figcaption><pre><code><span class="c">// The route in routes.rs already does this:
 // let status = params.get("status").and_then(|s| match s.as_str() { ... });
@@ -27536,13 +27552,16 @@ query.<span class="f">push_bind</span>(limit.<span class="f">unwrap_or</span>(<s
 <figure class="code lang-rust"><figcaption class="code-head"><span class="code-lang">Rust</span><span class="code-actions"><button type="button" class="cbtn btn-copy" title="Copy this code"><svg class="i " aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button></span></figcaption><pre><code>// <span class="t">In</span> routes.rs, `get_book` calls `state.library.<span class="f">touch</span>(id)` before returning the book.</code></pre></figure>
 <p><code>sqlx::migrate!()</code> applies both migrations in order, and skips any already applied.</p></div></details></div>
 <h2 id="capstone--what-you-have-learned">What you have learned</h2>
-<aside class="callout c-recap"><div class="callout-label"><svg class="i " aria-hidden="true"><use href="#i-list"/></svg>Recap</div><div class="callout-body"><ul><li>A program in layers — HTTP, rules, storage — is easy to test and easy to reuse.</li><li>One data model shared by the web API and the CLI means both interfaces see the same data.</li><li>SQLx keeps all SQL in one file, with bound parameters and compile-friendly queries.</li><li><code>thiserror</code> gives libraries a precise error enum; <code>anyhow</code> gives applications quick context.</li><li><code>LibraryError::IntoResponse</code> turns every failure into a fitting JSON answer.</li><li>Settings come from environment variables; secrets never appear in source code.</li><li><code>tokio::runtime::Runtime::block_on</code> connects a synchronous CLI to an async library.</li><li>Tests hand requests straight to the router; each test gets its own in-memory database.</li><li>Migrations evolve the schema safely, and <code>build.rs</code> makes Cargo notice them.</li></ul></div></aside>
+<aside class="callout c-recap"><div class="callout-label"><svg class="i " aria-hidden="true"><use href="#i-list"/></svg>Recap</div><div class="callout-body"><ul><li>A program in layers — HTTP, rules, storage — is easy to test and easy to reuse.</li><li>One data model shared by the web API and the CLI means both interfaces see the same data.</li><li>SQLx keeps all SQL in one file, with bound parameters and compile-friendly queries.</li><li><code>thiserror</code> gives libraries a precise error enum; <code>anyhow</code> gives applications quick context.</li><li><code>LibraryError::IntoResponse</code> turns every failure into a fitting JSON answer.</li><li>Settings come from environment variables; secrets never appear in source code.</li><li><code>#[tokio::main]</code> runs async database operations for both CLI commands and the web server.</li><li>Tests hand requests straight to the router; each test gets its own in-memory database.</li><li>Migrations evolve the schema safely, and <code>build.rs</code> makes Cargo notice them.</li></ul></div></aside>
 <ul class="checklist"><li><label><input type="checkbox" data-save="capstone-c1-1"><span>I built the library and used both <code>library add</code> / <code>library list</code> and the web API with <code>curl</code>.</span></label></li><li><label><input type="checkbox" data-save="capstone-c1-2"><span>The same book appears in the CLI output and in the JSON from <code>/books</code>.</span></label></li><li><label><input type="checkbox" data-save="capstone-c1-3"><span><code>cargo test</code> passes for the store, the rules and the API.</span></label></li><li><label><input type="checkbox" data-save="capstone-c1-4"><span>I can explain why <code>LibraryError::IntoResponse</code> logs database details but hides them.</span></label></li><li><label><input type="checkbox" data-save="capstone-c1-5"><span>I can explain why <code>NewBook</code> and <code>Book</code> are separate types.</span></label></li><li><label><input type="checkbox" data-save="capstone-c1-6"><span>I added the status/search filters.</span></label></li><li><label><input type="checkbox" data-save="capstone-c1-7"><span>I added pagination.</span></label></li><li><label><input type="checkbox" data-save="capstone-c1-8"><span>I added API-key protection for writes.</span></label></li><li><label><input type="checkbox" data-save="capstone-c1-9"><span>I added a second migration and saw it applied at start-up.</span></label></li></ul>
 <h2 id="capstone--what-comes-next">What comes next</h2>
 <p>You have reached the end of Part 10 and of this guide. You now know how to build command-line tools, web services, database-backed programs, graphical applications and embedded software in Rust. The next chapter points you at the resources that take you further: the books, the crates and the communities where Rust developers keep learning.</p>
 <p>:::</p>
 <p><a href="#next" data-nav="next">chapter 53</a></p></div><div class="ch-done"><div><b>Finished this chapter?</b><span>Mark it complete to track your progress through the guide.</span></div><button type="button" class="btn primary btn-done" data-done="capstone"><svg class="i " aria-hidden="true"><use href="#i-check"/></svg><span>Mark as complete</span></button></div><nav class="ch-nav" aria-label="Chapter navigation"><a class="ch-nav-a prev" href="#performance" data-nav="performance"><svg class="i " aria-hidden="true"><use href="#i-arrow-left"/></svg><span><small>Previous</small><b>Performance: measure first, then improve</b></span></a><a class="ch-nav-a next" href="#next" data-nav="next"><span><small>Next</small><b>Where to go from here</b></span><svg class="i " aria-hidden="true"><use href="#i-arrow-right"/></svg></a></nav></section>
-<section class="chapter kind-chapter" id="ch-next" data-id="next" hidden><header class="ch-head"><div class="ch-kicker"><span>Part 11 · Becoming a Rust developer</span><span class="lvl lvl-all">All levels</span><span class="ch-time">about 25 min</span></div><div class="ch-num" aria-hidden="true">53</div><h1 tabindex="-1">Where to go from here</h1><div class="ch-learn"><div class="ch-learn-h">By the end of this chapter you will be able to</div><ul><li><svg class="i " aria-hidden="true"><use href="#i-check"/></svg><span>Choose what to study next, by goal and by level</span></li><li><svg class="i " aria-hidden="true"><use href="#i-check"/></svg><span>Find the best book or course for each topic</span></li><li><svg class="i " aria-hidden="true"><use href="#i-check"/></svg><span>Practise with small tasks and with real projects</span></li><li><svg class="i " aria-hidden="true"><use href="#i-check"/></svg><span>Stay up to date and take part in the Rust community</span></li></ul></div></header><div class="ch-body"><p>You have worked through the whole language, the tools around it, and seven projects. This chapter is a map of what lies beyond: the books and courses that go deeper than this guide, places to practise, and ways to stay in touch with a language that gets a new version every six weeks.</p>
+<section class="chapter kind-chapter" id="ch-next" data-id="next" hidden><header class="ch-head"><div class="ch-kicker"><span>Part 11 · Becoming a Rust developer</span><span class="lvl lvl-all">All levels</span><span class="ch-time">about 25 min</span></div><div class="ch-num" aria-hidden="true">53</div><h1 tabindex="-1">Where to go from here</h1><div class="ch-learn"><div class="ch-learn-h">By the end of this chapter you will be able to</div><ul><li><svg class="i " aria-hidden="true"><use href="#i-check"/></svg><span>Choose what to study next, by goal and by level</span></li><li><svg class="i " aria-hidden="true"><use href="#i-check"/></svg><span>Find the best book or course for each topic</span></li><li><svg class="i " aria-hidden="true"><use href="#i-check"/></svg><span>Practise with small tasks and with real projects</span></li><li><svg class="i " aria-hidden="true"><use href="#i-check"/></svg><span>Stay up to date and take part in the Rust community</span></li></ul></div></header><div class="ch-body"><p>You have worked through the whole language, the tools around it, and several projects. This chapter is a map of what lies beyond: the books and courses that go deeper than this guide, places to practise, and ways to stay in touch with a language that gets a new version every six weeks.</p>
+<p>You do not need to cover every topic to move forward. Keep the core path from <a href="#what-is-rust" data-nav="what-is-rust">chapter 1</a> through <a href="#project-report" data-nav="project-report">chapter 26</a>, then choose the route closest to what you want to build:</p>
+<div class="table-wrap"><table><thead><tr><th>Goal</th><th>A focused next route</th></tr></thead><tbody><tr><td>Command-line tools</td><td><a href="#cargo" data-nav="cargo">Cargo</a>, <a href="#errors" data-nav="errors">error handling</a>, <a href="#serde" data-nav="serde">Serde</a>, <a href="#cli" data-nav="cli">Clap</a></td></tr><tr><td>Web services and APIs</td><td><a href="#async" data-nav="async">async Rust</a>, <a href="#async-ecosystem" data-nav="async-ecosystem">Tokio and the async ecosystem</a>, <a href="#web" data-nav="web">Axum</a>, <a href="#databases" data-nav="databases">databases</a>, then the <a href="#project-api" data-nav="project-api">API project</a></td></tr><tr><td>Browser or desktop apps</td><td><a href="#serde" data-nav="serde">Serde</a>, then <a href="#apps" data-nav="apps">WebAssembly and app interfaces</a></td></tr><tr><td>Embedded devices or games</td><td><a href="#memory" data-nav="memory">memory and ownership</a>, <a href="#smart-pointers" data-nav="smart-pointers">smart pointers</a>, <a href="#unsafe" data-nav="unsafe">unsafe Rust</a>, then <a href="#games-embedded" data-nav="games-embedded">games and embedded Rust</a></td></tr><tr><td>Deeper language understanding</td><td><a href="#advanced-traits" data-nav="advanced-traits">advanced traits</a>, <a href="#type-system" data-nav="type-system">type design</a>, <a href="#memory-layout" data-nav="memory-layout">memory layout</a>, and <a href="#idioms" data-nav="idioms">idioms</a></td></tr></tbody></table></div>
+<p>Treat these as starting points, not prerequisites. Follow a link when a project needs that skill, and return to the route later.</p>
 <aside class="callout c-analogy"><div class="callout-label"><svg class="i " aria-hidden="true"><use href="#i-bulb"/></svg>Real-world analogy</div><div class="callout-title">After the driving test</div><div class="callout-body"><p>A driving licence does not make an experienced driver. It means that you can now learn safely on your own, on real roads. You are at that point with Rust: you can read the documentation of any crate, understand what the compiler tells you, and build things. The experience comes from kilometres driven.</p></div></aside>
 <aside class="callout c-compare"><div class="callout-label"><svg class="i " aria-hidden="true"><use href="#i-scale"/></svg>How other languages do it</div><div class="callout-title">Learning Rust vs learning another skill</div><div class="callout-body"><p>Some people expect a language to be mastered by reading alone. In practice, every programming language is learned in a loop: you read a bit, you try a small thing, you fix the errors, and you build something real. Rust is unusual in that the compiler gives excellent feedback, which makes that loop efficient once you know the basic rules.</p></div></aside>
 <h2 id="next--how-to-keep-learning">How to keep learning</h2>
@@ -28156,7 +28175,7 @@ help: consider cloning the value if the performance cost is acceptable   (5) a s
  <span class="hl">--&gt;</span> src/main.rs:3:20
   |
 3 |     println!("{}", totl + 1);
-  |                    <span class="er">^^^^ not found in this scope</span>
+  |                    <span class="er">^^^^</span>
   |
 <span class="hl">help</span>: a local variable with a similar name exists
   |

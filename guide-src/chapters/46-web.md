@@ -6,7 +6,7 @@
 @time 100
 @learn Explain requests, responses, methods and status codes | Write a web server with routes and handlers in Axum | Read paths, query strings, headers and JSON bodies with extractors | Share state and return proper errors | Add logging, limits and timeouts with middleware | Compare Axum with Actix Web and Rocket
 
-A **web server** is a program that waits for requests from the network and answers them. The web sites you visit and the apps on your phone all talk to such programs. Rust is a strong choice for writing them: the servers are fast, use little memory, and stay up, because whole classes of crashes are ruled out at compile time.
+A **web server** is a program that waits for requests from the network and answers them. The web sites you visit and the apps on your phone all talk to such programs. Rust is a strong choice for writing them: it can help prevent memory-safety bugs and use resources efficiently. It cannot guarantee that a server stays up; logic errors, panics, overload and operational problems still need careful design and testing.
 
 :::analogy A restaurant
 A guest (the client) hands an order slip (the request) to the waiter. The slip says what is wanted and for which table. The waiter (the router) looks at it and gives it to the right cook (a handler). The cook prepares a dish (the response), and the waiter brings it back. House rules apply to every order whoever cooks: orders are written in the book, and no order may take longer than twenty minutes (middleware). The pantry is shared by all cooks (state).
@@ -49,13 +49,15 @@ content-length: 36
 
 ### Methods
 
-| Method | Meaning | Has a body |
+| Method | Meaning | Typical body use |
 |---|---|---|
-| `GET` | read something. Must not change anything | no |
-| `POST` | create something, or start an action | yes |
-| `PUT` | replace something | yes |
-| `PATCH` | change part of something | yes |
-| `DELETE` | remove something | no |
+| `GET` | retrieve a representation; defined as a safe method | usually absent |
+| `POST` | submit data for the resource to process | often present |
+| `PUT` | create or replace the target resource's representation | often present |
+| `PATCH` | apply a partial change to the target resource | often present |
+| `DELETE` | remove the target resource | usually absent |
+
+These are conventions, not rules that require a body or forbid one. HTTP defines the semantics of each method; for example, `GET` is intended to be safe, but a server still has to implement that contract correctly. A request body on `GET` or `DELETE` has no generally defined meaning, so clients and servers should not rely on one.
 
 ### Status codes
 
