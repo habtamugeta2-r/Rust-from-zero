@@ -56,6 +56,7 @@ jobs:
 
       - uses: dtolnay/rust-toolchain@stable
         with:
+          targets: wasm32-unknown-unknown, wasm32-wasip1, thumbv7m-none-eabi
           components: clippy, rustfmt
 
       - uses: actions/setup-python@v5
@@ -93,5 +94,17 @@ jobs:
             # compile errors are marked with a cross.
             head -n 14 /tmp/ext.log | sed 's/^/::error::/'
             grep -A5 -E "^✗" /tmp/ext.log | head -n 40 | sed 's/^/::error::/'
+            exit 1
+          fi
+
+      - name: Extract and test multi-file and target projects
+        run: |
+          set +e
+          python3 guide-src/tools/check.py --projects --strict-targets > /tmp/proj.log 2>&1
+          status=$?
+          tail -n 60 /tmp/proj.log
+          if [ $status -ne 0 ]; then
+            head -n 14 /tmp/proj.log | sed 's/^/::error::/'
+            grep -A8 -E "^✗|^error" /tmp/proj.log | head -n 60 | sed 's/^/::error::/'
             exit 1
           fi

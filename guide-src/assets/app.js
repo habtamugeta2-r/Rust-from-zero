@@ -487,4 +487,43 @@
 
   refreshProgress();
   route(true);
+
+  /* ── home learning routes ── */
+  var routeBtns = $$('.route-btn'), routeDesc = $('#route-desc');
+  function applyRoute(rid) {
+    var routes = DATA.routes || [];
+    var rt = routes.filter(function (r) { return r.id === rid; })[0] || routes[0];
+    if (!rt) return;
+    var allow = rt.chapters ? {} : null;
+    if (allow) rt.chapters.forEach(function (id) { allow[id] = true; });
+    routeBtns.forEach(function (b) {
+      var on = b.getAttribute('data-route') === rt.id;
+      b.classList.toggle('is-on', on);
+      b.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+    var mins = 0, count = 0;
+    tracked.forEach(function (c) {
+      if (!allow || allow[c.id]) { count++; mins += c.time || 0; }
+    });
+    if (routeDesc) {
+      var hrs = Math.max(1, Math.round(mins / 60));
+      routeDesc.textContent = rt.summary + ' (' + count + ' chapters, ~' + hrs + ' hours)';
+    }
+    $$('.path-part').forEach(function (pp) {
+      var hits = 0;
+      $$('.chip', pp).forEach(function (ch) {
+        var cid = ch.getAttribute('data-nav');
+        var on = !allow || !!allow[cid];
+        ch.classList.toggle('route-off', !!allow && !on);
+        if (on) hits++;
+      });
+      pp.classList.toggle('route-dim', !!allow && hits === 0);
+    });
+  }
+  if (routeBtns.length) {
+    routeBtns.forEach(function (b) {
+      b.addEventListener('click', function () { applyRoute(b.getAttribute('data-route')); });
+    });
+    applyRoute('all');
+  }
 })();

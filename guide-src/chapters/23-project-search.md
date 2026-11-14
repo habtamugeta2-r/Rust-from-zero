@@ -259,7 +259,7 @@ Add `use std::error::Error;` and `use std::fs;` at the top of `src/lib.rs`.
 
 Replace the contents of `src/main.rs`:
 
-```rust file=src/main.rs
+```rust proj=finder file=src/main.rs
 use std::env;
 use std::process;
 
@@ -341,7 +341,7 @@ error: nothing.txt: No such file or directory (os error 2)
 
 ## The complete library
 
-```rust test file=src/lib.rs
+```rust test proj=finder file=src/lib.rs
 use std::error::Error;
 use std::fs;
 

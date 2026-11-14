@@ -1,5 +1,5 @@
 @id idioms
-@part p8
+@part p9
 @title Idiomatic Rust: patterns and habits
 @short Idioms and patterns
 @level advanced
@@ -655,7 +655,7 @@ When you publish a type for others to use, go through this list. It is condensed
 - It is `Send` and `Sync` where possible.
 - Enums and structs that may grow are marked `#[non_exhaustive]`.
 
-Two tools enforce most idioms automatically. **`rustfmt`** formats code in the standard style, and **Clippy** knows several hundred idioms and suggests the better form with an explanation. Both are the subject of [chapter 40](#quality-tools). Running Clippy on your own code is one of the fastest ways to learn idiomatic Rust.
+Two tools enforce most idioms automatically. **`rustfmt`** formats code in the standard style, and **Clippy** knows several hundred idioms and suggests the better form with an explanation. You already met both in [chapter 35](#quality-tools). Running Clippy on your own code is one of the fastest ways to learn idiomatic Rust.
 
 :::compare Design patterns from other languages
 Many classic object-oriented design patterns exist to work around a missing language feature, and shrink in Rust:

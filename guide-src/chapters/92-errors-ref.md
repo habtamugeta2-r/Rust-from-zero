@@ -451,7 +451,7 @@ Rust has no optional parameters and no default values for them.
 **Repairs:**
 
 - Pass every argument.
-- For optional settings: an `Option<T>` parameter, a struct of options with `Default`, or a builder ([chapter 38](#idioms)).
+- For optional settings: an `Option<T>` parameter, a struct of options with `Default`, or a builder ([chapter 41](#idioms)).
 
 ## Names, modules and privacy
 
@@ -660,7 +660,7 @@ The function has requirements that the compiler cannot check, and the caller mus
 
 **Repairs:**
 
-- `unsafe { danger(); }`, with a `// SAFETY:` comment that says why the requirements hold ([chapter 35](#unsafe)).
+- `unsafe { danger(); }`, with a `// SAFETY:` comment that says why the requirements hold ([chapter 38](#unsafe)).
 
 ### E0728: `await` outside async code
 
@@ -714,4 +714,4 @@ A warning does not stop the build, and it is nearly always right.
 | `value assigned … is never read` | the variable is overwritten before anyone looks at it |
 | `unused comparison`, `comparison is useless` | a test that is always true or always false, such as `x >= 0` for an unsigned number |
 
-`cargo clippy` adds several hundred more checks of this kind ([chapter 40](#quality-tools)).
+`cargo clippy` adds several hundred more checks of this kind ([chapter 35](#quality-tools)).

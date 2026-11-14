@@ -8,9 +8,9 @@
 The technical words of this guide, in plain language. Type in the box to filter the list. Where a chapter explains the word in full, the entry links to it.
 
 :::glossary
-ABI :: The exact rules by which compiled code calls other compiled code: where arguments go, how values are laid out. The C ABI is the common language between programming languages. See [chapter 36](#ffi).
+ABI :: The exact rules by which compiled code calls other compiled code: where arguments go, how values are laid out. The C ABI is the common language between programming languages. See [chapter 39](#ffi).
 aliasing :: Reaching the same value through more than one name. Rust allows it only while nobody changes the value. See [chapter 10](#borrowing).
-alignment :: The rule that a value must start at an address divisible by a certain number, usually its size. It is the reason for padding inside structs. See [chapter 37](#memory-layout).
+alignment :: The rule that a value must start at an address divisible by a certain number, usually its size. It is the reason for padding inside structs. See [chapter 40](#memory-layout).
 allocation :: Asking for a block of memory on the heap. It takes time, so fast code avoids doing it in a loop. See [chapter 51](#performance).
 API :: The set of functions and types that a library or a web service offers to its users.
 argument :: A value that is passed to a function in a call. The function receives it in a parameter.
@@ -32,12 +32,12 @@ bound :: A requirement on a type parameter: `T: Display` means "any type `T` tha
 Box :: A pointer that owns a value on the heap. See [chapter 27](#smart-pointers).
 buffer :: A block of memory that collects data so that it can be read or written in large pieces, not byte by byte.
 bug :: A mistake in a program that makes it behave wrongly.
-build script :: A file `build.rs` that Cargo runs before it compiles a package, for example to generate code in `OUT_DIR` or compile C code. See [chapter 36](#ffi) and [chapter 39](#cargo).
+build script :: A file `build.rs` that Cargo runs before it compiles a package, for example to generate code in `OUT_DIR` or compile C code. See [chapter 39](#ffi) and [chapter 34](#cargo).
 byte :: Eight bits. The unit in which memory and files are measured.
 cancellation safety :: Whether an async operation can be dropped mid-`.await` (for example in `tokio::select!`) without losing data or leaving corrupt state. See [chapter 32](#async).
-Cargo :: Rust's tool for building, testing, documenting and publishing packages, and for fetching dependencies. See [chapter 39](#cargo).
+Cargo :: Rust's tool for building, testing, documenting and publishing packages, and for fetching dependencies. See [chapter 34](#cargo).
 channel :: A queue for sending values from one thread or task to another. See [chapter 30](#threads).
-CI :: Continuous integration: a server that builds and tests the project automatically after every change. See [chapter 40](#quality-tools).
+CI :: Continuous integration: a server that builds and tests the project automatically after every change. See [chapter 35](#quality-tools).
 Clippy :: A tool with several hundred extra checks that suggests better ways to write code: `cargo clippy`.
 clone :: An explicit, complete copy of a value, made with `.clone()`. It may be expensive.
 closure :: A function without a name that can use variables from the place where it was written: `|x| x + offset`. See [chapter 24](#closures).
@@ -64,19 +64,19 @@ documentation comment :: A comment that starts with `///`. `cargo doc` turns suc
 drop :: The moment a value is cleaned up, when its owner goes out of scope. Types can run their own code then, through the trait `Drop`.
 dyn :: Marks a trait object: `dyn Shape` is "some type that implements `Shape`, decided while the program runs".
 dynamic dispatch :: Choosing which function to call while the program runs, by looking it up in a table. It is what `dyn Trait` does.
-edition :: A version of the language's surface, such as 2021 or 2024. A crate chooses one, and crates of different editions work together. See [chapter 39](#cargo).
+edition :: A version of the language's surface, such as 2021 or 2024. A crate chooses one, and crates of different editions work together. See [chapter 34](#cargo).
 enum :: A type whose value is exactly one of several named variants, each of which can carry its own data. See [chapter 13](#enums).
 error :: Either a message from the compiler that stops the build, or a value of type `Err(…)` that a function returns when something went wrong.
 executable :: See binary.
 expression :: A piece of code that produces a value: `2 + 3`, a function call, an `if` with its branches. See [chapter 5](#functions).
-feature :: A named, optional part of a crate that can be switched on in `Cargo.toml`. See [chapter 39](#cargo).
-FFI :: Foreign function interface: calling code written in another language, or being called by it. See [chapter 36](#ffi).
+feature :: A named, optional part of a crate that can be switched on in `Cargo.toml`. See [chapter 34](#cargo).
+FFI :: Foreign function interface: calling code written in another language, or being called by it. See [chapter 39](#ffi).
 field :: A named piece of data inside a struct.
 flame graph :: A picture of where a program spends its time: one bar for each function, as wide as its share of the time. See [chapter 51](#performance).
 float :: A number with a fractional part, stored with limited precision: `f32` or `f64`.
 function :: A named piece of code with parameters and a result. See [chapter 5](#functions).
 future :: A value that stands for a result that will be ready later. Awaiting it gives the result. See [chapter 32](#async).
-fuzzing :: Testing a function with huge numbers of random inputs to find the ones that make it crash. See [chapter 41](#testing-strategies).
+fuzzing :: Testing a function with huge numbers of random inputs to find the ones that make it crash. See [chapter 36](#testing-strategies).
 garbage collector :: A part of many languages that searches for unused memory and frees it while the program runs. Rust has none.
 GAT :: Generic associated type: an associated type inside a trait that takes lifetime or type parameters of its own, such as `type Item<'a>`. See [chapter 28](#advanced-traits).
 generic :: Written once for many types, with a type parameter such as `T`. See [chapter 19](#generics).
@@ -86,7 +86,7 @@ hash :: A number computed from a value, used to find it quickly in a `HashMap`.
 HashMap :: A collection that finds a value by its key. See [chapter 15](#collections).
 heap :: The part of memory for data whose size is not known in advance or that must live longer than one function call. See [chapter 8](#memory).
 idempotency :: Performing the same operation or delivering the same message more than once without changing the outcome beyond the first execution. See [chapter 45](#async-ecosystem).
-idiomatic :: Written the way experienced users of the language would write it. See [chapter 38](#idioms).
+idiomatic :: Written the way experienced users of the language would write it. See [chapter 41](#idioms).
 immutable :: Not changeable. Variables and references are immutable unless marked `mut`.
 impl :: The block in which the methods of a type, or the implementation of a trait for a type, are written.
 inlining :: An optimisation that copies the body of a small function into the place where it is called.
@@ -105,7 +105,7 @@ linker :: The tool that joins all compiled pieces into one program file, as the 
 lint :: A check for code that compiles but is probably a mistake or bad style. Warnings come from lints.
 literal :: A value written directly in the code: `42`, `"hello"`, `true`.
 lock :: See mutex.
-macro :: Code that writes code. A macro call ends in `!`, as in `println!`. See [chapter 34](#macros).
+macro :: Code that writes code. A macro call ends in `!`, as in `println!`. See [chapter 37](#macros).
 match :: The expression that compares a value with a list of patterns and runs the first arm that fits. It must cover every case.
 memory leak :: Memory that is never freed although nothing uses it any more.
 memory safety :: The guarantee that a program never reads or writes memory it should not: no dangling pointers, no access past the end of a list, no data races.
@@ -132,7 +132,7 @@ procedural macro :: A macro written as a Rust function that receives code and re
 profile :: A set of compiler settings in Cargo. `dev` and `release` are the two that matter most.
 profiler :: A tool that measures where a running program spends its time.
 race condition :: A bug where the result depends on which of two threads happens to be faster.
-raw pointer :: A pointer without any guarantee, `*const T` or `*mut T`. It can only be followed in `unsafe` code. See [chapter 35](#unsafe).
+raw pointer :: A pointer without any guarantee, `*const T` or `*mut T`. It can only be followed in `unsafe` code. See [chapter 38](#unsafe).
 Rc :: A pointer with a counter that allows several owners of one value in one thread. `Arc` is the version for several threads.
 recursion :: A function that calls itself.
 reference :: A pointer that Rust guarantees to be valid: `&T` for reading, `&mut T` for changing. See [chapter 10](#borrowing).
@@ -171,15 +171,15 @@ tuple :: A fixed group of values that may have different types: `(i32, String)`.
 turbofish :: The syntax `::<T>` for naming a type in a call: `"5".parse::<i32>()`.
 type :: What kind of value something is: a number, text, a list. It decides how the value is stored and what can be done with it.
 type inference :: The compiler working out a type from how a value is used, so that you do not have to write it.
-undefined behaviour :: An operation for which the language promises nothing at all: the program may crash, give wrong results, or seem to work. It can only come from `unsafe` code. See [chapter 35](#unsafe).
+undefined behaviour :: An operation for which the language promises nothing at all: the program may crash, give wrong results, or seem to work. It can only come from `unsafe` code. See [chapter 38](#unsafe).
 unit :: The empty tuple `()`. It is the "result" of code that returns nothing useful.
 unit test :: A test next to the code it checks, usually in a `mod tests` at the end of the file.
-unsafe :: The keyword that marks code whose safety the compiler cannot check, so that the programmer takes over the responsibility. See [chapter 35](#unsafe).
+unsafe :: The keyword that marks code whose safety the compiler cannot check, so that the programmer takes over the responsibility. See [chapter 38](#unsafe).
 UTF-8 :: The way Rust stores text: every character takes one to four bytes.
 variable :: A name for a value.
 variant :: One of the possibilities of an enum.
 Vec :: A list that can grow, with all elements of one type, stored on the heap. See [chapter 15](#collections).
 WebAssembly :: A compact code format that browsers and other hosts can run at near-native speed. Rust compiles to it. Short: Wasm. See [chapter 49](#apps).
-workspace :: Several packages that are developed together and share one `Cargo.lock` and one `target` folder. See [chapter 39](#cargo).
+workspace :: Several packages that are developed together and share one `Cargo.lock` and one `target` folder. See [chapter 34](#cargo).
 zero-cost abstraction :: A convenient way of writing code that the compiler turns into machine code as fast as the hand-written version. Iterators are the standard example.
 :::

@@ -15,7 +15,7 @@ Until now your programs talked through a terminal or answered HTTP requests. Thi
 To make the tools easy to compare, most examples build the same tiny program: a **counter**, which is a number, a button that raises it, and a button that sets it back to zero.
 
 :::note How the programs of this chapter were tested
-A program with a window cannot run in the playground, so the code blocks here have no Run button. Every program was built and started for this guide, with the crate versions shown: the WebAssembly examples in a real browser (Chromium), the desktop examples on Linux, with real mouse clicks on their buttons. Numbers and outputs are from those runs. This corner of the Rust world changes faster than the language itself. If a newer version rejects a line, the documentation of the crate shows the new spelling. The ideas stay.
+A program with a window cannot run in the playground, so the code blocks here have no Run button. In CI, `tools/check.py --projects` and `tools/check.py --ext` automatically extract and compile the browser WebAssembly (`wasm32-unknown-unknown` for `wasm-bindgen`, `web-sys`, Leptos, and Yew) and WASI (`wasm32-wasip1`) projects, and run the pure-Rust `cargo test` unit tests (`wasm_hello` and `text_stats`). Desktop GUI and Tauri examples require platform windowing/WebView libraries (GTK/WebKit, Wayland/X11) and were built, started, and clicked on Linux with the crate versions shown. This corner of the Rust world changes faster than the language itself: if a newer crate version rejects a line, the crate's changelog and docs show the updated spelling, while the architectural ideas stay.
 :::
 
 ## WebAssembly: Rust in the browser
@@ -29,14 +29,14 @@ Imagine you hire a brilliant calculator, a person who computes anything you ask 
 Three properties shape everything that follows:
 
 - **A module can only compute.** By itself it cannot read a file, open a network connection or change the page. It may call the functions that the surrounding program hands to it, the **imports**, and it offers functions of its own, the **exports**. The surrounding program is called the **host**. In a browser, the host is the page with its JavaScript. A closed box like this is called a **sandbox**.
-- **Only numbers cross the border.** A Wasm function takes numbers and returns numbers. A text or a struct must be copied into the memory of the module, and then its address and length are passed. You met this problem in [chapter 36](#ffi), and the solution is the same: generated **glue code**.
+- **Only numbers cross the border.** A Wasm function takes numbers and returns numbers. A text or a struct must be copied into the memory of the module, and then its address and length are passed. You met this problem in [chapter 39](#ffi), and the solution is the same: generated **glue code**.
 - **Rust needs no helper inside the module.** There is no garbage collector to ship, so the files are small. The first module of this chapter has 16 kilobytes.
 
 The tools:
 
 | Tool | What it does |
 |---|---|
-| target `wasm32-unknown-unknown` | lets `rustc` produce Wasm. In this target triple ([chapter 39](#cargo)), `wasm32` is the processor, and the two `unknown`s say: no vendor, no operating system |
+| target `wasm32-unknown-unknown` | lets `rustc` produce Wasm. In this target triple ([chapter 34](#cargo)), `wasm32` is the processor, and the two `unknown`s say: no vendor, no operating system |
 | crate `wasm-bindgen` | generates the glue: Rust code on one side of the border, a JavaScript file on the other |
 | program `wasm-pack` | one command that runs Cargo, the glue generator and a size optimiser, and puts the result into a folder `pkg` |
 
@@ -49,9 +49,9 @@ cargo install wasm-pack
 
 ### A Rust function for a web page
 
-Create a library with `cargo new --lib wasm_hello`. The manifest asks for a `cdylib`, the kind of library that a foreign host loads ([chapter 36](#ffi)):
+Create a library with `cargo new --lib wasm_hello`. The manifest asks for a `cdylib`, the kind of library that a foreign host loads ([chapter 39](#ffi)):
 
-```toml file=Cargo.toml
+```toml proj=wasm_hello file=Cargo.toml
 [package]
 name = "wasm_hello"
 version = "0.1.0"
@@ -64,7 +64,7 @@ crate-type = ["cdylib"]
 wasm-bindgen = "0.2.130"
 ```
 
-```rust file=src/lib.rs
+```rust proj=wasm_hello target=host,wasm32-unknown-unknown file=src/lib.rs
 use wasm_bindgen::prelude::*;
 
 /// Greets a person.
@@ -169,7 +169,7 @@ export function greet(name) {
 }
 ```
 
-This is the hand-written FFI of [chapter 36](#ffi), written for you by a tool.
+This is the hand-written FFI of [chapter 39](#ffi), written for you by a tool.
 :::
 
 Now the page. Put this file next to `Cargo.toml`:
@@ -292,7 +292,7 @@ A web page is kept in the browser as a tree of objects: one for each heading, pa
 
 `web-sys` is huge, so every browser type sits behind its own Cargo feature. If the compiler cannot find a method that the documentation shows, the feature for its type is missing.
 
-```toml file=Cargo.toml
+```toml proj=wasm_dom file=Cargo.toml
 [package]
 name = "wasm_dom"
 version = "0.1.0"
@@ -306,7 +306,7 @@ wasm-bindgen = "0.2.130"
 web-sys = { version = "0.3.107", features = ["Window", "Document", "Element", "HtmlElement", "Node", "EventTarget"] }
 ```
 
-```rust file=src/lib.rs
+```rust proj=wasm_dom target=wasm32-unknown-unknown file=src/lib.rs
 use wasm_bindgen::prelude::*;
 
 /// Runs once, when the page has loaded the module.
@@ -370,7 +370,7 @@ It works, and the module is still small (21,891 bytes). But it took thirty lines
 
 The locked room is useful in other houses too. Programs called **Wasm runtimes** run modules on a server or inside another application, as a safe way to run plug-ins and code from strangers. For these hosts there is a standard set of imports named **WASI**, which gives a module files, clocks and arguments, but only the ones that the host allows. Rust has targets for it. An ordinary `main` program compiles without changes:
 
-```rust file=src/main.rs
+```rust proj=wasi_hello target=wasm32-wasip1 file=src/main.rs
 use std::fs;
 
 fn main() {
@@ -424,12 +424,12 @@ In a spreadsheet, you type `=A1*2` into cell B1 once. From then on, whenever A1 
 
 In **Leptos**, such a cell is called a **signal**: a value that remembers who reads it. The whole counter:
 
-```toml file=Cargo.toml
+```toml proj=leptos_counter file=Cargo.toml
 [dependencies]
 leptos = { version = "0.8.23", features = ["csr"] }
 ```
 
-```rust file=src/main.rs
+```rust proj=leptos_counter target=wasm32-unknown-unknown file=src/main.rs
 use leptos::prelude::*;
 
 /// A button that counts its clicks.
@@ -485,12 +485,12 @@ The function `Counter` itself runs only **once**. A click does not rebuild the p
 
 **Yew** is the oldest of the three, and its design follows the JavaScript library React:
 
-```toml file=Cargo.toml
+```toml proj=yew_counter file=Cargo.toml
 [dependencies]
 yew = { version = "0.23.0", features = ["csr"] }
 ```
 
-```rust file=src/main.rs
+```rust proj=yew_counter target=wasm32-unknown-unknown file=src/main.rs
 use yew::prelude::*;
 
 #[function_component]
@@ -559,7 +559,7 @@ What does a framework cost in download size? Measured for the counters above, as
 | Leptos | 210 KB | 54 KB |
 | Yew | 338 KB | 93 KB |
 
-These are the sizes with default settings. The size settings of [chapter 39](#cargo) (`opt-level = "z"`, `lto = true`) make them smaller. Most of the size is the framework itself, which is paid for only once.
+These are the sizes with default settings. The size settings of [chapter 34](#cargo) (`opt-level = "z"`, `lto = true`) make them smaller. Most of the size is the framework itself, which is paid for only once.
 
 ### One language on both sides
 
@@ -1029,7 +1029,7 @@ Build a page with a text area. While the user types, the page shows the number o
 ::hint
 `wasm-bindgen` can export a struct: put `#[wasm_bindgen]` on a `pub struct` whose public fields are numbers. In JavaScript the returned value is then an object with these fields. Listen for the `input` event of the text area.
 ::solution
-```rust file=src/lib.rs
+```rust ext test file=src/lib.rs
 use wasm_bindgen::prelude::*;
 
 /// What we know about a text.

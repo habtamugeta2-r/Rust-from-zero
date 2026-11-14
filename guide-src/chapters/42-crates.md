@@ -610,7 +610,7 @@ fn main() {
 Sat
 ```
 
-Tuples are compared element by element, so `(month, day) < (month, day)` asks exactly "is today earlier in the year than the birthday?". The function takes `today` as a parameter and does not call `Utc::now()` itself. That is the dependency injection of [chapter 41](#testing-strategies): the function can be tested for any date. Date arithmetic by hand, with month lengths and leap years, is a classic source of bugs. The crate has them right.
+Tuples are compared element by element, so `(month, day) < (month, day)` asks exactly "is today earlier in the year than the birthday?". The function takes `today` as a parameter and does not call `Utc::now()` itself. That is the dependency injection of [chapter 36](#testing-strategies): the function can be tested for any date. Date arithmetic by hand, with month lengths and leap years, is a classic source of bugs. The crate has them right.
 :::
 
 :::exercise challenge Analyse a log

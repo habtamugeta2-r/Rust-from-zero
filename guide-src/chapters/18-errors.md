@@ -396,7 +396,7 @@ There is a fair amount of new syntax here. Take it as a recipe for now. The bloc
 
 Steps 2 to 4 are routine, and the popular crate **`thiserror`** writes them for you. This is the same error type:
 
-```rust ext
+```rust ext check
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -461,7 +461,7 @@ Read `Box<dyn Error>` as "some error, I do not say which". `?` converts every er
 
 The crate **`anyhow`** is a more comfortable version of the same idea, and is what most applications use. It adds `context`, which attaches a description of *what the program was trying to do*:
 
-```rust ext
+```rust ext check
 use anyhow::{bail, Context, Result};
 
 fn read_volume(path: &str) -> Result<u32> {

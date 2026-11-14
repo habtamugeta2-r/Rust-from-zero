@@ -34,17 +34,19 @@ upstream docs for today's exact numbers.
 
 ## What the guide covers
 
-- **Part 1 — Foundations:** variables, types, functions, control flow, and a guessing game project
-- **Part 2 — Ownership and Data:** memory model, ownership, borrowing, slices, structs, enums, pattern matching, collections, and a CLI to-do manager
-- **Part 3 — Structure and Safety:** modules, error handling (`Result`, `thiserror`, `anyhow`), generics, traits (`use<...>` lifetime capture), lifetimes, testing, and a file-search CLI project
-- **Part 4 — Functional Rust:** closures, iterators, and a streaming report generator project
-- **Part 5 — Deeper Types:** smart pointers (`Box`, `Rc`, `Arc`, `RefCell`), advanced traits & GATs, typestates, and zero-cost abstractions
-- **Part 6 — Concurrency & Async:** threads, channels, `Mutex`/`RwLock`/atomics (`parking_lot`, `Acquire`/`Release`), `async`/`await`, `JoinSet`, `pin-project-lite`, and a multi-user async chat server
-- **Part 7 — Under the Hood:** declarative & procedural macros, `unsafe` (`ManuallyDrop`, soundness invariants), C/Python FFI (`bindgen`, `cbindgen`, `PyO3`), and memory layout
-- **Part 8 — Idioms & Engineering:** idiomatic Rust, Cargo workspaces, Edition 2024, `build.rs`, `cargo-deny`, formatting/Clippy/CI, and testing strategies (`proptest`, `insta`, `criterion`, fuzzing)
-- **Part 9 — Standard & Everyday Crates:** everyday crate selection (`chrono`/`jiff`, `regex`, `clap`, `tracing`), Serde serialisation, and a multi-command CLI project
-- **Part 10 — Real-World Domains:** Rayon & Tokio streams, gRPC (`tonic`), message queues (`NATS`, `RabbitMQ`, `Kafka`), Axum web servers (REST/GraphQL/OpenAPI, WebSockets/SSE/multipart, auth/sessions/JWT/rate limits, `figment`/`SecretString`, Docker & `cargo-chef`), SQLx/PostgreSQL/Redis/`redb`, observability & telemetry (`tracing`, OpenTelemetry/OTLP, Prometheus, `/health/live` vs `/health/ready`), a URL-shortener web API project, WebAssembly & desktop UI (`Leptos`, `Tauri`, `egui`, `iced`, `Slint`), and games, embedded (`no_std`, `Embassy`, `defmt`), and data/ML (`ndarray`, `Polars`)
-- **Part 11 — Mastery & Capstone:** performance & profiling (`hyperfine`, `criterion`, flame graphs, `dhat`, SIMD), a full-stack CLI + Axum + SQLite library manager capstone, and curated next steps
+The guide is organised around a **Core Rust Path** (Parts 1–5 + Part 8 Tooling, ~23.5 hours), **goal-based routes** (CLI tools, Web & APIs, Systems & deep dive), and **optional ecosystem survey chapters** (`49-apps`, `50-games-embedded`). You can filter by route directly on the home page of `rust-guide.html` or in [chapter 0](./guide-src/chapters/00-start.md).
+
+- **Part 1 — First steps:** what programming is, Cargo, variables, types, functions, control flow, and a guessing game project
+- **Part 2 — Ownership: Rust's big idea:** memory model, ownership, borrowing, and slices
+- **Part 3 — Modelling data:** structs, enums, pattern matching, collections, and a CLI to-do manager
+- **Part 4 — Building bigger programs:** modules, error handling (`Result`, `thiserror`, `anyhow`), generics, traits (`use<...>` lifetime capture), lifetimes, testing, and a file-search CLI project
+- **Part 5 — Functional style:** closures, iterators, and a streaming report generator project
+- **Part 6 — Memory and types mastery:** smart pointers (`Box`, `Rc`, `Arc`, `RefCell`), advanced traits & GATs, typestates, and zero-cost abstractions
+- **Part 7 — Concurrency:** threads, channels, `Mutex`/`RwLock`/atomics (`parking_lot`, `Acquire`/`Release`), `async`/`await`, `JoinSet`, `pin-project-lite`, and a multi-user async chat server
+- **Part 8 — Tooling and workflow:** Cargo workspaces, Edition 2024, `build.rs`, `cargo-deny`, formatting (`rustfmt`), Clippy, CI, and testing strategies (`proptest`, `insta`, `criterion`, fuzzing)
+- **Part 9 — Advanced Rust:** declarative & procedural macros, `unsafe` (`ManuallyDrop`, soundness invariants), C/Python FFI (`bindgen`, `cbindgen`, `PyO3`), memory layout, and idiomatic Rust
+- **Part 10 — The ecosystem:** everyday crate selection (`chrono`/`jiff`, `regex`, `clap`, `tracing`), Serde serialisation, a multi-command CLI project (`clap`), Rayon & Tokio streams, gRPC (`tonic`), message queues (`NATS`, `RabbitMQ`, `Kafka`), Axum web servers, SQLx/PostgreSQL/Redis/`redb`, URL-shortener web API project, optional UI/WebAssembly (`Leptos`, `Tauri`, `egui`, `iced`, `Slint`) and games/embedded/data (`Bevy`, `no_std`, `Embassy`, `defmt`, `ndarray`, `Polars`) surveys, and observability & telemetry (`tracing`, OpenTelemetry/OTLP, Prometheus, `/health/live` vs `/health/ready`)
+- **Part 11 — Becoming a Rust developer:** performance & profiling (`hyperfine`, `criterion`, flame graphs, `dhat`, SIMD), a full-stack CLI + Axum + SQLite library manager capstone, and curated next steps
 - **Appendices:** glossary, Rust quick reference, compiler error catalogue, and bridges from Python, JavaScript, Go, Java, and C/C++
 
 ## What it deliberately does not cover
@@ -95,16 +97,19 @@ python3 guide-src/tools/audit.py find redis # which chapters mention a word
 guide-src/tools/setup-env.sh                # installs it under /opt/rs
 python3 guide-src/tools/check.py            # the whole guide
 python3 guide-src/tools/check.py serde web  # only chapters matching a substring
-python3 guide-src/tools/check.py --ext      # also cargo-check the crate examples
+python3 guide-src/tools/check.py --ext      # also cargo-check & cargo-test the crate examples
+python3 guide-src/tools/check.py --projects # rebuild & test all multi-file and Wasm/no_std projects
 
-# Rebuild one of the multi-file projects from its chapter and test it.
+# List or rebuild a single multi-file project from its chapter:
+python3 guide-src/tools/project.py --list
 python3 guide-src/tools/project.py 48 shortener /tmp/shortener
 (cd /tmp/shortener && cargo test)
 ```
 
 CI checks two things (see [`.github/workflows/build.yml`](./.github/workflows/build.yml)):
-the build is fresh and the structure is clean on every push, and **every example
-is compiled and run** — standard library and crate examples both — on every pull
+the build is fresh and the structure is clean on every push, and **every verified example
+and extracted project is compiled and tested** — standard library, crate examples, multi-file
+projects, WebAssembly/WASI examples, and Cortex-M3 `no_std` firmware — on every pull
 request and once a week. The latest weekly run is the honest answer to "do the
 examples still compile?".
 

@@ -37,17 +37,70 @@ PARTS = [
      "Smart pointers for sharing and shaping data, and a deeper look at Rust's type system."),
     ("p7", "Concurrency", "Advanced",
      "Do many things at once without fear: threads, channels, shared state and async/await."),
-    ("p8", "Advanced Rust", "Advanced",
+    ("p8", "Tooling and workflow", "Intermediate",
+     "Everyday Cargo workspaces, formatting with rustfmt, Clippy lints, debugging, CI, and professional testing strategies."),
+    ("p9", "Advanced Rust", "Advanced",
      "Macros, unsafe code, talking to other languages, memory layout, and the idioms experienced Rust developers rely on."),
-    ("p9", "Tooling", "Intermediate",
-     "Cargo, Clippy, rustfmt, rust-analyzer, debugging, profiling and professional testing strategies."),
     ("p10", "The ecosystem", "Intermediate",
-     "The libraries and frameworks real projects are built from: Serde, Tokio, Clap, Axum, SQLx, Tauri, Bevy and many more."),
+     "Goal-based domain guides and optional surveys: Serde, Clap, Tokio, Axum, SQLx, observability, UI, games, and embedded."),
     ("p11", "Becoming a Rust developer", "Advanced",
      "Performance, a full capstone project, and a plan for what to do after this guide."),
     ("app", "Appendices", "", "Glossary, cheat sheets and reference tables to keep open while you code."),
 ]
 LEVELS = {"beginner": "Beginner", "intermediate": "Intermediate", "advanced": "Advanced", "all": "All levels"}
+
+CORE_IDS = [
+    "what-is-rust", "setup", "variables", "types", "functions", "control-flow", "project-guessing",
+    "memory", "ownership", "borrowing", "slices-strings",
+    "structs", "enums", "patterns", "collections", "project-todo",
+    "modules", "errors", "generics", "traits", "lifetimes", "testing", "project-search",
+    "closures", "iterators", "project-report",
+    "cargo", "quality-tools", "testing-strategies",
+]
+ROUTES = [
+    {
+        "id": "all",
+        "label": "All chapters",
+        "summary": "The complete curriculum: every language chapter, tool, domain overview, and all 8 projects.",
+        "chapters": None,
+    },
+    {
+        "id": "core",
+        "label": "Core path",
+        "summary": "Parts 1–5 + Part 8 Tooling: the beginner foundation and everyday Cargo, formatting, Clippy, and testing workflow.",
+        "chapters": CORE_IDS,
+    },
+    {
+        "id": "cli",
+        "label": "CLI tools",
+        "summary": "Core path plus everyday crate selection, Serde, and the Clap command-line tool project.",
+        "chapters": CORE_IDS + ["crates", "serde", "cli"],
+    },
+    {
+        "id": "web",
+        "label": "Web & APIs",
+        "summary": "Core path plus concurrency, async, Axum, SQLx databases, URL shortener API, observability, and capstone.",
+        "chapters": CORE_IDS + [
+            "smart-pointers", "threads", "shared-state", "async", "project-chat",
+            "crates", "serde", "async-ecosystem", "web", "databases", "project-api", "observability", "capstone",
+        ],
+    },
+    {
+        "id": "systems",
+        "label": "Systems & deep dive",
+        "summary": "Core path plus smart pointers, type system, threads, Part 9 (macros, unsafe, FFI, layout, idioms), and performance.",
+        "chapters": CORE_IDS + [
+            "smart-pointers", "advanced-traits", "type-system", "threads", "shared-state",
+            "macros", "unsafe", "ffi", "memory-layout", "idioms", "performance",
+        ],
+    },
+    {
+        "id": "surveys",
+        "label": "Optional surveys",
+        "summary": "Standalone domain overviews (WebAssembly, Tauri, desktop GUI, games, embedded, data) to explore as needed.",
+        "chapters": ["apps", "games-embedded"],
+    },
+]
 
 warnings = []
 stats = {"code": 0, "exercises": 0, "questions": 0, "projects": 0}
@@ -875,6 +928,11 @@ def build():
     for src, target in LINKS:
         if target not in KNOWN_IDS and target != "home":
             warn(f"{src}: link to unknown chapter #{target}")
+    for rt in ROUTES:
+        if rt["chapters"] is not None:
+            for cid in rt["chapters"]:
+                if cid not in KNOWN_IDS:
+                    warn(f"route {rt['id']}: unknown chapter #{cid}")
 
     # sidebar table of contents + home learning path
     toc, path = [], []
@@ -907,16 +965,29 @@ def build():
                         f'<div class="path-body"><h3>{esc(title)}{lv}</h3><p>{esc(blurb)}</p>'
                         f'<div class="chips">{chips}</div></div></li>')
 
+    route_btns = []
+    for i, rt in enumerate(ROUTES):
+        on = " is-on" if i == 0 else ""
+        pressed = "true" if i == 0 else "false"
+        route_btns.append(
+            f'<button type="button" class="route-btn{on}" data-route="{attr(rt["id"])}" '
+            f'aria-pressed="{pressed}">{esc(rt["label"])}</button>'
+        )
+
     data = {
         "chapters": [{"id": c["id"], "num": c["num"], "title": c["title"], "part": c["part"],
-                      "partTitle": part_titles[c["part"]], "kind": c["kind"]} for c in chapters],
+                      "partTitle": part_titles[c["part"]], "kind": c["kind"],
+                      "time": int(c["time"]) if str(c.get("time", "")).isdigit() else 0}
+                     for c in chapters],
+        "routes": ROUTES,
         "glossary": {k: {"t": t, "d": inline(d)} for k, (t, d) in GLOSSARY.items()},
     }
     tracked = [c for c in chapters if c["kind"] != "appendix"]
     home = (ASSETS / "home.html").read_text(encoding="utf-8")
     for k, v in {"%%N_CH%%": str(len(tracked)), "%%N_EX%%": str(stats["exercises"]),
                  "%%N_Q%%": str(stats["questions"]), "%%N_PROJ%%": str(stats["projects"]),
-                 "%%N_CODE%%": str(stats["code"]), "%%PATH%%": "".join(path)}.items():
+                 "%%N_CODE%%": str(stats["code"]), "%%ROUTES%%": "".join(route_btns),
+                 "%%PATH%%": "".join(path)}.items():
         home = home.replace(k, v)
 
     page = (ASSETS / "template.html").read_text(encoding="utf-8")

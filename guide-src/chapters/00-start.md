@@ -30,6 +30,22 @@ It is worth knowing the size of what you are starting, so that you can plan.
 
 Nothing here is a mock-up. When the guide shows a compiler error, that is the message the compiler really printed, on the line number it really pointed at. When it shows program output, the program really produced it. This is checked automatically, for every example, on every change to the guide.
 
+## Choose your path: core track and goal-based routes
+
+Working through **all** 55 chapters, 8 projects, and exercises cover-to-cover takes roughly 56–57 hours. You do **not** have to read every chapter—or every domain survey—before writing real Rust programs. Start with the **Core Rust Path**, then pick **one goal-based route** that matches what you want to build:
+
+| Route | Chapters to read | Approx. time | Best for |
+|---|---|---|---|
+| **Core Rust path** | [1](#what-is-rust)–[26](#project-report) (Parts 1–5) + [34](#cargo)–[36](#testing-strategies) (Part 8 Tooling) | ~23.5 hours | Every beginner. Everything needed to write, format, lint, and test real Rust programs |
+| **CLI tools** | Core path → [42](#crates) Crates → [43](#serde) Serde → [44](#cli) Command-line tools (`clap`) | +3.2 hours | Fast terminal utilities, automation scripts, and developer tools |
+| **Web backends & APIs** | Core path → [27](#smart-pointers) + [30](#threads)–[33](#project-chat) → [42](#crates)–[43](#serde) → [45](#async-ecosystem)–[48](#project-api) → [51](#observability) → [53](#capstone) | +21 hours | HTTP APIs (`Axum`), SQLite/Postgres (`SQLx`), telemetry, and services |
+| **Systems, FFI & performance** | Core path → [27](#smart-pointers)–[31](#shared-state) → [37](#macros)–[41](#idioms) (Part 9 Advanced) → [52](#performance) | +10.5 hours | Low-level memory control, `unsafe` invariants, C/Python FFI, profiling |
+| **Optional ecosystem surveys** | [49](#apps) Apps (Wasm, Tauri, GUI) and [50](#games-embedded) Games, embedded & data | ~3.3 hours | Browsing a specialised domain once your core skills are solid |
+
+:::tip You do not have to read Part 9 or Part 10 in full to start building
+Everyday Cargo workflows, formatting (`cargo fmt`), Clippy, and testing strategies live in **Part 8**, right after concurrency and **before** macros, `unsafe`, FFI, and memory layout (**Part 9**). Treat Part 9 as a deeper layer for when you need it, and treat [chapter 49](#apps) and [chapter 50](#games-embedded) as optional ecosystem maps rather than mandatory prerequisites.
+:::
+
 ## What this guide covers, and what it does not
 
 "Everything about Rust" is an endless subject, so this guide has a written rule. Each part of the Rust world is handled in one of three ways, and it says which:
@@ -110,7 +126,7 @@ fn main() {
 ```
 
 :::note Tested examples and reference code
-Standard-library examples and core crate examples marked for verification are compiled against the Rust compiler (edition 2024, targeting Rust 1.100) by `tools/check.py`, and failing examples fail in the way the text describes. Larger multi-file snippets or examples that talk to external services (such as databases, message brokers, or telemetry collectors) are shown as complete reference code.
+Standard-library examples and core crate examples marked for verification are compiled against the Rust compiler (edition 2024, targeting Rust 1.100) by `tools/check.py`, and multi-file projects and WebAssembly / bare-metal target listings are extracted and tested by `tools/check.py --projects`. Failing examples fail in the way the text describes. Examples that require external databases, brokers, hardware boards, or desktop GUI windows are shown as complete reference code verified separately.
 :::
 
 ## Exercises, hints and solutions

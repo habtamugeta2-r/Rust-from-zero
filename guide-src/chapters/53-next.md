@@ -51,8 +51,8 @@ This guide owes ideas to all of the following. None of them is a replacement for
 | Ownership, by building data structures | [Learn Rust With Entirely Too Many Linked Lists](https://rust-unofficial.github.io/too-many-lists/) | [9](#ownership) to [11](#slices-strings), [27](#smart-pointers) |
 | Threads, atomics and locks | [Rust Atomics and Locks](https://marabos.nl/atomics/) by Mara Bos, free to read online | [30](#threads), [31](#shared-state) |
 | Async | [Asynchronous Programming in Rust](https://rust-lang.github.io/async-book/) and the [Tokio tutorial](https://tokio.rs/tokio/tutorial) | [32](#async), [45](#async-ecosystem) |
-| Unsafe code | [The Rustonomicon](https://doc.rust-lang.org/nomicon/) | [35](#unsafe) to [37](#memory-layout) |
-| Macros | [The Little Book of Rust Macros](https://veykril.github.io/tlborm/) | [34](#macros) |
+| Unsafe code | [The Rustonomicon](https://doc.rust-lang.org/nomicon/) | [38](#unsafe) to [40](#memory-layout) |
+| Macros | [The Little Book of Rust Macros](https://veykril.github.io/tlborm/) | [37](#macros) |
 | Performance | [The Rust Performance Book](https://nnethercote.github.io/perf-book/) | [51](#performance) |
 | Command-line tools | [Command Line Applications in Rust](https://rust-cli.github.io/book/) | [44](#cli) |
 | Web services | *Zero To Production in Rust* by Luca Palmieri: one service, taken all the way to a server | [46](#web) to [48](#project-api), [51](#observability) |
@@ -68,8 +68,8 @@ This guide owes ideas to all of the following. None of them is a replacement for
 | Many services instead of one | *Designing Data-Intensive Applications*, and the [Raft paper](https://raft.github.io) for how replicas agree | [33](#project-chat), [45](#async-ecosystem) |
 | Dates, times and time zones | the [`jiff` docs](https://docs.rs/jiff), and RFC 3339 for the format on the wire | [42](#crates) |
 | Server-side WebAssembly and plug-ins | [`wasmtime`](https://docs.rs/wasmtime) and [`extism`](https://docs.rs/extism) | [49](#apps) |
-| Books and long-form docs for your own crate | [mdBook](https://rust-lang.github.io/mdBook/) for books, docs.rs for API reference | [39](#cargo) |
-| Releasing, versioning and changelogs | [release-plz](https://release-plz.dev) for automation, [Keep a Changelog](https://keepachangelog.com) for the habit | [39](#cargo), [40](#quality-tools) |
+| Books and long-form docs for your own crate | [mdBook](https://rust-lang.github.io/mdBook/) for books, docs.rs for API reference | [34](#cargo) |
+| Releasing, versioning and changelogs | [release-plz](https://release-plz.dev) for automation, [Keep a Changelog](https://keepachangelog.com) for the habit | [34](#cargo), [35](#quality-tools) |
 
 :::tip One at a time
 Do not open ten of these at once. Choose the one topic that your current project needs, read that, and return to the project.
@@ -128,7 +128,7 @@ Code to learn from, once your own projects raise questions:
 
 - A new stable version of Rust appears **every six weeks**. Run `rustup update` now and then. The [Rust blog](https://blog.rust-lang.org) explains what each version brings.
 - **[This Week in Rust](https://this-week-in-rust.org)** is a weekly newsletter: articles, new crates, events, jobs.
-- A new **edition** arrives about every three years. `cargo fix --edition` does most of the moving ([chapter 39](#cargo)).
+- A new **edition** arrives about every three years. `cargo fix --edition` does most of the moving ([chapter 34](#cargo)).
 - Talks from conferences such as RustConf, EuroRust and RustNation are published as videos.
 
 This guide was tested with Rust 1.100. Rust keeps old code working, so the examples will compile with later versions. Crates outside the standard library move faster. When an example with a crate no longer compiles, look at the changelog of that crate first.
@@ -196,7 +196,7 @@ This exercise trains the habit of making your confusion precise. The goal is not
 
 ## Giving back
 
-Open-source projects need more than code. Good first contributions are a fix in the documentation of a crate after it confused you, a missing example, a test for a reported bug, or a clear bug report with a small program that shows the problem. Many projects mark suitable tasks with a label such as "good first issue". And when you have written a tool that others could use, publish it ([chapter 39](#cargo)).
+Open-source projects need more than code. Good first contributions are a fix in the documentation of a crate after it confused you, a missing example, a test for a reported bug, or a clear bug report with a small program that shows the problem. Many projects mark suitable tasks with a label such as "good first issue". And when you have written a tool that others could use, publish it ([chapter 34](#cargo)).
 
 :::exercise guided Plan the next thirty days
 Pick the project you wrote down in [chapter 1](#what-is-rust), or a new one. Write three steps, each small enough to finish in one evening, and put a date next to each. The first step should be something you already know how to do — creating the project and printing one line is allowed.

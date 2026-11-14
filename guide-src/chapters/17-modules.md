@@ -416,7 +416,7 @@ You already used an external crate in the guessing game. The mechanism is the sa
 rand = "0.10"
 ```
 
-After `cargo add rand` has written that line into `Cargo.toml`, the crate's name is available as the first step of a path: `rand::random_range(1..=100)`. The standard library is also a crate, called `std`, that is always available. [Chapter 39](#cargo) covers Cargo in depth, and [chapter 42](#crates) shows how to find and judge crates.
+After `cargo add rand` has written that line into `Cargo.toml`, the crate's name is available as the first step of a path: `rand::random_range(1..=100)`. The standard library is also a crate, called `std`, that is always available. [Chapter 34](#cargo) covers Cargo in depth, and [chapter 42](#crates) shows how to find and judge crates.
 
 :::compare Module systems in other languages
 - **Python and JavaScript:** every file is automatically a module, and the files import each other. Rust is different: files become part of the crate only through `mod` declarations, which form one tree from the crate root.

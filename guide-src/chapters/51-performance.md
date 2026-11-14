@@ -14,7 +14,7 @@ When that day comes, this chapter gives you a method. It has three rules, and th
 2. **Find out where the time goes** before you change anything.
 3. **Change one thing, and measure again.**
 
-[Chapter 38](#idioms) asked you to write the clear version first and to optimise only what a measurement points at. Here is how to get that measurement.
+[Chapter 41](#idioms) asked you to write the clear version first and to optimise only what a measurement points at. Here is how to get that measurement.
 
 :::analogy The slow restaurant
 A restaurant gets complaints: the food takes too long. The owner is sure that the cooks are slow, and buys a faster stove. Nothing improves. Then somebody stands in the kitchen for an evening with a watch. Cooking a dish takes six minutes. But every plate waits ten minutes on the counter, because one waiter serves the whole room. The stove was never the problem. Programs are like this. The slow part is very often not where you would bet, and only a watch can tell you.
@@ -109,7 +109,7 @@ count the words    83.9 ms    2000012 allocations
 
 The function `measure` is the watch. It runs a piece of work, and prints how long that took and how often it asked for memory on the heap.
 
-The count of allocations comes from the first lines of the program. `#[global_allocator]` replaces the part of the program that hands out heap memory. Our `Counting` passes every request on to `System`, the normal allocator, and adds one to a counter on the way. The counter is an atomic number from [chapter 31](#shared-state), because any thread may ask for memory. Implementing `GlobalAlloc` needs the word `unsafe` ([chapter 35](#unsafe)): the compiler cannot check that an allocator returns valid memory. Here that duty is passed straight on to `System`. When a `String` or a `Vec` grows into a larger buffer, that counts as an allocation too.
+The count of allocations comes from the first lines of the program. `#[global_allocator]` replaces the part of the program that hands out heap memory. Our `Counting` passes every request on to `System`, the normal allocator, and adds one to a counter on the way. The counter is an atomic number from [chapter 31](#shared-state), because any thread may ask for memory. Implementing `GlobalAlloc` needs the word `unsafe` ([chapter 38](#unsafe)): the compiler cannot check that an allocator returns valid memory. Here that duty is passed straight on to `System`. When a `String` or a `Vec` grows into a larger buffer, that counts as an allocation too.
 
 ## Rule 1: measure a release build
 
@@ -644,7 +644,7 @@ The debug build tells a different story. There, the indexed loop needs 22,000 na
 
 ### The layout of the data
 
-Processors are much faster with data that lies close together in memory. [Chapter 37](#memory-layout) measured it: summing one field took 14 ms in an array of large structs, and 3.5 ms when that field had an array of its own. The same effect decides between collections. Here are the times for adding up two million numbers:
+Processors are much faster with data that lies close together in memory. [Chapter 40](#memory-layout) measured it: summing one field took 14 ms in an array of large structs, and 3.5 ms when that field had an array of its own. The same effect decides between collections. Here are the times for adding up two million numbers:
 
 | The numbers are stored in | Time |
 |---|---|
@@ -668,7 +668,7 @@ A few more techniques come up in every discussion of fast Rust. Each of them mat
 
 ## Settings of the compiler
 
-[Chapter 39](#cargo) presented the settings of the release profile. Two of them, and one flag for the compiler, are meant to make code faster:
+[Chapter 34](#cargo) presented the settings of the release profile. Two of them, and one flag for the compiler, are meant to make code faster:
 
 ```toml file=Cargo.toml
 [profile.release]
@@ -705,7 +705,7 @@ Run the same program twice and you get two different times. Other programs, the 
 
 You have seen noise in this chapter already. The function `make_text` took 106.8 ms in the first listing and 104.3 ms in the second one, and nothing had changed.
 
-The benchmark library **criterion** ([chapter 41](#testing-strategies)) does this reasoning for you. It remembers the last measurement of every benchmark. Here is its report for the counting function, after the change from `String` keys to `&str` keys:
+The benchmark library **criterion** ([chapter 36](#testing-strategies)) does this reasoning for you. It remembers the last measurement of every benchmark. Here is its report for the counting function, after the change from `String` keys to `&str` keys:
 
 ```text nosoft
 count 100k words        time:   [2.3309 ms 2.3681 ms 2.4165 ms]
@@ -757,7 +757,7 @@ criterion_group!(benches, bench_count);
 criterion_main!(benches);
 ```
 
-The setup in `Cargo.toml` is the one from [chapter 41](#testing-strategies). The benchmark uses 100,000 words instead of two million, because criterion calls the function many hundred times.
+The setup in `Cargo.toml` is the one from [chapter 36](#testing-strategies). The benchmark uses 100,000 words instead of two million, because criterion calls the function many hundred times.
 :::
 
 ### Work that disappears
@@ -787,7 +787,7 @@ plain:     333333833333500000 in 86ns
 black_box: 333333833333500000 in 71ns
 ```
 
-A million multiplications and additions in 86 nanoseconds would be more than ten thousand operations per nanosecond. No processor can do that. The compiler has recognised the pattern and replaced the whole loop with a formula for the sum of squares, so no loop runs at all. `black_box` ([chapter 41](#testing-strategies)) hides the limit from the optimiser, and it does not help here, because the formula works for any limit. (The debug build of the same program needs 6 milliseconds.)
+A million multiplications and additions in 86 nanoseconds would be more than ten thousand operations per nanosecond. No processor can do that. The compiler has recognised the pattern and replaced the whole loop with a formula for the sum of squares, so no loop runs at all. `black_box` ([chapter 36](#testing-strategies)) hides the limit from the optimiser, and it does not help here, because the formula works for any limit. (The debug build of the same program needs 6 milliseconds.)
 
 There is a second trap in these numbers. Reading the clock takes time too: a measurement with nothing at all between its start and its end shows 50 to 90 nanoseconds on the same machine. So the program above measured mostly its own clock. Never time anything that short with `Instant`. Let criterion repeat it a million times.
 
@@ -797,7 +797,7 @@ The program is honestly this fast, and nothing is wrong with it. But if the ques
 
 Optimised code is usually longer and harder to change than the first, simple version. Every step in this chapter added a constraint: a map that borrows from the text, a capacity that must be estimated, a second hash function to know about. So decide what "fast enough" means *before* you start: "the report appears within one second", "the server answers a thousand requests per second". Stop when the goal is reached. Time that you spend beyond it buys nothing that anybody will notice.
 
-And if a measurement shows that only `unsafe` code can reach the goal, [chapter 35](#unsafe) applies: a small block, behind a safe function, with a comment that says why it is correct, and with the benchmark that justifies it.
+And if a measurement shows that only `unsafe` code can reach the goal, [chapter 38](#unsafe) applies: a small block, behind a safe function, with a comment that says why it is correct, and with the benchmark that justifies it.
 
 :::compare Performance work in other languages
 In Python or JavaScript, making code faster often means leaving the language: the hot loop moves into NumPy, into C, or into Rust. In Java, Go and C#, much of the effort goes into producing less garbage for the collector. That is the same hunt for allocations as in this chapter, with less control over the result. C and C++ offer the same toolbox as Rust: release builds, profilers, flame graphs. The difference is the risk. Restructuring C++ code for speed can introduce memory errors that show up months later. In Rust, the borrow checker reviews every such change. The map with `&str` keys in this chapter is an example: in C, such a map full of pointers into another buffer would be a classic source of bugs, and here the compiler guarantees that the text outlives the map.

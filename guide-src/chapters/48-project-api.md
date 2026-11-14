@@ -27,7 +27,7 @@ $ curl http://localhost:3000/links/book
 
 The first request stores a link under the code `book`. The second one follows it: the answer `307 Temporary Redirect` with a `location` header tells a browser where to go next. The third one shows the facts about the link, with one visit counted.
 
-The project brings Part 10 together: Axum for HTTP ([chapter 46](#web)), SQLx with SQLite for storage ([chapter 47](#databases)), Serde for JSON ([chapter 43](#serde)), and `thiserror`, `anyhow`, `tracing` and `rand` from [chapter 42](#crates). It also keeps a promise of [chapter 41](#testing-strategies): the tests exercise the whole API without a network.
+The project brings Part 10 together: Axum for HTTP ([chapter 46](#web)), SQLx with SQLite for storage ([chapter 47](#databases)), Serde for JSON ([chapter 43](#serde)), and `thiserror`, `anyhow`, `tracing` and `rand` from [chapter 42](#crates). It also keeps a promise of [chapter 36](#testing-strategies): the tests exercise the whole API without a network.
 
 :::analogy A cloakroom for web addresses
 A link shortener works like the cloakroom of a theatre. You hand over a bulky coat (a long address) and get a small ticket (a short code). Whoever shows the ticket is led to the coat.
@@ -205,7 +205,7 @@ CREATE TABLE links (
 
 The number in front of the file name is a timestamp. It decides the order in which migrations run. If you installed `sqlx-cli`, the command `sqlx migrate add create_links` creates such a file for you.
 
-The program will apply its migrations itself when it starts, with the macro `sqlx::migrate!()`. The macro reads the folder *while the program is compiled* and stores the files inside the executable. That has a catch: when you add a migration later and change no Rust file, Cargo sees no reason to compile again, and the new migration is silently missing. A two-line build script ([chapter 36](#ffi)) closes the gap. Create it next to `Cargo.toml`:
+The program will apply its migrations itself when it starts, with the macro `sqlx::migrate!()`. The macro reads the folder *while the program is compiled* and stores the files inside the executable. That has a catch: when you add a migration later and change no Rust file, Cargo sees no reason to compile again, and the new migration is silently missing. A two-line build script ([chapter 39](#ffi)) closes the gap. Create it next to `Cargo.toml`:
 
 ```rust proj=shortener file=build.rs
 fn main() {
@@ -1468,7 +1468,7 @@ Seventeen tests on three levels:
 | store (`store.rs`) | 3 | that the SQL does what the method names say |
 | API (`tests/api.rs`) | 10 | that everything works together, through HTTP |
 
-This is the test pyramid of [chapter 41](#testing-strategies) in small. The ten API tests together take about two hundredths of a second, each with a database of its own. Tests this fast get run after every change.
+This is the test pyramid of [chapter 36](#testing-strategies) in small. The ten API tests together take about two hundredths of a second, each with a database of its own. Tests this fast get run after every change.
 
 What the API tests pin down is the *behaviour that clients rely on*: status codes, the shape of the JSON, who may do what. They do not mention SQL or the names of handlers. You could replace SQLite with PostgreSQL, or rewrite every handler, and these tests would tell you whether clients would notice.
 

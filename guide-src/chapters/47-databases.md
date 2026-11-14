@@ -563,7 +563,7 @@ Running `sqlx migrate run` again does nothing, because both are recorded as inst
 sqlx::migrate!().run(&pool).await?;
 ```
 
-The macro reads the folder while the program is compiled. Cargo compiles again only when a Rust file changes, so a new migration file alone would go unnoticed. A build script ([chapter 36](#ffi)) next to `Cargo.toml` tells Cargo to watch the folder. The command `sqlx migrate build-script` writes it for you:
+The macro reads the folder while the program is compiled. Cargo compiles again only when a Rust file changes, so a new migration file alone would go unnoticed. A build script ([chapter 39](#ffi)) next to `Cargo.toml` tells Cargo to watch the folder. The command `sqlx migrate build-script` writes it for you:
 
 ```rust file=build.rs
 fn main() {

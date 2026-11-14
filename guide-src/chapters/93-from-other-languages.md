@@ -37,7 +37,7 @@ The first weeks feel slow, because the compiler rejects programs that every othe
 | `with open(...) as f:` | no special syntax: the file is closed when its variable goes out of scope | [9](#ownership), [18](#errors) |
 | duck typing | traits and generics: "any type that can do this" is written down and checked | [19](#generics), [20](#traits) |
 | `lambda x: x + 1` | `\|x\| x + 1` | [24](#closures) |
-| `pip`, `venv`, `pyproject.toml`, `pytest` | all in one tool, Cargo: `cargo add`, `Cargo.toml`, `cargo test` | [39](#cargo), [22](#testing) |
+| `pip`, `venv`, `pyproject.toml`, `pytest` | all in one tool, Cargo: `cargo add`, `Cargo.toml`, `cargo test` | [34](#cargo), [22](#testing) |
 | `import json` | the crate `serde_json` | [43](#serde) |
 | threads held back by the global lock; `asyncio` | threads that really run in parallel; `async` with Tokio | [30](#threads), [32](#async) |
 
@@ -46,8 +46,8 @@ What will surprise you:
 - **Types everywhere, but rarely written.** The compiler works most of them out. You write them in function signatures.
 - **Integers have a size** and can overflow. `7 / 2` is `3`, and `7.0 / 2.0` is `3.5`. An integer and a float cannot be mixed without `as`.
 - **`text[0]` does not exist.** A string is UTF-8, and a character can take several bytes ([chapter 11](#slices-strings)).
-- **No default values for parameters and no keyword arguments.** Use `Option`, a struct of options, or a builder ([chapter 38](#idioms)).
-- **Speed.** A loop in Rust runs at the speed of C. You no longer need a library written in another language for the heavy parts, and you can write such a library for Python yourself with PyO3 ([chapter 36](#ffi)).
+- **No default values for parameters and no keyword arguments.** Use `Option`, a struct of options, or a builder ([chapter 41](#idioms)).
+- **Speed.** A loop in Rust runs at the speed of C. You no longer need a library written in another language for the heavy parts, and you can write such a library for Python yourself with PyO3 ([chapter 39](#ffi)).
 
 ## From JavaScript and TypeScript
 
@@ -55,7 +55,7 @@ What will surprise you:
 |---|---|---|
 | `const x`, `let x` | `let x`, `let mut x`. A `let` without `mut` also protects the content, not only the name | [3](#variables) |
 | `number` | `i32`, `u64`, `f64` and others: you choose | [4](#types) |
-| `null`, `undefined`, `x?.y`, `x ?? d` | `Option<T>`, `x.map(\|v\| v.y)`, `x.unwrap_or(d)` | [13](#enums), [38](#idioms) |
+| `null`, `undefined`, `x?.y`, `x ?? d` | `Option<T>`, `x.map(\|v\| v.y)`, `x.unwrap_or(d)` | [13](#enums), [41](#idioms) |
 | object literal `{ a: 1 }`, `interface` for its shape | `struct` | [12](#structs) |
 | union type `"a" \| "b"`, discriminated unions | `enum`, with data in the variants | [13](#enums) |
 | `interface` with methods | `trait` | [20](#traits) |
@@ -63,7 +63,7 @@ What will surprise you:
 | `arr.map().filter().reduce()` | the same names on iterators. They are lazy, so end with `collect()`, `sum()` or `fold()` | [25](#iterators) |
 | `Promise`, `async` / `await` | `Future`, `async` / `.await`. A future does nothing until it is awaited or spawned | [32](#async) |
 | `JSON.parse`, `JSON.stringify` | `serde_json`, into typed structs | [43](#serde) |
-| `npm`, `package.json`, `node_modules` | `cargo`, `Cargo.toml`, one shared cache | [39](#cargo) |
+| `npm`, `package.json`, `node_modules` | `cargo`, `Cargo.toml`, one shared cache | [34](#cargo) |
 | `===` | `==`. There is only one kind of equality, and it never converts | [4](#types) |
 | Express, Fastify | Axum | [46](#web) |
 | code in the browser | WebAssembly, with Leptos, Yew or Dioxus | [49](#apps) |
@@ -92,21 +92,21 @@ What will surprise you:
 | `synchronized`, `lock` | `Mutex<T>`: the data lives inside the lock and cannot be reached without it | [31](#shared-state) |
 | `Stream`, LINQ | iterators | [25](#iterators) |
 | packages, namespaces | modules and crates | [17](#modules) |
-| Maven, Gradle, NuGet, JUnit | Cargo and `cargo test` | [39](#cargo), [22](#testing) |
-| reflection, annotations processed at run time | macros that generate code at compile time | [34](#macros) |
+| Maven, Gradle, NuGet, JUnit | Cargo and `cargo test` | [34](#cargo), [22](#testing) |
+| reflection, annotations processed at run time | macros that generate code at compile time | [37](#macros) |
 
 What will surprise you:
 
 - **There is no base class to put shared code in.** See the worked example below.
 - **Values are not references by default.** A struct sits directly where it is declared, on the stack or inside another struct. A heap allocation is something you ask for, with `Box`, `Vec` or `String`.
 - **No run time to start, and nothing to install on the target machine.** The result of a build is one program file.
-- **Dependency injection frameworks are rare.** Pass what a function needs as a parameter, as a trait if tests need a fake ([chapter 41](#testing-strategies)).
+- **Dependency injection frameworks are rare.** Pass what a function needs as a parameter, as a trait if tests need a fake ([chapter 36](#testing-strategies)).
 
 ## From C and C++
 
 | C / C++ | Rust | Chapter |
 |---|---|---|
-| `T*` that may be null and may dangle | `&T` and `&mut T` (never null, never dangling), `Option<&T>`, and raw pointers in `unsafe` code | [10](#borrowing), [35](#unsafe) |
+| `T*` that may be null and may dangle | `&T` and `&mut T` (never null, never dangling), `Option<&T>`, and raw pointers in `unsafe` code | [10](#borrowing), [38](#unsafe) |
 | `malloc` / `free`, `new` / `delete` | `Box::new`, and freeing is automatic | [27](#smart-pointers) |
 | `std::unique_ptr`, `std::shared_ptr`, `std::weak_ptr` | `Box`, `Rc` or `Arc`, `Weak` | [27](#smart-pointers) |
 | `std::vector`, `std::string`, `std::string_view`, `std::span` | `Vec`, `String`, `&str`, `&[T]` | [11](#slices-strings), [15](#collections) |
@@ -117,10 +117,10 @@ What will surprise you:
 | templates, concepts | generics with trait bounds, checked where the generic code is written, not where it is used | [19](#generics) |
 | virtual functions | `dyn Trait` | [20](#traits) |
 | header files, `#include` | modules. No declarations ahead of use, no include order | [17](#modules) |
-| `#define`, template tricks | `macro_rules!` and procedural macros, `const fn`, const generics | [34](#macros) |
+| `#define`, template tricks | `macro_rules!` and procedural macros, `const fn`, const generics | [37](#macros) |
 | `std::mutex` beside the data it protects | `Mutex<T>` around the data | [31](#shared-state) |
-| undefined behaviour anywhere | only inside `unsafe` blocks | [35](#unsafe) |
-| CMake, Make, vcpkg, Conan | Cargo | [39](#cargo) |
+| undefined behaviour anywhere | only inside `unsafe` blocks | [38](#unsafe) |
+| CMake, Make, vcpkg, Conan | Cargo | [34](#cargo) |
 | exceptions, error codes | `Result`. A panic is for bugs, not for expected failures | [18](#errors) |
 
 What will surprise you:
@@ -128,7 +128,7 @@ What will surprise you:
 - **The borrow checker rejects patterns that you know to be correct**, such as two pointers into the same structure. Some need a different design (indices in place of pointers), some need `Rc<RefCell<T>>`, and a few really need `unsafe` behind a safe interface.
 - **Integer overflow is defined**: a panic in debug builds, wrapping in release builds. The conversion rules are explicit, with no silent promotion.
 - **No copy constructors.** A copy that costs something is always visible as `.clone()`.
-- **You can keep your C and C++ code.** Rust calls it and can be called from it ([chapter 36](#ffi)).
+- **You can keep your C and C++ code.** Rust calls it and can be called from it ([chapter 39](#ffi)).
 
 ## From Go
 
@@ -144,7 +144,7 @@ What will surprise you:
 | zero values | `Default`, on request | [20](#traits) |
 | slices and `map` | `Vec<T>` and `&[T]`, `HashMap<K, V>` | [15](#collections) |
 | `struct` embedding | a field, with the calls passed on by hand | [20](#traits) |
-| `go mod`, `go test`, `gofmt`, `go vet` | `cargo`, `cargo test`, `cargo fmt`, `cargo clippy` | [39](#cargo), [40](#quality-tools) |
+| `go mod`, `go test`, `gofmt`, `go vet` | `cargo`, `cargo test`, `cargo fmt`, `cargo clippy` | [34](#cargo), [35](#quality-tools) |
 | the race detector, at run time | data races are compile errors | [31](#shared-state) |
 
 What will surprise you:
@@ -266,6 +266,6 @@ The other three words of object-oriented programming translate like this:
 | catching every exception at the top | return `Result`, add context on the way up, report once in `main` |
 | a base class "for later" | start with plain structs and functions; add a trait when a second kind appears |
 | getters and setters for every field | public fields for plain data; private fields and methods where a rule must hold |
-| cloning or locking everything until it compiles | ask who should own the data ([chapter 38](#idioms)) |
+| cloning or locking everything until it compiles | ask who should own the data ([chapter 41](#idioms)) |
 
 Keep: small functions, clear names, tests, code review, and measuring before optimising. Those are the same in every language.

@@ -1,5 +1,5 @@
 @id macros
-@part p8
+@part p9
 @title Macros: code that writes code
 @short Macros
 @level advanced
@@ -380,7 +380,7 @@ An **attribute** is a note for the compiler, written as `#[...]` above an item. 
 | `#[deprecated(note = "use new_name")]` | warn everyone who still uses this item |
 | `#[inline]` | suggest that the compiler pastes the function's body into its callers |
 | `#[non_exhaustive]` | users of this enum or struct must allow for additions in future versions |
-| `#[repr(C)]` | lay out the data as a C compiler would ([chapter 37](#memory-layout)) |
+| `#[repr(C)]` | lay out the data as a C compiler would ([chapter 40](#memory-layout)) |
 | `#[macro_export]` | make a `macro_rules!` macro usable from other crates |
 
 An attribute with an exclamation mark, `#![...]`, applies to the whole enclosing file or crate. It goes at the very top.

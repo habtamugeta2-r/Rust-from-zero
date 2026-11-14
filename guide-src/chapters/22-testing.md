@@ -469,7 +469,7 @@ In most languages you choose and install a test framework first: JUnit for Java,
 :::
 
 :::tip More tools for later
-[Chapter 41](#testing-strategies) goes further: tests that generate hundreds of random inputs (property testing), snapshot tests, measuring speed (benchmarks), replacing parts of a system with stand-ins (mocking), and running tests automatically on every change (continuous integration).
+[Chapter 36](#testing-strategies) goes further: tests that generate hundreds of random inputs (property testing), snapshot tests, measuring speed (benchmarks), replacing parts of a system with stand-ins (mocking), and running tests automatically on every change (continuous integration).
 :::
 
 :::recap

@@ -95,7 +95,7 @@ tea and toast, at the same time: about 200 ms
 The new pieces:
 
 - **`async fn`** declares a function that can pause. Calling it does not run it. It returns a **future**: a value that stands for a result that will exist later.
-- **`.await`** runs a future to its end and gives you the result. If the future has to wait (here: for a timer), `.await` *pauses the current task* and lets the thread do other work. Later the task continues exactly where it stopped. Note the position: `.await` is written **after** the expression.
+- **`.await`** drives a future to completion and gives you its result. If the inner future is not ready yet (`Pending`), `.await` *pauses the current task* and yields its thread so the runtime can run other work; if the future is already ready, execution normally continues right away. Later the task resumes exactly where it stopped. Note the position: `.await` is written **after** the expression.
 - **`#[tokio::main]`** turns `async fn main` into a normal `main` that starts the runtime and runs the async code in it.
 - **`tokio::time::sleep`** is a timer that waits without occupying a thread.
 - **`tokio::join!`** runs several futures concurrently and waits until all are finished.
@@ -401,7 +401,7 @@ The ordinary `std::sync::Mutex` is the right choice in async code as long as the
 
 ## The golden rule: never block the runtime
 
-The runtime has a few threads, and each of them serves thousands of tasks. A task gives its thread back only at an `.await`. If a task does something slow **without** awaiting, every other task on that thread is stuck behind it.
+The runtime has a few threads, and each of them serves thousands of tasks. A task can give its thread back only at an `.await`, and it actually yields only when the awaited future returns `Pending` (not ready yet). If a task awaits a future that is already ready, it normally keeps running, and if a task does slow work **without** awaiting at all, the runtime gets no chance to switch tasks—leaving every other task on that thread stuck behind it.
 
 Things that block:
 
@@ -409,6 +409,8 @@ Things that block:
 - the file and network functions of the standard library, such as `std::fs::read_to_string` (use `tokio::fs`, `tokio::net`),
 - long calculations,
 - waiting on a `std::sync::mpsc` channel or a busy `std::sync::Mutex`.
+
+Even in async code, a long loop whose `.await`s always resolve immediately (for example reading buffered data already in memory) may rarely yield; call `tokio::task::yield_now().await` if you need to give other tasks a turn (Tokio also tracks a per-poll operation budget to limit starvation).
 
 For work that is truly blocking or heavy, hand it to a thread that is meant for it with `spawn_blocking`:
 
@@ -712,7 +714,7 @@ async fn main() {
 
 :::recap
 - Async is for many tasks that mostly wait. Threads are for heavy calculations.
-- `async fn` returns a future. Nothing runs until it is awaited or spawned. `.await` pauses the task while it waits, and frees the thread.
+- `async fn` returns a future. Nothing runs until it is awaited or spawned. `.await` polls a future and suspends the task—freeing its thread—whenever that future is `Pending`.
 - A runtime such as Tokio runs the tasks. `#[tokio::main]` starts it.
 - `join!` waits for all, `select!` for the first, `timeout` limits the wait, `tokio::spawn` starts a background task.
 - Dropping a future cancels it at its current `.await`.
@@ -741,7 +743,7 @@ async fn main() {
 - It is less precise
 + It blocks the whole thread, so all other tasks that share that thread stop too
 - It cancels the task
-= A runtime thread serves many tasks and gets control back only at an `.await`. A blocking call holds it hostage. Use `tokio::time::sleep(...).await`.
+= A runtime thread serves many tasks and can switch away only at an `.await` when a future is not ready (`Pending`). A blocking call holds the thread hostage. Use `tokio::time::sleep(...).await`.
 
 ? What happens to the slower branch of a `tokio::select!`?
 - It keeps running in the background
