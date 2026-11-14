@@ -844,6 +844,63 @@ let app = Router::new()
 
 Axum also supports **WebSockets** (`axum::extract::ws`, a lasting two-way connection, right for chats and live updates) and **server-sent events** (`axum::response::sse`, a stream of messages from the server to the browser).
 
+## Live updates: WebSockets and server-sent events
+
+Everything so far is request and response: the client asks, the server answers, the connection is done. Some features need the server to speak first — a chat message arriving, a job finishing, a price changing. Three techniques do that, and they are not interchangeable.
+
+| Technique | Direction | Latency | Reconnects by itself | Works through proxies | Cost |
+|---|---|---|---|---|---|
+| **Polling** — ask every *n* seconds | client asks | up to *n* seconds | yes, it is just requests | yes | one request per client per interval, most of them empty |
+| **Server-sent events (SSE)** | server → client, one way | immediate | yes, the browser retries | yes, it is ordinary HTTP | one long-lived HTTP response per client |
+| **WebSocket** | both ways | immediate | no, you write it | usually; needs proxy support | one upgraded connection per client, with its own lifecycle |
+
+Start with polling. It is a `setInterval` and one route you already have. Move to SSE when the client only listens. Choose a WebSocket when both sides talk.
+
+### WebSockets in Axum
+
+Axum has WebSockets built in, behind the `ws` feature, with no extra crate. The pattern is two steps: a handler that receives a normal HTTP request and *upgrades* it, and a function that then owns the connection as a plain async task.
+
+The types are `axum::extract::ws::{WebSocketUpgrade, WebSocket, Message}`. A handler takes `WebSocketUpgrade`, and returns `ws.on_upgrade(handle_socket)`. From that point `handle_socket(socket: WebSocket)` loops: `socket.recv().await` gives `Option<Result<Message, Error>>`, and you `match` on `Message::Text`, `Message::Binary`, `Message::Ping`, `Message::Pong` and `Message::Close`. Sending is `socket.send(Message::Text(…)).await`. A `None` from `recv` means the peer has gone, which is the end of the task.
+
+The room server of [chapter 33](#project-chat) maps onto this with almost no changes: the `Arc<Mutex<Rooms>>` and the `broadcast::Sender<String>` become the application state, and each socket task subscribes to the broadcast channel and forwards what it receives. The difference is the transport — a TCP line protocol there, an upgraded HTTP connection here — and the fact that a WebSocket already frames messages for you.
+
+Three practical rules:
+
+- **Send a heartbeat.** A ping every thirty seconds keeps idle connections alive through load balancers, which cut connections they consider dead after a minute or two of silence.
+- **Bound the input.** `Message::Text` has a maximum size, set on the upgrade, and you should also cap the length of a chat line.
+- **Decide where the state lives.** In-memory rooms mean two server instances do not see each other's messages. Either keep one instance, use sticky sessions, or move the fan-out to Redis pub/sub or NATS ([chapter 45](#async-ecosystem)).
+
+### Server-sent events
+
+SSE is a long-lived HTTP response whose body is a stream of text lines: `data: …`, optionally `event: …` and `id: …`, separated by blank lines. The browser consumes it with a few lines of JavaScript and reconnects by itself:
+
+```js
+const feed = new EventSource("/events");
+feed.addEventListener("tick", (e) => console.log(e.data));
+```
+
+In Axum the response type is `axum::response::sse::Sse`, wrapping a `Stream<Item = Result<Event, E>>`; `Sse::new(stream).keep_alive(KeepAlive::default())` adds the comment lines that stop proxies closing an idle connection. The stream can be anything that yields values over time — a `tokio::time::interval` for ticks, a broadcast channel for real events, a `tokio_stream` adapter over a queue.
+
+SSE is the right choice for notifications, progress bars, live logs and dashboards. It gives you HTTP status codes, cookies, compression and proxying for free, and the browser handles reconnection and resumes with a `Last-Event-ID` header. The cost is that it is one-way: to send something back, make a normal `POST`.
+
+## Describing the API: OpenAPI
+
+Once anything but you can call the API — a front-end team, a mobile app, a customer — the question "what does this endpoint take?" needs an answer that is not a conversation. **OpenAPI** is that answer: a machine-readable description of every route, parameter, body and response, from which documentation pages, client SDKs and tests are generated.
+
+Writing the description by hand guarantees it drifts. Two crates generate it from the code you already have:
+
+| Crate | Style | Notes |
+|---|---|---|
+| [`utoipa`](https://docs.rs/utoipa) | Derive macros on the handlers and the types (`#[utoipa::path]`, `#[derive(ToSchema)]`), assembled into one `#[derive(OpenApi)]` struct | Framework-agnostic, mature, and `utoipa-swagger-ui` serves a browsable `/docs` page from the same program |
+| [`aide`](https://docs.rs/aide) | Generates the document from the Axum router itself | Less typing when the router is the source of truth; Axum-specific |
+
+Either way the rules are the same as for tests: annotate the type once, keep the annotations next to the handler, and treat a mismatch between the document and the behaviour as a bug. A `GET /openapi.json` route that serves the generated document makes it checkable in CI, and that is what client generators consume.
+
+:::tip Multipart uploads and streaming bodies
+Two things that come up as soon as files are involved. **Uploads** use `axum::extract::Multipart` — iterate the fields, enforce a maximum size per field and in total, and never trust the client's `Content-Type` or file name. **Downloads and streams** build a `Body` from a stream (`Body::from_stream(…)`) or serve a `tokio_util::io::ReaderStream` over a file, so a 2 GB export is never held in memory. Both are ordinary handlers; the only new rule is that a streamed body has no `Content-Length`, so the client must not expect one.
+:::
+
+
 ## Security basics
 
 Security is a large subject. These are the points that no public web server may skip.
@@ -895,10 +952,138 @@ wrong password: false
 
 The stored string contains the algorithm, its settings, the salt and the hash, so `verify_password` needs nothing else. Hashing takes some tens of milliseconds by design. In an async handler, run it inside `tokio::task::spawn_blocking`.
 
+### Who is asking, and what may they do
+
+Two words that are constantly confused, and the difference is the difference between a login page and a security hole:
+
+- **Authentication** answers *who is this?* — the user proved an identity, usually with a password, a session, a token or a provider.
+- **Authorisation** answers *what may they do?* — this identity is allowed to read these notes and not to delete that user.
+
+Both happen **on the server, on every request, from data the server controls**. A hidden button, a greyed-out menu item or a check in JavaScript is a convenience for honest users, never a restriction: anyone can send the request by hand. The `require_key` middleware that guards `/admin/stats` above is authorisation, and it is the shape every check should take.
+
+Roles are the simplest useful model. Give each user one value from a small set — `Reader`, `Writer`, `Admin` — and let the extractor hand the handler a `User` that already carries it. The handler then asks one question, early, and returns `403 Forbidden` if the answer is no. Two status codes keep the distinction sharp: **401** means "I do not know who you are" (missing, invalid or expired credentials), **403** means "I know exactly who you are, and you may not do this".
+
+### Sessions, tokens and API keys
+
+Three mechanisms cover almost every web service. They are not ranked; they are good at different things.
+
+| | Session cookie | Signed token (JWT) | API key |
+|---|---|---|---|
+| Where the state lives | On the server: memory, Redis or a table | Inside the token, signed by the issuer | On the server, stored as a hash |
+| Revocation | Instant: delete the row | Hard: valid until it expires, unless you keep a deny-list | Instant: delete the key |
+| A browser app | Natural: the server sets a cookie | Workable, but storage invites XSS mistakes | No: browsers cannot keep a secret |
+| Mobile, CLI, server-to-server | Awkward | Fits well | Fits best |
+| Many services, one login | Needs a shared session store | Any service with the public key verifies offline | Needs a lookup per request |
+| Best first choice for | Server-rendered pages, admin panels | Short-lived access between services, or an SPA with a refresh flow | Machine clients, integrations, webhooks |
+
+The rule of thumb: **browsers and first-party apps get a session cookie; machines get a token or a key; anything that must be revoked instantly gets server-side state.**
+
+### The cookie flags that matter
+
+A session cookie is a bearer credential: whoever holds it is the user. Four attributes decide how much damage a leak can do.
+
+- `HttpOnly` — JavaScript cannot read it, so a cross-site scripting bug cannot steal it.
+- `Secure` — the browser sends it only over HTTPS.
+- `SameSite=Lax` — it is not attached to a cross-site `POST`, which blocks the common form of cross-site request forgery. `Strict` is stronger and breaks links from other sites; `Lax` is the sane default.
+- A short `Max-Age` plus a server-side expiry — a session that lives for ever is a session that leaks eventually. Rotate the session id at login, so a pre-login cookie cannot be replayed after it.
+
+The crates that do this for Axum are `tower-sessions` for the session store (memory for development, a database or Redis for production) and `axum-login` on top of it, which adds the user, the login and logout routes and the extractor that hands you `AuthSession<User>`. The flow is short enough to describe completely:
+
+1. `POST /signup` validates the form, hashes the password with the Argon2 code above, inserts the user.
+2. `POST /login` finds the user by name, calls `verify_password`, and on success writes the user id into a fresh session.
+3. `GET /whoami` returns the user from the session, or `401` if there is none.
+4. `POST /logout` deletes the session **on the server** — clearing the cookie alone is not enough.
+
+:::warn Cross-site request forgery
+A cookie is attached automatically by the browser to every request to your domain — including a request triggered by a form on `evil.example`, submitted while the user is logged in. That is **cross-site request forgery**, or CSRF, and it is why cookie-based sessions need `SameSite=Lax` *and* an `Origin` (or `Referer`) check on every state-changing request, or a CSRF token in the form. Token-based APIs are immune by construction: the browser does not attach an `Authorization` header by itself, so another site cannot make the request on the user's behalf. If you mix the two — a cookie for the browser and a header for scripts — you have to enforce both rules.
+:::
+
+### Signed tokens (JWT), and the four mistakes
+
+A **JSON Web Token** is three base64url parts separated by dots: a header naming the algorithm, a payload of claims, and a signature. It is **signed, not encrypted** — anyone can read the payload, so never put a secret in it.
+
+The claims that matter: `sub` (who), `exp` (expiry), `iat` (issued at), `iss` (who issued it) and `aud` (who it is for). Verify all of them, and keep access tokens short — five to fifteen minutes — with a longer-lived refresh token if you need long sessions. The crate is `jsonwebtoken`.
+
+Four mistakes account for most of the incidents:
+
+1. **Not pinning the algorithm.** Constructing the verifier for one algorithm (`Validation::new(Algorithm::HS256)`, or RS256 for public-key setups) rejects the "alg: none" and algorithm-confusion attacks. Never let the token choose the algorithm.
+2. **Treating a signature as revocation.** A signature says "I issued this and nobody changed it". It does not say "this user is still allowed". A deleted user keeps working until their token expires, which is the price of going stateless — accept it, or check a deny-list.
+3. **Choosing HS256 in a system with many verifiers.** HS256 uses one shared secret, so every service that can verify a token can also *mint* one. When several services must verify, sign with an asymmetric algorithm (RS256 or ES256): the private key stays with the issuer, and the public key is safe to publish.
+4. **Checking the token in the browser.** A client-side check is a decoration. The server verifies on every request, in one place, as an extractor or a middleware layer.
+
+### Validate every field
+
+A type checks the *shape* of a body: that `limits` is a number and `code` is a string. It says nothing about whether the number is 50 or 5,000,000, or whether the code is six characters of base62. Everything from a client must be checked twice over — shape by `serde`, meaning by you.
+
+Axum deliberately has no built-in validation. The two crates that fill the gap both work by deriving the checks from attributes on the struct:
+
+| Crate | The attribute | Reported as |
+|---|---|---|
+| [`validator`](https://docs.rs/validator) | `#[validate(length(min = 1, max = 64))]`, `email`, `range`, `regex` | a map of field to message |
+| [`garde`](https://docs.rs/garde) | `#[garde(length(min = 1, max = 64))]`, `email`, `range` | one error type with the field path |
+
+The integration is a small extractor of your own — call it `ValidatedJson<T>` — that deserialises as `Json<T>` does, calls `payload.validate()`, and either returns the value or rejects the request with **422 Unprocessable Content** and the field errors. Put it in the same place as the other extractors and use it for every route that takes a body; a route that takes `Json<T>` directly is a route where validation was forgotten.
+
+Four details that decide whether this works in practice:
+
+- **Normalise before you validate.** Trim whitespace, lower-case e-mail addresses, collapse repeated spaces. Validation runs on what you are going to store, not on what arrived.
+- **Reject unknown fields** with `#[serde(deny_unknown_fields)]` on request types ([chapter 43](#serde)). Otherwise a client that misspells `expires_at` gets a silently ignored field and a bug that hunts you for a week.
+- **Keep the database constraints.** Validation is the friendly error; the `NOT NULL`, the `UNIQUE` and the check constraint are the truth, because two requests can pass validation at the same instant ([chapter 47](#databases)).
+- **Say what is wrong, not what to do about it in SQL.** "code must be between 1 and 16 characters" is a message; "insert failed" is a leak.
+
+### Security headers
+
+Response headers are cheap and close whole classes of attack. In `tower-http` they are one `SetResponseHeaderLayer` each, the same pattern as the timeout layer above.
+
+| Header | Value | What it stops |
+|---|---|---|
+| `X-Content-Type-Options` | `nosniff` | The browser guessing an upload is a script and running it |
+| `X-Frame-Options` | `DENY` | Your pages being framed invisibly to steal clicks (clickjacking) |
+| `Referrer-Policy` | `no-referrer` | Leaking the URL of your page — including tokens in the query string — to other sites |
+| `Content-Security-Policy` | `default-src 'self'` | Inline and third-party scripts, which defuses most cross-site scripting. The biggest win, and the one that needs testing: start with `Content-Security-Policy-Report-Only` |
+| `Strict-Transport-Security` | `max-age=31536000; includeSubDomains` | Downgrade to plain HTTP. Add it only once HTTPS works everywhere: browsers remember it |
+| `Permissions-Policy` | `camera=(), microphone=(), geolocation=()` | Pages using features you never intended to offer |
+
+### Rate limiting
+
+A public endpoint without a limit is an invitation: to credential stuffing on `/login`, to scrapers, and to a single client using your whole capacity. The principle is a **bucket of tokens**: each client has a small allowance that refills at a fixed rate; a request costs one token; an empty bucket means `429 Too Many Requests` with a `Retry-After` header. A fixed window ("100 per minute") is easier to implement and burstier at the boundary; a **token bucket** (or the equivalent GCRA algorithm) smooths it out.
+
+Limit by something the client cannot choose freely — an API key or a user id when you have one, an IP address otherwise, remembering that an IP can be shared by a whole office or by a botnet. Put a much tighter limit on `/login` than on reads. In Rust, `tower-governor` provides a ready layer built on the `governor` crate, and `tower::limit::RateLimitLayer` and `ConcurrencyLimitLayer` cover the simple cases. Behind a reverse proxy, read the client address from the forwarded headers — and only trust those headers if the proxy is the only thing that can reach your port.
+
+### Signing in with someone else
+
+"Sign in with GitHub" is **OAuth 2.0**, and if the provider gives you an identity it is **OpenID Connect** (OIDC), which is OAuth 2.0 plus a standard identity token. The flow to learn is the **authorisation-code flow with PKCE**:
+
+1. Your app redirects the browser to the provider with your `client_id`, a `redirect_uri`, a random `state` and a PKCE challenge.
+2. The user signs in **on the provider's site**. You never see the password.
+3. The provider redirects back with a code; you check that `state` matches the value you stored (this is CSRF protection for the callback), then exchange the code for an access token and an ID token.
+4. You create or find the local user for that identity, and start your own session.
+
+The crates are `oauth2` for the flow and `openidconnect` for the identity layer. Each provider has its own quirks — scopes, claim names, e-mail verification rules — so the provider's own documentation is the real manual. Keep ordinary login as well: a provider is a convenience, not a replacement for owning your accounts.
+
+### Comparing secrets without leaking timing
+
+Comparing a submitted API key with the stored one using `==` stops at the first byte that differs, and the time it takes leaks how many bytes were right. That is enough to recover a key byte by byte. For secrets, compare in constant time with `subtle::ConstantTimeEq`:
+
+With `subtle`, the comparison is `provided.as_bytes().ct_eq(expected.as_bytes())`, which returns a `Choice` you convert to `bool`; it always reads every byte, so the time taken says nothing about where the first difference was. Password hashes are already compared in constant time inside `argon2`, so `verify_password` above needs nothing extra.
+
+:::details The login flow, end to end
+Whichever mechanism you choose, the shape is the same:
+
+1. **Signup:** validate, hash, store. Reject weak or breached passwords by length and against a breach list, not by demanding a symbol from each of four categories.
+2. **Login:** compare in constant time (the hash function does it for you), and return the *same* error and the same delay whether the user does not exist or the password is wrong. Otherwise you have built a user-enumeration oracle.
+3. **Session or token:** a session id, or a JWT with `sub`, `exp`, `iat`.
+4. **Every request:** an extractor resolves the credential to a user, or rejects with `401`.
+5. **Authorisation:** the handler or a layer checks the role or ownership, and rejects with `403`.
+6. **Logout / revocation:** delete the session row, or accept that the token lives until `exp`.
+7. **Housekeeping:** rotate session ids at login, expire idle sessions, log authentication failures with the account id but never the password, and alert when failures for one account spike.
+:::
+
+
 **More rules:**
 
 - **Keep secrets out of the code.** Read keys and passwords from environment variables or a secret store, never from the source code or the repository.
-- **Check who is asking.** After a login, the client proves who it is with each request, by a session cookie (`tower-sessions`, `axum-login`) or a signed token (`jsonwebtoken`). Check rights on the server for every request. A hidden button is no protection.
+- **Check who is asking.** After a login, the client proves who it is with each request: a session cookie, a signed token or an API key. The three are compared above, and rights are checked on the server for every request. A hidden button is no protection.
 - **Validate input** beyond its type: lengths, ranges, formats. Do it by hand, or with a crate such as `validator` or `garde`.
 - **Never build SQL from strings.** The next chapter shows the safe way.
 - **Do not show internals.** Log the details of an error on the server, and send the client a general message. A database error text in a response helps attackers.
@@ -1025,6 +1210,10 @@ EXPOSE 8080
 CMD ["myserver"]
 ```
 
+:::warn Never bake a secret into an image
+An `ENV API_KEY=…` line, or a credentials file copied into the build stage, stays in the image for ever: anyone who can pull the image can read it, and deleting the file in a later layer does not help, because the earlier layer is still there. Pass secrets at run time — Docker secrets, Kubernetes `Secret` objects, or the secret manager of the host — and let the program read them from the environment when it starts. If a secret has ever been committed by mistake, rotate it; a rewrite of the history does not reach the copies that were already fetched. The [configuration section](#cli) of the CLI chapter covers where values should come from.
+:::
+
 **Cross-compilation.** The server does not have to run on the same kind of machine it is built on. `rustup target add x86_64-unknown-linux-musl` followed by `cargo build --release --target x86_64-unknown-linux-musl` produces a statically linked Linux binary ([chapter 39](#cargo)). A container built from that binary needs almost nothing inside it, which keeps images small and startup fast.
 
 **Nix.** Teams that want every build to be byte-identical use Nix: it pins the Rust version, the system libraries and the crate versions, and builds in a sandbox. Tools such as `crane`, `naersk` or `fenix` turn a `Cargo.lock` into a Nix derivation, and `nix develop` gives every contributor the same toolchain. The price is learning Nix itself; for a single service, the Dockerfile above is simpler.
@@ -1085,6 +1274,34 @@ The final image contains your program and a minimal system, with no compiler and
 + A salted hash made by a slow password hash function such as Argon2
 - A plain SHA-256 hash of the password
 = A slow, salted hash cannot be reversed, and guessing is expensive. Fast hashes such as SHA-256 can be tried billions of times per second.
+
+? A request arrives with a valid session for an ordinary reader, and asks to delete another user's note. Which answer is correct?
+- `401 Unauthorized`, because the reader may not delete it
++ `403 Forbidden`, because the server knows who the caller is and they are not allowed
+- `404 Not Found`, because the note may not be deleted
+- `400 Bad Request`, because the request should not have been sent
+= `401` means "I do not know who you are"; `403` means "I know, and the answer is no". `404` is sometimes used deliberately to hide the existence of a resource, but that is a decision, not the default.
+
+? Why is a token-based API not vulnerable to cross-site request forgery?
+- Because tokens are encrypted
+- Because tokens expire quickly
++ Because the browser does not attach an `Authorization` header to a request made by another site
+- Because tokens are stored in a cookie
+= CSRF works by making the browser send credentials that it attaches automatically — a cookie. A header that your JavaScript adds explicitly is not attached by another origin's page, so the forged request arrives unauthenticated.
+
+? What is the mistake in verifying a JWT with the algorithm taken from the token's own header?
+- Nothing; that is what the header is for
++ An attacker can choose the algorithm, including `none` or a confusion between HS256 and RS256
+- It makes verification slower
+- It breaks the signature
+= Always fix the algorithm in the verifier (`Validation::new(Algorithm::HS256)`). Letting the token choose is the classic JWT vulnerability.
+
+? Which combination is the sane default for a server-rendered web application?
+- An API key stored in `localStorage`
+- A JWT in a cookie without `HttpOnly`, so the front end can read it
++ A server-side session, in a random cookie marked `HttpOnly`, `Secure` and `SameSite=Lax`
+- A session id in a URL parameter
+= The cookie flags remove whole classes of attack: `HttpOnly` blocks theft by scripts, `Secure` blocks plain-HTTP leaks, `SameSite=Lax` blocks cross-site posting. A session id in a URL leaks through logs, bookmarks and `Referer` headers.
 :::
 
 :::exercise guided A temperature API

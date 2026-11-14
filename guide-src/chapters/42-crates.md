@@ -206,6 +206,34 @@ true
 Keep and compare moments in UTC (or as timestamps), and convert to the user's time zone only for display. Mixing local times causes bugs around daylight saving changes. The standard library's `std::time::Instant` is the right tool for measuring how long something takes. Besides `chrono`, the crates `time` and `jiff` are good modern choices. `jiff` is especially careful about time zones.
 :::
 
+### Time zones, durations, and the format on the wire
+
+Almost every date bug comes from mixing up three questions that look like one. Ask them separately and the bugs disappear:
+
+1. **Which instant in time is it?** Store this. A moment is universal; it is the same moment in every city.
+2. **Which zone should the reader see it in?** A display decision, made at the edge, from the user's setting — not stored.
+3. **How is it written down?** One format on the wire, chosen once for the whole system.
+
+The consequence: **store UTC, display local, and always store an instant rather than a wall-clock time.** `2026-11-14T09:12:03Z` and `2026-11-14T12:12:03+03:00` are the same moment written two ways. That format is **RFC 3339** (a profile of ISO 8601), and it is what JSON APIs and HTTP headers use, because it is sortable as text, unambiguous, and readable by a human. In PostgreSQL the column type is `TIMESTAMPTZ`; in SQLite, store the RFC 3339 string or a Unix timestamp as an integer.
+
+A **time zone** is more than an offset: it is a set of rules that a government can change. That is why the rules ship as a database (`tzdata`, the IANA list) and why a program that calculates "9 a.m. tomorrow in Berlin" needs one. `chrono-tz` provides the zone list for `chrono`.
+
+Two traps worth naming:
+
+- **Daylight saving.** One hour of the year is skipped and one is lived twice. A local time such as 02:30 on a changeover day may not exist, or may exist twice. Arithmetic on local *wall-clock* times is therefore ambiguous — do it in UTC or on an `Instant`, and convert only for display. A zone with no daylight saving, such as East Africa Time (UTC+03:00 all year), does not have this problem, which is why code written there can look fine and fail in Berlin.
+- **A birthday is not an instant.** A birth date, an invoice date or a business day is a *calendar date*: `NaiveDate` in `chrono`, `Date` in `jiff`. Storing it as a timestamp at midnight UTC makes it the wrong day for half the planet.
+
+The three crates, honestly compared:
+
+| Crate | Strength | Choose it when |
+|---|---|---|
+| `chrono` | The most widely used, with the widest ecosystem support and the examples in this book | You want the default, and the docs you will find everywhere |
+| `time` | Stricter API, no implicit local-time reading, good formatting | You want compile-time checks on formats and a smaller surface |
+| `jiff` | Modern design, correct-by-default time zone handling, RFC 3339 as the native format | Time zones and human-facing dates are central to the program. For new code in 2025 onwards, a good first choice |
+
+For the wire: with the `serde` feature, `chrono`'s `DateTime<Utc>` serialises to an RFC 3339 string and parses back from one, which is exactly what you want in JSON. Durations in configuration are best written for humans — `"30s"`, `"5m"`, `"2h"` — and parsed with `humantime` (or `humantime_serde` as a serde attribute) rather than a raw number of milliseconds that nobody can read six months later.
+
+
 ### `itertools`: more iterator tools
 
 ```toml
@@ -329,6 +357,7 @@ fn work(items: &[&str]) {
 
 fn main() {
     Builder::from_env(Env::default().default_filter_or("trace"))
+        .target(env_logger::Target::Stdout)     // loggers write to stderr by default
         .format(|buf, record| writeln!(buf, "{}: {}", record.level(), record.args()))
         .init();
 
@@ -344,7 +373,7 @@ DEBUG: a detail only useful while developing
 ERROR: could not reach the server
 ```
 
-- The `format` closure decides what each line looks like; here it is just the level and the message.
+- The `format` closure decides what each line looks like; here it is just the level and the message. A logger's output belongs on standard error, so that it never mixes with the program's real output; this listing sends it to standard output instead, so that the lines above are the program's own output.
 - `default_filter_or("trace")` shows everything during development. Without any `RUST_LOG` setting, `info` and above would be enough for production.
 - `error!` shows even though nothing catches it: logging does not stop the program.
 
@@ -365,30 +394,7 @@ hides `info` and `debug`. The filter is a pattern: `mycrate=debug` shows debug m
 A library logs; an application decides where the logs go. `log` and `tracing` both leave the decision to `main`. A library that calls `println!` forces its output on everybody.
 :::
 
-### `log` with `env_logger`: a small configurable logger
-
-`log` is a facade: it gives libraries macros such as `info!` without choosing where messages are written. A binary installs one logger implementation. `env_logger` is a small choice for a command-line program or a simple service, and `RUST_LOG` lets the operator set the filter without recompiling.
-
-```toml
-[dependencies]
-env_logger = "0.11.11"
-log = "0.4.35"
-```
-
-```rust ext check
-use log::{debug, error, info, warn};
-
-fn main() {
-    env_logger::Builder::from_default_env().init();
-
-    info!("starting import");
-    debug!(records = 12, "parsed input");
-    warn!("one optional field was missing");
-    error!("the import stopped");
-}
-```
-
-Run the binary with `RUST_LOG=info cargo run` to see informational messages and more severe ones, or `RUST_LOG=debug cargo run` to include debug messages. Directives can target a module, for example `RUST_LOG=my_app::store=debug,my_app=info`. The logger is initialized once, at application start. A reusable library should emit through the `log` facade and must not call `env_logger::init()` itself, because the final application owns the global logger.
+A few rules keep logging sane in a program of any size. The logger is initialised once, at start-up, and the *application* does the initialising — a library that called `init()` would take the decision away from the program that links it, and two libraries both doing it is a panic. Filtering can also be per module: `RUST_LOG=my_app::store=debug,my_app=info` shows `info` and above everywhere, but `debug` from `my_app::store` only, which is how you raise the detail on the part you are debugging without drowning in everything else.
 
 ## A map of the ecosystem
 
@@ -403,13 +409,31 @@ The standard choice for each common task. Where two are listed, both are good, a
 | Async runtime | `tokio` |
 | HTTP client | `reqwest` |
 | Web server | `axum`, `actix-web`, `rocket` |
-| Databases | `sqlx`, `diesel`, `sea-orm`, `rusqlite`, `redis` |
+| Databases | `sqlx`, `diesel`, `sea-orm`, `rusqlite` |
+| Caches and key-value servers | `redis`, `fred` |
+| Documents | `mongodb` |
 | Parallel computing | `rayon` |
 | Concurrency tools | `crossbeam`, `parking_lot`, `dashmap` |
 | Random numbers | `rand` |
 | Dates and times | `chrono`, `time`, `jiff` |
 | Regular expressions | `regex` |
 | Logging and tracing | `tracing`, `log` |
+| Metrics | `metrics` with `metrics-exporter-prometheus`, or `prometheus` |
+| Traces and export | `opentelemetry`, `tracing-opentelemetry`, `opentelemetry-otlp` |
+| Configuration | `figment`, `config`, `dotenvy`, `secrecy`, `humantime` |
+| gRPC and Protocol Buffers | `tonic`, `prost` |
+| GraphQL | `async-graphql`, `juniper` |
+| WebSockets | `axum`'s built-in `ws`, `tokio-tungstenite` |
+| Message queues | `async-nats`, `rdkafka` (Kafka), `lapin` (RabbitMQ) |
+| Sessions and authentication | `tower-sessions`, `axum-login`, `jsonwebtoken`, `oauth2`, `openidconnect` |
+| Rate limiting | `tower-governor`, `governor` |
+| Validation | `validator`, `garde` |
+| Embedded key-value stores | `redb`, `fjall`, `sled` |
+| Search | `tantivy` (SQLite's FTS5 is the built-in alternative) |
+| Object storage | `object_store`, `aws-sdk-s3` |
+| Shell completions and man pages | `clap_complete`, `clap_mangen` |
+| Release automation | `release-plz`, `cargo-release`, `cargo-dist`, `cargo-msrv` |
+| Distributed systems | `openraft`, `etcd-client` |
 | Unique ids | `uuid` |
 | Testing | `proptest`, `insta`, `criterion`, `mockall`, `rstest` |
 | Text | `unicode-segmentation` (graphemes), `unicode-width` |

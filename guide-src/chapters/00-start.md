@@ -16,6 +16,32 @@ This guide is intentionally scoped to the core Rust language, its tooling, the m
 
 Learning to program is like learning to cook or to play an instrument. Reading alone does not work. **Each chapter gives you something to do, and the doing is where the learning happens.**
 
+## What is in this guide
+
+It is worth knowing the size of what you are starting, so that you can plan.
+
+| | |
+|---|---|
+| Chapters | 54, of which 8 are complete projects you build file by file |
+| Appendices | 4: a glossary, a reference, a catalogue of compiler errors, and Rust for people who know other languages |
+| Rust examples | 875, **every one compiled and run** by a real compiler, with its real output shown |
+| Exercises | 187, each with a hint and a worked solution |
+| Quiz questions | 229, each with an explanation |
+
+Nothing here is a mock-up. When the guide shows a compiler error, that is the message the compiler really printed, on the line number it really pointed at. When it shows program output, the program really produced it. This is checked automatically, for every example, on every change to the guide.
+
+## What this guide covers, and what it does not
+
+"Everything about Rust" is an endless subject, so this guide has a written rule. Each part of the Rust world is handled in one of three ways, and it says which:
+
+- **Taught.** At least one section with a compiled example, plus an exercise or a quiz question.
+- **Named with advice.** A table row or short paragraph that names the mainstream crates, says how mature they are, and says when to choose them. You are not left guessing, and you are not misled into thinking a passing name is a lesson.
+- **Out of scope, on purpose.** Declared in [chapter 53](#next) with a reason and somewhere else to read.
+
+A few areas are deliberately outside this guide: blockchain and Web3, operating-system and kernel development, robotics, high-frequency trading, and cloud-provider SDKs beyond one example. They are real and interesting ecosystems, and each has its own books. A guide that starts from zero cannot teach them honestly, so it names them and steps aside rather than pretending.
+
+Everything else in the ecosystem chapter follows the first two rules. If you find a crate that is named once and never explained, that is a mistake worth reporting.
+
 ## How a chapter is built
 
 Every chapter follows the same rhythm:

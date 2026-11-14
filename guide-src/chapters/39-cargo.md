@@ -85,9 +85,19 @@ Tutorials, answers on the web and old crates are often written for an earlier ed
 | 2015 | `extern crate serde;` at the top of files. `try!(…)` where you would write `?`. Trait objects without `dyn`: `Box<Error>`. Paths in `use` without `crate::`. |
 | 2018 | `async`, `await` and `dyn` become keywords. `use crate::…` paths as in this guide. `extern crate` is no longer needed. |
 | 2021 | A closure captures only the fields it uses, not the whole struct. `array.into_iter()` gives the values. `TryFrom`, `TryInto` and `FromIterator` can be used without a `use` line. |
-| 2024 | `unsafe extern` blocks and `#[unsafe(no_mangle)]`. Every unsafe operation inside an `unsafe fn` needs its own `unsafe` block. References to a `static mut` are refused. `if let` chains with `&&`. `std::env::set_var` is `unsafe`. `gen` is reserved as a keyword. |
+| 2024 | `unsafe extern` blocks and `#[unsafe(no_mangle)]`. Every unsafe operation inside an `unsafe fn` needs its own `unsafe` block. References to a `static mut` are refused. `if let` chains with `&&`. `std::env::set_var` is `unsafe`. `gen` is reserved as a keyword. Temporary values in the final expression of a function are dropped **before** the function's local variables, not after. `impl Trait` in return position captures every lifetime in scope, unless you narrow it with `use<…>`. |
 
 Code from every edition compiles with today's compiler, as long as its `Cargo.toml` names the edition it was written for. If you paste old code into a new project and get puzzling errors, the edition is the first thing to check.
+:::
+
+Three of the 2024 changes are worth recognising, because they arrive as diagnostics rather than as a new keyword, and the message does not always say the word "edition":
+
+- **Tail-expression drop order.** In an older edition, the temporary values created in the final expression of a function body were dropped *after* the local variables of that body. In 2024 they are dropped *before* them, at the end of the expression. Consider a function whose last line is `cell.borrow().len()`. Under the old order the borrow was still alive when the local `cell` was dropped, so the borrow checker refused the function. Under the new order the borrow ends first and the function compiles. Code that relied on the old order — a guard that read the local variable it outlived — now fails to compile instead of misbehaving, which is the point of the change.
+- **`unsafe_op_in_unsafe_fn`.** Every unsafe operation inside an `unsafe fn` must now sit in its own `unsafe` block. The lint that reports this is named in the error message, and it is a good habit to enable it in older editions too: the body of an `unsafe fn` was never meant to be an unsafe block.
+- **`static_mut_refs`.** Taking a reference to a `static mut` is an error in 2024, because two threads can do it at once. The fix is one of the tools from [chapter 31](#shared-state): an `AtomicU32`, a `Mutex` behind a `OnceLock`, or `&raw mut` when you really only need the address.
+
+:::tip The Edition Guide is the authority
+The [Rust Edition Guide](https://doc.rust-lang.org/edition-guide/) lists every change in every edition, with a migration example for each one, and it is short. When an old snippet will not compile and the edition is the suspect, read the page for that edition before changing the code.
 :::
 
 ## Dependencies and versions
@@ -451,6 +461,20 @@ impl Product {
 
 Every crate published on crates.io gets its documentation built and hosted automatically at **docs.rs**. For any crate you use, `https://docs.rs/<crate name>` is the place to look.
 
+:::tip Documentation that stays correct as the crate grows
+Three habits separate documentation that ages well from documentation that rots:
+
+- **Link by name, not by URL.** A name in square brackets inside backticks, like [`Product::new`] or [`Clone`], becomes a link that the compiler resolves. If you rename the item, the link breaks and `rustdoc` tells you. With `RUSTDOCFLAGS: -D warnings` in CI — the documentation step in the [next chapter](#quality-tools) — a broken link fails the build instead of quietly shipping a dead end.
+- **Ask the compiler to notice missing docs.** Put `#![warn(missing_docs)]` at the top of the crate root. Every public item without a doc comment then produces a warning, which is how a public API gets documented by habit rather than by good intentions. Keep it off for programs, where the public surface is your own business.
+- **Hide the plumbing.** `#[doc(hidden)]` keeps an item out of the rendered documentation, for generated or internal items that must be public but are not part of the promise. Use it sparingly: a hidden item can still be called, but it is not explained.
+
+`cargo doc --open` builds and opens the documentation for your crate *and* its dependencies. `cargo doc --no-deps` builds only your own, which is what CI should run.
+:::
+
+:::tip When rustdoc is not enough
+`rustdoc` answers "what does this function do?". It is poor at "how do I build something with this crate": chapters, a tutorial, a table of contents, a search box over prose. For that, the Rust world uses [mdBook](https://rust-lang.github.io/mdBook/), the tool that renders the official Rust Book and the Rustonomicon: a folder of Markdown files plus a small `book.toml` becomes a website with navigation and search. `mdbook build` writes it, `mdbook serve` previews it locally, and GitHub Pages can host it for free. API reference and book answer different questions, and a serious library ships both.
+:::
+
 ## Publishing a crate
 
 Sharing a library with the world takes a few minutes:
@@ -460,6 +484,29 @@ Sharing a library with the world takes a few minutes:
 3. Run `cargo publish --dry-run` to see what would be uploaded, and check the list of files with `cargo package --list`.
 4. Run `cargo publish`.
 
+The metadata is what a stranger sees on crates.io and on docs.rs, so it is worth ten minutes:
+
+```toml
+[package]
+name = "shop-core"
+version = "0.3.1"
+edition = "2024"
+description = "Data types and pricing rules for the tea shop example"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/you/shop-core"
+documentation = "https://docs.rs/shop-core"
+readme = "README.md"
+rust-version = "1.85"                      # the oldest compiler that works
+keywords = ["shop", "pricing"]             # up to five, used by search
+categories = ["data-structures"]           # from the crates.io list
+
+[package.metadata.docs.rs]
+all-features = true                        # document every feature, not the default set
+rustdoc-args = ["--cfg", "docsrs"]
+```
+
+`rust-version` is a promise, not decoration: `cargo` refuses to build the crate on an older compiler and says so clearly, instead of failing with a confusing error deep inside a macro. `cargo msrv` measures it for you by trying your crate on a range of toolchains.
+
 Things to know before you do:
 
 - **Publishing is permanent.** A version can never be changed or deleted, so that programs depending on it keep building. You can **yank** a broken version with `cargo yank --version 1.0.1`, which stops *new* projects from choosing it.
@@ -467,6 +514,18 @@ Things to know before you do:
 - **Follow SemVer strictly.** People's builds update to your new minor and patch versions automatically. The tool `cargo semver-checks` compares your code with the last published version and warns if you are about to break compatibility by accident.
 - The usual licence in the Rust world is the dual licence `MIT OR Apache-2.0`, the same as Rust itself.
 
+### Releasing without the ritual
+
+Publishing by hand becomes a ritual of small mistakes: forget the version bump, forget the changelog, publish in the wrong order. The tools that remove the ritual are all worth knowing by name:
+
+| Tool | What it takes over |
+|---|---|
+| [`release-plz`](https://release-plz.dev) | Reads the commit history, works out the next version, writes the `CHANGELOG.md` entry, opens a pull request, and publishes to crates.io when you merge it |
+| [`cargo-release`](https://github.com/crate-ci/cargo-release) | The manual but scriptable version: one command bumps the version, tags, pushes and publishes a workspace in the right order |
+| [`cargo-dist`](https://opensource.axo.dev/cargo-dist/) | For programs rather than libraries: builds binaries for every platform, writes installers, and uploads them to a GitHub release |
+| [`cargo msrv`](https://github.com/foresterre/cargo-msrv) | Finds the oldest Rust version your crate compiles with, so `rust-version` is measured rather than guessed |
+
+Whatever you use, keep a `CHANGELOG.md` in the format of [Keep a Changelog](https://keepachangelog.com) and version strictly by SemVer: *Added*, *Changed*, *Deprecated*, *Removed*, *Fixed*, *Security*, newest first. Your users read the changelog far more often than they read the code, and a release that says nothing is a release nobody upgrades to.
 ## rustup: managing the toolchain
 
 `rustup` installs and updates the compiler and its companions.
@@ -573,6 +632,20 @@ Cargo can be extended with extra commands, installed with `cargo install`:
 - It produces smaller programs
 - It formats the code
 = `check` runs all the analysis, including the borrow checker, without generating machine code. It is the fastest way to find out whether the code compiles.
+
+? What does `cargo fix --edition` do?
+- Rewrites the whole program to use the newest version of every crate
+- Changes the compiler version the package is built with
++ Applies the mechanical changes needed to move a package to the next edition, and leaves the rest of the code alone
+- Reformats the code in the new edition's style
+= An edition is a set of rules inside one crate, so moving to it is a code-level migration. `cargo fix --edition` performs the changes that can be done mechanically, and reports the few that need a human decision.
+
+? You paste a snippet from a 2018-era blog post into a 2024 project and get errors that make no sense. What should you check first?
+- Whether the crate has the `serde` feature enabled
+- Whether your version of Rust is new enough
++ Whether the snippet relies on a rule that changed between editions
+- Whether the author of the post made a mistake
+= Old snippets are usually correct *for their edition*. The differences are listed in the box above and in the Edition Guide, and `cargo fix --edition` automates most of them.
 :::
 
 :::exercise guided Read a manifest

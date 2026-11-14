@@ -753,7 +753,7 @@ pub fn router() -> Router<AppState> {
 
 ## Step 6: settings and `main`
 
-Settings come from environment variables, never from the source code. `main` wires everything together: logging, the store, the router, and the server.
+Settings come from environment variables, never from the source code. `main` wires everything together: logging, the store, the router, and the server. For the full precedence chain — flags over environment over file over defaults, with `figment`, `dotenvy` and `secrecy` — see [the configuration section](#cli) of the CLI chapter.
 
 ```rust proj=library file=src/config.rs
 use std::env;
@@ -1234,7 +1234,6 @@ ALTER TABLE books ADD COLUMN last_visited TEXT;
 
 ## What comes next
 
-You have reached the end of Part 10 and of this guide. You now know how to build command-line tools, web services, database-backed programs, graphical applications and embedded software in Rust. The next chapter points you at the resources that take you further: the books, the crates and the communities where Rust developers keep learning.
-:::
+You have reached the end of the last part of the guide, and the last of its eight projects. You now know how to build command-line tools, web services, database-backed programs, graphical applications and embedded software in Rust. The next chapter points you at the resources that take you further: the books, the crates and the communities where Rust developers keep learning.
 
 [chapter 53](#next)
