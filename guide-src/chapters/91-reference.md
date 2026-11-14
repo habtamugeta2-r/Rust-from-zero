@@ -1,0 +1,350 @@
+@id reference
+@part app
+@kind appendix
+@title Reference tables
+@short Reference tables
+@level all
+
+Tables to keep open while you write code: the words and signs of the language, the formatting codes, the traits you can derive, and a map of the standard library. Every example on this page was compiled and run.
+
+## Keywords
+
+A **keyword** is a word that belongs to the language. You cannot use it as a name.
+
+| Keyword | Meaning | Chapter |
+|---|---|---|
+| `as` | convert between simple types (`x as f64`); rename in a `use` | [29](#type-system), [17](#modules) |
+| `async`, `await` | write and wait for asynchronous code | [32](#async) |
+| `break`, `continue` | leave a loop; go to its next round | [6](#control-flow) |
+| `const` | a constant; also `const fn` and `const` generics | [3](#variables), [19](#generics) |
+| `crate` | the root of the current crate, in paths | [17](#modules) |
+| `dyn` | a trait object: `dyn Trait` | [20](#traits) |
+| `else` | the other branch of `if` and of `let … else` | [6](#control-flow), [13](#enums) |
+| `enum` | define an enum | [13](#enums) |
+| `extern` | functions of another language | [36](#ffi) |
+| `false`, `true` | the two values of `bool` | [4](#types) |
+| `fn` | define a function | [5](#functions) |
+| `for`, `in` | loop over an iterator | [6](#control-flow), [25](#iterators) |
+| `if` | a decision; also a guard in `match` | [6](#control-flow), [14](#patterns) |
+| `impl` | methods for a type, or a trait for a type; `impl Trait` | [12](#structs), [20](#traits) |
+| `let` | a new variable | [3](#variables) |
+| `loop`, `while` | repeat for ever; repeat while a condition holds | [6](#control-flow) |
+| `match` | compare a value with patterns | [6](#control-flow), [13](#enums), [14](#patterns) |
+| `mod` | define a module | [17](#modules) |
+| `move` | a closure takes ownership of what it uses | [24](#closures), [30](#threads) |
+| `mut` | allow change: `let mut`, `&mut` | [3](#variables), [10](#borrowing) |
+| `pub` | make an item visible outside its module | [17](#modules) |
+| `ref` | bind by reference in a pattern (older style) | [14](#patterns) |
+| `return` | leave a function with a value | [5](#functions) |
+| `self`, `Self` | the value a method is called on; its type | [12](#structs) |
+| `static` | a value that lives for the whole run | [31](#shared-state) |
+| `struct` | define a struct | [12](#structs) |
+| `super` | the parent module, in paths | [17](#modules) |
+| `trait` | define a trait | [20](#traits) |
+| `type` | a type alias; an associated type | [29](#type-system), [28](#advanced-traits) |
+| `unsafe` | code whose safety the compiler cannot check | [35](#unsafe) |
+| `use` | bring a path into scope | [17](#modules) |
+| `where` | bounds on type parameters, after the signature | [19](#generics) |
+
+A few more words have a meaning only in special places, and can be used as names elsewhere: `union`, `macro_rules`, `raw`, `safe`, and `'static` among the lifetimes.
+
+These words do nothing today, but are **reserved** for the future, so you cannot use them as names either: `abstract`, `become`, `box`, `do`, `final`, `gen`, `macro`, `override`, `priv`, `try`, `typeof`, `unsized`, `virtual`, `yield`.
+
+### Using a keyword as a name anyway
+
+Sometimes you need a name that is a keyword: a field called `type` in data from another program, or a function called `try` in an old crate. Put `r#` in front of it. This is called a **raw identifier**:
+
+```rust run
+struct Message {
+    r#type: String,
+    text: String,
+}
+
+fn r#match(text: &str, word: &str) -> bool {
+    text.contains(word)
+}
+
+fn main() {
+    let message = Message { r#type: String::from("greeting"), text: String::from("hello there") };
+    println!("{}: {}", message.r#type, r#match(&message.text, "hello"));
+}
+```
+```output
+greeting: true
+```
+
+## Operators and other signs
+
+| Sign | Meaning | Example |
+|---|---|---|
+| `+` `-` `*` `/` `%` | add, subtract, multiply, divide, remainder | `7 % 3` is `1` |
+| `==` `!=` `<` `>` `<=` `>=` | compare; the result is a `bool` | `a != b` |
+| `&&` `\|\|` `!` | and, or, not, for `bool` values. `&&` and `\|\|` skip the right side when the left side decides | `ready && !done` |
+| `&` `\|` `^` `!` `<<` `>>` | work on the single bits of an integer (see below) | `flags & 0b0100` |
+| `=` | assign | `x = 5` |
+| `+=` `-=` `*=` `/=` `%=` `&=` `\|=` `^=` `<<=` `>>=` | calculate and assign | `total += 1` |
+| `&x` `&mut x` | borrow | `&name` |
+| `*x` | the value behind a reference or pointer | `*count += 1` |
+| `?` | pass an error (or `None`) on to the caller | `file.read_to_string(&mut s)?` |
+| `.` | a field or a method | `user.name`, `text.len()` |
+| `::` | a path into a module or type | `String::from`, `std::fs` |
+| `::<T>` | the "turbofish": name a type parameter in a call | `"5".parse::<i32>()` |
+| `..` `..=` | a range without or with its end | `0..10`, `1..=6` |
+| `..` | "the rest": in patterns and in struct update | `Point { x, .. }`, `..Default::default()` |
+| `->` | the return type of a function | `fn f() -> i32` |
+| `=>` | "then", in a `match` arm | `Some(n) => n` |
+| `\|a, b\|` | the parameters of a closure | `\|x\| x + 1` |
+| `\|` in a pattern | "or" | `1 \| 2 => …` |
+| `@` | name a value while testing it with a pattern | `n @ 1..=9` |
+| `_` | "anything", in patterns; "work it out", in types | `_ => …`, `Vec<_>` |
+| `'a` | a lifetime; also a loop label | `&'a str`, `'outer: loop` |
+| `name!` | call a macro | `println!`, `vec!` |
+| `#[…]` `#![…]` | an attribute for the next item; for the surrounding item | `#[derive(Debug)]` |
+| `;` | end of a statement | |
+| `//` `///` `//!` `/* */` | comment; documentation for the next item; documentation for the surrounding item; block comment | |
+
+### Which operator goes first
+
+From the tightest binding to the loosest. Operators on the same line are worked out from left to right.
+
+| Level | Operators |
+|---|---|
+| 1 | method calls, fields: `a.b()`, `a.b` |
+| 2 | function calls and indexing: `f(x)`, `v[i]` |
+| 3 | `?` |
+| 4 | the one-sided operators: `-x`, `!x`, `*x`, `&x`, `&mut x` |
+| 5 | `as` |
+| 6 | `*` `/` `%` |
+| 7 | `+` `-` |
+| 8 | `<<` `>>` |
+| 9 | `&` |
+| 10 | `^` |
+| 11 | `\|` |
+| 12 | `==` `!=` `<` `>` `<=` `>=` (cannot be chained: `a < b < c` is an error) |
+| 13 | `&&` |
+| 14 | `\|\|` |
+| 15 | `..` `..=` |
+| 16 | `=` `+=` and the other assignments |
+| 17 | `return`, `break`, closures |
+
+Three results that surprise people. When in doubt, add parentheses: they cost nothing.
+
+```rust run
+fn main() {
+    // A method call binds tighter than the minus sign in front.
+    println!("{} {}", -2_i32.pow(2), (-2_i32).pow(2));
+
+    // `as` binds tighter than arithmetic.
+    let total = 7;
+    let count = 2;
+    println!("{} {}", total / count, total as f64 / count as f64);
+
+    // Shifts bind looser than `+`.
+    println!("{} {}", 1 << 2 + 1, (1 << 2) + 1);
+}
+```
+```output auto
+```
+
+### Working with single bits
+
+An integer is a row of bits ([chapter 4](#types)). Six operators work on the bits directly. They are used for sets of yes-or-no flags packed into one number, for file formats and network protocols, and for hardware.
+
+```rust run
+const READ: u8 = 0b001;
+const WRITE: u8 = 0b010;
+const EXECUTE: u8 = 0b100;
+
+fn main() {
+    let mut rights = READ | WRITE; // `|` switches bits on
+    println!("{rights:03b}");
+
+    println!("{}", rights & WRITE != 0); // `&` tests a bit
+    println!("{}", rights & EXECUTE != 0);
+
+    rights &= !WRITE; // `& !` switches a bit off
+    rights ^= EXECUTE; // `^` flips a bit
+    println!("{rights:03b}");
+
+    // Shifts move all bits to the left or to the right.
+    println!("{} {} {}", 1_u32 << 4, 0b1000_u32 >> 3, 0xAB_u32 >> 4);
+
+    // Useful methods on every integer type
+    println!("{} {} {}", 0b1011_u8.count_ones(), 16_u32.trailing_zeros(), 1_u8.leading_zeros());
+}
+```
+```output auto
+```
+
+For more than a few flags, the crate `bitflags` gives them a type of their own, so that flags of different kinds cannot be mixed up.
+
+## Ways to write a value
+
+| You write | You get |
+|---|---|
+| `1_000_000` | an integer; the underscores are only for the reader |
+| `0xff`, `0o77`, `0b1010` | an integer in base 16, base 8 and base 2 |
+| `42u8`, `7_i64`, `1usize` | an integer of the named type |
+| `2.5`, `1e3`, `2.5f32` | a float (`f64` unless you say `f32`) |
+| `'a'`, `'\n'`, `'\u{1F980}'` | a `char`: a letter, a line break, a character by its number |
+| `b'a'` | the byte of an ASCII character: a `u8` |
+| `"text"` | a `&str`. `\n`, `\t`, `\\`, `\"` and `\u{…}` work inside |
+| `r"C:\temp"`, `r#"say "hi""#` | a raw string: backslashes (and, with `#`, quotation marks) mean themselves |
+| `b"bytes"` | a byte string: `&[u8; 5]` |
+| `c"text"` | a C string, with a zero byte at the end: `&CStr` ([chapter 36](#ffi)) |
+| `(1, "a")`, `()` | a tuple; the empty tuple, called "unit" |
+| `[1, 2, 3]`, `[0; 8]` | an array; an array of eight zeros |
+
+## Formatting codes
+
+The codes work in `println!`, `format!`, `write!`, `panic!`, `assert!` and all other formatting macros. The general shape is `{name:fill align sign # 0 width .precision type}`, and every part can be left out.
+
+```rust run
+fn main() {
+    let name = "Ferris";
+    let n = 255;
+    let pi = 3.14159265;
+
+    println!("1  [{}] [{:?}]", name, name);
+    println!("2  [{:>10}] [{:<10}] [{:^10}]", name, name, name);
+    println!("3  [{:*^12}] [{:->8}]", name, n);
+    println!("4  [{:6}] [{:06}] [{:+}]", n, n, n);
+    println!("5  [{:.2}] [{:8.3}] [{:e}]", pi, pi, 1234.5);
+    println!("6  [{:x}] [{:X}] [{:o}] [{:b}]", n, n, n, n);
+    println!("7  [{:#x}] [{:#b}] [{:#010b}]", n, n, 5);
+    println!("8  [{0} {1} {0}] [{name} {n}] [{last}]", "a", "b", last = "z");
+
+    let width = 12;
+    let digits = 1;
+    println!("9  [{pi:width$}] [{pi:.digits$}] [{pi:>width$.digits$}]");
+
+    println!("10 [{{}}] [{:?}] [{:5}|{:<5}|]", (1, "a"), true, 'x');
+    println!("11 {:#?}", Some((1, "a")));
+}
+```
+```output auto
+```
+
+| Line | Code | Meaning |
+|---|---|---|
+| 1 | `{}` and `{:?}` | for people (`Display`), and for programmers (`Debug`) |
+| 2 | `{:>10}` `{:<10}` `{:^10}` | at least 10 characters wide: aligned right, left, centred. Text goes left unless you say otherwise, numbers go right |
+| 3 | `{:*^12}` `{:->8}` | the character in front of the alignment sign fills the empty room |
+| 4 | `{:6}` `{:06}` `{:+}` | a width for a number; filled with zeros; always with a sign |
+| 5 | `{:.2}` `{:8.3}` `{:e}` | digits after the point; width and digits; scientific notation |
+| 6 | `{:x}` `{:X}` `{:o}` `{:b}` | base 16 in small and capital letters, base 8, base 2 |
+| 7 | `{:#x}` `{:#b}` `{:#010b}` | with the prefix `0x` or `0b`; the width counts the prefix |
+| 8 | `{0}` `{name}` `{last}` | an argument by position; a variable by name; an argument named in the call |
+| 9 | `{pi:width$}` `{pi:.digits$}` | width and precision taken from variables |
+| 10 | `{{` `}}` | a real brace |
+| 11 | `{:#?}` | `Debug` spread over several lines |
+
+`{:p}` prints the address in a pointer or reference. To make your own type work with `{}`, implement `Display` ([chapter 20](#traits)). For `{:?}`, derive `Debug`.
+
+## Traits you can derive
+
+`#[derive(…)]` writes the implementation for you. It works when every field of the type already has the trait.
+
+| Trait | What you can do afterwards | Notes |
+|---|---|---|
+| `Debug` | print with `{:?}` and `dbg!` | derive it on almost every type |
+| `Clone` | `value.clone()` | an explicit copy that may be expensive |
+| `Copy` | the value is copied instead of moved | only for small types without heap data; needs `Clone` |
+| `PartialEq` | `==` and `!=` | compares field by field |
+| `Eq` | promise that equality has no exceptions | needs `PartialEq`; not possible with `f32` or `f64` fields |
+| `PartialOrd` | `<`, `>`, `<=`, `>=` | compares the fields in the order they are written; needs `PartialEq` |
+| `Ord` | `sort()`, `max()`, use as a key in a `BTreeMap` | needs `Eq` and `PartialOrd` |
+| `Hash` | use as a key in a `HashMap` or `HashSet` | needs `Eq`. Equal values must have equal hashes, which the derived versions guarantee |
+| `Default` | `Type::default()` and `..Default::default()` | numbers become 0, text empty, `bool` false, `Option` `None`. For an enum, mark one variant with `#[default]` |
+
+A common full set for a small value type is `#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Default)]`. Crates add more: `Serialize` and `Deserialize` from serde ([chapter 43](#serde)), `Error` from thiserror ([chapter 18](#errors)), `Parser` from clap ([chapter 44](#cli)).
+
+## `Option` and `Result`: which method?
+
+| You have | You want | Use |
+|---|---|---|
+| `Option<T>` | the value, or a fallback | `unwrap_or(x)`, `unwrap_or_else(\|\| …)`, `unwrap_or_default()` |
+| `Option<T>` | a `Result`, to use `?` | `ok_or(error)`, `ok_or_else(\|\| …)` |
+| `Option<T>` | to change the value inside | `map(\|v\| …)` |
+| `Option<T>` | to continue with something that may also be missing | `and_then(\|v\| …)` |
+| `Option<T>` | another option if this one is `None` | `or(other)`, `or_else(\|\| …)` |
+| `Option<T>` | to keep the value only if a test passes | `filter(\|v\| …)` |
+| `Option<T>` | a yes or no | `is_some()`, `is_none()`, `is_some_and(\|v\| …)` |
+| `&Option<T>` | to look inside without taking | `as_ref()`, `as_deref()` |
+| `&mut Option<T>` | to take the value and leave `None` | `take()` |
+| `&mut Option<T>` | the value, filled in first if it is missing | `get_or_insert_with(\|\| …)` |
+| `Result<T, E>` | to change the success value, or the error | `map(\|v\| …)`, `map_err(\|e\| …)` |
+| `Result<T, E>` | to continue with another step that can fail | `and_then(\|v\| …)` |
+| `Result<T, E>` | an `Option`, dropping the error | `ok()` |
+| `Result<T, E>` | the value, or a fallback | `unwrap_or(x)`, `unwrap_or_else(\|e\| …)`, `unwrap_or_default()` |
+| `Result<T, E>` | to stop with a message if this "cannot happen" | `expect("why it cannot fail")` |
+| `Option<Result<T, E>>` | `Result<Option<T>, E>` | `transpose()` |
+| many `Result<T, E>` | one `Result<Vec<T>, E>` | `collect()` ([chapter 25](#iterators)) |
+
+[Chapter 38](#idioms) shows these in use.
+
+## A map of the standard library
+
+You reach everything with `use std::…`. The most used items need no `use` at all: they are in the **prelude**, which is in scope in every file. It contains `Option` and `Result` with their variants, `String`, `Vec`, `Box`, the traits `Clone`, `Copy`, `Drop`, `Default`, `Iterator`, `From`, `Into`, `TryFrom`, `TryInto`, `ToString`, `PartialEq`, `Ord` and their relatives, and the function `drop`.
+
+| Module | What is in it | Chapter |
+|---|---|---|
+| `std::collections` | `HashMap`, `HashSet`, `BTreeMap`, `BTreeSet`, `VecDeque`, `BinaryHeap` | [15](#collections) |
+| `std::fmt` | `Display`, `Debug`, `Formatter`, `Write` for text | [20](#traits) |
+| `std::fs` | files and folders: `read_to_string`, `write`, `File`, `read_dir`, `create_dir_all` | [18](#errors), [23](#project-search) |
+| `std::io` | `stdin`, `stdout`, `Read`, `Write`, `BufRead`, `BufReader`, `BufWriter`, `Error` | [7](#project-guessing), [18](#errors), [51](#performance) |
+| `std::path` | `Path` and `PathBuf`: file paths that work on every system | [23](#project-search) |
+| `std::env` | command-line arguments (`args`) and environment variables (`var`) | [23](#project-search), [46](#web) |
+| `std::process` | `exit`, `ExitCode`, and `Command` to run other programs | [44](#cli) |
+| `std::time` | `Duration`, `Instant` (a stopwatch), `SystemTime` (the clock) | [30](#threads), [51](#performance) |
+| `std::thread` | `spawn`, `scope`, `sleep`, `available_parallelism` | [30](#threads) |
+| `std::sync` | `Arc`, `Mutex`, `RwLock`, `Condvar`, `OnceLock`, `LazyLock`; `mpsc` channels; `atomic` types | [30](#threads), [31](#shared-state) |
+| `std::rc`, `std::cell` | `Rc`, `Weak`; `Cell`, `RefCell`, `UnsafeCell` | [27](#smart-pointers), [35](#unsafe) |
+| `std::borrow` | `Cow`: borrowed or owned | [27](#smart-pointers) |
+| `std::mem` | `swap`, `replace`, `take`, `size_of`, `drop`, `forget` | [37](#memory-layout) |
+| `std::ptr` | tools for raw pointers | [35](#unsafe) |
+| `std::cmp` | `Ordering`, `min`, `max`, `Reverse` | [20](#traits), [24](#closures) |
+| `std::ops` | the traits behind the operators: `Add`, `Index`, `Deref`, `Drop`, `Fn`, ranges | [28](#advanced-traits) |
+| `std::iter` | `Iterator` and its helpers: `once`, `repeat`, `from_fn`, `successors` | [25](#iterators) |
+| `std::convert` | `From`, `Into`, `TryFrom`, `TryInto`, `AsRef` | [29](#type-system) |
+| `std::str`, `std::string`, `std::char` | text: `FromStr`, `from_utf8`, `String`, character tools | [11](#slices-strings) |
+| `std::num` | number errors (`ParseIntError`), `NonZero`, `Wrapping` | [18](#errors), [37](#memory-layout) |
+| `std::error` | the trait `Error` | [18](#errors) |
+| `std::any` | `Any`, `type_name` | [28](#advanced-traits) |
+| `std::marker` | `Send`, `Sync`, `Sized`, `Copy`, `PhantomData` | [28](#advanced-traits), [29](#type-system) |
+| `std::net` | `TcpListener`, `TcpStream`, `UdpSocket`, addresses | [32](#async) |
+| `std::ffi`, `std::os` | `CString`, `CStr`, `OsString`; things special to one operating system | [36](#ffi) |
+| `std::future`, `std::pin`, `std::task` | the parts under `async` | [32](#async) |
+| `std::hint` | `black_box`, `spin_loop` | [51](#performance) |
+| `std::panic` | `catch_unwind`, panic hooks | [36](#ffi) |
+
+Without an operating system, a program uses `core` (everything that needs neither memory allocation nor a system) and `alloc` (`Box`, `Vec`, `String`), which together make up most of `std` ([chapter 50](#games-embedded)).
+
+## Attributes you will see
+
+| Attribute | Meaning | Chapter |
+|---|---|---|
+| `#[derive(…)]` | generate trait implementations | [12](#structs) |
+| `#[allow(lint)]`, `#[warn(…)]`, `#[deny(…)]`, `#[expect(…)]` | silence a warning, switch it on, make it an error, or say "this warning must appear here" | [40](#quality-tools) |
+| `#[cfg(…)]`, `#[cfg_attr(…)]` | compile the item only under a condition | [39](#cargo) |
+| `#[test]`, `#[should_panic]`, `#[ignore]` | a test; a test that must panic; a test that runs only on request | [22](#testing) |
+| `#[must_use]` | warn when the result is thrown away | [34](#macros) |
+| `#[deprecated]` | warn users that the item will go away | [34](#macros) |
+| `#[non_exhaustive]` | more fields or variants may come: users must be ready for them | [38](#idioms) |
+| `#[inline]`, `#[cold]` | hints for the optimiser | [51](#performance) |
+| `#[repr(C)]`, `#[repr(u8)]`, `#[repr(transparent)]` | fix the layout of a type in memory | [37](#memory-layout) |
+| `#[track_caller]` | when this function panics, report the line of its caller | |
+| `#[macro_export]` | make a `macro_rules!` macro public | [34](#macros) |
+| `#[global_allocator]` | choose the allocator for the whole program | [51](#performance) |
+| `#![no_std]`, `#![no_main]` | a crate without the standard library; without the usual start | [50](#games-embedded) |
+| `#![forbid(unsafe_code)]` | refuse `unsafe` in the whole crate | [35](#unsafe) |
+
+## More tables in the chapters
+
+- The basic types, with sizes and ranges: [chapter 4](#types).
+- All patterns: [chapter 14](#patterns).
+- The most used iterator methods: [chapter 25](#iterators).
+- Which smart pointer for which job: [chapter 27](#smart-pointers).
+- Naming rules: [chapter 38](#idioms).
+- The Cargo commands: [chapter 39](#cargo).
+- The common compiler errors and their repairs: [the errors appendix](#errors-ref).

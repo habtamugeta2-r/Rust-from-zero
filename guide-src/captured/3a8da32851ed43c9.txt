@@ -1,0 +1,14 @@
+error[E0507]: cannot move out of index of `Vec<String>`
+ --> src/main.rs:3:17
+  |
+3 |     let first = names[0];
+  |                 ^^^^^^^^ move occurs because value has type `String`, which does not implement the `Copy` trait
+  |
+help: consider borrowing here
+  |
+3 |     let first = &names[0];
+  |                 +
+help: consider cloning the value if the performance cost is acceptable
+  |
+3 |     let first = names[0].clone();
+  |                         ++++++++

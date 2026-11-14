@@ -1,0 +1,11 @@
+error[E0597]: `second` does not live long enough
+  --> src/main.rs:10:34
+   |
+ 9 |         let second = String::from("short");
+   |             ------ binding `second` declared here
+10 |         result = longest(&first, &second);
+   |                                  ^^^^^^^ borrowed value does not live long enough
+11 |     }
+   |     - `second` dropped here while still borrowed
+12 |     println!("{result}");
+   |                ------ borrow later used here

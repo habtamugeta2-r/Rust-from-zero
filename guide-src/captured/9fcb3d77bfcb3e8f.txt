@@ -1,0 +1,17 @@
+error[E0373]: closure may outlive the current function, but it borrows `name`, which is owned by the current function
+ --> src/main.rs:5:32
+  |
+5 |     let handle = thread::spawn(|| println!("{name}"));
+  |                                ^^            ---- `name` is borrowed here
+  |                                |
+  |                                may outlive borrowed value `name`
+  |
+note: function requires argument type to outlive `'static`
+ --> src/main.rs:5:18
+  |
+5 |     let handle = thread::spawn(|| println!("{name}"));
+  |                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: to force the closure to take ownership of `name` (and any other referenced variables), use the `move` keyword
+  |
+5 |     let handle = thread::spawn(move || println!("{name}"));
+  |                                ++++

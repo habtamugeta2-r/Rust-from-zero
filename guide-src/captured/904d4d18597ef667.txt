@@ -1,0 +1,7 @@
+error[E0728]: `await` is only allowed inside `async` functions and blocks
+ --> src/main.rs:6:21
+  |
+5 | fn main() {
+  | --------- this is not `async`
+6 |     let n = fetch().await;
+  |                     ^^^^^ only allowed inside `async` functions and blocks

@@ -1,0 +1,17 @@
+error[E0277]: cannot add a float to an integer
+ --> src/main.rs:2:19
+  |
+2 |     let total = 5 + 2.5;
+  |                   ^ no implementation for `{integer} + {float}`
+  |
+  = help: the trait `Add<{float}>` is not implemented for `{integer}`
+  = help: the following other types implement trait `Add<Rhs>`:
+            `&f128` implements `Add<f128>`
+            `&f128` implements `Add`
+            `&f16` implements `Add<f16>`
+            `&f16` implements `Add`
+            `&f32` implements `Add<f32>`
+            `&f32` implements `Add`
+            `&f64` implements `Add<f64>`
+            `&f64` implements `Add`
+          and 56 others

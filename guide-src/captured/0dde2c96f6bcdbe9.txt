@@ -1,0 +1,10 @@
+error[E0502]: cannot borrow `text` as mutable because it is also borrowed as immutable
+ --> src/main.rs:4:18
+  |
+3 |     let reader = &text;
+  |                  ----- immutable borrow occurs here
+4 |     let writer = &mut text;
+  |                  ^^^^^^^^^ mutable borrow occurs here
+5 |     writer.push_str(" world");
+6 |     println!("{reader}");
+  |                ------ immutable borrow later used here

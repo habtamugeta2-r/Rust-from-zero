@@ -1,0 +1,18 @@
+error[E0308]: arguments to this function are incorrect
+  --> src/main.rs:16:5
+   |
+16 |     transfer(amount, alice, bob);
+   |     ^^^^^^^^ ------         --- expected `Cents`, found `AccountId`
+   |              |
+   |              expected `AccountId`, found `Cents`
+   |
+note: function defined here
+  --> src/main.rs:7:4
+   |
+ 7 | fn transfer(from: AccountId, to: AccountId, amount: Cents) {
+   |    ^^^^^^^^
+help: swap these arguments
+   |
+16 -     transfer(amount, alice, bob);
+16 +     transfer(bob, alice, amount);
+   |

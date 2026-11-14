@@ -1,0 +1,12 @@
+error[E0369]: cannot add `{integer}` to `Option<i32>`
+ --> src/main.rs:3:21
+  |
+3 |     let sum = maybe + 1;
+  |               ----- ^ - {integer}
+  |               |
+  |               Option<i32>
+  |
+note: `Option<i32>` does not implement `Add<{integer}>`
+ --> /rustc/0ef1bc386059596dada8fb65b50425aab2ea637a/library/core/src/option.rs:598:0
+  |
+  = note: `Option<i32>` is defined in another crate

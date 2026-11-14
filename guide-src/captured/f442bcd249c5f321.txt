@@ -1,0 +1,15 @@
+error[E0061]: this function takes 2 arguments but 1 argument was supplied
+ --> src/main.rs:6:20
+  |
+6 |     println!("{}", area(3));
+  |                    ^^^^--- argument #2 of type `u32` is missing
+  |
+note: function defined here
+ --> src/main.rs:1:4
+  |
+1 | fn area(width: u32, height: u32) -> u32 {
+  |    ^^^^             -----------
+help: provide the argument
+  |
+6 |     println!("{}", area(3, /* u32 */));
+  |                          +++++++++++

@@ -1,0 +1,4 @@
+the number 42
+the text "hi"
+something else
+alloc::vec::Vec<core::option::Option<u8>>

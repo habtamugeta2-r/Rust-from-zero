@@ -1,0 +1,21 @@
+error[E0382]: borrow of moved value: `s`
+ --> src/main.rs:4:16
+  |
+2 |     let s = String::from("hello");
+  |         - move occurs because `s` has type `String`, which does not implement the `Copy` trait
+3 |     print_text(s);
+  |                - value moved here
+4 |     println!("{s}");
+  |                ^ value borrowed here after move
+  |
+note: consider changing this parameter type in function `print_text` to borrow instead if owning the value isn't necessary
+ --> src/main.rs:7:21
+  |
+7 | fn print_text(text: String) {
+  |    ----------       ^^^^^^ this parameter takes ownership of the value
+  |    |
+  |    in this function
+help: consider cloning the value if the performance cost is acceptable
+  |
+3 |     print_text(s.clone());
+  |                 ++++++++

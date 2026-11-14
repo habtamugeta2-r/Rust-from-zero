@@ -1,0 +1,15 @@
+error[E0716]: temporary value dropped while borrowed
+ --> src/main.rs:2:22
+  |
+2 |     let word: &str = String::from("  padded  ").trim();
+  |                      ^^^^^^^^^^^^^^^^^^^^^^^^^^       - temporary value is freed at the end of this statement
+  |                      |
+  |                      creates a temporary value which is freed while still in use
+3 |     println!("{word}");
+  |                ---- borrow later used here
+  |
+help: consider using a `let` binding to create a longer lived value
+  |
+2 ~     let binding = String::from("  padded  ");
+3 ~     let word: &str = binding.trim();
+  |

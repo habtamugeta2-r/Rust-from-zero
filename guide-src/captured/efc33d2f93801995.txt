@@ -1,0 +1,17 @@
+error[E0502]: cannot borrow `numbers` as mutable because it is also borrowed as immutable
+ --> src/main.rs:5:13
+  |
+3 |       for n in &numbers {
+  |       -        --------
+  |       |        |
+  |       |        immutable borrow occurs here
+  |  _____|        immutable borrow later used here
+  | |
+4 | |         if *n < 0 {
+5 | |             numbers.push(-n);
+  | |             ^^^^^^^^^^^^^^^^ mutable borrow occurs here
+6 | |         }
+7 | |     }
+  | |_____- this for loop borrows `numbers` immutably, preventing mutation within its body
+  |
+  = help: consider using an index-based loop instead, or collecting modifications into a separate collection

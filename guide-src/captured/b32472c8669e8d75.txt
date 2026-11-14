@@ -1,0 +1,11 @@
+31
+RUST IS FAST, AND RUST IS SAFE.
+true
+true
+Some(5)
+Ferris is fast, and Ferris is safe.
+[Rust] [is] [fast,] [and] [Rust] [is] [safe.] 
+red green blue 
+ababab
+true
+false

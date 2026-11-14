@@ -1,0 +1,13 @@
+error[E0072]: recursive type `Folder` has infinite size
+ --> src/main.rs:1:1
+  |
+1 | struct Folder {
+  | ^^^^^^^^^^^^^
+2 |     name: String,
+3 |     parent: Option<Folder>,
+  |                    ------ recursive without indirection
+  |
+help: insert some indirection (e.g., a `Box`, `Rc`, or `&`) to break the cycle
+  |
+3 |     parent: Option<Box<Folder>>,
+  |                    ++++      +

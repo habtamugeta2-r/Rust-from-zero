@@ -1,0 +1,7 @@
+warning: unused variable: `colour`
+ --> src/main.rs:2:9
+  |
+2 |     let colour = "red";
+  |         ^^^^^^ help: if this is intentional, prefix it with an underscore: `_colour`
+  |
+  = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default

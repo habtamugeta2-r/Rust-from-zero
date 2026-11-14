@@ -1,0 +1,9 @@
+error[E0499]: cannot borrow `text` as mutable more than once at a time
+ --> src/main.rs:4:18
+  |
+3 |     let first = &mut text;
+  |                 --------- first mutable borrow occurs here
+4 |     let second = &mut text;
+  |                  ^^^^^^^^^ second mutable borrow occurs here
+5 |     first.push_str("!");
+  |     ----- first borrow later used here

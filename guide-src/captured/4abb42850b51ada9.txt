@@ -1,0 +1,11 @@
+error[E0499]: cannot borrow `scores` as mutable more than once at a time
+ --> src/main.rs:4:21
+  |
+3 |     let first = &mut scores[0];
+  |                      ------ first mutable borrow occurs here
+4 |     let last = &mut scores[2];
+  |                     ^^^^^^ second mutable borrow occurs here
+5 |     *first += *last;
+  |     --------------- first borrow later used here
+  |
+  = help: use `.split_at_mut(position)` to obtain two mutable non-overlapping sub-slices

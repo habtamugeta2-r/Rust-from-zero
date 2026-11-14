@@ -1,0 +1,10 @@
+error[E0599]: no method named `sum` found for struct `Vec<{integer}>` in the current scope
+ --> src/main.rs:3:30
+  |
+3 |     let total: i32 = numbers.sum();
+  |                              ^^^ `Vec<{integer}>` is not an iterator
+  |
+help: call `.into_iter()` first
+  |
+3 |     let total: i32 = numbers.into_iter().sum();
+  |                              ++++++++++++

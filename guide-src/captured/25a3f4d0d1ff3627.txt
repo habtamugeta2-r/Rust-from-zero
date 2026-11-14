@@ -1,0 +1,14 @@
+error[E0382]: borrow of moved value: `names`
+ --> src/main.rs:4:27
+  |
+2 |     let names = vec![String::from("Sara")];
+  |         ----- move occurs because `names` has type `Vec<String>`, which does not implement the `Copy` trait
+3 |     let moved = names;
+  |                 ----- value moved here
+4 |     println!("{:?} {:?}", names, moved);
+  |                           ^^^^^ value borrowed here after move
+  |
+help: consider cloning the value if the performance cost is acceptable
+  |
+3 |     let moved = names.clone();
+  |                      ++++++++

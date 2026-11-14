@@ -1,0 +1,11 @@
+error[E0597]: `x` does not live long enough
+ --> src/main.rs:5:13
+  |
+4 |         let x = 5;            // -+-- lifetime of `x`
+  |             - binding `x` declared here
+5 |         r = &x;               //  |       |
+  |             ^^ borrowed value does not live long enough
+6 |     }                         // -+       |
+  |     - `x` dropped here while still borrowed
+7 |     println!("{r}");          //          |
+  |                - borrow later used here

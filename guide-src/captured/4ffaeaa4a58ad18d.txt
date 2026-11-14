@@ -1,0 +1,12 @@
+error[E0597]: `short` does not live long enough
+  --> src/main.rs:9:30
+   |
+ 6 |     let mut kept: &'static str = "for ever";
+   |                   ------------ type annotation requires that `short` is borrowed for `'static`
+ 7 |     {
+ 8 |         let short = String::from("short");
+   |             ----- binding `short` declared here
+ 9 |         overwrite(&mut kept, &short);
+   |                              ^^^^^^ borrowed value does not live long enough
+10 |     }
+   |     - `short` dropped here while still borrowed

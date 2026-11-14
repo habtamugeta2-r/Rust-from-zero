@@ -1,0 +1,9 @@
+error[E0502]: cannot borrow `player` as mutable because it is also borrowed as immutable
+  --> src/main.rs:16:5
+   |
+15 |     let name = &player.name;
+   |                ------------ immutable borrow occurs here
+16 |     player.add_points(10);
+   |     ^^^^^^^^^^^^^^^^^^^^^ mutable borrow occurs here
+17 |     println!("{name} has {} points.", player.score);
+   |                ---- immutable borrow later used here

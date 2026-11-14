@@ -1,0 +1,9 @@
+error[E0502]: cannot borrow `count` as immutable because it is also borrowed as mutable
+ --> src/main.rs:4:16
+  |
+3 |     let writer = &mut count;
+  |                  ---------- mutable borrow occurs here
+4 |     println!("{count}");
+  |                ^^^^^ immutable borrow occurs here
+5 |     *writer += 1;
+  |     ------------ mutable borrow later used here

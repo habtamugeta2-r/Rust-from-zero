@@ -1,0 +1,11 @@
+error[E0502]: cannot borrow `count` as immutable because it is also borrowed as mutable
+ --> src/main.rs:4:16
+  |
+3 |     let mut increment = || count += 1;
+  |                         -- ----- first borrow occurs due to use of `count` in closure
+  |                         |
+  |                         mutable borrow occurs here
+4 |     println!("{count}");
+  |                ^^^^^ immutable borrow occurs here
+5 |     increment();
+  |     --------- mutable borrow later used here

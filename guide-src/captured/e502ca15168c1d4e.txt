@@ -1,0 +1,15 @@
+error[E0277]: the `?` operator can only be used in a function that returns `Result` or `Option` (or another type that implements `FromResidual`)
+ --> src/main.rs:4:50
+  |
+3 | fn main() {
+  | --------- this function should return `Result` or `Option` to accept `?`
+4 |     let text = fs::read_to_string("shopping.txt")?;
+  |                                                  ^ cannot use the `?` operator in a function that returns `()`
+  |
+help: consider adding return type
+  |
+3 ~ fn main() -> Result<(), Box<dyn std::error::Error>> {
+4 |     let text = fs::read_to_string("shopping.txt")?;
+5 |     println!("{text}");
+6 +     Ok(())
+  |

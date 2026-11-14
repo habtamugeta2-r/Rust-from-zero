@@ -1,0 +1,9 @@
+error[E0308]: mismatched types
+ --> src/main.rs:1:37
+  |
+1 | fn area(width: u32, height: u32) -> u32 {
+  |    ----                             ^^^ expected `u32`, found `()`
+  |    |
+  |    implicitly returns `()` as its body has no tail or `return` expression
+2 |     width * height;
+  |                   - help: remove this semicolon to return this value

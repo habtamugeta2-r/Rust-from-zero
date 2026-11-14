@@ -1,0 +1,11 @@
+error[E0597]: `value` does not live long enough
+ --> src/main.rs:5:21
+  |
+4 |         let value = String::from("short-lived");
+  |             ----- binding `value` declared here
+5 |         reference = &value;
+  |                     ^^^^^^ borrowed value does not live long enough
+6 |     }
+  |     - `value` dropped here while still borrowed
+7 |     println!("{reference}");
+  |                --------- borrow later used here

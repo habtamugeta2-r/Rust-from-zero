@@ -1,0 +1,11 @@
+error[E0425]: cannot find value `inside` in this scope
+ --> src/main.rs:5:16
+  |
+5 |     println!("{inside}");
+  |                ^^^^^^
+  |
+help: the binding `inside` is available in a different scope in the same function
+ --> src/main.rs:3:13
+  |
+3 |         let inside = 2;
+  |             ^^^^^^

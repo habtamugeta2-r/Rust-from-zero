@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rust from Zero — the complete hands-on guide</title>
+<meta name="description" content="A complete, interactive Rust programming guide for absolute beginners: plain-language explanations, exercises with solutions, quizzes and real projects.">
+<style>
+%%CSS%%
+</style>
+<noscript><style>.chapter[hidden]{display:block!important}.search,.progress,.top-actions,.ch-done{display:none!important}</style></noscript>
+</head>
+<body>
+<script>
+(function(){var r=document.documentElement,t=null;try{var d=JSON.parse(window.localStorage.getItem('rust-guide-v1')||'{}')||{};t=d.theme||null;if(d.fs)r.style.setProperty('--fs',d.fs+'px');}catch(e){}
+if(!t){try{t=window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}catch(e){t='light';}}r.setAttribute('data-theme',t);r.className='js';})();
+</script>
+%%SPRITE%%
+<a class="skip" href="#main">Skip to content</a>
+<div class="app">
+  <aside class="sidebar" id="sidebar" aria-label="Guide navigation">
+    <a class="brand" href="#home" data-nav="home">
+      <svg class="logo" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="11" fill="none" stroke="currentColor" stroke-width="5" stroke-dasharray="4.32 4.32"/><circle cx="16" cy="16" r="8.4" fill="none" stroke="currentColor" stroke-width="2.6"/><path d="M11.5 16.2l3.2 3.2 5.8-6.4" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span><b>Rust from Zero</b><small>The complete hands-on guide</small></span>
+    </a>
+    <label class="search">
+      <svg class="i" aria-hidden="true"><use href="#i-search"/></svg>
+      <input id="search" type="search" placeholder="Search the whole guide" aria-label="Search the whole guide" autocomplete="off" spellcheck="false">
+      <kbd>/</kbd>
+    </label>
+    <div class="progress" aria-label="Your progress">
+      <div class="progress-row"><span id="progress-text">Your progress</span><b id="progress-pct">0%</b></div>
+      <div class="progress-bar"><i id="progress-fill"></i></div>
+    </div>
+    <div id="results" class="results" hidden></div>
+    <nav class="toc" id="toc" aria-label="Table of contents">%%TOC%%</nav>
+    <div class="side-foot"><span id="save-note"></span><button type="button" id="reset" class="linkbtn">Reset my progress</button></div>
+  </aside>
+  <div class="scrim" id="scrim" hidden></div>
+  <div class="main-col">
+    <header class="topbar">
+      <button type="button" class="iconbtn" id="menu" aria-label="Open the table of contents" aria-controls="sidebar"><svg class="i" aria-hidden="true"><use href="#i-menu"/></svg></button>
+      <div class="crumb" id="crumb"></div>
+      <div class="top-actions">
+        <button type="button" class="iconbtn txt sm" id="fs-down" aria-label="Smaller text" title="Smaller text">A</button>
+        <button type="button" class="iconbtn txt" id="fs-up" aria-label="Larger text" title="Larger text">A</button>
+        <button type="button" class="iconbtn" id="theme" aria-label="Switch between light and dark theme" title="Light / dark theme"><svg class="i sun" aria-hidden="true"><use href="#i-sun"/></svg><svg class="i moon" aria-hidden="true"><use href="#i-moon"/></svg></button>
+      </div>
+      <i class="readbar" id="readbar"></i>
+    </header>
+    <div class="page wide" id="page">
+      <main id="main">
+%%HOME%%
+%%CHAPTERS%%
+      </main>
+      <nav class="rail" id="rail" aria-label="In this chapter"></nav>
+    </div>
+  </div>
+</div>
+<div class="tip-pop" id="tip" role="tooltip" hidden></div>
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+<script type="application/json" id="guide-data">%%DATA%%</script>
+<script>
+%%JS%%
+</script>
+</body>
+</html>

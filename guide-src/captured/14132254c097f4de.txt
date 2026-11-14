@@ -1,0 +1,9 @@
+error[E0502]: cannot borrow `numbers` as mutable because it is also borrowed as immutable
+ --> src/main.rs:4:5
+  |
+3 |     let first = &numbers[0];
+  |                  ------- immutable borrow occurs here
+4 |     numbers.push(4);
+  |     ^^^^^^^^^^^^^^^ mutable borrow occurs here
+5 |     println!("{first}");
+  |                ----- immutable borrow later used here

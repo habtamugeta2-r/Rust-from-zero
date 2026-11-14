@@ -1,0 +1,7 @@
+error[E0369]: cannot multiply `impl Future<Output = u32>` by `{integer}`
+ --> src/main.rs:7:7
+  |
+7 |     n * 2
+  |     - ^ - {integer}
+  |     |
+  |     impl Future<Output = u32>

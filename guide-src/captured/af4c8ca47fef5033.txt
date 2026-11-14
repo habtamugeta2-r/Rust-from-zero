@@ -1,0 +1,5 @@
+error[E0616]: field `balance` of struct `Account` is private
+  --> src/main.rs:15:13
+   |
+15 |     account.balance = 1_000_000;
+   |             ^^^^^^^ private field

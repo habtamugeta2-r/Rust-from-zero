@@ -1,0 +1,11 @@
+error[E0603]: function `prepare_dough` is private
+  --> src/main.rs:12:29
+   |
+12 |     println!("{}", kitchen::prepare_dough());
+   |                             ^^^^^^^^^^^^^ private function
+   |
+note: the function `prepare_dough` is defined here
+  --> src/main.rs:6:5
+   |
+ 6 |     fn prepare_dough() -> String {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^

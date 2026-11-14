@@ -1,0 +1,9 @@
+error[E0502]: cannot borrow `sentence` as mutable because it is also borrowed as immutable
+  --> src/main.rs:13:5
+   |
+12 |     let word = first_word(&sentence);
+   |                           --------- immutable borrow occurs here
+13 |     sentence.clear();
+   |     ^^^^^^^^^^^^^^^^ mutable borrow occurs here
+14 |     println!("{word}");
+   |                ---- immutable borrow later used here

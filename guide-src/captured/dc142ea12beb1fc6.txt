@@ -1,0 +1,13 @@
+error[E0384]: cannot assign twice to immutable variable `score`
+ --> src/main.rs:4:5
+  |
+2 |     let score = 10;
+  |         ----- first assignment to `score`
+3 |     println!("Score: {score}");
+4 |     score = 20;
+  |     ^^^^^^^^^^ cannot assign twice to immutable variable
+  |
+help: consider making this binding mutable
+  |
+2 |     let mut score = 10;
+  |         +++

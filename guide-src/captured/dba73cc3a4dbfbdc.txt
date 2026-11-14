@@ -1,0 +1,14 @@
+error[E0284]: type annotations needed
+ --> src/main.rs:2:48
+  |
+2 |     let numbers = "1 2 3".split(' ').map(|s| s.parse().unwrap()).collect();
+  |                                                ^^^^^ cannot infer type of the type parameter `F` declared on the method `parse`
+  |
+  = note: cannot satisfy `<_ as FromStr>::Err == _`
+  = note: the type must also implement `FromStr`
+note: required by a bound in `core::str::<impl str>::parse`
+ --> /rustc/0ef1bc386059596dada8fb65b50425aab2ea637a/library/core/src/str/mod.rs:2776:4
+help: consider specifying a concrete type for the type parameter `F`
+  |
+2 |     let numbers = "1 2 3".split(' ').map(|s| s.parse::</* Type */>().unwrap()).collect();
+  |                                                     ++++++++++++++

@@ -1,0 +1,12 @@
+error[E0381]: used binding `total` isn't initialized
+ --> src/main.rs:3:16
+  |
+2 |     let total: i32;
+  |         ----- binding declared here but left uninitialized
+3 |     println!("{total}");
+  |                ^^^^^ `total` used here but it isn't initialized
+  |
+help: consider assigning a value
+  |
+2 |     let total: i32 = 42;
+  |                    ++++

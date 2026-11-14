@@ -1,0 +1,6 @@
+step    0: mark =  0.00 * hours +  0.00   loss  5383.50
+step    1: mark = 14.08 * hours +  2.90   loss   481.86
+step   10: mark = 12.79 * hours +  6.09   loss   405.75
+step  100: mark =  8.74 * hours + 28.88   loss    96.57
+step 1000: mark =  4.91 * hours + 50.41   loss     0.95
+prediction for 10 hours: 99.5

@@ -1,0 +1,5 @@
+error[E0616]: field `balance` of struct `Account` is private
+  --> src/main.rs:13:28
+   |
+13 |     println!("{}", account.balance);
+   |                            ^^^^^^^ private field

@@ -1,0 +1,11 @@
+error[E0597]: `word` does not live long enough
+ --> src/main.rs:5:19
+  |
+4 |         let word = String::from("temporary");
+  |             ---- binding `word` declared here
+5 |         longest = &word;
+  |                   ^^^^^ borrowed value does not live long enough
+6 |     }
+  |     - `word` dropped here while still borrowed
+7 |     println!("{longest}");
+  |                ------- borrow later used here

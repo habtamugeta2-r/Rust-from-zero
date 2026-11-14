@@ -1,0 +1,5 @@
+error[E0515]: cannot return reference to local variable `text`
+ --> src/main.rs:3:5
+  |
+3 |     &text
+  |     ^^^^^ returns a reference to data owned by the current function

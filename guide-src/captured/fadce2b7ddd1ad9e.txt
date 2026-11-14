@@ -1,0 +1,10 @@
+error[E0382]: borrow of partially moved value: `player`
+  --> src/main.rs:12:22
+   |
+10 |     let name = player.name;                // the String moves out of the struct
+   |                ----------- value partially moved here
+11 |     println!("{name}: {}", player.score);  // the other field is still there
+12 |     println!("{:?}", player);              // the whole struct is not
+   |                      ^^^^^^ value borrowed here after partial move
+   |
+   = note: partial move occurs because `player.name` has type `String`, which does not implement the `Copy` trait

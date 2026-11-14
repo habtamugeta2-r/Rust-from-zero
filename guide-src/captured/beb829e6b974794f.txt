@@ -1,0 +1,21 @@
+error[E0277]: `Rc<i32>` cannot be sent between threads safely
+ --> src/main.rs:7:32
+  |
+7 |       let handle = thread::spawn(move || {
+  |                    ------------- ^------
+  |                    |             |
+  |  __________________|_____________within this `{closure@src/main.rs:7:32: 7:39}`
+  | |                  |
+  | |                  required by a bound introduced by this call
+8 | |         println!("{shared}");
+9 | |     });
+  | |_____^ `Rc<i32>` cannot be sent between threads safely
+  |
+  = help: within `{closure@src/main.rs:7:32: 7:39}`, the trait `Send` is not implemented for `Rc<i32>`
+note: required because `shared` is used within this closure
+ --> src/main.rs:8:20
+  |
+8 |         println!("{shared}");
+  |                    ^^^^^^
+note: required by a bound in `spawn`
+ --> /rustc/0ef1bc386059596dada8fb65b50425aab2ea637a/library/std/src/thread/functions.rs:125:0

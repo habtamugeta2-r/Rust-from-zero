@@ -1,0 +1,8 @@
+error[E0599]: no method named `publish` found for struct `Draft` in the current scope
+  --> src/main.rs:12:25
+   |
+ 1 | struct Draft { text: String }
+   | ------------ method `publish` not found for this struct
+...
+12 |     let article = draft.publish();
+   |                         ^^^^^^^ method not found in `Draft`

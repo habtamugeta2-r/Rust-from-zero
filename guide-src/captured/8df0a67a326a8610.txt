@@ -1,0 +1,10 @@
+error[E0596]: cannot borrow `*t` as mutable, as it is behind a `&` reference
+ --> src/main.rs:7:5
+  |
+7 |     t.push_str("!");
+  |     ^ `t` is a `&` reference, so it cannot be borrowed as mutable
+  |
+help: consider changing this to be a mutable reference
+  |
+6 | fn shout(t: &mut String) {
+  |              +++

@@ -1,0 +1,14 @@
+error[E0507]: cannot move out of `borrowed.leader` which is behind a shared reference
+ --> src/main.rs:8:18
+  |
+8 |     let leader = borrowed.leader;
+  |                  ^^^^^^^^^^^^^^^ move occurs because `borrowed.leader` has type `String`, which does not implement the `Copy` trait
+  |
+help: consider borrowing here
+  |
+8 |     let leader = &borrowed.leader;
+  |                  +
+help: consider cloning the value if the performance cost is acceptable
+  |
+8 |     let leader = borrowed.leader.clone();
+  |                                 ++++++++

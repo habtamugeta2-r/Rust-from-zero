@@ -1,0 +1,12 @@
+error[E0384]: cannot assign twice to immutable variable `count`
+ --> src/main.rs:3:5
+  |
+2 |     let count = 0;
+  |         ----- first assignment to `count`
+3 |     count += 1;
+  |     ^^^^^^^^^^ cannot assign twice to immutable variable
+  |
+help: consider making this binding mutable
+  |
+2 |     let mut count = 0;
+  |         +++

@@ -1,0 +1,18 @@
+error[E0369]: binary operation `==` cannot be applied to type `Money`
+ --> src/main.rs:8:22
+  |
+8 |     println!("{}", a == b);
+  |                    - ^^ - Money
+  |                    |
+  |                    Money
+  |
+note: an implementation of `PartialEq` might be missing for `Money`
+ --> src/main.rs:1:1
+  |
+1 | struct Money {
+  | ^^^^^^^^^^^^ must implement `PartialEq`
+help: consider annotating `Money` with `#[derive(PartialEq)]`
+  |
+1 + #[derive(PartialEq)]
+2 | struct Money {
+  |
