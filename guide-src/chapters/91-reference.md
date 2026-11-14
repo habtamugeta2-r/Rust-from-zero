@@ -339,6 +339,36 @@ Without an operating system, a program uses `core` (everything that needs neithe
 | `#![no_std]`, `#![no_main]` | a crate without the standard library; without the usual start | [50](#games-embedded) |
 | `#![forbid(unsafe_code)]` | refuse `unsafe` in the whole crate | [35](#unsafe) |
 
+## HTTP status codes
+
+HTTP status codes are part of every web service, and the numbers matter to clients. The ones a Rust web service sends, in practice ([chapter 46](#web)):
+
+| Code | Name | Meaning | When a server sends it |
+|---|---|---|---|
+| 200 | OK | Success with a body | A `GET` that found something |
+| 201 | Created | Success, something new exists | After a `POST` that stored a row; add a `Location` header |
+| 204 | No Content | Success, deliberately no body | A `DELETE`, or a `PUT` whose result the client does not need |
+| 301 | Moved Permanently | The resource has a new address for ever | Redirecting a renamed route in a browser |
+| 304 | Not Modified | The client's cached copy is still good | `If-None-Match` matching your `ETag` |
+| 400 | Bad Request | Malformed: the body is not even parseable | Broken JSON, a missing required field |
+| 401 | Unauthorized | *I do not know who you are* | No session, expired token, bad API key |
+| 403 | Forbidden | *I know who you are, and you may not* | A reader calling an admin route |
+| 404 | Not Found | No such resource — or none you may know about | A missing id; also used to hide existence |
+| 405 | Method Not Allowed | The path exists, the method does not | `DELETE` on a read-only route |
+| 409 | Conflict | The request clashes with the current state | A duplicate unique key, an edit of a stale version |
+| 413 | Payload Too Large | The body exceeds the limit | An upload beyond the configured maximum |
+| 415 | Unsupported Media Type | The body's format is not accepted | XML sent to a JSON endpoint |
+| 422 | Unprocessable Content | Well-formed, but fails validation | A negative age, a handle with a forbidden character. Older material calls it Unprocessable Entity; the code is the same |
+| 429 | Too Many Requests | Rate limited | Include `Retry-After` |
+| 500 | Internal Server Error | The server's fault, no detail to the client | Any unexpected error; log it, do not leak it |
+| 502 | Bad Gateway | An upstream answered badly | A proxy could not get a valid answer |
+| 503 | Service Unavailable | Temporarily unable to serve | Starting up, shutting down, `/ready` failing |
+| 504 | Gateway Timeout | An upstream took too long | A proxy's timeout expired |
+
+The two that are most often confused are **401** and **403**: authentication versus authorisation. The one that is most often wrong is **200 with an error inside the body** — a client, a proxy and a monitoring system all read the status code, and none of them reads your JSON.
+
+The full list, with the official definitions, is in [RFC 9110](https://www.rfc-editor.org/rfc/rfc9110).
+
 ## More tables in the chapters
 
 - The basic types, with sizes and ranges: [chapter 4](#types).

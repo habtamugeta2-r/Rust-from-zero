@@ -260,6 +260,10 @@ Hello, Node! This sentence was put together by Rust.
 
 The default, `--target bundler`, produces a package for the build tools of large JavaScript projects, such as Vite or webpack.
 
+:::tip Wasm outside the browser
+The same module runs on a server, and that is how many teams sell "plug-ins with a safety rail". [`wasmtime`](https://docs.rs/wasmtime) embeds a Wasm runtime in a Rust program: you load a module, give it a narrow set of allowed functions, and it can compute but cannot read your files or open a socket unless you hand it the capability. [`extism`](https://docs.rs/extism) wraps that idea as a plug-in framework with host functions and a memory model for passing data both ways. The pattern is the one this chapter opened with — the calculator in the locked room — applied to user-supplied code: untrusted code runs at near-native speed, inside limits you set.
+:::
+
 ### When a panic happens
 
 A panic inside the module arrives in JavaScript as an error that says very little:

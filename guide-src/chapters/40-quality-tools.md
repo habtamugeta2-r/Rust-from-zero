@@ -8,6 +8,10 @@
 
 A compiler that catches many mistakes is the first layer of quality. Rust's standard tools add more layers, and all of them come with the normal installation. Professional Rust projects run them on every change. Learning them early also makes you a better Rust programmer, because they explain what they find.
 
+:::analogy Spell check, grammar check, then a human editor
+A word processor fixes spelling as you type, suggests grammar after that, and a person still reads the result before it is published. Rust gives you those three layers: `rustfmt` for spelling (layout), Clippy for grammar (suspicious and unidiomatic code), and tests for meaning (does it do the job). Each layer sees a class of mistake the others cannot.
+:::
+
 ## rustfmt: one style for everyone
 
 `cargo fmt` rewrites your source files in the official Rust style: indentation, spaces, line breaks, the order of imports. Take this cramped code:
@@ -339,7 +343,18 @@ jobs:
           RUSTDOCFLAGS: -D warnings
 ```
 
-The four steps are the standard quartet: **format, lint, test, document**. The cache step keeps compiled dependencies between runs, which saves minutes. Larger projects add a matrix that runs the tests on Linux, Windows and macOS, a job on the oldest supported Rust version, and `cargo audit` on a schedule.
+The four steps are the standard quartet: **format, lint, test, document**. The `RUSTDOCFLAGS: -D warnings` line turns every documentation warning — a broken intra-doc link, a code example in a doc comment that no longer compiles — into a failed build, which is how documentation stays true.
+
+One more line earns its place in any project that reads a database:
+
+```yaml
+      - name: Test
+        run: cargo test --all-features
+        env:
+          SQLX_OFFLINE: "true"
+```
+
+`SQLX_OFFLINE=true` tells SQLx to check its queries against the saved description in the `.sqlx/` folder instead of connecting to a live database ([chapter 47](#databases)). The cache step keeps compiled dependencies between runs, which saves minutes. Larger projects add a matrix that runs the tests on Linux, Windows and macOS, a job on the oldest supported Rust version, and `cargo audit` on a schedule.
 
 Run the same commands yourself before you push. Many people put them in a script, or use a tool such as `just`, a simple command runner:
 

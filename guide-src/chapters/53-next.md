@@ -6,10 +6,14 @@
 @time 25
 @learn Choose what to study next, by goal and by level | Find the best book or course for each topic | Practise with small tasks and with real projects | Stay up to date and take part in the Rust community
 
-You have worked through the whole language, the tools around it, and seven projects. This chapter is a map of what lies beyond: the books and courses that go deeper than this guide, places to practise, and ways to stay in touch with a language that gets a new version every six weeks.
+You have worked through the whole language, the tools around it, and eight projects. This chapter is a map of what lies beyond: the books and courses that go deeper than this guide, places to practise, and ways to stay in touch with a language that gets a new version every six weeks.
 
 :::analogy After the driving test
 A driving licence does not make an experienced driver. It means that you can now learn safely on your own, on real roads. You are at that point with Rust: you can read the documentation of any crate, understand what the compiler tells you, and build things. The experience comes from kilometres driven.
+:::
+
+:::compare Where other books stop
+A book about Python or JavaScript can stop at the language, because the same web framework and the same standard library have served for a decade. Rust is different in two ways. The language changes slowly, but the *ecosystem* around it changes every month: a crate that everybody uses today may be replaced by a better one in two years. And the kind of software people write in Rust is unusually varied — a command-line tool, a web service, an embedded controller and a game engine share the language and almost nothing else. That is why this last chapter is a map rather than a next lesson.
 :::
 
 ## How to keep learning
@@ -55,10 +59,35 @@ This guide owes ideas to all of the following. None of them is a replacement for
 | Recipes for everyday tasks | [Rust Cookbook](https://rust-lang-nursery.github.io/rust-cookbook/) | [42](#crates) |
 | Language design in depth | *Rust for Rustaceans* by Jon Gjengset, and his long video series "Crust of Rust" | [28](#advanced-traits), [29](#type-system) |
 | A second complete book, more detailed | *Programming Rust* by Blandy, Orendorff and Tindall | all |
+| Logs, metrics and traces in production | [OpenTelemetry for Rust](https://opentelemetry.io/docs/languages/rust/), plus the docs of [`tracing`](https://docs.rs/tracing) and [`metrics`](https://docs.rs/metrics) | [42](#crates), [45](#async-ecosystem) |
+| Passwords, sessions, tokens and permissions | the [OWASP Authentication Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html) and OWASP's [Authorization](https://cheatsheetseries.owasp.org/cheatsheets/Authorization_Cheat_Sheet.html) sheet | [46](#web), [48](#project-api) |
+| Typed calls between services (gRPC) | [`tonic`](https://docs.rs/tonic) and the [Protocol Buffers language guide](https://protobuf.dev/programming-guides/proto3/) | [45](#async-ecosystem) |
+| GraphQL | [The `async-graphql` book](https://async-graphql.github.io/async-graphql/en/index.html) | [46](#web) |
+| Services that talk by message | [NATS](https://docs.nats.io) or [Kafka](https://kafka.apache.org/documentation/) for the broker, and *Designing Data-Intensive Applications* by Martin Kleppmann for the ideas | [45](#async-ecosystem) |
+| Many services instead of one | *Designing Data-Intensive Applications*, and the [Raft paper](https://raft.github.io) for how replicas agree | [33](#project-chat), [45](#async-ecosystem) |
+| Dates, times and time zones | the [`jiff` docs](https://docs.rs/jiff), and RFC 3339 for the format on the wire | [42](#crates) |
+| Server-side WebAssembly and plug-ins | [`wasmtime`](https://docs.rs/wasmtime) and [`extism`](https://docs.rs/extism) | [49](#apps) |
+| Books and long-form docs for your own crate | [mdBook](https://rust-lang.github.io/mdBook/) for books, docs.rs for API reference | [39](#cargo) |
+| Releasing, versioning and changelogs | [release-plz](https://release-plz.dev) for automation, [Keep a Changelog](https://keepachangelog.com) for the habit | [39](#cargo), [40](#quality-tools) |
 
 :::tip One at a time
 Do not open ten of these at once. Choose the one topic that your current project needs, read that, and return to the project.
 :::
+
+## What this guide leaves out
+
+Every ecosystem has corners that a guide starting from zero cannot teach honestly. Rather than mention them once and move on, here they are with a reason and a direction. This is the written coverage policy of the guide: a topic is either **taught** with a compiled example, **named with advice** so that you know what to look up, or **declared out of scope** here.
+
+| Area | Why it is out of scope | Where to go |
+|---|---|---|
+| Blockchain and Web3 (`solana`, `anchor`) | Domain-specific, fast-moving, and needs a blockchain mental model before Rust helps | the [Solana developer docs](https://solana.com/developers) |
+| Operating systems and kernels (`blog_os`, Rust for Linux) | Needs low-level hardware knowledge that comes before this guide, not after it | [Writing an OS in Rust](https://os.phil-opp.com) |
+| Robotics (ROS 2 bindings) | The hard part is robotics, not Rust | [`r2r`](https://docs.rs/r2r) and the ROS 2 tutorials |
+| High-frequency trading and market data | Latency engineering at that level is its own discipline, and much of it is closed-source | measure first: [chapter 51](#performance) |
+| Cloud-provider SDKs (`aws-sdk-*`, `azure_*`, `google-cloud-*`) | Each vendor ships its own generated SDK and its own documentation; the pattern is the same for all of them | the vendor's Rust SDK docs, and [`object_store`](https://docs.rs/object_store) for a vendor-neutral API |
+| GraphQL and full-screen terminal UIs (`async-graphql`, `ratatui`) | Real subjects with their own books. This guide names them, says when they are the right choice, and stops there rather than half-teaching them | the crate books linked in the table above and in [chapter 44](#cli) |
+
+Everything else you meet in [chapter 42](#crates) is either taught in a chapter or described with advice about when to choose it. If you find a crate that is only a name in a table, that is a gap worth reporting.
 
 ## Practice
 
@@ -114,11 +143,102 @@ This guide was tested with Rust 1.100. Rust keeps old code working, so the examp
 
 Open-source projects need more than code. Good first contributions are a fix in the documentation of a crate after it confused you, a missing example, a test for a reported bug, or a clear bug report with a small program that shows the problem. Many projects mark suitable tasks with a label such as "good first issue". And when you have written a tool that others could use, publish it ([chapter 39](#cargo)).
 
+:::exercise guided Plan the next thirty days
+Pick the project you wrote down in [chapter 1](#what-is-rust), or a new one. Write three steps, each small enough to finish in one evening, and put a date next to each. The first step should be something you already know how to do — creating the project and printing one line is allowed.
+::hint
+If a step takes longer than an evening, it is not a step yet. "Add a database" is a month. "Make the program read one line from a file" is an evening.
+::solution
+There is no single right plan, but a workable shape looks like this:
+
+1. **By Tuesday:** `cargo new mytool`, print one hard-coded line, commit it.
+2. **By Thursday:** read a file given on the command line, print its first ten lines.
+3. **By Sunday:** count the words in that file and print the count.
+
+Notice the direction: each step is *runnable* and each one changes one thing. A plan whose steps you cannot run is a wish list. When a step turns out to be harder than expected, split it — that is not failure, it is the normal way plans are made.
+:::
+
+:::exercise practice Write a question worth answering
+Think of the last problem you could not solve. Write the forum post you would send: what you wanted, the smallest program that shows the problem, the full compiler message, and what you expected instead. Do not send it anywhere.
+::hint
+Four ingredients: what you tried, what happened, what you expected, and the smallest complete program that shows it. The smallest program is the part people skip, and it is the part that gets answers.
+::solution
+A post that gets answered looks like this:
+
+> **Title:** `Iterator::sum` gives 0 on a `Vec<f64>` I filled in a loop
+>
+> I am reading numbers from a file and summing them. The count is right but the total is 0.
+>
+> ```rust
+> fn main() {
+>     let total: f64 = (0..10).map(|n| n as f64).sum();
+>     println!("{total}");
+> }
+> ```
+>
+> I expected 45. I get 0. The real code adds inside a loop first and sums afterwards, which is where it differs from this sketch.
+
+There is a good chance that writing it down solves it before you post: the act of shrinking the program is the debugging technique. Judging by the sketch, the loop that fills the vector probably produces integers and the sum is taken over an empty or shadowed binding — and you would have found that while trimming. If not, the post is now easy to answer.
+:::
+
+:::exercise challenge Return something to a crate that confused you
+Find a sentence, an example or a missing type signature in the documentation of a crate you use that cost you time. Open an issue or a pull request on that crate's repository with a better wording.
+::hint
+Small documentation pull requests are merged quickly, and maintainers are grateful for them. Mention which version you used and paste the confusing sentence verbatim, so the maintainer does not have to search for it.
+::solution
+The recipe:
+
+1. Find the documentation source. Most crates keep it in the repository as doc comments above the code, or as a `docs/` folder, not on docs.rs.
+2. Edit the comment, keeping the meaning, and add the example you wish you had found.
+3. Run the crate's tests locally if you can: `cargo test` also runs the examples in doc comments, so a wrong example fails there.
+4. Open a pull request that says what confused you and what you changed. One sentence is enough.
+5. If the repository has a `CONTRIBUTING.md`, read it first; it usually says how to sign commits and what to run.
+
+Do this once and you are a contributor to the Rust ecosystem, which is a different relationship with the language from being a reader of it.
+:::
+
+:::quiz Check your understanding
+? How often does Rust publish a new stable release?
+- Once a year
++ Every six weeks
+- Every three years
+- Whenever the version number reaches a round number
+= Rust ships a stable release every six weeks. **Editions** — batches of opt-in language changes — arrive roughly every three years, so "a new version" and "a new edition" are different events.
+
+? Your program compiles today. A new stable release arrives. What happens to it?
+- It stops compiling until you move to the new edition
++ It keeps compiling: stable releases are backwards compatible, and editions are opt-in
+- It compiles only after `cargo update`
+- Nothing at all, unless you also upgrade your crates
+= Backwards compatibility is the promise: code that compiles on one stable release keeps compiling on later ones. Moving to a new edition is a separate, opt-in step in `Cargo.toml`, helped by `cargo fix --edition`.
+
+? Two crates do the same job. Which signal tells you the most?
+- The longer README
+- Which one a search engine ranks first
++ When it was last released, whether issues get answered, and whether the docs contain worked examples
+- The shorter name
+= Popularity is a proxy, not evidence. A recent release, a maintainer who answers issues, and documentation with real examples tell you what the next year of your project will feel like.
+
+? Which is the best first contribution to the ecosystem?
+- Rewriting a crate's core algorithm
++ Fixing a confusing sentence in documentation that confused you an hour ago
+- Opening an issue that says "does not work"
+- Asking a maintainer to add the feature you want
+= Start where your own confusion was. A documentation fix is small, obviously useful, and almost always welcome; the larger contributions come later, once you know the code.
+
+? This guide says a topic is "out of scope". What does that mean in practice?
+- The topic does not matter
+- The topic is only for experts
++ The topic is named with a reason and a direction, and this guide deliberately does not pretend to teach it
+- The topic is covered in a later edition of the guide
+= The coverage policy is written down in [chapter 1](#start) and applied here: taught, named with advice, or declared out of scope. A declared gap is honest; a silent one is a trap for the reader.
+:::
+
 :::recap
 - Keep a loop going: build, read good code, explain.
 - Pick resources by need: the Brown edition of the book for ownership, Rustlings for compiler messages, Effective Rust and the API Guidelines for style, the specialised books for async, unsafe, concurrency and performance.
 - Practise with small tasks, and learn judgement with projects that you finish.
 - Update Rust regularly, read the release notes, and ask and answer questions in the community.
+- A declared gap is honest, a silent one is not: this chapter lists what the guide deliberately leaves out, and where to read instead.
 :::
 
 :::checklist

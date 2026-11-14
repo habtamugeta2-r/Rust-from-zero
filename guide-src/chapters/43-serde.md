@@ -590,6 +590,10 @@ Serde does not build an intermediate tree of generic values. The derive macro ge
 - **Serde** does the work at compile time. Missing fields and wrong types are errors unless you say otherwise, and no reflection is involved.
 :::
 
+:::tip When the error does not say which field
+Serde's error message names the problem but not always its address: on a deep configuration file it can say "invalid type: string, expected a boolean" without telling you *which* of two hundred fields. The crate `serde_path_to_error` wraps the deserialiser and reports the path — `server.tls.require_client_cert`, not just "field". It is ten lines of integration and it pays for itself the first time a user sends you a broken configuration file.
+:::
+
 :::recap
 - Serialisation turns values into bytes in some format, and deserialisation turns them back.
 - `#[derive(Serialize, Deserialize)]` makes a type work with every format Serde supports.

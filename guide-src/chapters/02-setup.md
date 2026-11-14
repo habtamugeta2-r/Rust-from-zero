@@ -16,6 +16,10 @@ Time to write a real program. First you will run Rust in your web browser with n
 
 If you cannot install software right now, use the Playground and come back to the installation later.
 
+:::analogy Setting up a workshop before building anything
+A carpenter spends the first day hanging tools on the wall. Nothing is built that day, yet every later hour is faster. Setting up Rust, a terminal and an editor is that day: dull while it lasts, paid back every day after.
+:::
+
 ## A five-minute tour of the terminal
 
 Programmers often control the computer by typing commands instead of clicking. The window where you type them is called the **terminal** (also *command line*, *console* or *shell*). It looks old-fashioned, but it is quick and exact, and Rust's tools are used through it.

@@ -649,6 +649,8 @@ query data written to .sqlx in the current directory; please check this into ver
 | Result | `FromRow` struct, tuple or `Row` | a generated type, or your struct with `query_as!` |
 | Needs a database to compile | no | yes, or the saved `.sqlx` data |
 
+Then set `SQLX_OFFLINE=true` wherever no database is available — CI, a Docker build, a colleague's laptop before the first `docker compose up`. The macros read the committed `.sqlx` data instead of connecting, and the build works. Commit the folder and re-run `cargo sqlx prepare` whenever a query changes; a stale `.sqlx` gives a confusing error that mentions neither the folder nor the migration. This one variable removes the most common "works locally, fails in CI" complaint about SQLx.
+
 The examples of this guide use the function form, so that they run anywhere. For a real project with a fixed schema, the macros are worth their set-up.
 
 ## A database behind a web server
@@ -976,14 +978,71 @@ The Rust code stays the same apart from these points. Many projects use SQLite f
 
 ### Other kinds of storage
 
-| Need | Crates |
-|---|---|
-| A cache, or data shared between servers (Redis) | `redis`, `fred` |
-| Documents (MongoDB) | `mongodb` |
-| A key-value store inside the program, without SQL | `redb`, `fjall`, `sled` |
-| Full-text search | `tantivy` |
-| Files in cloud storage (S3 and similar) | `object_store`, `aws-sdk-s3` |
-| A low-level PostgreSQL client | `tokio-postgres` |
+A relational database is the right default: it gives you transactions, constraints and a query language that answers questions you did not plan for. These are the tools you reach for when one of those is in the way.
+
+| Need | Crates | Choose it when |
+|---|---|---|
+| A cache, or data shared between servers | `redis`, `fred` | Reads outnumber writes, the data is rebuildable, and you need it shared between processes |
+| Documents | `mongodb` | The shape varies between records, and a record is read as a whole |
+| A key-value store inside the program, without SQL | `redb`, `fjall`, `sled` | A desktop or CLI program needs durable keyed data without a server |
+| Full-text search | `tantivy` | Real ranked search over many documents; SQLite's FTS5 is the built-in alternative below a few hundred thousand rows |
+| Files in cloud storage (S3 and similar) | `object_store`, `aws-sdk-s3` | Blobs belong in an object store, never in the database |
+| A low-level PostgreSQL client | `tokio-postgres` | You need protocol features SQLx does not expose |
+| Pooling **any** driver | `deadpool`, `bb8` | You use Diesel, `tokio-postgres` or a client with no pool of its own |
+
+#### Redis: the shared memory between your servers
+
+Redis is a server that holds key–value data in memory. It is fast because it never touches the disk on the read path, and it is honest about the trade: **assume the data can disappear**, and never let Redis be the only copy of anything you cannot rebuild.
+
+```sh
+docker run --rm -p 6379:6379 redis:latest
+```
+
+The five operations that cover most uses, run from `redis-cli`:
+
+```text
+SET session:8f3c1d0e "user:42" EX 3600     # a value with a one-hour expiry
+GET session:8f3c1d0e
+INCR rate:203.0.113.7:2026-11-14T09         # a counter with a time bucket in the key
+EXPIRE rate:203.0.113.7:2026-11-14T09 120
+ZADD leaderboard 1200 "ada"                 # a sorted set: a ranking for free
+ZREVRANGE leaderboard 0 9 WITHSCORES        # the top ten
+```
+
+Three habits make Redis pleasant to live with:
+
+- **Namespace every key** — `session:`, `cache:`, `rate:` — because a shared Redis is shared, and a key called `user42` will collide with someone else's.
+- **Always set an expiry** on anything that is a cache. A cache without a TTL is a database with none of the guarantees.
+- **Use the patterns the types give you.** A sorted set is a leaderboard, `INCR` is a rate-limit counter, and `SET … EX` is a session with a timeout already in it.
+
+In Rust, `redis` is the crate. Use `redis::aio::ConnectionManager` rather than a bare client in a web service: it reconnects by itself after the server restarts, and it is cheap to clone into every handler. `fred` is the alternative with more of Redis 6 and 7 built in. The operations are commands, not SQL: `cmd("SET").arg(key).arg(value).arg("EX").arg(3600).query_async(&mut conn).await?`.
+
+#### MongoDB: documents instead of rows
+
+```json
+{
+  "_id": { "$oid": "65f1c0de8f3c1d0e" },
+  "handle": "ada",
+  "display_name": "Ada Lovelace",
+  "links": [
+    { "label": "blog", "url": "https://example.org" },
+    { "label": "code", "url": "https://example.org/code" }
+  ],
+  "created_at": { "$date": "2026-11-14T09:12:03Z" }
+}
+```
+
+A document is one self-contained record, nested as deeply as the data is. Reading it is one lookup with no `JOIN`; `bson::doc!` writes queries that look like the documents themselves; `mongodb` plus `serde` maps a document to a struct. Choose documents when each record has its own shape and you always read it whole. Choose rows when several records must agree with each other — an order and its stock level — because that is what transactions and foreign keys are for, and MongoDB's transactions are newer and more constrained than PostgreSQL's.
+
+#### Embedded key-value stores
+
+`redb`, `fjall` and `sled` are storage engines that live **inside your program**: no server, no port, one file. Choose them for a desktop application, a CLI tool that keeps state, or a cache that must survive a restart. `redb` is the simplest and most stable of the three for new work; `sled` is the best known but has been at beta for years; `fjall` is LSM-based and shines on write-heavy local workloads. All three store bytes, so pair them with `serde` and you have a durable typed store in about twenty lines. None of them give you SQL, indexes on arbitrary fields, or concurrent access from other processes.
+
+#### Object storage and full-text search
+
+Files — images, PDFs, exports, backups — belong in object storage, not in a database column: `object_store` gives one API over S3, GCS, Azure and the local filesystem, and `aws-sdk-s3` is the S3-specific official SDK. Both stream, so a 2 GB upload never has to fit in memory.
+
+For search, `tantivy` is a search engine library: you define a schema, index documents, and query with ranked results, highlights and facets, all inside your process. Below a few hundred thousand rows, SQLite's **FTS5** extension gives you keyword search with ranking in the database you already have, through a virtual table and `MATCH` — often the right first answer.
 
 :::compare Databases in other languages
 - **Python** has SQLAlchemy and Django's ORM, and **JavaScript** has Prisma and Drizzle. Mistakes in queries and in the mapping of rows show up when the program runs.
@@ -1001,6 +1060,10 @@ The Rust code stays the same apart from these points. Many projects use SQLite f
 - Migrations are numbered SQL files that change the schema step by step.
 - `query!` and `query_as!` check SQL against a real database at compile time.
 - Diesel and SeaORM are ORMs that build the SQL from Rust code. rusqlite is a light, synchronous SQLite library.
+- Redis is shared memory between servers: cache, sessions, counters, rankings. Namespace the keys, and give every cache entry an expiry.
+- MongoDB stores documents instead of rows, and `redb`/`fjall`/`sled` store key–value data inside your own program with no server at all.
+- `object_store` and `s3`-style services hold blobs; `tantivy` (or SQLite's FTS5) holds a search index.
+- `SQLX_OFFLINE=true` plus a committed `.sqlx` folder is what makes compile-time-checked queries work in CI.
 :::
 
 :::quiz Check your understanding

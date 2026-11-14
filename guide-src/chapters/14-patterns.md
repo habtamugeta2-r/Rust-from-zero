@@ -8,6 +8,10 @@
 
 You have already used patterns many times: in `match` arms, in `if let`, and in `let (a, b) = pair;`. A **pattern** describes the *shape* of a value. Rust compares a value with the pattern, and if the shape fits, it can pull out the parts and give them names. This chapter collects everything patterns can do. You do not need to memorise it all. Read it once, do the exercises, and come back when you need a particular form.
 
+:::analogy A sieve with holes of different shapes
+A pattern is a hole cut to a shape. Hold a value against it: if the shape fits, the value goes through, and the parts that come out are already sorted for you. `Some(x)` is a hole that accepts only a filled `Option`, and what drops out is the `x` inside. This chapter is the catalogue of holes.
+:::
+
 ## Patterns are everywhere
 
 ```rust run

@@ -168,6 +168,10 @@ These bugs are dangerous because the program often *keeps running* with wrong da
 
 ## Three ways to manage memory
 
+:::compare Where your language sits
+If you come from Python, Java, JavaScript, Go or C#, you have been relying on a garbage collector and have never had to free anything by hand. If you come from C or C++, you have written `free` and `delete` yourself, and you have probably met a crash caused by calling them at the wrong moment. Rust takes a third path: the compiler proves where the clean-up belongs, so the code runs at C speed while the bugs of hand-written memory management fail to compile.
+:::
+
 | Approach | Who frees the memory? | Languages | Advantages | Disadvantages |
 |---|---|---|---|---|
 | Manual | The programmer, by hand | C, older C++ | Full control, top speed | Every mistake is a possible crash or security hole |

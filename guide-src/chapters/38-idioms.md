@@ -10,6 +10,10 @@ Code can be correct and still feel foreign. Every language has its own way of sa
 
 This chapter gathers the habits of experienced Rust programmers. Most of the pieces you have seen already. Here they are side by side, as a reference to come back to.
 
+:::analogy Grammar is not the same thing as idiom
+"Give me the salt, please" and "The salt, if you would not mind" are both correct English. Only one of them sounds like a person at a dinner table. Programming has the same layer above correctness: the idioms in this chapter are how fluent Rust programmers expect a program to be written. They are not the only way that works; they are the way that reads.
+:::
+
 ## Names
 
 The compiler warns about the first group. The second group is convention, and it carries real information.

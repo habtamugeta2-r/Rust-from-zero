@@ -1,0 +1,31 @@
+# Rust build output
+target/
+
+# Local toolchain and check environment (see guide-src/tools/setup-env.sh)
+/opt/rs/
+
+# Scratch space: throwaway projects, drafts and experiments
+scratch/
+tmp/
+
+# Editor and OS noise
+.DS_Store
+Thumbs.db
+*.swp
+*~
+.idea/
+.vscode/
+
+# Generated or downloaded artefacts
+node_modules/
+*.bak
+*.orig
+Unselected files/
+
+# Python bytecode from the build tools
+__pycache__/
+*.pyc
+
+# Bookkeeping folders created by tools/check.py when RUST_CHECK_HOME is the repo
+/chk/
+/ext/

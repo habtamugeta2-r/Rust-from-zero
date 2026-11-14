@@ -8,6 +8,10 @@
 
 No language lives alone. Decades of proven software are written in C and C++: operating systems, databases, image and audio libraries, cryptography. Other teams work in Python or JavaScript and want one slow part to be fast. Rust was designed to fit into this world. It can call code in other languages and be called by them, with no translation layer in between and no cost at run time. The mechanism is called the **foreign function interface**, or **FFI**.
 
+:::analogy An interpreter between two languages
+Two people who speak different languages can still make a deal, as long as they share one common language and the same customs: greet, shake hands, say goodbye. The C ABI is that shared language, and the customs are the calling convention — who puts each argument where, who tidies up afterwards, and what a returned value looks like.
+:::
+
 ## The common language: the C ABI
 
 For one piece of compiled code to call another, both must agree on details far below the level of source code: in which processor registers the arguments are passed, how a struct is laid out in memory, who cleans up afterwards. Such an agreement is an **ABI** (application binary interface).

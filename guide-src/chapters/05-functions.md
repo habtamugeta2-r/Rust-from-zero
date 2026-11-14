@@ -242,6 +242,13 @@ fn mystery(a: i32) -> i32 {
 - Because parameters are always numbers
 - Because functions run faster with types
 = The compiler infers types inside function bodies, but signatures are fixed contracts. You can understand how to use a function from its signature alone.
+
+? A function promises `-> i32`, but its body ends with `b + 1;` — with a semicolon. What happens?
+- Nothing; the semicolon is ignored
++ The compiler reports a type mismatch: the function produces `()` but promised `i32`
+- The program panics when it runs
+- The function returns `b`
+= A semicolon turns the final expression into a statement, and a statement produces no value. The function's value is then `()`, the empty tuple, which is not an `i32`. Delete the semicolon and the mismatch disappears — this is one of the most common early Rust mistakes.
 :::
 
 :::exercise guided Your first function with a result

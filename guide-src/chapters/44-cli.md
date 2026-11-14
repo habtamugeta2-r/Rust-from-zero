@@ -844,6 +844,48 @@ sorted: apple fig pear
 | `assert_cmd`, `predicates`, `trycmd` | testing command-line programs |
 | `cargo-dist` | build and publish installers for all platforms |
 
+### Tab completion and man pages
+
+A tool that people use daily should complete its own arguments. `clap` knows the whole grammar already, so `clap_complete` turns that structure into a completion script for bash, zsh, fish and PowerShell — no second definition to keep in sync. The usual pattern is a hidden subcommand that writes the script to standard output:
+
+`clap_complete::generate` takes the shell, the command definition (`Cli::command()`), the program name and any `Write` — usually `std::io::stdout()` — and writes the script there. Wire it to a hidden `completions <shell>` subcommand, so the script is produced by the binary itself and can never drift out of step with the parser.
+
+The user then installs it once:
+
+```sh
+todo completions bash > ~/.local/share/bash-completion/completions/todo   # bash
+todo completions zsh  > ~/.zfunc/_todo                                    # zsh, with fpath set
+todo completions fish > ~/.config/fish/completions/todo.fish              # fish
+```
+
+Keep the subcommand `#[command(hide = true)]`: it is plumbing, not a feature to advertise in `--help`. The same idea for documentation: `clap_mangen` renders the same definition as a man page, so `todo completions` and `man todo` describe exactly what the program accepts. Distributions that package your tool will ask for both.
+
+### Full-screen interfaces
+
+Some programs are not a command that prints and exits but a place you stay in: a log viewer, a file browser, a dashboard, a mail client. They need the whole terminal — a fixed layout, panels that update independently, keys that act on a selection.
+
+`ratatui` is the standard crate for this, with `crossterm` underneath it for the terminal itself. Its model is **immediate mode**, and that phrase is the whole idea: you do not build a widget tree once and mutate it. On every tick — say thirty times a second — you describe the entire screen from your current state, and the library redraws it. There is no hidden state to fall out of sync with your data, and no callbacks:
+
+In outline the loop is four steps: `terminal.draw(|frame| render(frame, &app))?` to describe the whole screen, one blocking read of a key, `app.on_key(key)` to change the state, and a break when the state says the user asked to quit. Everything the program knows lives in `app`; the screen is a function of it.
+
+Three things are different from a program that prints:
+
+- **The terminal becomes state you borrowed.** You enter raw mode and the alternate screen, and you must leave them again — including when the program panics. A terminal left in raw mode with no cursor is a support call. `ratatui`'s examples show the restore-on-panic hook; copy it.
+- **Layout is code.** You split the screen into rectangles with constraints (`Length(3)`, `Percentage(40)`, `Min(10)`), and each widget draws into its rectangle.
+- **Test the logic, not the pixels.** Keep the application state and the key handling in plain structs with plain methods, tested as in [chapter 22](#testing). The drawing function is then the only part you cannot unit-test, and it should contain no decisions.
+
+Which crate for which job, in one table:
+
+| Job | Crate | Example |
+|---|---|---|
+| Show progress on a long task | `indicatif` | a download bar, a spinner during a build |
+| Ask a question and read an answer | `dialoguer`, `inquire` | a menu, a confirmation, a password prompt |
+| Print an aligned table and exit | `comfy-table`, `tabled` | `todo list` |
+| Own the screen and stay running | `ratatui` + `crossterm` | a dashboard, a file browser, a TUI client |
+
+Start with the first three. Reach for `ratatui` when you notice that you are clearing the screen and reprinting it yourself.
+
+
 ## Questions and progress: `dialoguer` and `indicatif`
 
 clap parses what the user types. Two crates handle the rest of a pleasant terminal program: asking questions, and showing that work is under way.
@@ -1091,6 +1133,60 @@ A wrong date such as `--due 2027-02-30` is rejected by clap with a message from 
 
 Passing `today` into `run` keeps the logic free of the system clock. The test decides that it is the first of February 2027, and gives the same result on every day it runs. `#[serde(default)]` keeps old files readable, and `skip_serializing_if` keeps the file free of `"due": null` lines.
 :::
+
+## Configuration: where values come from
+
+A program that hard-codes its path, port or API key has to be rebuilt for every machine it runs on. A program that reads everything from the environment is untestable and unpleasant to use. The good answer is a **layered** one: every setting can come from several places, and the closest-to-the-user source wins.
+
+The precedence chain, which is the same in almost every well-built tool:
+
+```text
+command-line flag   >   environment variable   >   configuration file   >   built-in default
+```
+
+The order is not arbitrary. A flag is chosen by the person running the command *now*, so it must win. An environment variable is set by whoever deployed this instance. A file is a shared, versioned configuration. A default is the author's guess. Each layer overrides the one after it, and every setting has a default, so a program with no configuration at all still starts.
+
+### A file, with defaults
+
+```toml
+# todo.toml — committed, contains nothing secret
+[server]
+host = "127.0.0.1"
+port = 8080
+
+[logging]
+# a duration in a human unit, not a number of milliseconds
+timeout = "30s"
+```
+
+### Environment variables that override it
+
+```sh
+TDL_PORT=9000 TDL_LOG=debug todoui add "buy tea"
+```
+
+Two conventions make this pleasant. **Prefix everything** (`TDL_`), so the program's variables cannot collide with the hundreds of others in the environment. And **parse once, at start-up, into one typed struct**, using `serde` and its `#[serde(default)]` attribute: the file and the environment are merged into a `Config`, and the rest of the program never looks at an environment variable again. A mistyped port then fails immediately with a clear message instead of at the first request.
+
+The crates for the layering are:
+
+| Crate | What it adds | When to choose it |
+|---|---|---|
+| [`figment`](https://docs.rs/figment) | Merge several sources (TOML file, environment with a prefix, defaults) into one `serde` struct, with a report of where each value came from | The layering above, without writing it yourself. The usual choice in Axum applications |
+| [`config`](https://docs.rs/config) | The same idea with more file formats (JSON, YAML, RON) and a different API | You need YAML or a watching file |
+| [`dotenvy`](https://docs.rs/dotenvy) (successor to `dotenv`) | Loads a `.env` file into the environment **for development** | Local work only. Never ship a `.env`; add it to `.gitignore` and commit a `.env.example` with the keys and no values |
+| [`secrecy`](https://docs.rs/secrecy) | A `SecretString` wrapper that prints as `[REDACTED]`, is zeroed on drop, and must be unwrapped explicitly | Settings that are secret, so a `Debug` print or a log line cannot leak them |
+| [`humantime`](https://docs.rs/humantime) | Parses `"30s"`, `"5m"`, `"2h"` into a `Duration` | Timeouts, intervals, retention periods |
+
+:::tip Print the resolved configuration at start-up, with the secrets redacted
+One INFO line at start-up that shows every setting and where it came from turns "it works on my machine" into a five-second diagnosis. With `secrecy`, the parts that must not be seen print themselves as `[REDACTED]`, so the log line is safe to keep.
+:::
+
+:::warn An environment variable is not a secret store
+Environment variables are visible to anything that can read the process — a crash dump, a debugging endpoint, `/proc`, a child process. They are the conventional way to *pass* configuration, not a way to *protect* it. For real secrets use the host's secret store: Docker secrets, Kubernetes `Secret` objects, or the secret manager of your cloud. In particular, never bake a secret into a Docker image: image layers are readable for ever by anyone who can pull it, even if a later layer deletes the file. Pass secrets at run time, and rotate them.
+:::
+
+This is what the **twelve-factor app** means by "config in the environment". The name comes from [12factor.net](https://12factor.net/config), and the rule is about one idea: the same artefact, built once, runs in every environment, and only its configuration differs. [Chapter 48](#project-api) shows the same chain implemented for a web service in a few dozen lines, without a crate.
+
 
 ## What you have learned
 

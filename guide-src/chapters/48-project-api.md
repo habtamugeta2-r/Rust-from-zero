@@ -923,7 +923,7 @@ pub use routes::{AppState, app};
 
 ## Step 6: settings and `main`
 
-A service should not contain its settings. The same executable must run on your laptop, on a test server and in production, and a secret in the source code ends up in the version history for ever. The custom of web services is to read settings from **environment variables**:
+A service should not contain its settings. The same executable must run on your laptop, on a test server and in production, and a secret in the source code ends up in the version history for ever. The custom of web services is to read settings from **environment variables**, which are the layer between a configuration file and a command-line flag ([the full precedence chain](#cli) is in the CLI chapter). Here it is in a few dozen lines, with no crate:
 
 | Variable | Meaning | If it is not set |
 |---|---|---|
@@ -1502,6 +1502,8 @@ A public shortener needs more than this:
 
 - **Rate limiting.** Anybody can create links as fast as they can send requests. A layer that limits requests per client address belongs in front (the crate `tower_governor` provides one).
 - **Protection against abuse.** Shorteners hide where a link leads, which makes them attractive for fraud. Real services check addresses against block lists and offer a preview page.
+- **Observability.** The service logs, but it counts nothing. A request counter and a duration histogram, exposed on `GET /metrics`, are what turn "it feels slow" into "p99 rose at 14:20" ([chapter 45](#async-ecosystem)). The `GET /health` route is a start; a separate readiness check that also asks the database is the other half.
+- **A real login.** One key for one owner works for a machine client, not for people. Sessions for a browser, signed tokens for an app, and the difference between authentication and authorisation are in [chapter 46](#web).
 - **Accounts.** One key for one owner is the simplest possible scheme. With several users, each gets a key of their own, stored as a hash like a password. Keys should also be compared in constant time (the crate `subtle` does that), so that the duration of a comparison reveals nothing about the key.
 - **A real URL parser.** `check_url` covers the basics. The crate `url` implements the complete standard.
 - **More than one machine.** SQLite is a file on one disk. To run several copies of the service, switch to PostgreSQL. Thanks to the store, only `store.rs` and the migration change.

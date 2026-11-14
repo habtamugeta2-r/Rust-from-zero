@@ -10,6 +10,10 @@ Rust's standard library is small on purpose. It has no random numbers, no regula
 
 This chapter shows how to find and judge crates, and introduces the ones you will use in almost every project. The chapters after it go deeper into the main areas: data formats, command-line tools, async and web, databases, and applications.
 
+:::analogy A hardware shop, not a forge
+You could mine the iron and forge every screw yourself. You do not: you buy the screw, because a specialist makes a better screw than you will this afternoon. Crates are those screws. The skill is not making them. It is walking into the shop knowing which shelf to go to, and how to check that the box has not been tampered with.
+:::
+
 ## Where to look
 
 | Site | What it gives you |
@@ -202,6 +206,34 @@ true
 Keep and compare moments in UTC (or as timestamps), and convert to the user's time zone only for display. Mixing local times causes bugs around daylight saving changes. The standard library's `std::time::Instant` is the right tool for measuring how long something takes. Besides `chrono`, the crates `time` and `jiff` are good modern choices. `jiff` is especially careful about time zones.
 :::
 
+### Time zones, durations, and the format on the wire
+
+Almost every date bug comes from mixing up three questions that look like one. Ask them separately and the bugs disappear:
+
+1. **Which instant in time is it?** Store this. A moment is universal; it is the same moment in every city.
+2. **Which zone should the reader see it in?** A display decision, made at the edge, from the user's setting — not stored.
+3. **How is it written down?** One format on the wire, chosen once for the whole system.
+
+The consequence: **store UTC, display local, and always store an instant rather than a wall-clock time.** `2026-11-14T09:12:03Z` and `2026-11-14T12:12:03+03:00` are the same moment written two ways. That format is **RFC 3339** (a profile of ISO 8601), and it is what JSON APIs and HTTP headers use, because it is sortable as text, unambiguous, and readable by a human. In PostgreSQL the column type is `TIMESTAMPTZ`; in SQLite, store the RFC 3339 string or a Unix timestamp as an integer.
+
+A **time zone** is more than an offset: it is a set of rules that a government can change. That is why the rules ship as a database (`tzdata`, the IANA list) and why a program that calculates "9 a.m. tomorrow in Berlin" needs one. `chrono-tz` provides the zone list for `chrono`.
+
+Two traps worth naming:
+
+- **Daylight saving.** One hour of the year is skipped and one is lived twice. A local time such as 02:30 on a changeover day may not exist, or may exist twice. Arithmetic on local *wall-clock* times is therefore ambiguous — do it in UTC or on an `Instant`, and convert only for display. A zone with no daylight saving, such as East Africa Time (UTC+03:00 all year), does not have this problem, which is why code written there can look fine and fail in Berlin.
+- **A birthday is not an instant.** A birth date, an invoice date or a business day is a *calendar date*: `NaiveDate` in `chrono`, `Date` in `jiff`. Storing it as a timestamp at midnight UTC makes it the wrong day for half the planet.
+
+The three crates, honestly compared:
+
+| Crate | Strength | Choose it when |
+|---|---|---|
+| `chrono` | The most widely used, with the widest ecosystem support and the examples in this book | You want the default, and the docs you will find everywhere |
+| `time` | Stricter API, no implicit local-time reading, good formatting | You want compile-time checks on formats and a smaller surface |
+| `jiff` | Modern design, correct-by-default time zone handling, RFC 3339 as the native format | Time zones and human-facing dates are central to the program. For new code in 2025 onwards, a good first choice |
+
+For the wire: with the `serde` feature, `chrono`'s `DateTime<Utc>` serialises to an RFC 3339 string and parses back from one, which is exactly what you want in JSON. Durations in configuration are best written for humans — `"30s"`, `"5m"`, `"2h"` — and parsed with `humantime` (or `humantime_serde` as a serde attribute) rather than a raw number of milliseconds that nobody can read six months later.
+
+
 ### `itertools`: more iterator tools
 
 ```toml
@@ -374,13 +406,31 @@ The standard choice for each common task. Where two are listed, both are good, a
 | Async runtime | `tokio` |
 | HTTP client | `reqwest` |
 | Web server | `axum`, `actix-web`, `rocket` |
-| Databases | `sqlx`, `diesel`, `sea-orm`, `rusqlite`, `redis` |
+| Databases | `sqlx`, `diesel`, `sea-orm`, `rusqlite` |
+| Caches and key-value servers | `redis`, `fred` |
+| Documents | `mongodb` |
 | Parallel computing | `rayon` |
 | Concurrency tools | `crossbeam`, `parking_lot`, `dashmap` |
 | Random numbers | `rand` |
 | Dates and times | `chrono`, `time`, `jiff` |
 | Regular expressions | `regex` |
 | Logging and tracing | `tracing`, `log` |
+| Metrics | `metrics` with `metrics-exporter-prometheus`, or `prometheus` |
+| Traces and export | `opentelemetry`, `tracing-opentelemetry`, `opentelemetry-otlp` |
+| Configuration | `figment`, `config`, `dotenvy`, `secrecy`, `humantime` |
+| gRPC and Protocol Buffers | `tonic`, `prost` |
+| GraphQL | `async-graphql`, `juniper` |
+| WebSockets | `axum`'s built-in `ws`, `tokio-tungstenite` |
+| Message queues | `async-nats`, `rdkafka` (Kafka), `lapin` (RabbitMQ) |
+| Sessions and authentication | `tower-sessions`, `axum-login`, `jsonwebtoken`, `oauth2`, `openidconnect` |
+| Rate limiting | `tower-governor`, `governor` |
+| Validation | `validator`, `garde` |
+| Embedded key-value stores | `redb`, `fjall`, `sled` |
+| Search | `tantivy` (SQLite's FTS5 is the built-in alternative) |
+| Object storage | `object_store`, `aws-sdk-s3` |
+| Shell completions and man pages | `clap_complete`, `clap_mangen` |
+| Release automation | `release-plz`, `cargo-release`, `cargo-dist`, `cargo-msrv` |
+| Distributed systems | `openraft`, `etcd-client` |
 | Unique ids | `uuid` |
 | Testing | `proptest`, `insta`, `criterion`, `mockall`, `rstest` |
 | Text | `unicode-segmentation` (graphemes), `unicode-width` |
