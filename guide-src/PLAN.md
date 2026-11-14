@@ -8,8 +8,9 @@
 > environment that is created by `tools/setup-env.sh` and is not part of the
 > repository.
 
-Deliverable: `rust-guide.html` at the repository root (ONE self-contained file), built by
-`python3 guide-src/tools/build.py` from `chapters/*.md` + `assets/*`. Never edit the HTML by hand.
+Deliverable: Next.js App Router web application (`src/`) built directly from
+`guide-src/chapters/*.md` and `guide-src/captured/*.txt`. Run `npm run verify:content`,
+`npm run typecheck`, and `npm run build` to verify and build.
 
 ## Reader routes
 - Core path: Parts 1–5 (chapters 01–26) + Part 8 Tooling (chapters 34–36). Essential Cargo, formatting, testing, and Clippy commands are introduced in chapter 02; chapters 34–36 provide the deeper workflow reference before Part 9 advanced topics (chapters 37–41).
@@ -37,10 +38,9 @@ Deliverable: `rust-guide.html` at the repository root (ONE self-contained file),
   (chapter 51: timings).
 - `text`/`output` blocks with a line over 100 chars soft-wrap automatically (class `soft`), unless they contain
   box-drawing characters. Force with the flag `soft`, forbid with `nosoft` (compiler messages with ^^^ markers).
-- `tools/showcap.py 13 14` prints the captured `auto` texts of chapters; `tools/shot.js` is the screenshot script.
+- `tools/showcap.py 13 14` prints the captured `auto` texts of chapters.
 - Method for long chapters with tested programs: build and test the program in /opt/rs/scratch, write the chapter
   text with @@NAME@@ markers, and fill the markers from the tested files with a small Python script.
-- Screenshots: /opt/pw (playwright + chromium-headless-shell), `node /opt/pw/shot.js out.png <hash> W H theme full sandbox [actions]`.
 
 ## Chapter format (see chapters/03-variables.md for a model)
 Header: @id @part @title @short @level @time @learn a | b | c   (@kind project|appendix)

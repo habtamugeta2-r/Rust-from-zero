@@ -5,20 +5,23 @@ programming language, no computer science, no maths beyond arithmetic. It
 finishes with the libraries and tools that real Rust projects are built from:
 `serde`, Tokio, Clap, Axum, SQLx, OpenTelemetry, Tauri, Bevy and more.
 
-Open **[`rust-guide.html`](./rust-guide.html)** in a browser. It is one
-self-contained file: no server, no installation, no network. Reading progress,
-completed exercises, quiz answers, themes and search all work offline.
+The guide runs as a **Next.js (App Router, TypeScript, Tailwind CSS)** web
+application built directly from the Markdown chapters in
+[`guide-src/chapters/`](./guide-src/chapters/) and captured compiler outputs in
+[`guide-src/captured/`](./guide-src/captured/). Reading progress, completed
+exercises, quiz answers, themes, font size and full-text search all work
+out of the box.
 
 ## What is in it
 
 | | |
 |---|---|
 | Chapters | 55, including 8 complete projects, plus 4 appendices (59 sections total) |
-| Examples | 1,163 code listings, **913 of them Rust** |
+| Examples | 1,167 code blocks, **914 of them Rust** |
 | Exercises | 190, every one with a hint and a worked solution |
 | Quiz questions | 238, each with an explanation of the answer |
 | Captured output | 104 real compiler messages and program outputs |
-| Size | ~44,300 lines of source; one 4.2 MB HTML file |
+| Stack | Next.js 16 App Router, React 19, TypeScript, Tailwind CSS v4, Shiki |
 
 Every chapter follows the same rhythm: the idea in plain words, an analogy, a
 small example, exercises, a quiz, and a recap. Every verified **Rust example is
@@ -34,7 +37,7 @@ upstream docs for today's exact numbers.
 
 ## What the guide covers
 
-The guide is organised around a **Core Rust Path** (Parts 1–5 + Part 8 Tooling, ~23.5 hours), **goal-based routes** (CLI tools, Web & APIs, Systems & deep dive), and **optional ecosystem survey chapters** (`49-apps`, `50-games-embedded`). You can filter by route directly on the home page of `rust-guide.html` or in [chapter 0](./guide-src/chapters/00-start.md).
+The guide is organised around a **Core Rust Path** (Parts 1–5 + Part 8 Tooling, ~24 hours), **goal-based routes** (CLI tools, Web & APIs, Systems & deep dive), and **optional ecosystem survey chapters** (`49-apps`, `50-games-embedded`). You can filter by route directly on the home page or in [chapter 0](./guide-src/chapters/00-start.md).
 
 - **Part 1 — First steps:** what programming is, Cargo, variables, types, functions, control flow, and a guessing game project
 - **Part 2 — Ownership: Rust's big idea:** memory model, ownership, borrowing, and slices
@@ -67,24 +70,36 @@ provider-specific cloud SDKs beyond one S3-compatible example. These are real
 and interesting ecosystems; they are simply not what a from-zero self-study
 guide can honestly claim to teach.
 
-## Build from source
+## Run locally
 
-The editable chapters and assets live in [`guide-src/`](./guide-src/). Edit the
-Markdown chapters and the assets, never the generated HTML. From the repository
-root:
+Requires Node.js 22+ and npm. From the repository root:
 
 ```sh
-python3 -m pip install 'pygments==2.21.0'   # the only build dependency
-python3 guide-src/tools/build.py --strict   # writes ./rust-guide.html
+npm install
+npm run dev       # start development server at http://localhost:3000
 ```
 
-`build.py` is fast (about two seconds) and checks every internal chapter link. CI
-rebuilds the guide and fails if the committed `rust-guide.html` differs, so pin
-the version: the generated markup depends on it.
+For a production build and server:
+
+```sh
+npm run verify:content   # validates all 59 chapters, links & captured outputs
+npm run typecheck        # TypeScript check
+npm run build            # builds all routes and static chapter pages
+npm start                # serves the production Next.js app on port 3000
+```
+
+The editable chapters live in [`guide-src/chapters/`](./guide-src/chapters/),
+captured outputs live in [`guide-src/captured/`](./guide-src/captured/), and the
+Next.js parser, syntax highlighter and UI live in [`src/`](./src/).
 
 ## Verify
 
 ```sh
+# Content & Next.js checks:
+npm run verify:content
+npm run typecheck
+npm run build
+
 # Structure: header fields, analogies, boxes, exercise/quiz minimums.
 # Must report "0 structural remark(s)".
 python3 guide-src/tools/audit.py --strict
@@ -109,12 +124,12 @@ python3 guide-src/tools/project.py 48 shortener /tmp/shortener
 python3 guide-src/tools/check-projects.py --strict-targets
 ```
 
-CI checks two things (see [`.github/workflows/build.yml`](./.github/workflows/build.yml) and [`.github/workflows/guide-checks.yml`](./.github/workflows/guide-checks.yml)):
-the build is fresh and the structure is clean on every push, and **every verified example
-and extracted project is compiled and tested** — standard library, crate examples, multi-file
-projects, WebAssembly/WASI examples, and Cortex-M3 `no_std` firmware — on every pull
-request and once a week. The latest weekly run is the honest answer to "do the
-examples still compile?".
+CI verifies the Next.js build, `verify:content`, and `audit.py --strict` on
+every push, and **compiles and tests every verified Rust example and extracted
+project** — standard library, crate examples, multi-file projects,
+WebAssembly/WASI examples, and Cortex-M3 `no_std` firmware — on every push, pull
+request, and weekly schedule (see [`.github/workflows/build.yml`](./.github/workflows/build.yml)
+and [`.github/workflows/guide-checks.yml`](./.github/workflows/guide-checks.yml)).
 
 ## How examples are marked
 
@@ -128,9 +143,10 @@ from crates.io, checked with `cargo`) · `nocmp` (do not compare output) ·
 
 An ```` ```output auto ```` or ```` ```error auto ```` block directly after a
 Rust block is filled from the captured real output stored in
-`guide-src/captured/`. If you change an example, re-run `check.py`; the guide
-picks the new output up at the next build. [`guide-src/PLAN.md`](./guide-src/PLAN.md)
-is the full reference for the chapter format.
+`guide-src/captured/`. If you change an example, re-run `check.py`; the Next.js
+app picks up the updated chapter and captured output automatically.
+[`guide-src/PLAN.md`](./guide-src/PLAN.md) is the full reference for the
+chapter format.
 
 ## Contributing
 
@@ -144,11 +160,9 @@ See [`CONTRIBUTING.md`](./CONTRIBUTING.md) for full details. The short version:
    exercises with hint and solution → quiz → recap.
 4. **Every new Rust example must pass `check.py`**, with its real captured output.
    Do not hand-write compiler messages or program output.
-5. **Never edit `rust-guide.html` by hand.** Rebuild it with `build.py` and commit
-   the result in the same commit as the chapters.
-6. Run `python3 guide-src/tools/build.py --strict` and
+5. Run `npm run verify:content`, `npm run typecheck`, `npm run build`, and
    `python3 guide-src/tools/audit.py --strict` before opening a pull request;
-   both must be clean.
+   all must pass cleanly.
 
 Ideas are welcome from anywhere; the text is written for this guide. See
 [`guide-src/RESEARCH.md`](./guide-src/RESEARCH.md) for the provenance of the
