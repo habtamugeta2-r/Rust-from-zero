@@ -15,10 +15,10 @@ themes and search all work offline.
 |---|---|
 | Chapters | 54, including 8 complete projects, plus 4 appendices |
 | Examples | 1,112 code listings, **875 of them Rust** |
-| Exercises | 184, every one with a hint and a worked solution |
-| Quiz questions | 225, each with an explanation of the answer |
+| Exercises | 187, every one with a hint and a worked solution |
+| Quiz questions | 229, each with an explanation of the answer |
 | Captured output | 104 real compiler messages and program outputs |
-| Size | 42,400 lines of source; one 4 MB HTML file |
+| Size | 42,700 lines of source; one 4 MB HTML file |
 
 Every chapter follows the same rhythm: the idea in plain words, an analogy, a
 small example, exercises, a quiz, and a recap. Every **Rust example is compiled
