@@ -970,6 +970,24 @@ fn rocket() -> _ {
 }
 ```
 
+**Warp** builds routes from small, composable pieces called **filters**. A filter describes a request as a pipeline (`and`, `or`, `map`), and the result becomes the response:
+
+```rust file=src/main.rs
+use warp::Filter;
+
+#[tokio::main]
+async fn main() {
+    let greet = warp::path!("greet" / String).map(|name| format!("Hello, {name}!"));
+    let users = warp::path!("users" / u32).map(|id| format!("user {id}"));
+
+    warp::serve(greet.or(users))
+        .run(([127, 0, 0, 1], 3002))
+        .await;
+}
+```
+
+Warp's style is functional: you describe the request, and the framework matches it. It is powerful, but its types can be long, and fewer new projects choose it today than Axum or Actix Web.
+
 The ideas are the same in all three: routes, typed extractors as function parameters, and return types that become responses. Once you know one, the others read easily.
 
 | Framework | Character |
@@ -1006,6 +1024,10 @@ ENV PORT=8080
 EXPOSE 8080
 CMD ["myserver"]
 ```
+
+**Cross-compilation.** The server does not have to run on the same kind of machine it is built on. `rustup target add x86_64-unknown-linux-musl` followed by `cargo build --release --target x86_64-unknown-linux-musl` produces a statically linked Linux binary ([chapter 39](#cargo)). A container built from that binary needs almost nothing inside it, which keeps images small and startup fast.
+
+**Nix.** Teams that want every build to be byte-identical use Nix: it pins the Rust version, the system libraries and the crate versions, and builds in a sandbox. Tools such as `crane`, `naersk` or `fenix` turn a `Cargo.lock` into a Nix derivation, and `nix develop` gives every contributor the same toolchain. The price is learning Nix itself; for a single service, the Dockerfile above is simpler.
 
 The final image contains your program and a minimal system, with no compiler and no interpreter. Memory use of a small Axum service is typically some megabytes.
 

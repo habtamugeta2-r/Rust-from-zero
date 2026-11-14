@@ -844,6 +844,106 @@ sorted: apple fig pear
 | `assert_cmd`, `predicates`, `trycmd` | testing command-line programs |
 | `cargo-dist` | build and publish installers for all platforms |
 
+## Questions and progress: `dialoguer` and `indicatif`
+
+clap parses what the user types. Two crates handle the rest of a pleasant terminal program: asking questions, and showing that work is under way.
+
+**`dialoguer`** shows prompts: confirm (yes or no), input (free text), password (hidden keystrokes), select (a menu), multi-select. It reads the keyboard directly, so it needs a real terminal — run these programs yourself; they do not work in the playground or when standard input is piped.
+
+```toml
+dialoguer = "0.11"
+indicatif = "0.5"
+```
+
+A small interview:
+
+```rust
+use dialoguer::{Confirm, Input, Password, Select};
+use dialoguer::theme::ColorfulTheme;
+
+fn main() -> Result<(), dialoguer::Error> {
+    let theme = ColorfulTheme::default();
+
+    let name: String = Input::with_theme(&theme)
+        .with_prompt("Your name")
+        .interact()?;
+
+    let pick = Select::with_theme(&theme)
+        .with_prompt("Which drink?")
+        .items(&["Tea", "Coffee", "Water"])
+        .default(0)
+        .interact()?;
+
+    let secret = Password::with_theme(&theme)
+        .with_prompt("Password")
+        .interact()?;
+
+    let sure = Confirm::with_theme(&theme)
+        .with_prompt("Continue?")
+        .default(true)
+        .interact()?;
+
+    let drinks = &["Tea", "Coffee", "Water"];
+    println!("{name} likes {}; continue: {sure} (password has {} characters)",
+        drinks[pick], secret.len());
+    Ok(())
+}
+```
+
+A typical run looks like this (your terminal may show colours):
+
+```text
+Your name: › Sara
+Which drink? › [Use arrows to move]
+> Tea
+  Coffee
+  Water
+Password: › ********
+Continue? › Yes
+Sara likes Tea; continue: true (password has 8 characters)
+```
+
+The returned values are ordinary Rust values: a `String`, the index of the chosen item, a `bool`. Validate them afterward (`if name.is_empty() { ... }`) just as you would with clap.
+
+**`indicatif`** draws progress bars and spinners for work that takes seconds or minutes. It writes to standard output, so a well-behaved tool checks `std::io::stdout().is_terminal()` and stays quiet when its output is piped ("When the reader leaves early", above):
+
+```rust
+use indicatif::{ProgressBar, ProgressStyle};
+use std::thread;
+use std::time::Duration;
+
+let bar = ProgressBar::new(100);
+bar.set_style(ProgressStyle::default_bar()
+    .template("{spinner:.green} [{elapsed_precise}] [{bar:40.cyan/blue}] {pos}/{len} ({eta})")
+    .unwrap()
+    .progress_chars("#>-"));
+for _ in 0..100 {
+    // one piece of work happens here
+    bar.inc(1);
+    thread::sleep(Duration::from_millis(20));
+}
+bar.finish_with_message("done");
+```
+
+A run prints something like:
+
+```text
+[####----------------------] 12% 0:00:01 left (1/8)
+```
+
+- `ProgressBar::new(100)` declares the total; `inc(1)` advances it by one.
+- The template controls what is shown: a spinner, elapsed time, the bar, position, total and the estimated time left.
+- `finish_with_message` replaces the bar with a final line, so the screen never ends on a half-drawn bar.
+
+| Crate | Use it for |
+|---|---|
+| `dialoguer` | questions, menus, passwords — anything the user must answer while the program runs |
+| `indicatif` | progress bars and spinners for long work |
+| `clap_complete` | tab completion for bash, zsh, fish and PowerShell |
+| `owo-colors`, `anstyle` | coloured text on a terminal |
+
+A progress bar piped into a file fills it with escape sequences. Check `is_terminal`, or offer a `--quiet` flag.
+
 ## Make it better
 
 :::exercise practice Edit a task

@@ -297,7 +297,69 @@ ERROR something failed code=7
 - `#[instrument]` wraps a function in a **span**: a named stretch of time. Every message inside shows which call it belongs to, with the arguments (`divide{a=1 b=0}`). In async programs, where many tasks are interleaved, this is what makes logs readable.
 - The example switches off the time stamp and colours to keep the output stable. Normally you would just call `tracing_subscriber::fmt::init()`.
 
-An older and simpler option is the `log` crate with `env_logger`. Libraries should log through `tracing` or `log` and never print by themselves. The program that uses them decides where the messages go.
+`tracing` is powerful, but a small program does not need spans and fields. The crate **`log`** is a *facade*: it provides the macros (`error!`, `warn!`, `info!`, `debug!`, `trace!`) and nothing more. A library should depend on `log` and call its macros — and never decide where messages go. The crate **`env_logger`** is the simplest *subscriber*: it prints the messages to standard error, and the environment variable `RUST_LOG` chooses how much to see.
+
+```toml
+log = "0.4"
+env_logger = "0.11"
+```
+
+A tiny program with a logger:
+
+```rust ext run
+use std::io::Write;
+
+use env_logger::Builder;
+use env_logger::Env;
+use log::{debug, error, info, warn};
+
+fn work(items: &[&str]) {
+    info!("processing {} items", items.len());
+    for item in items {
+        if item.is_empty() {
+            warn!("skipping an empty item");
+        }
+    }
+    debug!("a detail only useful while developing");
+}
+
+fn main() {
+    Builder::from_env(Env::default().default_filter_or("trace"))
+        .format(|buf, record| writeln!(buf, "{}: {}", record.level(), record.args()))
+        .init();
+
+    work(&["tea", "", "milk"]);
+    error!("could not reach the server");
+}
+```
+
+```output
+INFO: processing 3 items
+WARN: skipping an empty item
+DEBUG: a detail only useful while developing
+ERROR: could not reach the server
+```
+
+- The `format` closure decides what each line looks like; here it is just the level and the message.
+- `default_filter_or("trace")` shows everything during development. Without any `RUST_LOG` setting, `info` and above would be enough for production.
+- `error!` shows even though nothing catches it: logging does not stop the program.
+
+```text
+$ RUST_LOG=warn myprogram
+WARN: skipping an empty item
+ERROR: could not reach the server
+```
+hides `info` and `debug`. The filter is a pattern: `mycrate=debug` shows debug messages from one crate only, and `info` shows the rest.
+
+| | `log` + `env_logger` | `tracing` |
+|---|---|---|
+| What you write | one message per call | messages with fields, inside named spans |
+| Async tasks | hard to tell which task said what | spans follow the task (`#[instrument]`) |
+| Best fit | small tools, command-line programs | services, servers, async code |
+
+:::compare Logging, not printing
+A library logs; an application decides where the logs go. `log` and `tracing` both leave the decision to `main`. A library that calls `println!` forces its output on everybody.
+:::
 
 ## A map of the ecosystem
 
