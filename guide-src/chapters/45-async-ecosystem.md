@@ -267,6 +267,19 @@ fn main() {
 
 `block_on` is the bridge from synchronous code into async code. A program that is mostly synchronous can keep a runtime in a variable and call `block_on` where it needs an async library.
 
+### Three async runtimes
+
+Tokio is the runtime you will meet most often, but it is not the only one:
+
+| | Tokio | async-std | smol |
+|---|---|---|---|
+| API | its own types (`tokio::spawn`, `tokio::time::sleep`) | deliberately similar to `std` (`async_std::task::spawn`, `async_std::stream`) | small and explicit (`smol::scale`, your own `Executor`) |
+| How it starts | `#[tokio::main]` or a `Runtime` you build | `#[async_std::main]` | `smol::run(async { … })` |
+| Ecosystem | the largest: Axum, reqwest, SQLx, tower all assume Tokio | smaller | smallest |
+| Best fit | web services and most async programs | code that should read like `std` | tiny binaries and constrained devices |
+
+All three run many tasks on a few threads, and all three follow the same golden rule: never block a worker thread. Tokio is the default choice because nearly every async crate is tested with it first.
+
 ### Heavy work beside async tasks
 
 The golden rule of chapter 32 was: never block the runtime. A calculation that takes 50 milliseconds holds up every other task on that worker thread. There are two ways to move it out of the way:
@@ -894,6 +907,61 @@ is_decode: true
 :::warn Always set a timeout
 reqwest has no time limit by default. A request to a server that never answers waits for ever, and so does your task. Set `.timeout(…)` on the client.
 :::
+
+### A smaller client: `ureq`
+
+reqwest is powerful, and it needs Tokio. A script or a command-line tool often does not want an async runtime at all. **ureq** is a minimal, blocking HTTP client: one call does the whole request and waits for the answer.
+
+```toml
+ureq = "2.11"
+```
+
+A tiny server and a client that talks to it, all in one program:
+
+```rust ext run
+use std::io::Write;
+use std::net::TcpListener;
+use std::thread;
+
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let listener = TcpListener::bind("127.0.0.1:0")?;
+    let address = listener.local_addr()?;
+
+    thread::spawn(move || {
+        if let Ok((mut stream, _)) = listener.accept() {
+            let _ = stream.write_all(
+                b"HTTP/1.1 200 OK\r\ncontent-type: text/plain\r\ncontent-length: 11\r\n\r\nhello, ureq",
+            );
+        }
+    });
+
+    let response = ureq::get(&format!("http://{address}/"))
+        .timeout(std::time::Duration::from_secs(5))
+        .call()?;
+
+    println!("status: {}", response.status());
+    println!("{}", response.into_string()?);
+    Ok(())
+}
+```
+
+```output
+status: 200
+hello, ureq
+```
+
+- `.call()` performs the request and waits. No `async`, no `await`, no runtime.
+- `response.status()` is the status code, and `into_string()` reads the whole body as text.
+- `timeout` sets an upper bound: a server that never answers does not wait forever.
+- Other builders: `.set("header", "value")` for headers, `.send_json(&value)` for a JSON body, and `ureq::Agent` to reuse connections across many requests (the equivalent of reqwest's `Client`).
+
+| | reqwest | ureq |
+|---|---|---|
+| Async | yes, on Tokio | no |
+| Best fit | services, many requests at once | scripts and command-line tools |
+
+Choose reqwest for a server or for many requests at once; choose ureq when a small dependency and no runtime matter more.
+
 
 ### Many requests at once
 

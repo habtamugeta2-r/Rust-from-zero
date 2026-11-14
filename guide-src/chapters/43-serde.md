@@ -404,6 +404,65 @@ Since the conversion is described once by the derive, switching the format is a 
 
 Web frameworks, database libraries and command-line parsers build on Serde as well. A struct with `Deserialize` can be filled from an HTTP request body, a row of a database, or environment variables.
 
+### Binary formats: `bincode` and MessagePack
+
+JSON and TOML are text: easy to read and debug, but verbose and slow to parse. When the data never needs to be read by a person — saved to a file, sent between two services, kept in a message queue — a **binary format** is smaller and faster. Both sides must agree on the type, usually by sharing the same crate; the bytes themselves contain no schema and no field names unless the format adds them.
+
+**`bincode`** turns a Serde type into the smallest possible bytes: field names disappear, and numbers are written in their binary form. It is the natural choice when both sides are Rust.
+
+**`rmp-serde`** implements **MessagePack**: a binary form of JSON-like data (maps, lists, strings, numbers). Other languages can read it, so it fits services written in more than one language.
+
+```toml
+bincode = "1.3"
+rmp-serde = "1.4"
+serde = { version = "1.0.229", features = ["derive"] }
+```
+
+```rust ext run
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
+struct Reading {
+    sensor: u8,
+    temperature: i16,
+    ok: bool,
+}
+
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let reading = Reading { sensor: 3, temperature: -125, ok: true };
+
+    // bincode: Rust to Rust, with no field names in the data
+    let bytes = bincode::serialize(&reading)?;
+    let back: Reading = bincode::deserialize(&bytes)?;
+    println!("bincode: {} bytes  {:02x?}", bytes.len(), bytes);
+    println!("round trip: {}", back == reading);
+
+    // rmp-serde: MessagePack, readable by other languages too
+    let packed = rmp_serde::to_vec(&reading)?;
+    let back2: Reading = rmp_serde::from_slice(&packed)?;
+    println!("messagepack round trip: {}", back2 == reading);
+    Ok(())
+}
+```
+
+```output
+bincode: 4 bytes  [03, 83, ff, 01]
+round trip: true
+messagepack round trip: true
+```
+
+- Four bytes for three values, and none of them are the words `sensor`, `temperature` or `ok`. The reader must know the struct shape in advance — that is the contract of a binary format.
+- The size difference matters at scale: ten thousand readings take about 40 kilobytes with bincode, roughly ten times less than the same data as JSON.
+
+| | `bincode` | `rmp-serde` (MessagePack) | JSON |
+|---|---|---|---|
+| Field names in the data | no | yes | yes |
+| Readable by other languages | rarely | yes | yes |
+| Size | smallest | small | larger |
+| Best for | Rust ↔ Rust | mixed-language services | files people edit |
+
+Because the bytes carry no names, adding or removing a field can break files written by an older version of the program. Use `Option`, `#[serde(default)]` and `#[serde(skip_serializing_if = "…")]` to tolerate change (described earlier in this chapter), or keep a text format for data that must last years.
+
 ### Tables: CSV
 
 [Chapter 26](#project-report) read a table of sales by splitting lines at commas, and noted that real CSV files are harder: a field may contain a comma or a quote. The crate `csv` knows these rules, and with Serde each row becomes a struct:

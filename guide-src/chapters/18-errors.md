@@ -490,6 +490,97 @@ Caused by:
 `anyhow::Result<T>` is short for `Result<T, anyhow::Error>`. `bail!` returns an error built from a message. The output shows the chain: what the program tried to do, and the underlying cause.
 
 
+### Rich reports for applications: `eyre` and `miette`
+
+`anyhow` is enough for most applications. Two related crates solve slightly different problems.
+
+**`eyre`** is anyhow's close sibling. It adds `WrapErr`, which attaches context while keeping the cause, and it works with **`color-eyre`**: a hook that prints coloured error reports with source locations, much like a compiler error message. An application or CLI tool that uses `eyre` shows the user what went wrong, without you writing formatting code.
+
+**`miette`** is different. An error can carry a **diagnostic**: a severity, a help text, a link, and even a snippet of the offending source with the offending part underlined. `miette` is the choice for developer tools — linters, code generators, compilers — whose users appreciate compiler-style reports.
+
+```toml
+eyre = "0.10"
+color-eyre = "2.1"   # optional: coloured reports and source locations
+miette = "9.1"
+```
+
+`eyre` in an application. `wrap_err` adds context; `wrap_err_with` builds the context lazily, only when there is an error:
+
+```rust ext run
+use eyre::{Context, Result};
+
+fn main() -> Result<()> {
+    let text = std::fs::read_to_string("settings.toml")
+        .wrap_err("could not read the settings file")?;
+    let port: u16 = text.trim().parse()
+        .wrap_err_with(|| format!("the port '{text}' is not a number"))?;
+    println!("port is {port}");
+    Ok(())
+}
+```
+
+```output
+Error: could not read the settings file: No such file or directory (os error 2)
+```
+
+`color-eyre` installs itself once, at the start of `main`:
+
+```rust
+fn main() -> eyre::Result<()> {
+    color_eyre::install()?;
+    // the rest of the program
+}
+```
+
+After that, every error and every panic prints in colour, with the file and line where it happened.
+
+```toml
+[dependencies]
+miette = "9.1"
+thiserror = "1.0"
+```
+
+`miette` in a library. The `#[derive(Diagnostic)]` attribute turns an error into a diagnostic:
+
+```rust ext run
+use miette::Diagnostic;
+use thiserror::Error;
+
+#[derive(Debug, Error, Diagnostic)]
+#[error("the colour '{colour}' is not known")]
+#[diagnostic(code(color::unknown), help("try one of: red, green, blue"))]
+struct UnknownColour {
+    colour: String,
+}
+
+fn main() -> Result<(), miette::Report> {
+    let error = UnknownColour { colour: String::from("snake") };
+    let report = miette::Report::new(error);
+    println!("{report}");
+    Ok(())
+}
+```
+
+```output
+error: the colour 'snake' is not known
+```
+
+With miette's own report handler the same error also prints its help line and its error code; the handler is what gives you compiler-style reports, including source snippets when you add `#[label]` spans.
+
+| | Best for | What it adds |
+|---|---|---|
+| `thiserror` | libraries | precise error enums callers can `match` on |
+| `anyhow` | applications | one error type, `context` and `bail!` |
+| `eyre` | applications, especially CLIs | coloured reports and source locations via `color-eyre` |
+| `miette` | developer tools | compiler-style diagnostics: codes, help text, source snippets |
+
+:::compare Which error crate today?
+- Writing a library: `thiserror`, so callers can react to each case.
+- Writing an application: `anyhow`, quick context for every error.
+- Writing a CLI tool that people run: `eyre`; add `color-eyre` for coloured reports.
+- Writing a tool that parses or generates code or config: `miette`.
+:::
+
 ### The chain of causes: `source`
 
 Where does `anyhow` get the "Caused by" lines from? Every error type can name the error that led to it, through the method **`source`** of the `Error` trait. The standard answer is "none". An error that wraps another one overrides the method:

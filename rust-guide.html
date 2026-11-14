@@ -540,7 +540,7 @@ Hello, you!
   <h2>How this guide works</h2>
   <div class="how">
     <div class="how-card"><svg class="i" aria-hidden="true"><use href="#i-book"/></svg><h3>Read</h3><p>Every idea starts with an everyday comparison. Every technical word is explained the first time it appears, and again in the glossary.</p></div>
-    <div class="how-card"><svg class="i" aria-hidden="true"><use href="#i-code"/></svg><h3>Run</h3><p>1048 code examples, compiled and run with the real Rust compiler. Press <b>Run</b> on a complete example to open it in the free online Rust Playground.</p></div>
+    <div class="how-card"><svg class="i" aria-hidden="true"><use href="#i-code"/></svg><h3>Run</h3><p>1066 code examples, compiled and run with the real Rust compiler. Press <b>Run</b> on a complete example to open it in the free online Rust Playground.</p></div>
     <div class="how-card"><svg class="i" aria-hidden="true"><use href="#i-pencil"/></svg><h3>Practise</h3><p>Guided exercises, practice tasks and challenges follow every concept, each with a hint and a fully explained solution. Quizzes give instant feedback.</p></div>
     <div class="how-card"><svg class="i" aria-hidden="true"><use href="#i-hammer"/></svg><h3>Build</h3><p>Projects at every milestone: a game, a to-do app, a search tool, a chat server, a command-line tool, a web API with a database, and a capstone.</p></div>
   </div>
@@ -6144,6 +6144,55 @@ error: could not read the file: No such file or directory (os error 2)</code></p
 Caused by:
     No such file or directory (os error 2)</code></pre></figure>
 <p><code>anyhow::Result&lt;T&gt;</code> is short for <code>Result&lt;T, anyhow::Error&gt;</code>. <code>bail!</code> returns an error built from a message. The output shows the chain: what the program tried to do, and the underlying cause.</p>
+<h3 id="errors--rich-reports-for-applications-eyre-and-miette">Rich reports for applications: <code>eyre</code> and <code>miette</code></h3>
+<p><code>anyhow</code> is enough for most applications. Two related crates solve slightly different problems.</p>
+<p><strong><code>eyre</code></strong> is anyhow’s close sibling. It adds <code>WrapErr</code>, which attaches context while keeping the cause, and it works with <strong><code>color-eyre</code></strong>: a hook that prints coloured error reports with source locations, much like a compiler error message. An application or CLI tool that uses <code>eyre</code> shows the user what went wrong, without you writing formatting code.</p>
+<p><strong><code>miette</code></strong> is different. An error can carry a <strong>diagnostic</strong>: a severity, a help text, a link, and even a snippet of the offending source with the offending part underlined. <code>miette</code> is the choice for developer tools — linters, code generators, compilers — whose users appreciate compiler-style reports.</p>
+<figure class="code lang-toml"><figcaption class="code-head"><span class="code-lang">TOML</span><span class="code-actions"><button type="button" class="cbtn btn-copy" title="Copy this code"><svg class="i " aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button></span></figcaption><pre><code>eyre = <span class="s">"0.10"</span>
+color-eyre = <span class="s">"2.1"</span>   <span class="c"># optional: coloured reports and source locations</span>
+miette = <span class="s">"9.1"</span></code></pre></figure>
+<p><code>eyre</code> in an application. <code>wrap_err</code> adds context; <code>wrap_err_with</code> builds the context lazily, only when there is an error:</p>
+<figure class="code lang-rust"><figcaption class="code-head"><span class="code-lang">Rust</span><span class="code-actions"><button type="button" class="cbtn btn-copy" title="Copy this code"><svg class="i " aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button></span></figcaption><pre><code><span class="k">use</span> eyre::{<span class="t">Context</span>, <span class="t">Result</span>};
+
+<span class="k">fn</span> <span class="f">main</span>() -&gt; <span class="t">Result</span>&lt;()&gt; {
+    <span class="k">let</span> text = std::fs::<span class="f">read_to_string</span>(<span class="s">"settings.toml"</span>)
+        .<span class="f">wrap_err</span>(<span class="s">"could not read the settings file"</span>)?;
+    <span class="k">let</span> port: <span class="t">u16</span> = text.<span class="f">trim</span>().<span class="f">parse</span>()
+        .<span class="f">wrap_err_with</span>(|| <span class="m">format!</span>(<span class="s">"the port '{text}' is not a number"</span>))?;
+    <span class="m">println!</span>(<span class="s">"port is {port}"</span>);
+    <span class="t">Ok</span>(())
+}</code></pre></figure>
+<figure class="code lang-output out"><figcaption class="code-head"><span class="code-lang">Output</span><span class="code-actions"></span></figcaption><pre><code>Error: could not read the settings file: No such file or directory (os error 2)</code></pre></figure>
+<p><code>color-eyre</code> installs itself once, at the start of <code>main</code>:</p>
+<figure class="code lang-rust"><figcaption class="code-head"><span class="code-lang">Rust</span><span class="code-actions"><button type="button" class="cbtn btn-copy" title="Copy this code"><svg class="i " aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button></span></figcaption><pre><code><span class="k">fn</span> <span class="f">main</span>() -&gt; eyre::<span class="t">Result</span>&lt;()&gt; {
+    color_eyre::<span class="f">install</span>()?;
+    <span class="c">// the rest of the program
+</span>}</code></pre></figure>
+<p>After that, every error and every panic prints in colour, with the file and line where it happened.</p>
+<figure class="code lang-toml"><figcaption class="code-head"><span class="code-lang">TOML</span><span class="code-actions"><button type="button" class="cbtn btn-copy" title="Copy this code"><svg class="i " aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button></span></figcaption><pre><code><span class="k">[dependencies]</span>
+miette = <span class="s">"9.1"</span>
+thiserror = <span class="s">"1.0"</span></code></pre></figure>
+<p><code>miette</code> in a library. The <code>#[derive(Diagnostic)]</code> attribute turns an error into a diagnostic:</p>
+<figure class="code lang-rust"><figcaption class="code-head"><span class="code-lang">Rust</span><span class="code-actions"><button type="button" class="cbtn btn-copy" title="Copy this code"><svg class="i " aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button></span></figcaption><pre><code><span class="k">use</span> miette::<span class="t">Diagnostic</span>;
+<span class="k">use</span> thiserror::<span class="t">Error</span>;
+
+<span class="a">#[derive(Debug, Error, Diagnostic)]</span>
+<span class="a">#[error(</span><span class="s">"the colour '{colour}' is not known"</span><span class="a">)]</span>
+<span class="a">#[diagnostic(code(color::unknown), help(</span><span class="s">"try one of: red, green, blue"</span><span class="a">))]</span>
+<span class="k">struct</span> <span class="t">UnknownColour</span> {
+    colour: <span class="t">String</span>,
+}
+
+<span class="k">fn</span> <span class="f">main</span>() -&gt; <span class="t">Result</span>&lt;(), miette::<span class="t">Report</span>&gt; {
+    <span class="k">let</span> error = <span class="t">UnknownColour</span> { colour: <span class="t">String</span>::<span class="f">from</span>(<span class="s">"snake"</span>) };
+    <span class="k">let</span> report = miette::<span class="t">Report</span>::<span class="f">new</span>(error);
+    <span class="m">println!</span>(<span class="s">"{report}"</span>);
+    <span class="t">Ok</span>(())
+}</code></pre></figure>
+<figure class="code lang-output out"><figcaption class="code-head"><span class="code-lang">Output</span><span class="code-actions"></span></figcaption><pre><code>error: the colour 'snake' is not known</code></pre></figure>
+<p>With miette’s own report handler the same error also prints its help line and its error code; the handler is what gives you compiler-style reports, including source snippets when you add <code>#[label]</code> spans.</p>
+<div class="table-wrap"><table><thead><tr><th></th><th>Best for</th><th>What it adds</th></tr></thead><tbody><tr><td><code>thiserror</code></td><td>libraries</td><td>precise error enums callers can <code>match</code> on</td></tr><tr><td><code>anyhow</code></td><td>applications</td><td>one error type, <code>context</code> and <code>bail!</code></td></tr><tr><td><code>eyre</code></td><td>applications, especially CLIs</td><td>coloured reports and source locations via <code>color-eyre</code></td></tr><tr><td><code>miette</code></td><td>developer tools</td><td>compiler-style diagnostics: codes, help text, source snippets</td></tr></tbody></table></div>
+<aside class="callout c-compare"><div class="callout-label"><svg class="i " aria-hidden="true"><use href="#i-scale"/></svg>How other languages do it</div><div class="callout-title">Which error crate today?</div><div class="callout-body"><ul><li>Writing a library: <code>thiserror</code>, so callers can react to each case.</li><li>Writing an application: <code>anyhow</code>, quick context for every error.</li><li>Writing a CLI tool that people run: <code>eyre</code>; add <code>color-eyre</code> for coloured reports.</li><li>Writing a tool that parses or generates code or config: <code>miette</code>.</li></ul></div></aside>
 <h3 id="errors--the-chain-of-causes-source">The chain of causes: <code>source</code></h3>
 <p>Where does <code>anyhow</code> get the “Caused by” lines from? Every error type can name the error that led to it, through the method <strong><code>source</code></strong> of the <code>Error</code> trait. The standard answer is “none”. An error that wraps another one overrides the method:</p>
 <figure class="code lang-rust"><figcaption class="code-head"><span class="code-lang">Rust</span><span class="code-actions"><button type="button" class="cbtn btn-copy" title="Copy this code"><svg class="i " aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button><button type="button" class="cbtn btn-run" title="Open this example in the online Rust Playground"><svg class="i " aria-hidden="true"><use href="#i-play"/></svg><span>Run</span></button></span></figcaption><pre><code><span class="k">use</span> std::error::<span class="t">Error</span>;
@@ -18012,7 +18061,45 @@ DEBUG divide{a=10 b=2}: divided result=5
  WARN divide{a=1 b=0}: division by zero
 ERROR something failed code=7</code></pre></figure>
 <ul><li>The five levels, from most to least detailed: <code>trace!</code>, <code>debug!</code>, <code>info!</code>, <code>warn!</code>, <code>error!</code>. A program in production usually shows <code>info</code> and above.</li><li>Messages can carry <strong>fields</strong> (<code>result = …</code>, <code>code = 7</code>) in addition to text. Tools can filter and search by them.</li><li><code>#[instrument]</code> wraps a function in a <strong>span</strong>: a named stretch of time. Every message inside shows which call it belongs to, with the arguments (<code>divide{a=1 b=0}</code>). In async programs, where many tasks are interleaved, this is what makes logs readable.</li><li>The example switches off the time stamp and colours to keep the output stable. Normally you would just call <code>tracing_subscriber::fmt::init()</code>.</li></ul>
-<p>An older and simpler option is the <code>log</code> crate with <code>env_logger</code>. Libraries should log through <code>tracing</code> or <code>log</code> and never print by themselves. The program that uses them decides where the messages go.</p>
+<p><code>tracing</code> is powerful, but a small program does not need spans and fields. The crate <strong><code>log</code></strong> is a <em>facade</em>: it provides the macros (<code>error!</code>, <code>warn!</code>, <code>info!</code>, <code>debug!</code>, <code>trace!</code>) and nothing more. A library should depend on <code>log</code> and call its macros — and never decide where messages go. The crate <strong><code>env_logger</code></strong> is the simplest <em>subscriber</em>: it prints the messages to standard error, and the environment variable <code>RUST_LOG</code> chooses how much to see.</p>
+<figure class="code lang-toml"><figcaption class="code-head"><span class="code-lang">TOML</span><span class="code-actions"><button type="button" class="cbtn btn-copy" title="Copy this code"><svg class="i " aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button></span></figcaption><pre><code>log = <span class="s">"0.4"</span>
+env_logger = <span class="s">"0.11"</span></code></pre></figure>
+<p>A tiny program with a logger:</p>
+<figure class="code lang-rust"><figcaption class="code-head"><span class="code-lang">Rust</span><span class="code-actions"><button type="button" class="cbtn btn-copy" title="Copy this code"><svg class="i " aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button></span></figcaption><pre><code><span class="k">use</span> std::io::<span class="t">Write</span>;
+
+<span class="k">use</span> env_logger::<span class="t">Builder</span>;
+<span class="k">use</span> env_logger::<span class="t">Env</span>;
+<span class="k">use</span> log::{debug, error, info, warn};
+
+<span class="k">fn</span> <span class="f">work</span>(items: &amp;[&amp;<span class="t">str</span>]) {
+    <span class="m">info</span>!(<span class="s">"processing {} items"</span>, items.<span class="f">len</span>());
+    <span class="k">for</span> item <span class="k">in</span> items {
+        <span class="k">if</span> item.<span class="f">is_empty</span>() {
+            <span class="m">warn</span>!(<span class="s">"skipping an empty item"</span>);
+        }
+    }
+    <span class="m">debug</span>!(<span class="s">"a detail only useful while developing"</span>);
+}
+
+<span class="k">fn</span> <span class="f">main</span>() {
+    <span class="t">Builder</span>::<span class="f">from_env</span>(<span class="t">Env</span>::<span class="f">default</span>().<span class="f">default_filter_or</span>(<span class="s">"trace"</span>))
+        .<span class="f">format</span>(|buf, record| <span class="m">writeln!</span>(buf, <span class="s">"{}: {}"</span>, record.<span class="f">level</span>(), record.<span class="f">args</span>()))
+        .<span class="f">init</span>();
+
+    <span class="f">work</span>(&amp;[<span class="s">"tea"</span>, <span class="s">""</span>, <span class="s">"milk"</span>]);
+    <span class="m">error</span>!(<span class="s">"could not reach the server"</span>);
+}</code></pre></figure>
+<figure class="code lang-output out"><figcaption class="code-head"><span class="code-lang">Output</span><span class="code-actions"></span></figcaption><pre><code>INFO: processing 3 items
+WARN: skipping an empty item
+DEBUG: a detail only useful while developing
+ERROR: could not reach the server</code></pre></figure>
+<ul><li>The <code>format</code> closure decides what each line looks like; here it is just the level and the message.</li><li><code>default_filter_or("trace")</code> shows everything during development. Without any <code>RUST_LOG</code> setting, <code>info</code> and above would be enough for production.</li><li><code>error!</code> shows even though nothing catches it: logging does not stop the program.</li></ul>
+<figure class="code lang-text"><figcaption class="code-head"><span class="code-lang">Text</span><span class="code-actions"><button type="button" class="cbtn btn-copy" title="Copy this code"><svg class="i " aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button></span></figcaption><pre><code>$ RUST_LOG=warn myprogram
+WARN: skipping an empty item
+ERROR: could not reach the server</code></pre></figure>
+<p>hides <code>info</code> and <code>debug</code>. The filter is a pattern: <code>mycrate=debug</code> shows debug messages from one crate only, and <code>info</code> shows the rest.</p>
+<div class="table-wrap"><table><thead><tr><th></th><th><code>log</code> + <code>env_logger</code></th><th><code>tracing</code></th></tr></thead><tbody><tr><td>What you write</td><td>one message per call</td><td>messages with fields, inside named spans</td></tr><tr><td>Async tasks</td><td>hard to tell which task said what</td><td>spans follow the task (<code>#[instrument]</code>)</td></tr><tr><td>Best fit</td><td>small tools, command-line programs</td><td>services, servers, async code</td></tr></tbody></table></div>
+<aside class="callout c-compare"><div class="callout-label"><svg class="i " aria-hidden="true"><use href="#i-scale"/></svg>How other languages do it</div><div class="callout-title">Logging, not printing</div><div class="callout-body"><p>A library logs; an application decides where the logs go. <code>log</code> and <code>tracing</code> both leave the decision to <code>main</code>. A library that calls <code>println!</code> forces its output on everybody.</p></div></aside>
 <h2 id="crates--a-map-of-the-ecosystem">A map of the ecosystem</h2>
 <p>The standard choice for each common task. Where two are listed, both are good, and the first is the more widely used.</p>
 <div class="table-wrap"><table><thead><tr><th>Task</th><th>Crates</th></tr></thead><tbody><tr><td>Error handling</td><td><code>anyhow</code> (applications), <code>thiserror</code> (libraries)</td></tr><tr><td>Serialisation</td><td><code>serde</code> with <code>serde_json</code>, <code>toml</code>, <code>serde_yaml</code>, <code>csv</code>, <code>bincode</code>, <code>postcard</code></td></tr><tr><td>Command-line arguments</td><td><code>clap</code></td></tr><tr><td>Terminal output</td><td><code>indicatif</code> (progress bars), <code>colored</code> or <code>owo-colors</code>, <code>ratatui</code> (full-screen interfaces)</td></tr><tr><td>Async runtime</td><td><code>tokio</code></td></tr><tr><td>HTTP client</td><td><code>reqwest</code></td></tr><tr><td>Web server</td><td><code>axum</code>, <code>actix-web</code>, <code>rocket</code></td></tr><tr><td>Databases</td><td><code>sqlx</code>, <code>diesel</code>, <code>sea-orm</code>, <code>rusqlite</code>, <code>redis</code></td></tr><tr><td>Parallel computing</td><td><code>rayon</code></td></tr><tr><td>Concurrency tools</td><td><code>crossbeam</code>, <code>parking_lot</code>, <code>dashmap</code></td></tr><tr><td>Random numbers</td><td><code>rand</code></td></tr><tr><td>Dates and times</td><td><code>chrono</code>, <code>time</code>, <code>jiff</code></td></tr><tr><td>Regular expressions</td><td><code>regex</code></td></tr><tr><td>Logging and tracing</td><td><code>tracing</code>, <code>log</code></td></tr><tr><td>Unique ids</td><td><code>uuid</code></td></tr><tr><td>Testing</td><td><code>proptest</code>, <code>insta</code>, <code>criterion</code>, <code>mockall</code>, <code>rstest</code></td></tr><tr><td>Text</td><td><code>unicode-segmentation</code> (graphemes), <code>unicode-width</code></td></tr><tr><td>Cryptography</td><td><code>ring</code>, <code>rustls</code>, the RustCrypto crates (<code>sha2</code>, <code>aes-gcm</code>, <code>argon2</code>)</td></tr><tr><td>Compression</td><td><code>flate2</code>, <code>zstd</code>, <code>zip</code>, <code>tar</code></td></tr><tr><td>Images</td><td><code>image</code></td></tr><tr><td>File system</td><td><code>walkdir</code>, <code>tempfile</code>, <code>notify</code> (watch for changes), <code>directories</code></td></tr><tr><td>Enum helpers</td><td><code>strum</code>, <code>bitflags</code></td></tr><tr><td>Numbers</td><td><code>num</code>, <code>rust_decimal</code> (exact decimals for money), <code>ndarray</code></td></tr><tr><td>Parsing</td><td><code>nom</code>, <code>winnow</code>, <code>pest</code>, <code>logos</code></td></tr><tr><td>Macros</td><td><code>syn</code>, <code>quote</code>, <code>proc-macro2</code></td></tr><tr><td>Graphical interfaces</td><td><code>egui</code>, <code>iced</code>, <code>slint</code>, <code>tauri</code></td></tr><tr><td>Games</td><td><code>bevy</code>, <code>macroquad</code></td></tr><tr><td>WebAssembly</td><td><code>wasm-bindgen</code>, <code>leptos</code>, <code>yew</code>, <code>dioxus</code></td></tr><tr><td>Embedded</td><td><code>embedded-hal</code>, <code>embassy</code></td></tr><tr><td>Other languages</td><td><code>pyo3</code>, <code>napi</code>, <code>cxx</code>, <code>uniffi</code>, <code>bindgen</code></td></tr></tbody></table></div>
@@ -18421,6 +18508,43 @@ port = 8080</code></pre></figure>
 <p>Since the conversion is described once by the derive, switching the format is a matter of calling a different crate:</p>
 <div class="table-wrap"><table><thead><tr><th>Format</th><th>Crate</th><th>Typical use</th></tr></thead><tbody><tr><td>JSON</td><td><code>serde_json</code></td><td>web APIs, data exchange</td></tr><tr><td>TOML</td><td><code>toml</code></td><td>configuration files</td></tr><tr><td>YAML</td><td><code>serde_yaml</code> and its successors</td><td>configuration, Kubernetes files</td></tr><tr><td>CSV</td><td><code>csv</code></td><td>tables, spreadsheets</td></tr><tr><td>MessagePack</td><td><code>rmp-serde</code></td><td>compact binary exchange between languages</td></tr><tr><td>bincode, postcard</td><td><code>bincode</code>, <code>postcard</code></td><td>very compact binary data between Rust programs. <code>postcard</code> suits embedded devices</td></tr><tr><td>CBOR</td><td><code>ciborium</code></td><td>binary, standardised</td></tr><tr><td>RON</td><td><code>ron</code></td><td>a Rust-like text format, used for game data</td></tr><tr><td>URL query strings and forms</td><td><code>serde_urlencoded</code></td><td>web forms</td></tr></tbody></table></div>
 <p>Web frameworks, database libraries and command-line parsers build on Serde as well. A struct with <code>Deserialize</code> can be filled from an HTTP request body, a row of a database, or environment variables.</p>
+<h3 id="serde--binary-formats-bincode-and-messagepack">Binary formats: <code>bincode</code> and MessagePack</h3>
+<p>JSON and TOML are text: easy to read and debug, but verbose and slow to parse. When the data never needs to be read by a person — saved to a file, sent between two services, kept in a message queue — a <strong>binary format</strong> is smaller and faster. Both sides must agree on the type, usually by sharing the same crate; the bytes themselves contain no schema and no field names unless the format adds them.</p>
+<p><strong><code>bincode</code></strong> turns a Serde type into the smallest possible bytes: field names disappear, and numbers are written in their binary form. It is the natural choice when both sides are Rust.</p>
+<p><strong><code>rmp-serde</code></strong> implements <strong>MessagePack</strong>: a binary form of JSON-like data (maps, lists, strings, numbers). Other languages can read it, so it fits services written in more than one language.</p>
+<figure class="code lang-toml"><figcaption class="code-head"><span class="code-lang">TOML</span><span class="code-actions"><button type="button" class="cbtn btn-copy" title="Copy this code"><svg class="i " aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button></span></figcaption><pre><code>bincode = <span class="s">"1.3"</span>
+rmp-serde = <span class="s">"1.4"</span>
+serde = { version = <span class="s">"1.0.229"</span>, features = [<span class="s">"derive"</span>] }</code></pre></figure>
+<figure class="code lang-rust"><figcaption class="code-head"><span class="code-lang">Rust</span><span class="code-actions"><button type="button" class="cbtn btn-copy" title="Copy this code"><svg class="i " aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button></span></figcaption><pre><code><span class="k">use</span> serde::{<span class="t">Deserialize</span>, <span class="t">Serialize</span>};
+
+<span class="a">#[derive(Debug, PartialEq, Serialize, Deserialize)]</span>
+<span class="k">struct</span> <span class="t">Reading</span> {
+    sensor: <span class="t">u8</span>,
+    temperature: <span class="t">i16</span>,
+    ok: <span class="t">bool</span>,
+}
+
+<span class="k">fn</span> <span class="f">main</span>() -&gt; <span class="t">Result</span>&lt;(), <span class="t">Box</span>&lt;<span class="k">dyn</span> std::error::<span class="t">Error</span>&gt;&gt; {
+    <span class="k">let</span> reading = <span class="t">Reading</span> { sensor: <span class="n">3</span>, temperature: -<span class="n">125</span>, ok: <span class="k">true</span> };
+
+    <span class="c">// bincode: Rust to Rust, with no field names in the data
+</span>    <span class="k">let</span> bytes = bincode::<span class="f">serialize</span>(&amp;reading)?;
+    <span class="k">let</span> back: <span class="t">Reading</span> = bincode::<span class="f">deserialize</span>(&amp;bytes)?;
+    <span class="m">println!</span>(<span class="s">"bincode: {} bytes  {:02x?}"</span>, bytes.<span class="f">len</span>(), bytes);
+    <span class="m">println!</span>(<span class="s">"round trip: {}"</span>, back == reading);
+
+    <span class="c">// rmp-serde: MessagePack, readable by other languages too
+</span>    <span class="k">let</span> packed = rmp_serde::<span class="f">to_vec</span>(&amp;reading)?;
+    <span class="k">let</span> back2: <span class="t">Reading</span> = rmp_serde::<span class="f">from_slice</span>(&amp;packed)?;
+    <span class="m">println!</span>(<span class="s">"messagepack round trip: {}"</span>, back2 == reading);
+    <span class="t">Ok</span>(())
+}</code></pre></figure>
+<figure class="code lang-output out"><figcaption class="code-head"><span class="code-lang">Output</span><span class="code-actions"></span></figcaption><pre><code>bincode: 4 bytes  [03, 83, ff, 01]
+round trip: true
+messagepack round trip: true</code></pre></figure>
+<ul><li>Four bytes for three values, and none of them are the words <code>sensor</code>, <code>temperature</code> or <code>ok</code>. The reader must know the struct shape in advance — that is the contract of a binary format.</li><li>The size difference matters at scale: ten thousand readings take about 40 kilobytes with bincode, roughly ten times less than the same data as JSON.</li></ul>
+<div class="table-wrap"><table><thead><tr><th></th><th><code>bincode</code></th><th><code>rmp-serde</code> (MessagePack)</th><th>JSON</th></tr></thead><tbody><tr><td>Field names in the data</td><td>no</td><td>yes</td><td>yes</td></tr><tr><td>Readable by other languages</td><td>rarely</td><td>yes</td><td>yes</td></tr><tr><td>Size</td><td>smallest</td><td>small</td><td>larger</td></tr><tr><td>Best for</td><td>Rust ↔ Rust</td><td>mixed-language services</td><td>files people edit</td></tr></tbody></table></div>
+<p>Because the bytes carry no names, adding or removing a field can break files written by an older version of the program. Use <code>Option</code>, <code>#[serde(default)]</code> and <code>#[serde(skip_serializing_if = "…")]</code> to tolerate change (described earlier in this chapter), or keep a text format for data that must last years.</p>
 <h3 id="serde--tables-csv">Tables: CSV</h3>
 <p><a href="#project-report" data-nav="project-report">Chapter 26</a> read a table of sales by splitting lines at commas, and noted that real CSV files are harder: a field may contain a comma or a quote. The crate <code>csv</code> knows these rules, and with Serde each row becomes a struct:</p>
 <figure class="code lang-toml"><figcaption class="code-head"><span class="code-lang">TOML</span><span class="code-actions"><button type="button" class="cbtn btn-copy" title="Copy this code"><svg class="i " aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button></span></figcaption><pre><code><span class="k">[dependencies]</span>
@@ -19428,6 +19552,73 @@ sorted: apple fig pear </code></pre></figure>
 <ul><li><strong>Three ways to start.</strong> <code>output()</code> waits and collects everything the program printed. <code>status()</code> waits and lets the program use your terminal directly. <code>spawn()</code> returns at once with a <code>Child</code> that you can talk to and wait for later.</li><li><strong>A failing program is not an <code>Err</code>.</strong> An <code>Err</code> means that the program could not be started at all. If it started and failed, you get <code>Ok</code> with an exit code other than 0. Check <code>status.success()</code> every time.</li><li><strong>Arguments are passed one by one</strong>, with <code>arg</code> or <code>args</code>. No shell is involved, so a file name with spaces or with a <code>;</code> in it is passed on exactly as it is. Do not build one long command string and hand it to <code>sh -c</code>. With text from a user, that is the same mistake as building SQL from input (<a href="#databases" data-nav="databases">chapter 47</a>).</li><li><strong>Close the input when you are done.</strong> <code>sort</code> waits for the end of its input. Dropping the handle closes the pipe.</li></ul>
 <h3 id="cli--more-crates-for-the-terminal">More crates for the terminal</h3>
 <div class="table-wrap"><table><thead><tr><th>Crate</th><th>Purpose</th></tr></thead><tbody><tr><td><code>clap_complete</code></td><td>generate tab-completion scripts for bash, zsh, fish and PowerShell</td></tr><tr><td><code>indicatif</code></td><td>progress bars and spinners</td></tr><tr><td><code>owo-colors</code>, <code>colored</code>, <code>anstyle</code></td><td>coloured text</td></tr><tr><td><code>dialoguer</code>, <code>inquire</code></td><td>questions, menus and password prompts</td></tr><tr><td><code>ratatui</code> with <code>crossterm</code></td><td>full-screen terminal interfaces</td></tr><tr><td><code>comfy-table</code>, <code>tabled</code></td><td>tables</td></tr><tr><td><code>directories</code></td><td>the right folders for configuration and data on each system</td></tr><tr><td><code>assert_cmd</code>, <code>predicates</code>, <code>trycmd</code></td><td>testing command-line programs</td></tr><tr><td><code>cargo-dist</code></td><td>build and publish installers for all platforms</td></tr></tbody></table></div>
+<h2 id="cli--questions-and-progress-dialoguer-and-indicatif">Questions and progress: <code>dialoguer</code> and <code>indicatif</code></h2>
+<p>clap parses what the user types. Two crates handle the rest of a pleasant terminal program: asking questions, and showing that work is under way.</p>
+<p><strong><code>dialoguer</code></strong> shows prompts: confirm (yes or no), input (free text), password (hidden keystrokes), select (a menu), multi-select. It reads the keyboard directly, so it needs a real terminal — run these programs yourself; they do not work in the playground or when standard input is piped.</p>
+<figure class="code lang-toml"><figcaption class="code-head"><span class="code-lang">TOML</span><span class="code-actions"><button type="button" class="cbtn btn-copy" title="Copy this code"><svg class="i " aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button></span></figcaption><pre><code>dialoguer = <span class="s">"0.11"</span>
+indicatif = <span class="s">"0.5"</span></code></pre></figure>
+<p>A small interview:</p>
+<figure class="code lang-rust"><figcaption class="code-head"><span class="code-lang">Rust</span><span class="code-actions"><button type="button" class="cbtn btn-copy" title="Copy this code"><svg class="i " aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button></span></figcaption><pre><code><span class="k">use</span> dialoguer::{<span class="t">Confirm</span>, <span class="t">Input</span>, <span class="t">Password</span>, <span class="t">Select</span>};
+<span class="k">use</span> dialoguer::theme::<span class="t">ColorfulTheme</span>;
+
+<span class="k">fn</span> <span class="f">main</span>() -&gt; <span class="t">Result</span>&lt;(), dialoguer::<span class="t">Error</span>&gt; {
+    <span class="k">let</span> theme = <span class="t">ColorfulTheme</span>::<span class="f">default</span>();
+
+    <span class="k">let</span> name: <span class="t">String</span> = <span class="t">Input</span>::<span class="f">with_theme</span>(&amp;theme)
+        .<span class="f">with_prompt</span>(<span class="s">"Your name"</span>)
+        .<span class="f">interact</span>()?;
+
+    <span class="k">let</span> pick = <span class="t">Select</span>::<span class="f">with_theme</span>(&amp;theme)
+        .<span class="f">with_prompt</span>(<span class="s">"Which drink?"</span>)
+        .<span class="f">items</span>(&amp;[<span class="s">"Tea"</span>, <span class="s">"Coffee"</span>, <span class="s">"Water"</span>])
+        .<span class="f">default</span>(<span class="n">0</span>)
+        .<span class="f">interact</span>()?;
+
+    <span class="k">let</span> secret = <span class="t">Password</span>::<span class="f">with_theme</span>(&amp;theme)
+        .<span class="f">with_prompt</span>(<span class="s">"Password"</span>)
+        .<span class="f">interact</span>()?;
+
+    <span class="k">let</span> sure = <span class="t">Confirm</span>::<span class="f">with_theme</span>(&amp;theme)
+        .<span class="f">with_prompt</span>(<span class="s">"Continue?"</span>)
+        .<span class="f">default</span>(<span class="k">true</span>)
+        .<span class="f">interact</span>()?;
+
+    <span class="k">let</span> drinks = &amp;[<span class="s">"Tea"</span>, <span class="s">"Coffee"</span>, <span class="s">"Water"</span>];
+    <span class="m">println!</span>(<span class="s">"{name} likes {}; continue: {sure} (password has {} characters)"</span>,
+        drinks[pick], secret.<span class="f">len</span>());
+    <span class="t">Ok</span>(())
+}</code></pre></figure>
+<p>A typical run looks like this (your terminal may show colours):</p>
+<figure class="code lang-text"><figcaption class="code-head"><span class="code-lang">Text</span><span class="code-actions"><button type="button" class="cbtn btn-copy" title="Copy this code"><svg class="i " aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button></span></figcaption><pre><code>Your name: › Sara
+Which drink? › [Use arrows to move]
+&gt; Tea
+  Coffee
+  Water
+Password: › ********
+Continue? › Yes
+Sara likes Tea; continue: true (password has 8 characters)</code></pre></figure>
+<p>The returned values are ordinary Rust values: a <code>String</code>, the index of the chosen item, a <code>bool</code>. Validate them afterward (<code>if name.is_empty() { ... }</code>) just as you would with clap.</p>
+<p><strong><code>indicatif</code></strong> draws progress bars and spinners for work that takes seconds or minutes. It writes to standard output, so a well-behaved tool checks <code>std::io::stdout().is_terminal()</code> and stays quiet when its output is piped (“When the reader leaves early”, above):</p>
+<figure class="code lang-rust"><figcaption class="code-head"><span class="code-lang">Rust</span><span class="code-actions"><button type="button" class="cbtn btn-copy" title="Copy this code"><svg class="i " aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button></span></figcaption><pre><code><span class="k">use</span> indicatif::{<span class="t">ProgressBar</span>, <span class="t">ProgressStyle</span>};
+<span class="k">use</span> std::thread;
+<span class="k">use</span> std::time::<span class="t">Duration</span>;
+
+<span class="k">let</span> bar = <span class="t">ProgressBar</span>::<span class="f">new</span>(<span class="n">100</span>);
+bar.<span class="f">set_style</span>(<span class="t">ProgressStyle</span>::<span class="f">default_bar</span>()
+    .<span class="f">template</span>(<span class="s">"{spinner:.green} [{elapsed_precise}] [{bar:40.cyan/blue}] {pos}/{len} ({eta})"</span>)
+    .<span class="f">unwrap</span>()
+    .<span class="f">progress_chars</span>(<span class="s">"#&gt;-"</span>));
+<span class="k">for</span> _ <span class="k">in</span> <span class="n">0</span>..<span class="n">100</span> {
+    <span class="c">// one piece of work happens here
+</span>    bar.<span class="f">inc</span>(<span class="n">1</span>);
+    thread::<span class="f">sleep</span>(<span class="t">Duration</span>::<span class="f">from_millis</span>(<span class="n">20</span>));
+}
+bar.<span class="f">finish_with_message</span>(<span class="s">"done"</span>);</code></pre></figure>
+<p>A run prints something like:</p>
+<figure class="code lang-text"><figcaption class="code-head"><span class="code-lang">Text</span><span class="code-actions"><button type="button" class="cbtn btn-copy" title="Copy this code"><svg class="i " aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button></span></figcaption><pre><code>[####----------------------] 12% 0:00:01 left (1/8)</code></pre></figure>
+<ul><li><code>ProgressBar::new(100)</code> declares the total; <code>inc(1)</code> advances it by one.</li><li>The template controls what is shown: a spinner, elapsed time, the bar, position, total and the estimated time left.</li><li><code>finish_with_message</code> replaces the bar with a final line, so the screen never ends on a half-drawn bar.</li></ul>
+<div class="table-wrap"><table><thead><tr><th>Crate</th><th>Use it for</th></tr></thead><tbody><tr><td><code>dialoguer</code></td><td>questions, menus, passwords — anything the user must answer while the program runs</td></tr><tr><td><code>indicatif</code></td><td>progress bars and spinners for long work</td></tr><tr><td><code>clap_complete</code></td><td>tab completion for bash, zsh, fish and PowerShell</td></tr><tr><td><code>owo-colors</code>, <code>anstyle</code></td><td>coloured text on a terminal</td></tr></tbody></table></div>
+<p>A progress bar piped into a file fills it with escape sequences. Check <code>is_terminal</code>, or offer a <code>--quiet</code> flag.</p>
 <h2 id="cli--make-it-better">Make it better</h2>
 <div class="exercise" data-ex="cli-x1"><div class="ex-head"><span class="ex-kind practice"><svg class="i " aria-hidden="true"><use href="#i-pencil"/></svg>Practice</span><span class="ex-title">Edit a task</span><label class="ex-done"><input type="checkbox" data-save="cli-x1"> Done</label></div><div class="ex-body"><p>Add a subcommand <code>todo edit &lt;id&gt; &lt;new title&gt;</code> that changes the title of a task.</p></div><details class="ex-more ex-hint"><summary><svg class="i " aria-hidden="true"><use href="#i-bulb"/></svg>Need a hint?</summary><div class="d-body"><p>Add a variant <code>Edit { id: u32, title: String }</code> to <code>Command</code>, with <code>///</code> comments for the help. The compiler then demands a new arm in <code>run</code>. Reuse <code>list.find(id)?</code> and the empty-title check.</p></div></details><details class="ex-more ex-sol"><summary><svg class="i " aria-hidden="true"><use href="#i-check"/></svg>Show solution and explanation</summary><div class="d-body"><figure class="code lang-rust"><figcaption class="code-head"><span class="code-lang">Rust</span><span class="code-actions"><button type="button" class="cbtn btn-copy" title="Copy this code"><svg class="i " aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button></span></figcaption><pre><code><span class="c">// In `enum Command`
 /// Change the title of a task
@@ -19716,6 +19907,10 @@ the: 3, fox: 1</code></pre></figure>
 2</code></pre></figure>
 <div class="table-wrap"><table><thead><tr><th>Form</th><th>Meaning</th></tr></thead><tbody><tr><td><code>#[tokio::main]</code></td><td>multi-threaded runtime, one worker per core</td></tr><tr><td><code>#[tokio::main(worker_threads = 4)]</code></td><td>a fixed number of workers</td></tr><tr><td><code>#[tokio::main(flavor = "current_thread")]</code></td><td>everything on the calling thread. Good for small tools and for tests</td></tr><tr><td><code>Builder::new_multi_thread()…build()</code></td><td>by hand, for full control</td></tr><tr><td><code>runtime.block_on(future)</code></td><td>run a future to completion from ordinary, non-async code</td></tr></tbody></table></div>
 <p><code>block_on</code> is the bridge from synchronous code into async code. A program that is mostly synchronous can keep a runtime in a variable and call <code>block_on</code> where it needs an async library.</p>
+<h3 id="async-ecosystem--three-async-runtimes">Three async runtimes</h3>
+<p>Tokio is the runtime you will meet most often, but it is not the only one:</p>
+<div class="table-wrap"><table><thead><tr><th></th><th>Tokio</th><th>async-std</th><th>smol</th></tr></thead><tbody><tr><td>API</td><td>its own types (<code>tokio::spawn</code>, <code>tokio::time::sleep</code>)</td><td>deliberately similar to <code>std</code> (<code>async_std::task::spawn</code>, <code>async_std::stream</code>)</td><td>small and explicit (<code>smol::scale</code>, your own <code>Executor</code>)</td></tr><tr><td>How it starts</td><td><code>#[tokio::main]</code> or a <code>Runtime</code> you build</td><td><code>#[async_std::main]</code></td><td><code>smol::run(async { … })</code></td></tr><tr><td>Ecosystem</td><td>the largest: Axum, reqwest, SQLx, tower all assume Tokio</td><td>smaller</td><td>smallest</td></tr><tr><td>Best fit</td><td>web services and most async programs</td><td>code that should read like <code>std</code></td><td>tiny binaries and constrained devices</td></tr></tbody></table></div>
+<p>All three run many tasks on a few threads, and all three follow the same golden rule: never block a worker thread. Tokio is the default choice because nearly every async crate is tested with it first.</p>
 <h3 id="async-ecosystem--heavy-work-beside-async-tasks">Heavy work beside async tasks</h3>
 <p>The golden rule of chapter 32 was: never block the runtime. A calculation that takes 50 milliseconds holds up every other task on that worker thread. There are two ways to move it out of the way:</p>
 <figure class="code lang-rust"><figcaption class="code-head"><span class="code-lang">Rust</span><span class="code-actions"><button type="button" class="cbtn btn-copy" title="Copy this code"><svg class="i " aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button></span></figcaption><pre><code><span class="k">use</span> tokio::sync::oneshot;
@@ -20057,6 +20252,39 @@ is_connect: true
 is_decode: true</code></pre></figure>
 <aside class="callout c-warn"><div class="callout-label"><svg class="i " aria-hidden="true"><use href="#i-alert"/></svg>Watch out</div><div class="callout-title">A 404 is not an <code>Err</code></div><div class="callout-body"><p><code>send()</code> returns <code>Ok</code> whenever the server answered at all, even with “404 Not Found” or “500 Internal Server Error”. Check <code>response.status()</code>, or call <code>.error_for_status()?</code>, which turns error statuses into an <code>Err</code>. Forgetting this is the most common mistake with HTTP clients.</p></div></aside>
 <aside class="callout c-warn"><div class="callout-label"><svg class="i " aria-hidden="true"><use href="#i-alert"/></svg>Watch out</div><div class="callout-title">Always set a timeout</div><div class="callout-body"><p>reqwest has no time limit by default. A request to a server that never answers waits for ever, and so does your task. Set <code>.timeout(…)</code> on the client.</p></div></aside>
+<h3 id="async-ecosystem--a-smaller-client-ureq">A smaller client: <code>ureq</code></h3>
+<p>reqwest is powerful, and it needs Tokio. A script or a command-line tool often does not want an async runtime at all. <strong>ureq</strong> is a minimal, blocking HTTP client: one call does the whole request and waits for the answer.</p>
+<figure class="code lang-toml"><figcaption class="code-head"><span class="code-lang">TOML</span><span class="code-actions"><button type="button" class="cbtn btn-copy" title="Copy this code"><svg class="i " aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button></span></figcaption><pre><code>ureq = <span class="s">"2.11"</span></code></pre></figure>
+<p>A tiny server and a client that talks to it, all in one program:</p>
+<figure class="code lang-rust"><figcaption class="code-head"><span class="code-lang">Rust</span><span class="code-actions"><button type="button" class="cbtn btn-copy" title="Copy this code"><svg class="i " aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button></span></figcaption><pre><code><span class="k">use</span> std::io::<span class="t">Write</span>;
+<span class="k">use</span> std::net::<span class="t">TcpListener</span>;
+<span class="k">use</span> std::thread;
+
+<span class="k">fn</span> <span class="f">main</span>() -&gt; <span class="t">Result</span>&lt;(), <span class="t">Box</span>&lt;<span class="k">dyn</span> std::error::<span class="t">Error</span>&gt;&gt; {
+    <span class="k">let</span> listener = <span class="t">TcpListener</span>::<span class="f">bind</span>(<span class="s">"127.0.0.1:0"</span>)?;
+    <span class="k">let</span> address = listener.<span class="f">local_addr</span>()?;
+
+    thread::<span class="f">spawn</span>(<span class="k">move</span> || {
+        <span class="k">if</span> <span class="k">let</span> <span class="t">Ok</span>((<span class="k">mut</span> stream, _)) = listener.<span class="f">accept</span>() {
+            <span class="k">let</span> _ = stream.<span class="f">write_all</span>(
+                <span class="s">b"HTTP/1.1 200 OK\r\ncontent-type: text/plain\r\ncontent-length: 11\r\n\r\nhello, ureq"</span>,
+            );
+        }
+    });
+
+    <span class="k">let</span> response = ureq::<span class="f">get</span>(&amp;<span class="m">format!</span>(<span class="s">"http://{address}/"</span>))
+        .<span class="f">timeout</span>(std::time::<span class="t">Duration</span>::<span class="f">from_secs</span>(<span class="n">5</span>))
+        .<span class="f">call</span>()?;
+
+    <span class="m">println!</span>(<span class="s">"status: {}"</span>, response.<span class="f">status</span>());
+    <span class="m">println!</span>(<span class="s">"{}"</span>, response.<span class="f">into_string</span>()?);
+    <span class="t">Ok</span>(())
+}</code></pre></figure>
+<figure class="code lang-output out"><figcaption class="code-head"><span class="code-lang">Output</span><span class="code-actions"></span></figcaption><pre><code>status: 200
+hello, ureq</code></pre></figure>
+<ul><li><code>.call()</code> performs the request and waits. No <code>async</code>, no <code>await</code>, no runtime.</li><li><code>response.status()</code> is the status code, and <code>into_string()</code> reads the whole body as text.</li><li><code>timeout</code> sets an upper bound: a server that never answers does not wait forever.</li><li>Other builders: <code>.set("header", "value")</code> for headers, <code>.send_json(&amp;value)</code> for a JSON body, and <code>ureq::Agent</code> to reuse connections across many requests (the equivalent of reqwest’s <code>Client</code>).</li></ul>
+<div class="table-wrap"><table><thead><tr><th></th><th>reqwest</th><th>ureq</th></tr></thead><tbody><tr><td>Async</td><td>yes, on Tokio</td><td>no</td></tr><tr><td>Best fit</td><td>services, many requests at once</td><td>scripts and command-line tools</td></tr></tbody></table></div>
+<p>Choose reqwest for a server or for many requests at once; choose ureq when a small dependency and no runtime matter more.</p>
 <h3 id="async-ecosystem--many-requests-at-once">Many requests at once</h3>
 <p>Streams and reqwest together give the standard recipe for calling an API many times: a limited number of requests in flight, and a time limit for each.</p>
 <figure class="code lang-rust"><figcaption class="code-head"><span class="code-lang">Rust</span><span class="code-actions"><button type="button" class="cbtn btn-copy" title="Copy this code"><svg class="i " aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button></span></figcaption><pre><code><span class="k">use</span> std::time::{<span class="t">Duration</span>, <span class="t">Instant</span>};
@@ -21053,6 +21281,19 @@ wrong password: false</code></pre></figure>
 <span class="k">fn</span> <span class="f">rocket</span>() -&gt; _ {
     rocket::<span class="f">build</span>().<span class="f">mount</span>(<span class="s">"/"</span>, <span class="m">routes</span>![greet, create_user])
 }</code></pre></figure>
+<p><strong>Warp</strong> builds routes from small, composable pieces called <strong>filters</strong>. A filter describes a request as a pipeline (<code>and</code>, <code>or</code>, <code>map</code>), and the result becomes the response:</p>
+<figure class="code lang-rust"><figcaption class="code-head"><span class="code-lang">Rust</span><span class="code-file">src/main.rs</span><span class="code-actions"><button type="button" class="cbtn btn-copy" title="Copy this code"><svg class="i " aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button></span></figcaption><pre><code><span class="k">use</span> warp::<span class="t">Filter</span>;
+
+<span class="a">#[tokio::main]</span>
+<span class="k">async</span> <span class="k">fn</span> <span class="f">main</span>() {
+    <span class="k">let</span> greet = warp::<span class="m">path</span>!(<span class="s">"greet"</span> / <span class="t">String</span>).<span class="f">map</span>(|name| <span class="m">format!</span>(<span class="s">"Hello, {name}!"</span>));
+    <span class="k">let</span> users = warp::<span class="m">path</span>!(<span class="s">"users"</span> / <span class="t">u32</span>).<span class="f">map</span>(|id| <span class="m">format!</span>(<span class="s">"user {id}"</span>));
+
+    warp::<span class="f">serve</span>(greet.<span class="f">or</span>(users))
+        .<span class="f">run</span>(([<span class="n">127</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">1</span>], <span class="n">3002</span>))
+        .<span class="k">await</span>;
+}</code></pre></figure>
+<p>Warp’s style is functional: you describe the request, and the framework matches it. It is powerful, but its types can be long, and fewer new projects choose it today than Axum or Actix Web.</p>
 <p>The ideas are the same in all three: routes, typed extractors as function parameters, and return types that become responses. Once you know one, the others read easily.</p>
 <div class="table-wrap"><table><thead><tr><th>Framework</th><th>Character</th></tr></thead><tbody><tr><td><strong>Axum</strong></td><td>from the Tokio team. Few macros, built on tower, the largest ecosystem of middleware. The default choice today</td></tr><tr><td><strong>Actix Web</strong></td><td>mature and very fast. Its own middleware system</td></tr><tr><td><strong>Rocket</strong></td><td>the friendliest to start with. Many conveniences built in</td></tr><tr><td><strong>Poem</strong>, <strong>Salvo</strong></td><td>similar to Axum, with built-in generation of OpenAPI descriptions</td></tr><tr><td><strong>Warp</strong></td><td>routes composed from small “filters”. An older, functional style</td></tr><tr><td><strong>Loco</strong></td><td>“Rails for Rust”: a full framework on top of Axum with generators, an ORM, background jobs and mailers</td></tr><tr><td><strong>Leptos</strong>, <strong>Dioxus</strong></td><td>full-stack frameworks: server and browser code in one Rust project (<a href="#apps" data-nav="apps">chapter 49</a>)</td></tr></tbody></table></div>
 <h2 id="web--from-your-machine-to-the-world">From your machine to the world</h2>
@@ -21069,6 +21310,8 @@ COPY --from=build /app/target/release/myserver /usr/local/bin/myserver
 ENV PORT=8080
 EXPOSE 8080
 CMD ["myserver"]</code></pre></figure>
+<p><strong>Cross-compilation.</strong> The server does not have to run on the same kind of machine it is built on. <code>rustup target add x86_64-unknown-linux-musl</code> followed by <code>cargo build --release --target x86_64-unknown-linux-musl</code> produces a statically linked Linux binary (<a href="#cargo" data-nav="cargo">chapter 39</a>). A container built from that binary needs almost nothing inside it, which keeps images small and startup fast.</p>
+<p><strong>Nix.</strong> Teams that want every build to be byte-identical use Nix: it pins the Rust version, the system libraries and the crate versions, and builds in a sandbox. Tools such as <code>crane</code>, <code>naersk</code> or <code>fenix</code> turn a <code>Cargo.lock</code> into a Nix derivation, and <code>nix develop</code> gives every contributor the same toolchain. The price is learning Nix itself; for a single service, the Dockerfile above is simpler.</p>
 <p>The final image contains your program and a minimal system, with no compiler and no interpreter. Memory use of a small Axum service is typically some megabytes.</p>
 <aside class="callout c-compare"><div class="callout-label"><svg class="i " aria-hidden="true"><use href="#i-scale"/></svg>How other languages do it</div><div class="callout-title">Web frameworks in other languages</div><div class="callout-body"><ul><li><strong>Express</strong> (JavaScript) and <strong>Flask</strong> (Python) are small and flexible. Request data is untyped, and checks are written by hand or added with libraries.</li><li><strong>FastAPI</strong> (Python) is the closest relative of Axum’s style: function parameters with types describe the request. The checks happen while the program runs.</li><li><strong>Spring</strong> (Java) and <strong>ASP.NET</strong> (C#) are large frameworks with annotations and injection of dependencies at run time.</li><li><strong>Go</strong>’s <code>net/http</code> is in the standard library. Handlers take a request and a response writer, and decode by hand.</li><li><strong>Axum</strong> checks the shape of handlers at compile time, and a request that reaches your code is already validated against its types. A Rust server needs no separate application server. It is the server.</li></ul></div></aside>
 <aside class="callout c-recap"><div class="callout-label"><svg class="i " aria-hidden="true"><use href="#i-list"/></svg>Recap</div><div class="callout-body"><ul><li>HTTP is requests (method, path, headers, body) and responses (status, headers, body). REST maps resources to URLs and actions to methods.</li><li>In Axum, a <code>Router</code> maps routes to handlers. A handler is an async function.</li><li>Extractors (<code>Path</code>, <code>Query</code>, <code>Json</code>, <code>State</code>, …) declare what a handler needs. Bad requests are rejected before your code runs.</li><li>Anything that implements <code>IntoResponse</code> can be returned. A custom error type with <code>IntoResponse</code> gives uniform error responses.</li><li>Shared data lives in a state value, passed with <code>with_state</code> and received with <code>State&lt;T&gt;</code>.</li><li>Middleware wraps routes: <code>from_fn</code> for your own, and <code>tower-http</code> for logging, timeouts, compression and CORS.</li><li>Public servers need limits, HTTPS, hashed passwords, validated input and safe error messages.</li><li>Actix Web and Rocket follow the same ideas with a different style.</li></ul></div></aside>
