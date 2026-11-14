@@ -12,6 +12,10 @@ You have worked through the whole language, the tools around it, and seven proje
 A driving licence does not make an experienced driver. It means that you can now learn safely on your own, on real roads. You are at that point with Rust: you can read the documentation of any crate, understand what the compiler tells you, and build things. The experience comes from kilometres driven.
 :::
 
+:::compare Learning Rust vs learning another skill
+Some people expect a language to be mastered by reading alone. In practice, every programming language is learned in a loop: you read a bit, you try a small thing, you fix the errors, and you build something real. Rust is unusual in that the compiler gives excellent feedback, which makes that loop efficient once you know the basic rules.
+:::
+
 ## How to keep learning
 
 Three activities, in a loop. Each one feeds the others.
@@ -102,6 +106,60 @@ Code to learn from, once your own projects raise questions:
 - Talks from conferences such as RustConf, EuroRust and RustNation are published as videos.
 
 This guide was tested with Rust 1.100. Rust keeps old code working, so the examples will compile with later versions. Crates outside the standard library move faster. When an example with a crate no longer compiles, look at the changelog of that crate first.
+
+:::exercise guided Pick one next step
+Write a short plan for the next two weeks: one project you will build, one book or article you will read, and one community place you will visit or follow. Keep the plan visible.
+::hint
+Do not pick everything at once. Choose one real need and one learning resource that supports it.
+::solution
+A good plan is concrete and small enough to finish. Example: "I will build a CLI that renames photos by date, read one chapter of Rustlings or the Rust book, and ask a question in the users forum when I get stuck." The important part is that the plan connects learning to a real task.
+:::
+
+:::exercise practice Choose a reading habit
+Pick one resource from this chapter and explain in one sentence why it matches the project you want to build next. Then write down one action you will take when you finish the chapter: a code sample, a note, or a small experiment.
+::hint
+Match the resource to your audience: learn ownership from a book, learn compiler messages from Rustlings, or read async docs if you need a server.
+::solution
+A strong answer names both the task and the reason. Example: "I need to build a small web service, so I will read Zero To Production in Rust because it starts with a single service and keeps growing systematically." The action is the step that turns reading into understanding.
+:::
+
+:::exercise challenge Decide what to revisit
+Choose one topic from this guide that you still find unclear. Write a one-paragraph note saying what you understand, what you do not yet understand, and what you will do next to close the gap.
+::hint
+Use a concrete question: "I understand ownership in simple cases but not in a struct that contains a `Vec` and a reference; I will revisit that chapter and write one tiny example." 
+::solution
+This exercise trains the habit of making your confusion precise. The goal is not to feel bad about the gap; it is to convert uncertainty into a next action. That is how Rust learning becomes durable.
+:::
+
+:::quiz Check your understanding
+? Why is a loop of build, read code, and explain useful?
+- It guarantees that you will never need to ask for help
+- It replaces the compiler with a teacher
++ It turns learning into practice and makes gaps in your understanding visible
+- It is the only way to finish a project
+= Learning in a loop keeps your knowledge connected to real work and helps you notice where you are still guessing.
+
+? Which resource is best for a beginner who wants to improve compiler-message reading?
+- The Rust blog
+- The Cargo Book
++ Rustlings
+- The Rust Reference
+= Rustlings is built for small fixes, so it helps you practice reading compiler messages as you make mistakes on purpose.
+
+? Why is it valuable to choose just one topic at a time?
+- Because all topics are equally important right away
+- Because reading ten books is faster than reading one
++ Because focused study is easier to connect to one real project and easier to finish
+- Because the guide lists only one topic per chapter
+= One topic at a time keeps your attention on the skill that matters right now.
+
+? What is a good first contribution to open source?
+- A giant rewrite of a library
+- A feature that changes the API for everyone
++ A small documentation fix, a test, or a clear reproduction of a bug
+- A patch with no explanation
+= Small, well-described contributions are the easiest way to start helping in a project and to learn from experienced maintainers.
+:::
 
 ## People
 

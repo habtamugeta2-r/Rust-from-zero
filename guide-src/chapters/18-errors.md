@@ -4,7 +4,7 @@
 @short Error handling
 @level intermediate
 @time 55
-@learn Tell apart errors a program should recover from and bugs that should stop it | Return, handle and pass on errors with `Result` and the `?` operator | Read and write files | Define your own error type | Choose between `panic!`, `Option` and `Result`, and know the crates `anyhow` and `thiserror`
+@learn Tell apart errors a program should recover from and bugs that should stop it | Return, handle and pass on errors with `Result` and the `?` operator | Read and write files | Define your own error type | Choose between `panic!`, `Option` and `Result`, and compare `anyhow`, `thiserror`, `eyre` and `miette`
 
 Things go wrong. A file is missing, the user types letters where a number belongs, the network is down. A good program expects this and reacts sensibly. Rust takes an unusual and very deliberate approach: errors are **ordinary values** that functions return, and the compiler makes sure you do not ignore them.
 
@@ -653,6 +653,52 @@ There are two styles. Either the message of an error includes the message of its
 - **In an application:** use `anyhow` (or `Box<dyn Error>`) and add context, so that the person in front of the program gets a helpful message.
 :::
 
+### `eyre` and `miette`: choose the report for the audience
+
+`eyre` is an application error-reporting alternative to `anyhow`. Both provide a flexible report type and context on the way up the call stack. `eyre` is useful when an application wants to install a custom report handler; `color-eyre` is a common companion that adds color, backtraces and tracing-span context. Pick one application report ecosystem rather than converting errors back and forth without a reason.
+
+```toml
+[dependencies]
+eyre = "0.6.14"
+```
+
+```rust ext check
+use eyre::{Result, WrapErr};
+
+fn read_config(path: &str) -> Result<String> {
+    std::fs::read_to_string(path)
+        .wrap_err_with(|| format!("could not read configuration at {path}"))
+}
+
+fn main() -> Result<()> {
+    let _contents = read_config("service.toml")?;
+    Ok(())
+}
+```
+
+`path: &str` borrows the caller's path because the function only needs it while reading and formatting an error; it does not need to own the path. `WrapErr` supplies `wrap_err_with`, whose closure constructs context only on failure. The `?` operator returns the report to `main`, where an application can print the entire chain.
+
+`miette` targets human-facing diagnostics, especially for command-line programs that want error codes, help text and highlighted source snippets. Its `Diagnostic` trait complements `std::error::Error`; enabling `fancy` in the top-level application opts into its richer renderer and additional dependencies. A library should generally expose its structured error and let the binary choose how to render it.
+
+```toml
+[dependencies]
+miette = { version = "7.6.0", features = ["fancy"] }
+```
+
+```rust ext check
+fn read_config(path: &str) -> miette::Result<String> {
+    std::fs::read_to_string(path)
+        .map_err(|error| miette::miette!("could not read `{path}`: {error}"))
+}
+
+fn main() -> miette::Result<()> {
+    let _contents = read_config("service.toml")?;
+    Ok(())
+}
+```
+
+This minimal error names the failed operation. A richer diagnostic defines a type implementing `miette::Diagnostic` and attaches a source span, a stable diagnostic code and an actionable help message. Use it when that extra context helps a user fix input; use `anyhow` or `eyre` when a contextual error chain is enough. None of these application-reporting crates replaces a library's precise error variants when callers must branch on them.
+
 ## Which tool when?
 
 | Situation | Use |
@@ -681,6 +727,7 @@ Avoid patterns that throw an error away without a decision: `let _ = risky();`, 
 - `std::fs` reads and writes files. Every operation returns a `Result`.
 - A custom error enum lists the ways a function can fail. `Display` gives the message, and `From` lets `?` convert other errors into it. `thiserror` generates this code.
 - `Box<dyn Error>` and `anyhow` hold any error, which is convenient in applications.
+- `eyre` is another flexible application report with customizable handlers; `miette` is useful when a command-line user benefits from structured diagnostics and source snippets.
 :::
 
 :::quiz Check your understanding

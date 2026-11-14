@@ -18,6 +18,10 @@ Picture a street with billions of small letterboxes in a row. Each box holds one
 
 A program uses its memory in two different ways, in two different areas: the **stack** and the **heap**.
 
+:::compare Memory management in other languages
+A garbage-collected language such as Java or Python also hides many memory details from you, but it keeps a helper running in the background. C and C++ let the programmer manage memory by hand, which is fast but easy to get wrong. Rust gives a middle path: many rules are checked by the compiler, and the memory is freed when ownership ends, without a garbage collector.
+:::
+
 ## The stack: fast and automatic
 
 :::analogy A pile of trays

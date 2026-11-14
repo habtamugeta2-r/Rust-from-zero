@@ -8,6 +8,10 @@
 
 A compiler that catches many mistakes is the first layer of quality. Rust's standard tools add more layers, and all of them come with the normal installation. Professional Rust projects run them on every change. Learning them early also makes you a better Rust programmer, because they explain what they find.
 
+:::analogy A kitchen check before service
+A chef does not wait until the restaurant is full to inspect the pans. Quality tools are the same: they scan the code before the pressure is high, telling you if the style is consistent or if something looks suspicious.
+:::
+
 ## rustfmt: one style for everyone
 
 `cargo fmt` rewrites your source files in the official Rust style: indentation, spaces, line breaks, the order of imports. Take this cramped code:

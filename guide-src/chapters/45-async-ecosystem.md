@@ -1,10 +1,10 @@
 @id async-ecosystem
 @part p10
-@title Concurrency in practice: Rayon, Tokio, streams, reqwest and tower
-@short Rayon, Tokio, reqwest, tower
+@title Concurrency in practice: Rayon, Tokio, streams, HTTP clients and tower
+@short Rayon, Tokio, HTTP clients, tower
 @level advanced
 @time 80
-@learn Use all processor cores for a computation with Rayon | Set up a Tokio runtime, run heavy work beside it, and shut it down cleanly | Process values that arrive over time with streams | Call web APIs with reqwest | Add timeouts and limits with tower layers
+@learn Use all processor cores for a computation with Rayon | Set up a Tokio runtime, run heavy work beside it, and shut it down cleanly | Process values that arrive over time with streams | Call web APIs with async reqwest or blocking ureq | Add timeouts and limits with tower layers
 
 Part 7 explained the machinery of concurrency: threads, locks, channels and async tasks. In daily work you rarely build on that machinery directly. A handful of crates package the common patterns, and this chapter is a tour of them.
 
@@ -1078,6 +1078,34 @@ The practice server answers number 5 only after two seconds, and number 7 with a
 An address that starts with `https://` is encrypted with **TLS**. reqwest handles this for you. In version 0.13 it uses `rustls` by default, a TLS library written in Rust, so that no system library has to be installed. For a small script that needs no async code, `reqwest::blocking` offers the same API without `await` (enable the feature `blocking`). The crate `ureq` is a smaller, blocking alternative.
 :::
 
+### `ureq`: a synchronous HTTP client
+
+Choose `ureq` when a command-line program makes a few HTTP calls and a blocking request is simpler than introducing an async runtime. It is not a faster way to make many concurrent requests: while a call waits, its current thread is blocked. Its `Agent` owns reusable client configuration and a connection pool; borrow one agent across calls instead of rebuilding a client each time.
+
+```toml
+[dependencies]
+ureq = "3.5.2"
+```
+
+```rust ext check
+use std::error::Error;
+
+fn main() -> Result<(), Box<dyn Error>> {
+    let agent = ureq::agent();
+    let mut response = agent
+        .get("https://example.com")
+        .header("accept", "text/html")
+        .call()?;
+
+    let status = response.status();
+    let body = response.body_mut().read_to_string()?;
+    println!("HTTP {status}, {} bytes", body.len());
+    Ok(())
+}
+```
+
+`call()` and body reading both return errors, so `?` reports connection, protocol and I/O failures. Check the returned status before treating a body as successful application data; an HTTP response such as 404 is not the same kind of failure as a DNS or TLS error. Configure request timeouts and response-size limits for the service you call. In an async Tokio handler, do not call this blocking client directly on an executor thread; use async `reqwest` or deliberately isolate blocking work with `spawn_blocking`.
+
 ## tower: layers around a service
 
 A request should have a time limit. There should not be too many at once. Each one should be logged. Failed ones might be retried. These wishes are the same for every server and every client, whatever the request means. **tower** is the crate that lets such behaviour be written once and reused everywhere.
@@ -1241,7 +1269,11 @@ The `Service` trait has two methods. `poll_ready` says whether the service can a
 | Redis | `redis`, `fred` |
 | E-mail | `lettre` |
 | DNS | `hickory-resolver` |
-| Other async runtimes | `smol` (small and simple), `embassy` (for microcontrollers, [chapter 50](#games-embedded)) |
+| Other async runtimes | `smol` (small and composable), `async-std` (legacy projects; discontinued), `embassy` (microcontrollers, [chapter 50](#games-embedded)) |
+
+:::warn Runtime status matters
+`async-std` is discontinued: its maintainers recommend that existing users migrate to `smol` rather than expecting continued development. It remains relevant when reading older projects or a dependency that still supports it, but it is not a good default for a new application. `smol` is a small runtime assembled from focused crates; it is not a drop-in promise that every Tokio library can run unchanged. Check each library's runtime features and I/O traits before mixing ecosystems. For a new network service, Tokio remains the broadest default in this guide.
+:::
 
 :::compare Parallelism and HTTP elsewhere
 - **Python** has `multiprocessing` and `concurrent.futures`. Because of the interpreter lock, parallel calculations long needed separate processes, with data copied between them. `requests` and `httpx` are its HTTP clients.
@@ -1261,6 +1293,7 @@ The `Service` trait has two methods. `poll_ready` says whether the service can a
 - `CancellationToken` and `TaskTracker` give a graceful shutdown.
 - A stream is an async iterator. `map(…).buffer_unordered(n)` runs up to `n` operations at once.
 - reqwest sends HTTP requests. Reuse one `Client`, set a timeout, and check the status.
+- `ureq` is a synchronous client for simple programs; do not block a Tokio executor thread with it.
 - tower wraps services in layers such as timeouts and limits. The same layers work across the ecosystem.
 :::
 

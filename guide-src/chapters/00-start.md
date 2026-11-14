@@ -1,6 +1,7 @@
 @id start
 @part welcome
 @title How to use this guide
+@short Learn the guide and the study rhythm
 @level beginner
 @time 8
 @learn Find your way around the guide and its interactive parts | Follow a study routine that makes new knowledge stick | Know what to do when you get stuck
@@ -10,6 +11,8 @@ Welcome. This guide teaches you Rust, a modern programming language, starting fr
 ## What you will be able to do
 
 Finish every chapter, exercise and project and you will be able to build real software in Rust: command-line tools, web services backed by a database, programs that do many things at once. You will also understand ideas that apply to every programming language: how memory works, how to organise a large program, how to handle errors, and how to test that your code is right.
+
+This guide is intentionally scoped to the core Rust language, its tooling, the most important crates and ecosystem patterns, and the practical projects in this book. It does not pretend to cover every niche branch of the ecosystem: blockchain, kernel programming, robotics and other specialised domains are outside the main path of a from-zero guide. The point is to give you a solid foundation before you choose a deeper specialism.
 
 Learning to program is like learning to cook or to play an instrument. Reading alone does not work. **Each chapter gives you something to do, and the doing is where the learning happens.**
 

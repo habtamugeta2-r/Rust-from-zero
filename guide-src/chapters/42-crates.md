@@ -10,6 +10,10 @@ Rust's standard library is small on purpose. It has no random numbers, no regula
 
 This chapter shows how to find and judge crates, and introduces the ones you will use in almost every project. The chapters after it go deeper into the main areas: data formats, command-line tools, async and web, databases, and applications.
 
+:::analogy A toolbox with a label on every drawer
+The standard library is the set of tools that comes with the workbench. Crates are the tools you choose for a particular job. A label helps you reach for the right tool, but before using one you still check that it fits, is maintained, and has no hidden damage. In the same way, learn a crate's job and check its source, docs, dependencies and release history before trusting it in a project.
+:::
+
 ## Where to look
 
 | Site | What it gives you |
@@ -361,6 +365,31 @@ hides `info` and `debug`. The filter is a pattern: `mycrate=debug` shows debug m
 A library logs; an application decides where the logs go. `log` and `tracing` both leave the decision to `main`. A library that calls `println!` forces its output on everybody.
 :::
 
+### `log` with `env_logger`: a small configurable logger
+
+`log` is a facade: it gives libraries macros such as `info!` without choosing where messages are written. A binary installs one logger implementation. `env_logger` is a small choice for a command-line program or a simple service, and `RUST_LOG` lets the operator set the filter without recompiling.
+
+```toml
+[dependencies]
+env_logger = "0.11.11"
+log = "0.4.35"
+```
+
+```rust ext check
+use log::{debug, error, info, warn};
+
+fn main() {
+    env_logger::Builder::from_default_env().init();
+
+    info!("starting import");
+    debug!(records = 12, "parsed input");
+    warn!("one optional field was missing");
+    error!("the import stopped");
+}
+```
+
+Run the binary with `RUST_LOG=info cargo run` to see informational messages and more severe ones, or `RUST_LOG=debug cargo run` to include debug messages. Directives can target a module, for example `RUST_LOG=my_app::store=debug,my_app=info`. The logger is initialized once, at application start. A reusable library should emit through the `log` facade and must not call `env_logger::init()` itself, because the final application owns the global logger.
+
 ## A map of the ecosystem
 
 The standard choice for each common task. Where two are listed, both are good, and the first is the more widely used.
@@ -368,7 +397,7 @@ The standard choice for each common task. Where two are listed, both are good, a
 | Task | Crates |
 |---|---|
 | Error handling | `anyhow` (applications), `thiserror` (libraries) |
-| Serialisation | `serde` with `serde_json`, `toml`, `serde_yaml`, `csv`, `bincode`, `postcard` |
+| Serialisation | `serde` with `serde_json`, `toml`, `csv`, `rmp-serde`, `postcard` |
 | Command-line arguments | `clap` |
 | Terminal output | `indicatif` (progress bars), `colored` or `owo-colors`, `ratatui` (full-screen interfaces) |
 | Async runtime | `tokio` |
@@ -424,6 +453,7 @@ Each dependency is code you did not write, running with all the rights of your p
 - The standard library is small. Most functionality comes from crates on crates.io, documented on docs.rs.
 - Judge a crate by use, maintenance, documentation, dependencies, licence and version.
 - `rand` for randomness, `regex` for text patterns, `chrono` for dates, `itertools` for extra iterator methods, `tracing` for logging.
+- `log` is a logging facade for libraries; an application can install `env_logger` and let `RUST_LOG` control its output.
 - For every common task there is a well-known standard crate. The table in this chapter is your map.
 - Keep dependencies few, current and audited.
 :::

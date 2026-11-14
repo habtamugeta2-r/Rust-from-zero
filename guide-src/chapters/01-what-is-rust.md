@@ -184,6 +184,16 @@ You also thought about what could go wrong (no tea bag). That is error handling,
 
 :::exercise practice Pick your goal
 Write down one thing you would like to build once you know Rust. It can be small: a tool that renames your photo files, a simple game, a website that tracks your reading. Keep the note. A concrete goal makes it much easier to keep going.
+::hint
+Choose a project you already care about. A personal problem is easier to motivate than a generic toy project.
 ::solution
 There is no wrong answer. If you cannot think of anything yet, borrow one of these: a quiz game in the terminal, a tool that counts the words in a file, a personal expense tracker, or a small website for a club. You will build something similar to each of them in this guide.
+:::
+
+:::exercise practice Choose the first kind of Rust program you want to build
+Pick a category for your first project: command-line tool, web service, terminal game, desktop app, or small library. Write one sentence explaining why that category fits your goal.
+::hint
+Think about what you want to do with the program, not about the syntax. A CLI is easier to start with if you want a tool for files and folders.
+::solution
+A good answer is specific and connected to a real task. For example: "I want a command-line tool that renames my photos by date, because I have many files and I want a quicker way to organise them." The purpose of the exercise is to turn a vague wish into a project you can finish and learn from.
 :::

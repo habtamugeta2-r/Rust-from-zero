@@ -8,6 +8,10 @@
 
 [Chapter 20](#traits) covered the everyday use of traits. This chapter collects the features you meet when you read the standard library, design a library of your own, or wonder how `a + b` works for your own type. You can read it once now and come back when you need a particular tool.
 
+:::analogy A manager with special rules
+A trait is like a job description: it says what a type must be able to do. Associated types are the extra details that each person in that role supplies, like "this team produces numbers, that team produces strings".
+:::
+
 ## Associated types
 
 The `Iterator` trait has a line `type Item;`. That is an **associated type**: a type that each implementation of the trait chooses, once.

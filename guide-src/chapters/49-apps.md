@@ -40,6 +40,8 @@ The tools:
 | crate `wasm-bindgen` | generates the glue: Rust code on one side of the border, a JavaScript file on the other |
 | program `wasm-pack` | one command that runs Cargo, the glue generator and a size optimiser, and puts the result into a folder `pkg` |
 
+The `wasm-bindgen` documentation moved to [wasm-bindgen.github.io](https://wasm-bindgen.github.io/wasm-bindgen/). The older `rustwasm.github.io` documentation site is no longer maintained; this is a documentation move, not a statement that the crate itself has been discontinued.
+
 ```sh
 rustup target add wasm32-unknown-unknown
 cargo install wasm-pack
@@ -935,6 +937,10 @@ Slint was designed for devices with small screens and little memory as well as f
 | State lives in | your variables | one state struct | properties of the components |
 | A click becomes | `true` from `.clicked()` | a message for `update` | a callback or a line of markup |
 | Good first choice for | tools, debug panels, quick results | applications with a clear structure | designed interfaces, small devices |
+
+:::note Check toolkit maturity before choosing
+These projects do not all promise the same stability. The egui documentation warns that it is under heavy development and that releases may include breaking changes. The iced project describes itself as experimental and its own documentation may assume advanced Rust knowledge. Before adopting either for a long-lived product, check the exact release's changelog, minimum supported Rust version, supported platforms, and migration policy. The examples here teach their core models; they are not a guarantee of API stability.
+:::
 
 More names you will meet: `gtk4` with `relm4` on top binds the GTK toolkit of the GNOME desktop. `cxx-qt` connects Rust to the Qt toolkit. And `ratatui` builds full-screen interfaces inside a terminal ([chapter 44](#cli)).
 
