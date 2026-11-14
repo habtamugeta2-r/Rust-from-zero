@@ -134,7 +134,7 @@ cargo add serde_json
 cargo add clap --features derive
 cargo add anyhow
 cargo add thiserror
-cargo add tracing --features attrs
+cargo add tracing --features attributes
 cargo add tracing-subscriber --features env-filter
 cargo add --dev tower --features util
 cargo add --dev proptest
@@ -175,7 +175,7 @@ serde_json = "1"
 clap = { version = "4", features = ["derive"] }
 anyhow = "1"
 thiserror = "2"
-tracing = { version = "0.1", features = ["attrs"] }
+tracing = { version = "0.1", features = ["attributes"] }
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
 [dev-dependencies]
@@ -305,8 +305,9 @@ pub struct Store {
 impl Store {
     /// Opens (or creates) the SQLite database file and applies pending migrations.
     pub async fn open(path: &str) -> Result<Store, LibraryError> {
+        let connections = if path == "sqlite::memory:" { 1 } else { 5 };
         let pool = SqlitePoolOptions::new()
-            .max_connections(5)
+            .max_connections(connections)
             .connect(path)
             .await
             .map_err(LibraryError::Database)?;

@@ -28090,7 +28090,7 @@ $ curl http://localhost:3000/books
 <span class="o">cargo add clap --features derive</span>
 <span class="o">cargo add anyhow</span>
 <span class="o">cargo add thiserror</span>
-<span class="o">cargo add tracing --features attrs</span>
+<span class="o">cargo add tracing --features attributes</span>
 <span class="o">cargo add tracing-subscriber --features env-filter</span>
 <span class="o">cargo add --dev tower --features util</span>
 <span class="o">cargo add --dev proptest</span></code></pre></figure>
@@ -28121,7 +28121,7 @@ serde_json = <span class="s">"1"</span>
 clap = { version = <span class="s">"4"</span>, features = [<span class="s">"derive"</span>] }
 anyhow = <span class="s">"1"</span>
 thiserror = <span class="s">"2"</span>
-tracing = { version = <span class="s">"0.1"</span>, features = [<span class="s">"attrs"</span>] }
+tracing = { version = <span class="s">"0.1"</span>, features = [<span class="s">"attributes"</span>] }
 tracing-subscriber = { version = <span class="s">"0.3"</span>, features = [<span class="s">"env-filter"</span>] }
 
 <span class="k">[dev-dependencies]</span>
@@ -28235,8 +28235,9 @@ tower = { version = <span class="s">"0.5"</span>, features = [<span class="s">"u
 <span class="k">impl</span> <span class="t">Store</span> {
     <span class="c">/// Opens (or creates) the SQLite database file and applies pending migrations.
 </span>    <span class="k">pub</span> <span class="k">async</span> <span class="k">fn</span> <span class="f">open</span>(path: &amp;<span class="t">str</span>) -&gt; <span class="t">Result</span>&lt;<span class="t">Store</span>, <span class="t">LibraryError</span>&gt; {
+        <span class="k">let</span> connections = <span class="k">if</span> path == <span class="s">"sqlite::memory:"</span> { <span class="n">1</span> } <span class="k">else</span> { <span class="n">5</span> };
         <span class="k">let</span> pool = <span class="t">SqlitePoolOptions</span>::<span class="f">new</span>()
-            .<span class="f">max_connections</span>(<span class="n">5</span>)
+            .<span class="f">max_connections</span>(connections)
             .<span class="f">connect</span>(path)
             .<span class="k">await</span>
             .<span class="f">map_err</span>(<span class="t">LibraryError</span>::<span class="t">Database</span>)?;

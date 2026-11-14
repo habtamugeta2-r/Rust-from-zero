@@ -102,9 +102,8 @@ jobs:
           set +e
           python3 guide-src/tools/check.py --projects --strict-targets > /tmp/proj.log 2>&1
           status=$?
-          tail -n 60 /tmp/proj.log
+          cat /tmp/proj.log
           if [ $status -ne 0 ]; then
-            head -n 14 /tmp/proj.log | sed 's/^/::error::/'
-            grep -A8 -E "^✗|^error" /tmp/proj.log | head -n 60 | sed 's/^/::error::/'
+            grep -A12 -E "^✗|^error|FAILED" /tmp/proj.log | head -n 80 | sed 's/^/::error::/'
             exit 1
           fi
