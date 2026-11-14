@@ -567,7 +567,7 @@ Hello, you!
   <h2>How this guide works</h2>
   <div class="how">
     <div class="how-card"><svg class="i" aria-hidden="true"><use href="#i-book"/></svg><h3>Read</h3><p>Every idea starts with an everyday comparison. Every technical word is explained the first time it appears, and again in the glossary.</p></div>
-    <div class="how-card"><svg class="i" aria-hidden="true"><use href="#i-code"/></svg><h3>Run</h3><p>1112 code listings, and every Rust program among them compiled and run with the real Rust compiler. Press <b>Run</b> on a complete example to open it in the free online Rust Playground.</p></div>
+    <div class="how-card"><svg class="i" aria-hidden="true"><use href="#i-code"/></svg><h3>Run</h3><p>1113 code listings, and every Rust program among them compiled and run with the real Rust compiler. Press <b>Run</b> on a complete example to open it in the free online Rust Playground.</p></div>
     <div class="how-card"><svg class="i" aria-hidden="true"><use href="#i-pencil"/></svg><h3>Practise</h3><p>Guided exercises, practice tasks and challenges follow every concept, each with a hint and a fully explained solution. Quizzes give instant feedback.</p></div>
     <div class="how-card"><svg class="i" aria-hidden="true"><use href="#i-hammer"/></svg><h3>Build</h3><p>Projects at every milestone: a game, a to-do app, a search tool, a chat server, a command-line tool, a web API with a database, and a capstone.</p></div>
   </div>
@@ -14888,6 +14888,22 @@ None false</code></pre></figure>
 }</code></pre></figure>
 <figure class="code lang-output out"><figcaption class="code-head"><span class="code-lang">Output</span><span class="code-actions"></span></figcaption><pre><code>[0, 10, 20, 30]</code></pre></figure>
 <p><code>assume_init</code> is the unsafe step: you promise that a value has been written. In old code you may see <code>std::mem::uninitialized()</code>. It is deprecated, because almost every use of it was undefined behaviour.</p></div></details>
+<h3 id="unsafe--dropping-by-hand-manuallydrop">Dropping by hand: <code>ManuallyDrop</code></h3>
+<p>The mirror image of building a value by hand is <em>giving it away</em> by hand. A <code>Vec</code> that hands its buffer to the operating system, or a struct that moves one of its fields into a C function, must not free that memory when it is dropped itself. <code>std::mem::ManuallyDrop&lt;T&gt;</code> wraps a value and switches the automatic drop off: the compiler will not run <code>T</code>’s destructor for it, so the destructor runs when you say, or never.</p>
+<figure class="code lang-rust"><figcaption class="code-head"><span class="code-lang">Rust</span><span class="code-actions"><button type="button" class="cbtn btn-copy" title="Copy this code"><svg class="i " aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button><button type="button" class="cbtn btn-run" title="Open this example in the online Rust Playground"><svg class="i " aria-hidden="true"><use href="#i-play"/></svg><span>Run</span></button></span></figcaption><pre><code><span class="k">use</span> std::mem::<span class="t">ManuallyDrop</span>;
+
+<span class="k">fn</span> <span class="f">main</span>() {
+    <span class="k">let</span> <span class="k">mut</span> owner = <span class="t">ManuallyDrop</span>::<span class="f">new</span>(<span class="t">String</span>::<span class="f">from</span>(<span class="s">"hello"</span>));
+
+    <span class="c">// Deref works as usual, so the value is fully usable while it lives.
+</span>    <span class="m">println!</span>(<span class="s">"still usable: {}"</span>, *owner);
+
+    <span class="c">// SAFETY: this is the only drop of `owner`, and nothing uses it afterwards.
+</span>    <span class="k">unsafe</span> { <span class="t">ManuallyDrop</span>::<span class="f">drop</span>(&amp;<span class="k">mut</span> owner) };
+}</code></pre></figure>
+<figure class="code lang-output out"><figcaption class="code-head"><span class="code-lang">Output</span><span class="code-actions"></span></figcaption><pre><code>still usable: hello</code></pre></figure>
+<aside class="callout c-warn"><div class="callout-label"><svg class="i " aria-hidden="true"><use href="#i-alert"/></svg>Watch out</div><div class="callout-title">Dropping twice is a double free</div><div class="callout-body"><p><code>ManuallyDrop::drop</code> is unsafe for exactly this reason: safe code could call it twice, and the second call would free memory that has already been freed. If you call it, the value must never be dropped again — not at the end of the scope, not by a later <code>mem::take</code>, not by anything else. In ordinary code <code>Option&lt;T&gt;</code> with <code>take()</code> is the better tool, because the <code>None</code> that <code>take</code> leaves behind means “already moved out” and needs no <code>unsafe</code> at all. <code>ManuallyDrop</code> is for the cases where a type must keep its layout — a struct shared with C, or a self-referential type whose fields point into each other — and where the destructor has to be taken over deliberately.</p></div></aside>
+<p>The two tools often appear together: <code>MaybeUninit</code> is “a value may be here”, and <code>ManuallyDrop</code> is “the value is definitely here, but I will decide when it goes”. <code>std::mem::forget(x)</code> is the third form of the same idea — it takes ownership of <code>x</code> and never drops it, which leaks the value but cannot be undone.</p>
 <h2 id="unsafe--the-other-three-abilities">The other three abilities</h2>
 <h3 id="unsafe--mutable-statics">Mutable statics</h3>
 <p>A <code>static mut</code> is a global variable that can be changed, with no protection at all. Any thread can reach it at any time, so every access is a potential data race.</p>

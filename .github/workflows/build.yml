@@ -46,8 +46,13 @@ jobs:
     name: Compile every Rust example
     # Compiling ~900 examples needs a full toolchain and takes about three
     # minutes, so it runs on pull requests, on demand, and every week — not on
-    # every push to a branch.
-    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || github.event_name == 'pull_request'
+    # every push to a branch. To ask for it on a branch push, put [examples] in
+    # the commit message.
+    if: >-
+      github.event_name == 'pull_request'
+      || github.event_name == 'schedule'
+      || github.event_name == 'workflow_dispatch'
+      || (github.event_name == 'push' && contains(github.event.head_commit.message, '[examples]'))
     runs-on: ubuntu-latest
     env:
       RUST_CHECK_HOME: ${{ github.workspace }}
