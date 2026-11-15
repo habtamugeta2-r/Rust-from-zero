@@ -1,9 +1,10 @@
 import type { MetadataRoute } from "next";
 import { loadGuide } from "@/lib/guide-parser";
+import { SITE_URL } from "@/lib/site";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const guide = loadGuide();
-  const base = "https://habtamugeta2-r.github.io/Rust-from-zero";
+  const base = SITE_URL;
   return [
     {
       url: `${base}/`,

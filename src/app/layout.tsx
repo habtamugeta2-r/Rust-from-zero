@@ -6,8 +6,7 @@ import {
 } from "@/components/GuideStateProvider";
 import { loadGuide } from "@/lib/guide-parser";
 import "./globals.css";
-
-const SITE_URL = "https://habtamugeta2-r.github.io/Rust-from-zero";
+import { SITE_URL } from "@/lib/site";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -70,7 +69,7 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }}
         />
       </head>
       <body className="antialiased">

@@ -14,8 +14,7 @@ import {
   Sun,
   X,
 } from "lucide-react";
-import type { SearchHit } from "@/app/api/search/route";
-import type { ChapterSummary, PartMeta } from "@/lib/guide-types";
+import type { ChapterSummary, PartMeta, SearchHit } from "@/lib/guide-types";
 import { useGuideState } from "./GuideStateProvider";
 
 export function GuideShell({

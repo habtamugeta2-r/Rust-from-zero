@@ -1,10 +1,13 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import type { HeadingItem } from "@/lib/guide-types";
 
 export function ChapterRail({ headings }: { headings: HeadingItem[] }) {
-  const h2Headings = headings.filter((h) => h.level === 2);
+  const h2Headings = useMemo(
+    () => headings.filter((h) => h.level === 2),
+    [headings]
+  );
   const [activeId, setActiveId] = useState<string>(h2Headings[0]?.id ?? "");
 
   useEffect(() => {

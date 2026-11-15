@@ -14,6 +14,9 @@ export function generateStaticParams() {
   return guide.summaries.map((c) => ({ id: c.id }));
 }
 
+// Every chapter is prerendered at build time; anything else is a hard 404.
+export const dynamicParams = false;
+
 export async function generateMetadata({
   params,
 }: {
@@ -44,13 +47,7 @@ export default async function ChapterPage({
   const chapter = loadChapter(id);
   if (!chapter) notFound();
 
-  const guide = loadGuide();
-  const idx = guide.summaries.findIndex((c) => c.id === chapter.id);
-  const prev = idx > 0 ? guide.summaries[idx - 1] : null;
-  const next =
-    idx >= 0 && idx + 1 < guide.summaries.length
-      ? guide.summaries[idx + 1]
-      : null;
+  const { prev, next } = chapter;
 
   const eyebrow =
     chapter.kind === "project"
