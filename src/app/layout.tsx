@@ -5,6 +5,7 @@ import {
   type GlossaryTipItem,
 } from "@/components/GuideStateProvider";
 import { loadGuide } from "@/lib/guide-parser";
+import { websiteJsonLd } from "@/lib/seo";
 import "./globals.css";
 import { SITE_URL } from "@/lib/site";
 
@@ -25,6 +26,7 @@ export const metadata: Metadata = {
     description:
       "Learn Rust from scratch with plain language, interactive memory diagrams, 190 solved exercises, quizzes and eight hands-on projects.",
     url: SITE_URL,
+    images: ["/og.png"],
   },
   twitter: {
     card: "summary",
@@ -51,17 +53,20 @@ export default function RootLayout({
     };
   }
 
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@type": "Book",
-    name: "Rust from Zero — The Complete Hands-On Guide",
-    description:
-      "A complete self-study Rust 2024 programming guide for beginners through web services, databases, systems programming and production tooling.",
-    inLanguage: "en",
-    isAccessibleForFree: true,
-    numberOfPages: guide.stats.trackedChapters,
-    url: SITE_URL,
-  };
+  const jsonLd = [
+    {
+      "@context": "https://schema.org",
+      "@type": "Book",
+      name: "Rust from Zero — The Complete Hands-On Guide",
+      description:
+        "A complete self-study Rust 2024 programming guide for beginners through web services, databases, systems programming and production tooling.",
+      inLanguage: "en",
+      isAccessibleForFree: true,
+      numberOfPages: guide.stats.trackedChapters,
+      url: SITE_URL,
+    },
+    websiteJsonLd(),
+  ];
 
   return (
     <html lang="en" suppressHydrationWarning>
@@ -77,10 +82,15 @@ export default function RootLayout({
           content="#141311"
         />
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }}
-        />
+        {jsonLd.map((obj, i) => (
+          <script
+            key={i}
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{
+              __html: JSON.stringify(obj).replace(/</g, "\\u003c"),
+            }}
+          />
+        ))}
       </head>
       <body className="antialiased">
         <a
