@@ -7,7 +7,7 @@
 @time 35
 @learn Contrast blocking I/O, non-blocking EAGAIN polling, and I/O multiplexing (select/poll/epoll/kqueue) | Trace how epoll (epoll_create, epoll_ctl, epoll_wait) scales to 100,000 sockets (O(ready) vs O(N)) | Explain level-triggered vs edge-triggered epoll readiness notifications and why Tokio registers Wakers with mio | Understand Linux io_uring (SQ/CQ lockless ring buffers in shared memory) as true completion-based async I/O
 
-Imagine building a chat or web server handling **50,000 simultaneous TCP clients**, where 49,950 connections are idle at any millisecond while 50 actually send bytes.
+Consider a network service with many open connections, most of which are waiting for input at any moment. A blocking design can tie up a thread per wait; readiness-based I/O lets a program wait for activity across multiple sockets. This chapter compares blocking calls, `epoll` and `io_uring`, including the complexity and workload trade-offs.
 
 If you spawn one OS thread per connection and call blocking `TcpStream::read()`, 50,000 × 2 MiB virtual stacks burns 100 GiB of stack reservations and forces tens of thousands of kernel scheduler transitions. Conversely, spinning in a `nonblocking` `loop` calling `read()` on all 50,000 sockets burns 100% CPU receiving `EAGAIN` 49,950 times!
 

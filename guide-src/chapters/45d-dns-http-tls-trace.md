@@ -7,7 +7,7 @@
 @time 35
 @learn Trace DNS resolution from /etc/hosts and glibc nsswitch to UDP/53 recursive resolvers and TTL caching | Explain TLS 1.3 (X25519 key exchange, X.509 certificate chains, AEAD encryption) in 1-RTT | Contrast HTTP/1.1 text streams, HTTP/2 binary multiplexed frames, and HTTP/3 over QUIC/UDP | Follow reqwest::get("https://example.com/data") end-to-end across every network packet and syscall
 
-In [Chapter 46](#end-to-end-trace) we traced two lines of local Rust down to terminal pixels. Now let's run the **networked counterpart** of that trace:
+The [end-to-end trace](#end-to-end-trace) followed a local program from source code to terminal output. This chapter follows a network request through name resolution, transport and application protocols, then relates those layers to the Rust code that initiates it. The path varies with configuration, caches and protocol negotiation, so the trace is a model of a common case rather than a fixed route.
 
 ```rust
 let body = reqwest::get("https://example.com/data").await?.text().await?;

@@ -6,7 +6,7 @@
 @time 55
 @learn Use associated types and constants, and know when to prefer them to generic parameters | Overload operators such as `+` and `==` for your own types | Implement a trait for many types at once with a blanket implementation | Explain what makes a trait usable as `dyn Trait` | Recognise the marker traits `Sized`, `Send` and `Sync`
 
-[Chapter 25](#traits) covered the everyday use of traits. This chapter collects the features you meet when you read the standard library, design a library of your own, or wonder how `a + b` works for your own type. You can read it once now and come back when you need a particular tool.
+The earlier [traits chapter](#traits) introduced implementations and bounds. Here we examine features used to design flexible libraries: associated types, operator traits, supertraits, blanket implementations and other advanced patterns. The examples explain what each feature enables and the constraints it adds, so you can return to a section when a design calls for it.
 
 :::plain Associated types, GATs, and operator traits
 Chapter 25's traits described what a type can *do*; the advanced forms describe how traits combine. An **associated type** (`type Item`) makes a trait carry one type per implementation, which is why `Iterator` can only yield one kind of value. A **super-trait** (`trait Sorted: Ord`) requires implementors to satisfy another trait first. **Operator traits** (`Add`, `Index`, `Deref`) are ordinary traits that overload syntax, and `impl Trait` in argument and return position hides a concrete type without a `Box`. **Blanket implementations** give a method to every type that meets a bound, and **trait objects** (`dyn Trait`) trade static dispatch for one vtable lookup.

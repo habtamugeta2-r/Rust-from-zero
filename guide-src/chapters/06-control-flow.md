@@ -6,7 +6,7 @@
 @time 35
 @learn Make a program choose between paths with `if`, `else` and `match` | Repeat work with `loop`, `while` and `for` | Stop or skip rounds of a loop with `break` and `continue` | Pick the right kind of loop for a task
 
-A program that always runs the same lines in the same order cannot do much. Real programs **decide** (if the password is right, let the user in) and **repeat** (do this for every item in the list). Together these are called **control flow**: they control which line runs next. With sequence, decision and repetition you can express any computation.
+A fixed sequence of steps is not enough for most useful programs: they need to choose a response and repeat work. **Control flow** is the set of rules that determines which statement runs next. Rust uses conditions and pattern matching to choose paths, and loops to repeat them; together with data and functions, these are the basic tools for expressing algorithms.
 
 :::plain Conditions, loops, and expressions in one paragraph
 **Control flow** is how a program decides what to do next: `if` runs a block only when a `bool` is true, `match` picks one arm out of many, and `loop`, `while` and `for` repeat work. In Rust every one of those is an **[[expression]]** with a value, so `let x = if c { 1 } else { 2 };` is ordinary code. A loop can also produce a value with `break x`, and the compiler insists that every path through an `if`/`match` yields the same type.

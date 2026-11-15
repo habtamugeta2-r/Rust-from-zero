@@ -7,7 +7,7 @@
 @time 35
 @learn Explain Unix's "everything is a file descriptor" model via FD table, open file description, and inode | Contrast stdin (0), stdout (1), stderr (2), pipes, sockets, and regular files | Understand read/write buffering (BufReader/BufWriter/LineWriter) vs kernel page cache | Observe dup/redirection and RAII Drop closing file descriptors safely in Rust
 
-Why does the exact same `std::io::Write` trait write effortlessly to a terminal, an `ext4` file on disk, a Unix pipe (`cmd1 | cmd2`), a TCP socket, and `/dev/null`? Because Unix models every byte stream behind a tiny integer handle: a **[[file descriptor]] (FD)**!
+Rust's `Write` trait lets code send bytes to different destinations through a common interface. On Unix, a **[[file descriptor]] (FD)** is a small integer handle used to refer to an open file, pipe, socket or device. These resources do not all behave identically, but the shared interface makes it possible to write reusable I/O code and reason about buffering separately.
 
 In this chapter we open the Linux kernel's three-table file descriptor diagram, trace what `dup2` / shell redirection (`> out.txt 2>&1`) actually rewires, and see how user-space buffering (`BufReader`, `LineWriter`, `BufWriter`) interacts with the kernel's buffer and disk cache. When one thread cannot afford to wait on a slow descriptor, [blocking, `epoll` and `io_uring`](#blocking-epoll-io-uring) shows the alternatives.
 

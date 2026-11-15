@@ -7,7 +7,7 @@
 @time 45
 @learn Combine Parts I-XI systems concepts into a working Linux /proc & syscall diagnostic tool in Rust | Parse ELF headers, /proc/self/maps segments, /proc/self/status kernel metrics, /proc/net/tcp sockets and FD tables from scratch | Count every heap allocation with a global allocator and inspect the same program with readelf, strace, perf, gdb and Valgrind | Verify systems invariants (alignment, page masks, endianness, RAII cleanup) with deterministic unit tests
 
-Look at how far you have come: in Part I you learned bits, endianness, and CPUs; in Part II you opened ELF binaries and disassembly; in Parts IV–VIII you mapped virtual memory, allocators, `syscall`, threads, `epoll`, and hardware caches; and in Parts X–XI you traced packets, sockets, blocks, and file systems.
+This lab combines ideas from the hardware, compiler, memory, operating-system and storage chapters in a practical Linux program. You will inspect process metadata and executable files, parse selected `/proc` entries, and compare what your program reports with established command-line tools. Each inspection is scoped to Linux interfaces, which can vary across kernel versions and environments.
 
 In this hands-on systems lab, you put those concepts together into a practical **Linux Process & Binary Inspector** written in pure safe Rust (`std` only—zero external crates!). It parses real ELF64 headers by hand, reads Linux `/proc/self/maps` VMAs, inspects `/proc/self/status` memory and context-switch counters, and verifies every parser cleanly with deterministic tests.
 

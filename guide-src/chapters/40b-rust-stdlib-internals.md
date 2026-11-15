@@ -6,7 +6,7 @@
 @time 65
 @learn Trace the exact memory layouts of Vec, String, Box, Rc, and Option in std | Explain how niche optimisation eliminates enum tag bytes | Describe how UnsafeCell, NonNull, ManuallyDrop, and MaybeUninit work inside core and alloc | Explain drop flags, MIR drop elaboration, pointer provenance, and compiler miscompilation from UB
 
-In earlier chapters you used `Vec<T>`, `String`, `Option<T>`, `Box<T>`, `Rc<T>`, and `RefCell<T>` to build safe programs. None of those types are opaque magic hard-wired into the CPU—they are small structs written in Rust itself inside the `core` and `alloc` crates, resting on a handful of compiler primitives (`lang` items) and strict contracts with LLVM.
+Earlier chapters used `Vec<T>`, `String`, `Option<T>`, `Box<T>`, `Rc<T>` and `RefCell<T>`. Their behaviour comes from standard-library implementations, compiler-supported language features and allocation routines—not special CPU instructions for each type. This chapter opens those implementations and shows where the compiler's guarantees rely on library code and documented invariants.
 
 ## Starting point: `std` is just Rust code over `core` and `alloc`
 

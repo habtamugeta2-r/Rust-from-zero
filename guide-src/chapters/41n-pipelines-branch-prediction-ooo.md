@@ -5,9 +5,9 @@
 @short Pipelines, branches & OoO
 @level intermediate
 @time 35
-@learn Trace a 5-stage instruction pipeline and its three classic hazards (structural, data, control) | Measure why branch mispredictions flush 15-20 pipeline stages (~15-20 cycles) | Understand superscalar dispatch, register renaming, and out-of-order speculative execution | Connect speculative execution directly to Spectre side-channel attacks and bounds-check optimisation
+@learn Trace an instruction pipeline and distinguish structural, data and control hazards | Measure the cost of branch misprediction on a chosen processor | Understand superscalar dispatch, register renaming, and out-of-order speculative execution | Connect speculative execution to Spectre side-channel attacks and bounds-check optimisation
 
-Why does a modern 4 GHz processor execute **3 or 4 instructions *per single clock cycle***—yet suddenly stall for 15–20 wasted cycles every time an `if` goes the unexpected way? And how does sorting an array *before* summing conditional items sometimes make the exact same Rust loop run **3× faster**?
+A processor can overlap instruction work to improve throughput, but dependencies and an incorrectly predicted branch can leave parts of the pipeline waiting or force speculative work to be discarded. The size of the effect depends on the processor and the program. This chapter explains pipelining, branch prediction and out-of-order execution, then connects those ideas to measurements of Rust code. It builds on [assembly and machine code](#assembly-machine-code) and relates its findings to [cache behaviour](#pointers-safety-caches).
 
 The answer lives inside the CPU core's instruction assembly line: **pipelining**, **out-of-order (OoO) execution**, and **speculative branch prediction**. The machine code that flows down that line is in [assembly and machine code](#assembly-machine-code), and the caches it stalls on are in [pointers, safety and caches](#pointers-safety-caches).
 

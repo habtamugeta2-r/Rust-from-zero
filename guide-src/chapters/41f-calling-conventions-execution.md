@@ -7,7 +7,7 @@
 @time 35
 @learn Trace System V AMD64 and AAPCS64 (ARM64) register passing rules | Distinguish caller-saved (volatile) vs callee-saved (non-volatile) registers across calls | Follow stack alignment (16 bytes), prologues/epilogues, red zones, and leaf-function optimisations | Understand Rust's default ABI vs #[repr(C)] / extern "C" and how ? / Option / Vec lower to machine instructions
 
-What actually happens at the nanosecond your Rust code calls `compute(1, 2, 3, 4, 5, 6, 7)`? Why do small structs vanish into CPU registers without touching RAM, while a 7th argument spills onto the stack? Why does `extern "C"` look identical in syntax yet generate different field orders and calling stubs from `extern "Rust"`?
+When Rust calls `compute(1, 2, 3, 4, 5, 6, 7)`, the compiler follows a calling convention: rules for passing arguments, returning values and preserving registers. Those rules vary by target and ABI; some values travel in registers and others in memory. This chapter compares Rust's native convention with `extern "C"` and traces a call from source to machine instructions.
 
 Every architecture specifies an **ABI (Application Binary Interface)**—the machine-level treaty stating which registers carry arguments, which hold return values, who preserves which registers across a `call`, and how the stack pointer (`RSP` / `SP`) stays aligned.
 

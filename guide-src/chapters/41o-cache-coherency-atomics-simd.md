@@ -7,12 +7,7 @@
 @time 35
 @learn Explain MESI cache coherency and why hardware store buffers reorder reads/writes across cores | Contrast x86-64 TSO vs ARM64 weak memory ordering and Rust Ordering (Relaxed/Acquire/Release/SeqCst) | Trace how RMW atomics compile to lock xadd/cmpxchg on x86 vs LL/SC or LSE on ARM64 | Understand data-level parallelism with SIMD registers (SSE/AVX2/NEON) and Rust auto-vectorisation
 
-Look at the two forms of hardware parallelism inside every chip you own today:
-
-1. **Multi-core concurrency (thread-level parallelism):** 8 or 64 cores executing separate Rust threads simultaneously, each with private L1/L2 caches backed by shared L3/RAM—forcing hardware to keep caches coherent (**MESI**) while still allowing **store buffers** to reorder memory visibility unless constrained by **memory barriers** (`Ordering::Acquire` / `Release` / `SeqCst`)!
-2. **SIMD data parallelism (instruction-level data parallelism):** Inside **one single core**, wide vector registers (`128`-bit SSE/NEON, `256`-bit AVX2, `512`-bit AVX-512) operating on `4`, `8`, or `16` numbers in **one single CPU instruction**!
-
-Mastering both explains *why* Rust's `Ordering` enum exists on `std::sync::atomic` and how a 5-line iterator loop runs 8× faster under `--release` auto-vectorisation. The user-side rules for sharing state safely are in [threads](#threads) and [shared state](#shared-state); the cache-line side of the story is in [pointers, safety and caches](#pointers-safety-caches).
+Modern processors can do work in parallel in more than one way. Multiple cores can run separate threads, while SIMD instructions process several data lanes in one instruction. Cache coherence helps cores keep cached copies consistent; memory ordering rules constrain which writes another core may observe and when. The exact cache protocol, vector width and performance depend on the processor and workload. This chapter connects those hardware mechanisms to Rust atomics and SIMD; the programming-level foundations are in [threads](#threads) and [shared state](#shared-state), while [pointers, safety and caches](#pointers-safety-caches) introduces cache-line layout.
 
 :::analogy Whiteboards across conference rooms vs a wide painting roller
 - **Cache coherency + memory ordering:** Each CPU core sits in its own room with a private whiteboard (**L1/L2 cache**) and an "Outbox tray" (**store buffer**). Before a note reaches the central hallway board, it sits briefly in the Outbox—so Core 1 might peek into the hallway before Core 0 empties its Outbox unless Core 0 sends an explicit **Release** barrier!

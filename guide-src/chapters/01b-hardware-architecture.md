@@ -6,7 +6,7 @@
 @time 35
 @learn Explain what hardware and software are and how they interact | Name the main parts inside a CPU: control unit, ALU, registers, and clock | Contrast SRAM caches, DRAM main memory, ROM firmware, SSDs, and HDDs | Describe how address, data, and control buses move bytes through one instruction cycle
 
-When you double-click a program or run `cargo run`, it can feel as if software lives in an abstract cloud of ideas. In reality, nothing runs without moving electrical charges across copper traces and silicon transistors. Understanding that physical machinery makes every concept later in this guide—pointers, stack vs heap, CPU caches, system calls, and concurrency—feel concrete rather than mysterious.
+A running program is not an idea floating above the machine: its instructions and data are represented by physical states in memory and processor circuits. Following one instruction through the CPU, registers and memory gives a concrete starting point for later topics such as pointers, caches and system calls.
 
 ## Starting point: hardware and software
 

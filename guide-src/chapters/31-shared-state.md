@@ -6,7 +6,7 @@
 @time 55
 @learn Share read-only data between threads with `Arc` | Protect changeable data with `Mutex` and `RwLock` | Use atomic types for simple counters and flags | Create global values safely with `static`, `OnceLock` and `LazyLock` | Recognise and avoid deadlocks, and choose between messages and shared state
 
-The last chapter showed two ways for threads to work together: give data away with `move`, or send it through a channel. Both avoid sharing. Sometimes sharing is the natural design: a cache that all threads consult, a counter that all threads increase, a list of connected users. This chapter is about the third way: **several threads use the same data, with coordination**.
+Threads can communicate by transferring ownership or sending messages through a channel. Some designs instead need shared state—for example, a cache consulted by several workers. Shared access requires a coordination rule that protects updates and keeps the data valid. This chapter compares mutexes, read-write locks and atomic values, and shows the costs each introduces.
 
 ## `Arc<T>`: shared ownership across threads
 

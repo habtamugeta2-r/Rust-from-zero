@@ -7,7 +7,7 @@
 @time 35
 @learn Contrast processes and OS threads via Linux clone() sharing flags | Trace fork() + COW, execve(), wait(), zombies, and orphans | Explain OS preemptive scheduling (CFS / EEVDF, run queues, time slices, I/O vs CPU bursts) | Measure what a full CPU context switch costs and inspect thread/PID isolation in Rust
 
-Your computer has 4, 8, or 64 CPU cores, yet `ps aux` shows 300+ running processes and 2,000+ threads—a compiler, a terminal, a web server, a database, and dozens of kernel workers—all seemingly moving forward together.
+A system may have more runnable processes and threads than CPU cores. Yet interactive programs, background services and kernel workers appear to make progress together. The operating-system scheduler shares processor time among runnable threads, while many others wait for input or other events. The exact counts vary by machine and workload; the useful question is how the scheduler decides what runs next.
 
 Who decides which thread gets a CPU core right now, how long it gets to keep it, what separates a **process** from a **thread** inside the Linux kernel, and why does switching between two threads from different processes cost far more than switching within the same process? The kernel side of the `clone()` call that starts all of this is in [the kernel and system calls](#kernel-syscalls-processes).
 

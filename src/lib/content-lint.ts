@@ -216,6 +216,11 @@ export interface LintOptions {
   chaptersDir?: string;
   /** Directory holding `captured/*.txt`; defaults beside `chaptersDir`. */
   capturedDir?: string;
+  /**
+   * Hashes of intentionally preserved historical captures, documented in the
+   * capture archive manifest. Unlisted orphans still produce warnings.
+   */
+  archivedCaptures?: string[];
   /** README to check the published statistics against, when enabled. */
   readmePath?: string;
   /**
@@ -651,7 +656,13 @@ export function lintContent(guide: LoadedGuide, options: LintOptions = {}): Lint
     capturedFiles = [];
   }
   const capturedSet = new Set(capturedFiles.map((name) => name.slice(0, -4)));
+  const archivedCaptures = new Set(options.archivedCaptures ?? []);
+  let archivedOrphanCount = 0;
   for (const hash of capturedSet) {
+    if (!captures.referenced.has(hash) && archivedCaptures.has(hash)) {
+      archivedOrphanCount += 1;
+      continue;
+    }
     if (!captures.referenced.has(hash)) {
       problems.push({
         severity: "warn",
@@ -685,6 +696,9 @@ export function lintContent(guide: LoadedGuide, options: LintOptions = {}): Lint
   info.push(
     `captured outputs: ${capturedFiles.length} files, ${captures.autoBlocks} auto blocks, ${captures.referenced.size} referenced`,
   );
+  if (archivedOrphanCount > 0) {
+    info.push(`captured outputs: ${archivedOrphanCount} documented historical orphan(s) retained`);
+  }
 
   // ---- published statistics -------------------------------------------------
   if (options.checkReadmeStats) {

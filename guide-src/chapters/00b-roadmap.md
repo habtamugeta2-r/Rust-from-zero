@@ -7,11 +7,11 @@
 @time 15
 @learn Navigate the entire computer systems and Rust internals curriculum | Trace conceptual dependencies from hardware up to distributed services | See how every chapter maps to practical Linux and Rust experiments
 
-This roadmap is the central table of contents for the entire guide. It maps every **Part**, **Chapter**, **Subchapter**, **Topic covered**, **Learning objective**, **Chapter dependency**, and **Practical experiment** in strict conceptual order—so no advanced mechanism is ever used before its foundation is built.
+Use this roadmap to see how the guide is organised and how its topics connect. It lists the Parts and chapters, their learning goals, useful prerequisites and practical experiments. The order builds from basic ideas towards systems topics, but you can follow a project-specific route when that better fits your goal.
 
 ## How the Full Stack Connects
 
-Every program you write travels through the same ten-stage chain of reality:
+A native Rust program can be followed through a sequence of transformations and runtime layers. This sketch is a useful map, not a claim that every target or executable uses identical steps:
 
 ```text
 Source Code (.rs)

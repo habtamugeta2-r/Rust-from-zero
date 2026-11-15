@@ -6,7 +6,7 @@
 @time 70
 @learn Explain when async is the right tool and when threads are | Write `async` functions and use `.await` | Run tasks concurrently with `join!`, `spawn`, `select!` and timeouts | Use async channels and shared state, and avoid blocking the runtime | Describe what a future and a runtime are underneath
 
-Threads are perfect when you have a handful of long calculations. Many programs have a different problem. A web server may have ten thousand clients connected at once, and nearly all of them are doing nothing at a given moment: the server is *waiting* for them to send something. A chat server, a download manager and a web crawler are the same. They are not short of processor time. They spend their lives waiting for the network or the disk.
+Threads are useful for running work concurrently, but assigning a dedicated thread to every connection can use substantial resources. Network services often have many connections waiting for input, with only a few ready to make progress at a time. **Asynchronous programming** lets a task pause while it waits and resume when an event arrives, so a runtime can schedule other work in the meantime. Whether async is the right choice depends on the workload and design.
 
 One thread per waiting client is wasteful. Every thread reserves memory for its own stack, and the operating system needs time to switch between threads. A few hundred are fine. A hundred thousand are not.
 

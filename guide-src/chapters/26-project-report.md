@@ -7,7 +7,7 @@
 @time 120
 @learn Turn raw text into typed data, and report bad rows without stopping | Summarise data with iterator pipelines | Write one generic function that groups by any key, using a closure | Handle money correctly | Print aligned tables
 
-Programs that read data, clean it, summarise it and print a report are among the most common programs in the world. In this project you write one. It reads sales records in **CSV** form ("comma-separated values": one record per line, with commas between the fields) and prints this:
+This project turns a CSV file of sales records into a summary report. You will parse each row, handle malformed input, aggregate the data and format the result. The program is a useful exercise in composing iterators, collections and error handling around a concrete data-processing task.
 
 ```text
 SALES REPORT

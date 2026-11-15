@@ -6,7 +6,7 @@
 @time 60
 @learn Explain what a macro is and how it differs from a function | Write declarative macros with `macro_rules!`, including repetition | Use the built-in macros and the common attributes | Describe the three kinds of procedural macros and write a simple derive macro | Decide when a macro is the right tool
 
-Since your first program you have used `println!`. The exclamation mark means that it is a **macro**, not a function. `vec!`, `format!`, `assert_eq!`, `matches!` and `#[derive(Debug)]` are macros as well. This chapter shows what they are and how to write your own.
+The `!` in `println!` marks a macro invocation. Unlike an ordinary function call, a macro expands into code during compilation. Rust has declarative macros, procedural macros and compiler-provided derives; this chapter explains how to recognise them and how to define a declarative macro for a repeated pattern.
 
 :::plain Declarative and procedural macros
 A **[[macro]]** is code that runs at compile time and produces code. `macro_rules!` matches token patterns and re-emits tokens, which is how `vec![]` and `println!` are written; it is hygienic, so names introduced inside do not leak out. **Procedural** macros are separate crates that take a token stream and return one: `#[derive(Clone)]` is a derive macro, `#[inline]` is an attribute macro, and `sqlx::query!` is a function-like macro that can check SQL against a live database at compile time. Macros are the escape hatch for what borrowing and generics cannot express; reach for a function first, and a macro only when the syntax itself must be new.

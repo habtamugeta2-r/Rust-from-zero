@@ -6,7 +6,7 @@
 @level all
 @time 10
 
-The Rust compiler refuses many programs, and it explains itself better than most compilers. This page lists the errors that you will meet most often. Each entry has a small program that produces the error, the real message, the reason, and the usual repairs. Use the search box with the error code, for example `E0382`.
+When Rust rejects a program, its diagnostic usually points to a location and may include a suggested repair. This reference explains a selection of common compiler errors: the code that triggers each one, what the message means, and ways to resolve it. Search by error code, such as `E0382`, or by the term you are trying to understand.
 
 ## How to read a message
 

@@ -6,7 +6,7 @@
 @time 45
 @learn Compare high-level languages, low-level languages, compilers, and interpreters | Trace source code through lexing, parsing, AST, name resolution, HIR, MIR, and LLVM IR | Explain why Rust performs type checking on HIR and borrow checking on MIR | Inspect real intermediate representations emitted by `rustc`
 
-When you write `let sum = a + b;` in Rust and run `cargo run`, `rustc` does not jump straight from your text file to CPU machine instructions in one giant leap. Instead, the [[compiler]] runs an assembly line of distinct representations, each checking a different class of truth and shedding surface syntax until only hardware-ready operations remain.
+Turning `let sum = a + b;` into a running program involves several stages, much like translating a document before printing it: each stage changes the representation and makes particular checks or transformations possible. Rust's compiler, `rustc`, does not translate source text directly into the final instructions in one step. This chapter follows the main intermediate forms and explains what each contributes.
 
 :::note A gentle tour before Part III
 In Part II (Chapters 5–7), we open the hood of `rustc` so you can see how source text turns into a runnable program. Whenever a compiler stage mentions a Rust concept you have not met yet—such as *traits*, *generics*, or the *borrow checker*—do not worry about memorising it now: [Part III](#variables) teaches every single one from zero starting in [Chapter 8](#variables).

@@ -7,7 +7,7 @@
 @time 120
 @learn Read command-line arguments | Structure a program as a library with a thin `main` | Return borrowed results with a lifetime | Report errors on the error stream and through exit codes | Develop a function test-first
 
-In this project you build `finder`, a small version of the classic command-line tool `grep`. It searches files for a text and prints every line that contains it:
+In this project you build `finder`, a small command-line search tool inspired by `grep`. It reads a query and a file, then prints matching lines. The implementation separates argument handling, search logic and error reporting so the core behaviour can be tested independently of the terminal.
 
 ```text
 $ finder rust poem.txt

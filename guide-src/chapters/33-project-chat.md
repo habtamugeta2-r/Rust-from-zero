@@ -7,7 +7,7 @@
 @time 150
 @learn Design a small network protocol and a concurrent server for it | Run one async task per client and connect the tasks with a broadcast channel | Wait for two things at once with `select!` | Guarantee clean-up with `Drop` | Test a network server automatically
 
-In this project you write a real network program: a chat server. Any number of people connect to it, choose a name, and whatever one of them types appears on everybody else's screen. You also write a small client, and a test that starts the server and lets two simulated users talk.
+In this project you build a small networked chat service. Several clients can connect, choose names and exchange messages through the server. You will also write a client and an integration test that starts the server and checks a conversation between simulated users. The project makes concurrency, message framing and error handling concrete.
 
 This is what two users see. The lines marked with `>` are what the person typed. The mark itself is not on the screen.
 

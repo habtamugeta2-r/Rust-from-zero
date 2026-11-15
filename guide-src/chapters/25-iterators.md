@@ -6,7 +6,7 @@
 @time 60
 @learn Explain what an iterator is and how `for` uses it | Build processing pipelines with `map`, `filter` and other adapters | Finish a pipeline with `collect`, `sum`, `fold`, `find` and friends | Understand laziness and why iterator chains are as fast as loops | Write your own iterator
 
-A great deal of programming is "go through a collection and do something with each element": keep some, change them, add them up, find one. You can do all of that with `for` loops and `mut` variables. Rust offers a second style that is shorter, harder to get wrong, and just as fast: **iterators**.
+Many tasks process a collection one element at a time: filter values, transform them, add them up or find a match. A `for` loop is one clear way to do this. Rust's **iterators** offer another way to compose those steps, often without a temporary collection; the compiler can optimise many iterator chains, but performance should be measured for the workload that matters.
 
 Here is the same task in both styles. Add up the squares of all even numbers in a list:
 

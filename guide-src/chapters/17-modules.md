@@ -6,7 +6,7 @@
 @time 45
 @learn Explain what packages, crates and modules are | Group code into modules and control what is visible from outside | Refer to items with paths and shorten them with `use` | Split a program into several files | Build a library and a program in the same package
 
-Your programs so far lived in one file. That works up to a few hundred lines. After that, you scroll a lot, names start to collide, and it gets hard to see which parts depend on which. Rust has a system for dividing code into named, nested groups, and for deciding which parts of a group the rest of the program is allowed to use.
+Keeping all code in one file can make a growing program harder to navigate and its dependencies harder to see. Rust lets you divide code into named modules, group related items, and control which items other parts of the crate may use. Modules are part of the language's visibility system, not only a way to split files.
 
 :::analogy A company with departments
 A company puts people into departments: sales, accounting, the workshop. Each department has a front desk that the rest of the company may talk to, and internal procedures that are nobody else's business. If accounting changes how it files its papers, nobody outside notices, as long as the front desk still answers the same questions. Modules are departments for code.

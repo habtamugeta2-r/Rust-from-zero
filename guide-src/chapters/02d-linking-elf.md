@@ -6,7 +6,7 @@
 @time 50
 @learn Explain what lives inside an object file (.o) and why it cannot run by itself | Distinguish static linking (.a, .rlib) from dynamic linking (.so, PLT/GOT) | Read the structure of an ELF executable: ELF header, sections (.text, .rodata, .data, .bss), and program headers | Inspect real compiled programs using readelf, objdump, nm, and ldd
 
-Compiling a single `.rs` file produces machine instructions, yet those instructions are still missing pieces. Your code calls `println!`, which calls Rust's `std::io::_print`, which eventually calls the C library's `write` symbol—code living in completely separate compiled files. Putting all compiled fragments together and turning them into a file the Linux kernel knows how to load is the job of **linking** and the **ELF executable format**.
+A source file can refer to functions and data defined elsewhere, including in the standard library. The compiler emits object code and references that still need to be resolved; the **linker** combines the required pieces and records how they fit together. On Linux, a common executable format is **ELF** (Executable and Linkable Format), which also describes information the operating system needs to load a program. The exact call path and linking choices depend on the target and build.
 
 ## Starting point: why compilation stops at object files first
 

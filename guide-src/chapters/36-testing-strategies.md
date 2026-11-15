@@ -6,7 +6,7 @@
 @time 50
 @learn Decide what to test at which level | Make code testable by passing in its dependencies | Write table-driven, property-based and snapshot tests | Measure speed with benchmarks and completeness with coverage | Know the tools for fuzzing, mocking and faster test runs
 
-[Chapter 27](#testing) taught the mechanics: `#[test]`, the assertion macros, unit and integration tests. This chapter is about using them well in a growing project, and about the more powerful techniques and tools.
+The [testing chapter](#testing) introduced test functions, assertions and test organisation. Here the focus shifts from syntax to strategy: selecting useful cases, isolating external effects, testing failures and deciding where property-based or snapshot tests fit. No single testing style catches every defect, so the aim is a set of checks suited to the code.
 
 :::plain The test pyramid, in Rust terms
 Three levels of test, each answering a different question. **[[Unit tests|unit test]]** sit next to the code and check one function in isolation, so they are fast and precise. **Integration tests** in `tests/` drive the public API the way a user would, catching wiring mistakes the unit tests cannot see. **End-to-end tests** start the real server against a real database and are slow and few, because their job is to prove the pieces fit, not to cover every branch. The pyramid is a budget: many cheap tests at the bottom, a handful at the top, and no level trying to do another level's work.

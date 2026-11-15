@@ -315,6 +315,21 @@ test("lint: capture/orphan warns on a capture no auto block references", () => {
   assert.ok(rules.includes("capture/orphan"));
 });
 
+test("lint: a documented archived capture is retained without a warning", () => {
+  const fixture = makeFixture();
+  fs.writeFileSync(path.join(fixture.capturedDir, "deadbeefdeadbeef.txt"), "old\n");
+  const result = lintContent(cleanGuide(), {
+    chaptersDir: fixture.chaptersDir,
+    capturedDir: fixture.capturedDir,
+    archivedCaptures: ["deadbeefdeadbeef"],
+  });
+  assert.equal(
+    result.problems.some((problem) => problem.rule === "capture/orphan"),
+    false,
+  );
+  assert.ok(result.info.includes("captured outputs: 1 documented historical orphan(s) retained"));
+});
+
 test("lint: capture/missing warns on an auto block without its capture", () => {
   const rust = ["fn main() {}", ""].join("\n");
   const fixture = makeFixture({

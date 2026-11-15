@@ -6,7 +6,7 @@
 @time 40
 @learn Format code automatically with rustfmt | Find mistakes and unidiomatic code with Clippy | Configure lints for a whole project | Debug with `dbg!`, backtraces and a debugger | Set up continuous integration that checks every change
 
-A compiler that catches many mistakes is the first layer of quality. Rust's standard tools add more layers, and all of them come with the normal installation. Professional Rust projects run them on every change. Learning them early also makes you a better Rust programmer, because they explain what they find.
+The compiler catches many kinds of mistakes, but it does not check formatting, every style issue or all likely bugs. Rust's toolchain includes tools such as rustfmt and Clippy for those jobs. Teams choose which checks to run locally and in continuous integration; using them consistently makes code easier to review and maintain.
 
 :::plain rustfmt, Clippy, and the toolchain
 The three tools that keep a Rust codebase uniform are all one command away. **rustfmt** rewrites layout — line breaks, spacing, import order — so nobody argues about style and diffs stay small. **[[Clippy]]** is a few hundred lints beyond the compiler's, catching `&Vec<T>` parameters, redundant clones, `if let` chains that want `match`, and off-by-one iterator mistakes, with `#[allow(clippy::…)]` when you genuinely mean it. **[[cargo]] doc** builds the API documentation from your doc comments, and `cargo audit`/`cargo deny` check dependencies for known vulnerabilities and licence problems. Run them in CI with `-D warnings`, so a clean local run and a green build mean the same thing.

@@ -6,7 +6,7 @@
 @time 45
 @learn Explain the difference between `String` and `&str` and choose the right one | Build, grow and combine text | Borrow a part of a text or a list with a slice | Work correctly with text in any language of the world | Use the most common text methods
 
-Text is everywhere in programs: names, messages, file contents. It looks simple, and it is one of the trickiest kinds of data. Rust has two main text types, and beginners often ask why. The answer comes straight from ownership: one type **owns** its text, the other **borrows** it.
+A name typed by a user, a line read from a file, and a fixed label may all look like text, but they have different ownership needs. Rust's `String` owns a growable UTF-8 buffer; `&str` is a borrowed view into text stored elsewhere. This chapter shows how to choose between them and work safely with slices.
 
 :::plain `String`, `&str`, and slices in one paragraph
 A **`String`** owns a growable buffer on the heap, so you can append to it and pass it around. A **`&str`** is a *borrowed view* into text someone else owns: a pointer and a length, with no allocation of its own, which is why string literals are `&'static str`. A **slice** `&[T]` is the same idea for any array-like data: a length and a pointer into an existing `Vec` or array. Functions should usually take `&str` or `&[T]` and return owned values, so callers keep ownership and you avoid needless copies.

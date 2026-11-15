@@ -6,7 +6,7 @@
 @time 55
 @learn Explain what `unsafe` allows, what it does not change, and what undefined behaviour is | Work with raw pointers | Wrap unsafe code in a safe interface and document why it is sound | Name the tools that check unsafe code | Judge when unsafe code is justified
 
-Everything you have written so far was **safe Rust**: the compiler guaranteed that no reference dangles, no index reads outside its array, and no two threads race for the same data. It gives these guarantees by being careful. When it cannot prove that some code is correct, it rejects the code, even if the code happens to be fine.
+Most Rust code is written in **safe Rust**, where the compiler checks rules for references, indexing and thread-safe access. Safe indexing reports an out-of-range access rather than reading beyond a slice. These checks rely on unsafe code and foreign libraries upholding their contracts, and they do not prove that program logic is correct. This chapter examines the small set of operations that require the programmer to uphold invariants the compiler cannot check.
 
 Some things cannot be proved by any compiler: that an address handed over by the operating system really points to usable memory, or that a function written in C keeps its promises. For these cases Rust has a second mode, entered with the keyword `unsafe`.
 

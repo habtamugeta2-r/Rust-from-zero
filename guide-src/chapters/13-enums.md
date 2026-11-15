@@ -6,7 +6,7 @@
 @time 45
 @learn Define a type whose value is one of several named possibilities | Attach different data to each possibility | Handle every case safely with `match`, `if let` and `let … else` | Use `Option` instead of null, and explain why that prevents a whole class of crashes
 
-A struct says "a user has a name **and** an email **and** an age". Many things are better described with **or**: a traffic light is red *or* yellow *or* green. A payment is by cash *or* by card *or* by bank transfer. A search finds something *or* finds nothing. For "one of several possibilities" Rust has the **[[enum]]** (short for *enumeration*).
+A struct groups fields that exist together; an enum represents one case chosen from several alternatives. A traffic signal can be red, yellow or green, and a search can return a result or no result. Rust's **[[enum]]** type names those alternatives and can attach different data to each one. `Option` is an enum used to represent a value that may be absent.
 
 ## A simple enum
 

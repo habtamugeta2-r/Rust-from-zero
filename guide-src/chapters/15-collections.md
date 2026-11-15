@@ -6,7 +6,7 @@
 @time 50
 @learn Store any number of values in a `Vec` and work with them safely | Look things up by a key with `HashMap` | Keep unique values in a `HashSet` | Choose the right collection for a task | Handle ownership of the values inside a collection
 
-An array has a fixed length, decided when you write the program. Real data is rarely like that: a shopping cart, the lines of a file and the players in a game all grow and shrink. A **[[collection]]** is a type that holds a changing number of values on the heap. The standard library has several. Three of them cover almost everything: `Vec`, `HashMap` and `HashSet`.
+An array has a fixed length, while many tasks need a set of values that grows or shrinks as the program runs. Rust's standard library offers several **collections** for those jobs. A `Vec` stores an ordered sequence, a `HashMap` looks up values by key, and a `HashSet` tracks unique values. Their operations and trade-offs differ, so the right choice depends on how you use the data.
 
 :::plain The three collections in one paragraph
 A **`Vec<T>`** is a growable array of same-typed values stored contiguously, so indexing is fast and the data is cache-friendly. A **`HashMap<K, V>`** looks values up by key in roughly constant time, at the cost of unordered iteration. A **`BTreeMap<K, V>`** keeps its keys sorted, so iteration is ordered and range queries are cheap, at a small constant factor in speed. Choosing between them is a question about iteration order and access pattern, not about which one is "better".

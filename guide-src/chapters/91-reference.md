@@ -6,7 +6,7 @@
 @level all
 @time 10
 
-Tables to keep open while you write code: the words and signs of the language, the formatting codes, the traits you can derive, and a map of the standard library. Every example on this page was compiled and run.
+This appendix collects lookup tables for Rust syntax, formatting, derivable traits and standard-library modules. Use it as a reference while working through examples; consult the linked chapters for explanations and context. Compiler output is included where it is part of the reference material.
 
 ## Keywords
 

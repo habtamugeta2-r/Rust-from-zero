@@ -7,7 +7,7 @@
 @time 25
 @learn Choose what to study next, by goal and by level | Find the best book or course for each topic | Practise with small tasks and with real projects | Stay up to date and take part in the Rust community
 
-You have worked through the whole language, its computer-systems foundations, the tools around it, and nine projects. This chapter is a map of what lies beyond: the books and courses that go deeper than this guide, places to practise, and ways to stay in touch with a language that gets a new version every six weeks.
+This guide introduced Rust, computer-systems foundations and practical projects; it is a starting point, not an endpoint. Use this chapter to choose what to study next, find resources for a particular topic, practise with new projects, and keep up with changes in the Rust ecosystem.
 
 You do not need to cover every topic to move forward. Keep the core path from [chapter 1](#what-is-rust) through [chapter 31](#project-report), then choose the route closest to what you want to build:
 

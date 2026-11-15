@@ -7,7 +7,7 @@
 @time 60
 @learn Plan a program in plain words before writing code | Read what the user types and turn it into a number | Use code written by other people (a crate) through Cargo | Combine variables, loops, decisions and functions in one working program
 
-You now know enough to build a complete program that someone can use. In this project the computer picks a secret number between 1 and 100, and the player guesses until they find it. After each guess the program says "too small" or "too big".
+This project combines input, parsing, decisions and repetition in a small number-guessing game. The program chooses a secret number in the stated range, reads guesses from the player, and reports whether each guess is too high or too low. The goal is to make the interaction work while keeping invalid input from crashing the program.
 
 This project needs Rust installed on your computer, because it reads from the keyboard and uses a library from the internet. If you skipped the installation, go back to [chapter 4](#setup) first.
 

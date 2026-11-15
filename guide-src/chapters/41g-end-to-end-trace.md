@@ -7,7 +7,7 @@
 @time 35
 @learn Trace two real lines of Rust across all 10 layers of the computing stack | Follow String::from("Habtamu") through MIR, LLVM IR, ELF .rodata, malloc, and Heap RAM | Follow println!("{}", name) through format_args, StdoutLock buffering, write(1, ...) syscall, kernel VFS/TTY, and terminal pixels | Connect every concept from Parts I through V into one unified mental model
 
-We have reached the summit of the first half of the systems curriculum! In Part I we met transistors, bits, and CPUs. In Part II we traced `rustc`, MIR, LLVM, x86-64 machine code ([assembly and machine code](#assembly-machine-code)) and [ELF](#linking-elf). In Part III we mastered Rust ownership and `std` internals. In Part IV we explored [virtual memory](#virtual-memory-address-spaces), [allocators](#allocators-heap-internals), and 64-byte cache lines ([pointers, safety and caches](#pointers-safety-caches)). In Part V we opened [ELF startup](#program-loading-startup) and calling conventions.
+This chapter brings several earlier threads together. You have met hardware and binary data, followed Rust through [compiler stages](#compilation-pipeline), and studied [ownership](#ownership), [memory layout](#memory-layout) and [process startup](#program-loading-startup). Now trace one small program across those layers—from source code through compilation and loading to the instructions and system interactions involved while it runs.
 
 Now let's watch **everything fire together** on just two ordinary lines of Rust:
 

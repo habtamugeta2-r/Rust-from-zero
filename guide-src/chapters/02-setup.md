@@ -6,7 +6,7 @@
 @time 30
 @learn Run Rust code in the browser without installing anything | Use a terminal for basic tasks | Install Rust and a code editor on your own computer | Create, run and change a Rust project with Cargo | Read a compiler error message without fear
 
-Time to write a real program. First you will run Rust in your web browser with nothing to install. Then you will set up Rust on your own computer, create a project, and learn what every character of your first program means.
+Start by running a small Rust program in the browser, where no local installation is needed. Then set up the compiler and Cargo on your computer, create a project, and examine the first program line by line. You can pause after the browser exercise and return to installation when you are ready.
 
 ## Two ways to run Rust
 
@@ -16,7 +16,7 @@ A borrowed kitchen lets you try a recipe quickly, but a real kitchen is what you
 
 **1. In the browser: the Rust Playground.** Open [play.rust-lang.org](https://play.rust-lang.org). You see an editor with a small program in it. Press the **Run** button and the result appears below. That is all. The Playground is perfect for the first chapters and for quick experiments. The **Run** button on examples in this guide opens the example there for you.
 
-**2. On your own computer.** You need this for real projects: programs made of several files, programs that read your files, and everything from the first mini-project onwards. Installing takes about ten minutes and is explained below.
+**2. On your own computer.** You will need this for multi-file projects, programs that read local files, and the later projects. The steps below explain how to install Rust and check that the tools work.
 
 If you cannot install software right now, use the Playground and come back to the installation later.
 

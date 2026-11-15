@@ -6,7 +6,7 @@
 @time 40
 @learn State the three rules of ownership | Explain what a move is and why the old variable can no longer be used | Decide when to move, when to clone, and which types are copied automatically | Follow ownership as values go into functions and come back out
 
-This is the most important chapter in the guide. Ownership is the idea that lets Rust manage memory safely without a garbage collector. The rules are short. They feel strict for a week or two, and then they start to feel like common sense.
+A library needs to know who is responsible for each copy of a book and when it can be returned to the shelves. A program also needs clear responsibility for the values it uses. Rust calls this rule system **ownership**: it lets ordinary values be cleaned up without a tracing garbage collector. The examples below show how moving a value changes which part of the program owns it.
 
 ## The three rules
 

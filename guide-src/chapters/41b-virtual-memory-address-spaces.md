@@ -7,7 +7,7 @@
 @time 35
 @learn Explain why every process gets its own private virtual address space | Trace virtual-to-physical translation through 4-level page tables and the TLB | Read /proc/self/maps and distinguish stack, heap, mapped segments, and guard pages | Understand ASLR, demand paging, page faults, and copy-on-write fork()
 
-Earlier chapters spoke about "addresses in memory" as if your program touched physical RAM chips directly. On a modern operating system, it never does. Every pointer you print in Rust—`0x7ffe8245635c` on the stack, `0x55608aa662a0` on the heap—is a **virtual address**. Two separate programs can print the exact same numerical address at the exact same instant and still read completely different bytes.
+Ordinary user-space code works with **virtual addresses**, not physical RAM addresses. The processor's memory-management unit translates those addresses using mappings managed by the operating system. As a result, two processes can use the same numerical virtual address while mapping it to different physical memory; a pointer's printed value does not identify a universal location in RAM.
 
 Virtual memory is the hardware-plus-OS illusion that gives every running process its own private, linear address space while the [[kernel]] quietly multiplexes physical RAM frames underneath. Where those frames come from — `brk` and `mmap` — is the subject of [heap allocators](#allocators-heap-internals). Where those frames come from — `brk` and `mmap` — is the subject of [heap allocators](#allocators-heap-internals). Where those frames come from — `brk` and `mmap` — is the subject of [heap allocators](#allocators-heap-internals).
 

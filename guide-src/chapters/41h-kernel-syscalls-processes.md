@@ -7,7 +7,7 @@
 @time 35
 @learn Contrast Ring 3 / EL0 user mode with Ring 0 / EL1 kernel mode | Trace the x86-64 syscall instruction (and ARM64 svc #0) step by step including R10 vs RCX | Explain why vDSO turns clock_gettime() into a fast user-space read | Call standard-library and libc OS wrappers cleanly and observe syscall costs
 
-Everything your Rust program touches outside its own registers and already-mapped RAM—files, terminals, sockets, clocks, new threads, new processes, extra heap pages—belongs to the **operating system kernel**. Your binary cannot talk directly to the NVMe controller, overwrite another process's page tables, or disable CPU interrupts. If it tried, the hardware would trap immediately.
+A user-space program requests many privileged services from the **operating system kernel**: opening files, creating processes, using sockets and mapping memory. A system call is a controlled entry into the kernel for such a request. Hardware protection prevents ordinary user-space code from directly changing kernel page tables or executing privileged instructions; the kernel mediates access to devices and shared resources.
 
 The kernel is the single privileged gatekeeper managing shared hardware fairly and safely across all programs running on the machine. How it schedules the work that reaches it is in [processes, threads and scheduling](#processes-threads-scheduling).
 

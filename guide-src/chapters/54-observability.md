@@ -6,7 +6,7 @@
 @time 55
 @learn Emit structured JSON logs and spans with `tracing` and `tracing-subscriber` | Avoid async span bugs by using `.instrument()` instead of `.entered()` across `.await` | Propagate request IDs and W3C trace contexts across tasks and HTTP calls | Export distributed traces with OpenTelemetry and OTLP | Record counters, gauges, and histograms with `metrics` and serve `/metrics` | Separate `/health/live` and `/health/ready` probes cleanly
 
-When a program runs on your laptop, `println!` or `dbg!` is enough to see what it did. When a service runs on a server and serves thousands of requests at once, `println!` falls apart. Lines from different requests mix together, you cannot filter by user or latency, and when a request jumps between three services, plain text cannot tie them back together.
+For a small local program, `println!` or `dbg!` can help inspect what happened. In a concurrent service, interleaved output can be difficult to search or connect across components. **Observability** is the practice of exposing useful signals about a running system so that operators can investigate its behaviour. This chapter introduces structured logs, traces, metrics and health checks, and explains the questions each can answer.
 
 **Observability** is designing a program so that operators can understand what is happening inside it purely from its external signals. In production Rust services, those signals rest on three pillars: structured logs, distributed traces, and numeric metrics — paired with health endpoints so load balancers know when an instance can take traffic.
 

@@ -6,7 +6,7 @@
 @time 40
 @learn Convert numbers between decimal, binary, and hexadecimal | Explain two's complement representation of signed integers and wrap-around | Read the sign, exponent, and mantissa layout of IEEE-754 floats and UTF-8 bytes | Explain little-endian byte ordering and how machine instructions live as bytes in memory
 
-Inside hardware, there is no special wire labelled "letter A", "negative seventeen", or "add instruction". Everything in memory—numbers, text, images, pointers, and CPU instructions—is stored as patterns of `0` and `1` voltages grouped into bytes. How the computer interprets any byte depends purely on **context**: whether an instruction reads it as a signed integer, a floating-point number, a UTF-8 character, or an instruction opcode.
+A byte in memory does not label itself as a letter, a negative number or an instruction. It is a bit pattern; software interprets that pattern according to an agreed representation. The same bits can stand for an integer, part of a floating-point number, UTF-8 text or a machine instruction. This chapter builds the tools for reading those representations.
 
 ## Starting point: why binary and hexadecimal exist
 

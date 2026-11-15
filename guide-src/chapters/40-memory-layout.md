@@ -6,7 +6,7 @@
 @time 45
 @learn Find the size and alignment of any type | Explain padding and why field order matters | Control layout with `repr` attributes | Describe how enums, `Option`, references and trait objects are stored | Reason about the cost of allocations, indirection and cache misses
 
-[Chapter 13](#memory) introduced the stack and the heap. This chapter goes one level deeper and looks at how individual values are stored, byte by byte. You need this knowledge to exchange data with other languages, to read and write binary file formats, and to understand why one data structure is fast and another is slow.
+[The memory chapter](#memory) introduced the stack and the heap. Here we look at the size, alignment and layout of individual Rust values. This helps explain padding, performance and the data layouts used at FFI or binary-file boundaries. Rust's default layout is not a stable external format, so the chapter distinguishes what you can measure on a build from what you may rely on across builds.
 
 All the numbers in this chapter are for a 64-bit computer, which is what almost everyone uses today. This chapter stops at the byte. For what happens between your source text and those bytes — the compiler pipeline, the linker, the operating system's loader, and the fetch–decode–execute cycle of the processor — see [the silicon appendix](#under-the-hood).
 

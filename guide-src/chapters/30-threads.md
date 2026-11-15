@@ -6,7 +6,7 @@
 @time 55
 @learn Explain concurrency, parallelism, threads and data races | Start threads, wait for them and get their results | Share local data with scoped threads | Send data between threads through channels | Explain how `Send` and `Sync` let the compiler rule out data races
 
-Every program you have written so far did one thing at a time, from the first line of `main` to the last. Modern computers have several processor cores, typically between 4 and 16, and each can run code at the same moment. A program that uses one of them leaves most of the machine idle. A program may also have to *wait* for several things at once: a download, a key press, a timer.
+A single thread follows one path through its instructions. A program can create additional **threads** so work can make progress concurrently, and on a machine with multiple processor cores some threads may run at the same time. Core counts vary widely, and using more threads does not automatically make a program faster. Threads are also useful for keeping independent work responsive while another task waits.
 
 Doing several things at once is one of the hardest parts of programming in most languages. It is also where Rust's ownership rules pay off most. The same rules that prevent dangling references prevent the worst concurrency bug, and they do so at compile time. The Rust community calls this **fearless concurrency**.
 
