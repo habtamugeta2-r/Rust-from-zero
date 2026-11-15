@@ -4,6 +4,7 @@ import { BadgeCheck } from "lucide-react";
 import { HomeContinueButton } from "@/components/HomeContinueButton";
 import { HomeRoutesSection } from "@/components/HomeRoutesSection";
 import { loadGuide } from "@/lib/guide-parser";
+import { courseJsonLd } from "@/lib/seo";
 
 export default function HomePage() {
   const guide = loadGuide();
@@ -65,6 +66,15 @@ export default function HomePage() {
 
   return (
     <div className="mx-auto max-w-5xl px-5 py-10 sm:px-8 lg:py-14">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(courseJsonLd(parts, summaries)).replace(
+            /</g,
+            "\\u003c",
+          ),
+        }}
+      />
       {/* Hero */}
       <section className="grid items-center gap-10 lg:grid-cols-[1.25fr_0.95fr] lg:gap-14">
         <div>

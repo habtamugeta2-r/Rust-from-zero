@@ -8,6 +8,7 @@ import { BlockList } from "@/components/ChapterBody";
 import { ChapterRail } from "@/components/ChapterRail";
 import { InlineRenderer } from "@/components/InlineRenderer";
 import { loadChapter, loadGuide } from "@/lib/guide-parser";
+import { chapterJsonLd, chapterMetadata } from "@/lib/seo";
 
 export function generateStaticParams() {
   const guide = loadGuide();
@@ -27,15 +28,7 @@ export async function generateMetadata({
   if (!ch) {
     return { title: "Chapter not found" };
   }
-  const desc =
-    ch.learn.length > 0
-      ? ch.learn.join(" ")
-      : `${ch.title} — part of Rust from Zero.`;
-  return {
-    title: ch.title,
-    description: desc,
-    alternates: { canonical: `/chapters/${ch.id}` },
-  };
+  return chapterMetadata(ch);
 }
 
 export default async function ChapterPage({
@@ -60,7 +53,33 @@ export default async function ChapterPage({
 
   return (
     <div className="mx-auto flex max-w-6xl gap-10 px-5 py-8 sm:px-8 lg:py-12">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(chapterJsonLd(chapter)).replace(/</g, "\\u003c"),
+        }}
+      />
       <article className="min-w-0 max-w-3xl flex-1">
+        {/* Breadcrumb (visible + mirrors the BreadcrumbList schema) */}
+        <nav
+          aria-label="Breadcrumb"
+          className="mb-5 font-sans text-xs text-[var(--g-ink3)]"
+        >
+          <ol className="flex flex-wrap items-center gap-x-1.5 gap-y-1">
+            <li>
+              <Link href="/" className="hover:text-[var(--g-accent)]">
+                Learn Rust
+              </Link>
+            </li>
+            <li aria-hidden="true">/</li>
+            <li className="truncate">{chapter.partTitle}</li>
+            <li aria-hidden="true">/</li>
+            <li className="truncate text-[var(--g-ink2)]" aria-current="page">
+              {chapter.short}
+            </li>
+          </ol>
+        </nav>
+
         {/* Chapter header */}
         <header className="mb-9 border-b border-[var(--g-line)] pb-7">
           <div className="flex flex-wrap items-center gap-x-3 gap-y-2 font-sans text-xs font-semibold">
