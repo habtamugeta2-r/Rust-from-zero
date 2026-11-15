@@ -49,6 +49,14 @@ operating system instead of overruling it.
 - **Search results cannot disagree.** Ranking, snippets and highlighting live in
   one module (`src/lib/search.ts`) shared by the API route, the palette and the
   results page.
+- **Stale hits in the palette.** Results are tagged with the query they belong
+  to, so pressing `Enter` while the next search is still in flight can no longer
+  open a hit from the word you just typed over.
+- **Tab now moves in the palette.** It used to be swallowed to keep focus in the
+  field; it now walks the dialog's controls and rows and wraps at the ends, so a
+  keyboard user can reach a result without the arrow keys. Arrow keys and
+  `Enter` still drive the highlight from the field, and a focused row keeps its
+  own native activation.
 - The toast sits above the palette instead of behind it.
 
 ### Changed

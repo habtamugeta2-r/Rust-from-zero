@@ -56,11 +56,16 @@ export function CommandPalette({
   const { theme, cycleTheme, state } = useGuideState();
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(0);
-  const { hits, pending } = useGuideSearch(query, open);
+  const { hits: fetched, resolved, pending } = useGuideSearch(query, open);
 
+  const panelRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const itemRefs = useRef<(HTMLElement | null)[]>([]);
   const restoreFocusTo = useRef<HTMLElement | null>(null);
+
+  // Results for a string the reader has already typed past are stale: showing
+  // them would let Enter open the wrong hit.
+  const hits = fetched && resolved === query.trim() ? fetched : null;
 
   const lastChapter = state.last
     ? `/chapters/${state.last}`
@@ -198,6 +203,32 @@ export function CommandPalette({
       close();
       return;
     }
+
+    // Tab walks the dialog — field, close button and every row — and wraps at
+    // the ends, so keyboard users can reach a result without the arrow keys.
+    if (event.key === "Tab") {
+      const focusables = Array.from(
+        panelRef.current?.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        ) ?? []
+      ).filter((el) => el.offsetParent !== null);
+      if (focusables.length === 0) return;
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      } else if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      }
+      return;
+    }
+
+    // Arrows and Enter drive the highlight only while the field has focus; on a
+    // row, Enter and Space keep their native meaning for that row.
+    if (event.target !== inputRef.current) return;
+
     if (event.key === "ArrowDown") {
       event.preventDefault();
       setActive((i) => (items.length === 0 ? 0 : (i + 1) % items.length));
@@ -213,12 +244,6 @@ export function CommandPalette({
     if (event.key === "Enter") {
       event.preventDefault();
       activate(active);
-      return;
-    }
-    if (event.key === "Tab") {
-      // The input is the only tab stop that matters; keep focus inside.
-      event.preventDefault();
-      inputRef.current?.focus();
     }
   };
 
@@ -245,6 +270,7 @@ export function CommandPalette({
       />
 
       <div
+        ref={panelRef}
         role="dialog"
         aria-modal="true"
         aria-label="Search the guide"
@@ -403,9 +429,11 @@ export function CommandPalette({
             <Kbd>esc</Kbd> close
           </span>
           <span className="ml-auto hidden sm:inline">
-            {q.length >= 2
-              ? `${hits?.length ?? 0} matches`
-              : "Type to search the whole guide"}
+            {q.length < 2
+              ? "Type to search the whole guide"
+              : pending
+                ? "Searching…"
+                : `${hits?.length ?? 0} matches`}
           </span>
         </div>
       </div>

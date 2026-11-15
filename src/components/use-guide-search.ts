@@ -8,15 +8,21 @@ import type { SearchHit } from "@/lib/guide-types";
  *
  * One hook, used by the command palette, so every search surface talks to the
  * same endpoint and ranking. Returns `null` until a query is worth sending.
+ *
+ * `resolved` is the query the current `hits` belong to, which lets the caller
+ * ignore results for a string the reader has already typed past — otherwise a
+ * fast typist could press Enter and open a hit from the previous word.
  */
 export function useGuideSearch(query: string, enabled = true) {
   const [hits, setHits] = useState<SearchHit[] | null>(null);
+  const [resolved, setResolved] = useState("");
   const [pending, setPending] = useState(false);
 
   useEffect(() => {
     const q = query.trim();
     if (!enabled || q.length < 2) {
       setHits(null);
+      setResolved("");
       setPending(false);
       return;
     }
@@ -35,11 +41,13 @@ export function useGuideSearch(query: string, enabled = true) {
         const data = (await res.json()) as { hits: SearchHit[] };
         if (!cancelled) {
           setHits(data.hits);
+          setResolved(q);
           setPending(false);
         }
       } catch (error) {
         if ((error as Error).name === "AbortError" || cancelled) return;
         setHits([]);
+        setResolved(q);
         setPending(false);
       }
     }, 140);
@@ -51,5 +59,5 @@ export function useGuideSearch(query: string, enabled = true) {
     };
   }, [query, enabled]);
 
-  return { hits, pending };
+  return { hits, resolved, pending };
 }
