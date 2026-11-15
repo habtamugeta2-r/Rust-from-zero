@@ -6,7 +6,7 @@
 @time 45
 @learn Explain what a lifetime is and why the compiler tracks it | Read and write lifetime annotations such as `'a` | Know when annotations are needed and when the compiler fills them in | Put references into structs | Recognise `'static` and avoid misusing it
 
-In [chapter 10](#borrowing) you learned the rule that a reference must never outlive the value it points to. The compiler checks this rule by working out, for every reference, the stretch of code in which it is valid. That stretch is the reference's **lifetime**.
+In [chapter 10](#borrowing) you learned the rule that a reference must never outlive the value it points to. The compiler checks this rule by working out, for every reference, the stretch of code in which it is valid. That stretch is the reference's **lifetime**. Since Rust 2018 that stretch ends at the reference's last use (not at the closing brace), a rule called **non-lexical lifetimes**; under the hood it is a flow analysis over the compiler's MIR, as explained in [the silicon appendix](#under-the-hood).
 
 Most of the time you never see lifetimes: the compiler works them out silently. Occasionally a function or struct is ambiguous, and the compiler asks you to describe how the references relate to each other. That description is a **lifetime annotation**. It is the part of Rust with the most unfamiliar syntax, but the idea behind it is simple.
 

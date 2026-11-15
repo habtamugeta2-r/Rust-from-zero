@@ -243,7 +243,7 @@ If two crates in a program need the same dependency with different features, Car
 
 ## Profiles: how the code is built
 
-A **profile** is a set of compiler settings. Two are used all the time:
+A **profile** is a set of compiler settings. Two are used all the time. For what the optimiser does between your source text and the final bytes, see [the silicon appendix](#under-the-hood).
 
 | | `dev` (`cargo build`) | `release` (`cargo build --release`) |
 |---|---|---|

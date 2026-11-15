@@ -138,7 +138,7 @@ export function courseJsonLd(
     name: SITE_NAME,
     alternateName: "Rust tutorial",
     description: clip(
-      "A complete self-study course that teaches the Rust programming language from absolute zero: from the first line of syntax, through numbers, lists, bytes, the heap and the stack, to building web services, async code and systems software. Plain-language explanations, real compiler output, 190 solved exercises, quizzes and eight hands-on projects.",
+      "A complete self-study course that teaches the Rust programming language from absolute zero: from the first line of syntax, through numbers, lists, bytes, the heap and the stack, to building web services, async code and systems software. Plain-language explanations, real compiler output, 193 solved exercises, quizzes and eight hands-on projects.",
       300,
     ),
     url: SITE_URL,

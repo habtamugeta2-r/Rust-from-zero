@@ -43,7 +43,20 @@ clone :: An explicit, complete copy of a value, made with `.clone()`. It may be 
 closure :: A function without a name that can use variables from the place where it was written: `|x| x + offset`. See [chapter 24](#closures).
 collection :: A type that holds many values: `Vec`, `HashMap`, `HashSet` and others. See [chapter 15](#collections).
 compile time :: The moment when the compiler translates the program. A mistake found "at compile time" never reaches a user.
-compiler :: The tool that translates your source code into a program the computer can run, and checks it for mistakes first. Rust's compiler is called `rustc`.
+compiler :: The tool that translates your source code into a program the computer can run, and checks it for mistakes first. Rust's compiler is called `rustc`. See [the silicon appendix](#under-the-hood) for the full pipeline.
+MIR :: The mid-level intermediate representation: the simple control-flow graph of the program that the borrow checker analyses. See [the silicon appendix](#under-the-hood).
+LLVM IR :: The typed intermediate language that `rustc` hands to the LLVM optimiser. LLVM does the heavy, processor-aware optimisation and emits machine code. See [the silicon appendix](#under-the-hood).
+assembly :: The human-readable spelling of machine-code instructions, such as `mov eax, edi`. Each line stands for one instruction. See [the silicon appendix](#under-the-hood).
+cache :: A small, fast memory between the processor and RAM that keeps recently used data. Fetching from it costs about a nanosecond. See [chapter 40](#memory-layout).
+cache line :: The fixed-size block, usually 64 bytes, in which data moves between RAM and the cache. Reading one byte fetches the whole line. See [chapter 40](#memory-layout).
+guard page :: A page of memory deliberately left unmapped at the end of a stack. The first write into it faults, which is how a runaway recursion is stopped. See [chapter 8](#memory).
+instruction :: One operation the processor can carry out. Machine code is a sequence of instructions with numeric opcodes. See [the silicon appendix](#under-the-hood).
+machine code :: The bytes of a program as the processor fetches and executes them. Produced by the compiler backend; `89 F8` is one instruction. See [the silicon appendix](#under-the-hood).
+MMU :: The memory management unit: the hardware that translates each virtual address your program uses into a physical RAM address, using the page tables. See [the silicon appendix](#under-the-hood).
+page table :: The per-process table that the MMU walks to map a virtual page onto physical memory. See [the silicon appendix](#under-the-hood).
+register :: One of the processor's tiny, ultra-fast storage cells, such as `RAX`, `RSP` or `XMM0`. Values travel in registers between the CPU and memory. See [the silicon appendix](#under-the-hood).
+stack frame :: The slice of the stack that belongs to one active function call, holding its parameters, local variables and return address. See [chapter 8](#memory).
+virtual memory :: The private address space the operating system gives each process and maps onto physical RAM. See [chapter 8](#memory).
 concurrency :: Dealing with several tasks during the same period of time. They may take turns on one processor core.
 const :: A value that is fixed when the program is compiled, with a name in capital letters.
 constant :: See const.

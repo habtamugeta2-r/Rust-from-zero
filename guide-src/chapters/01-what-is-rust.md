@@ -52,6 +52,10 @@ Imagine you wrote a speech in English and the audience speaks only Japanese.
 The **compiler** is the tool that turns your source code into a program the computer can run. For Rust this tool is called `rustc`. To **compile** is to do that translation. **Compile time** is the moment when the compiler is working. **Run time** (also written *runtime*) is the moment when the finished program is running. A mistake caught at compile time never reaches the people who use your program. That idea is central to Rust.
 :::
 
+:::note For the curious: the compiler's conveyor belt
+What exactly happens inside the compiler, and what exactly the processor does with the result? [The silicon appendix](#under-the-hood) traces one line of Rust through every station — tokens, syntax tree, the borrow checker, LLVM, machine code, the operating system's loader, and finally the fetch–decode–execute cycle of the CPU. It is an optional deep dive for when the basics feel comfortable.
+:::
+
 ## Bugs, and the kind Rust was built to stop
 
 A mistake in a program is called a **bug**. Some bugs are small, like a button in the wrong colour. Some are serious: a program that **crashes** (stops suddenly), loses your data, or lets a criminal break in.

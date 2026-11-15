@@ -16,10 +16,10 @@ out of the box.
 
 | | |
 |---|---|
-| Chapters | 55, including 8 complete projects, plus 4 appendices (59 sections total) |
-| Examples | 1,167 code blocks, **914 of them Rust** |
-| Exercises | 190, every one with a hint and a worked solution |
-| Quiz questions | 238, each with an explanation of the answer |
+| Chapters | 55, including 8 complete projects, plus 5 appendices (60 sections total) |
+| Examples | 1,179 code blocks, **916 of them Rust** |
+| Exercises | 193, every one with a hint and a worked solution |
+| Quiz questions | 243, each with an explanation of the answer |
 | Captured output | 104 real compiler messages and program outputs |
 | Stack | Next.js 16 App Router, React 19, TypeScript, Tailwind CSS v4, Shiki |
 
@@ -50,7 +50,7 @@ The guide is organised around a **Core Rust Path** (Parts 1–5 + Part 8 Tooling
 - **Part 9 — Advanced Rust:** declarative & procedural macros, `unsafe` (`ManuallyDrop`, soundness invariants), C/Python FFI (`bindgen`, `cbindgen`, `PyO3`), memory layout, and idiomatic Rust
 - **Part 10 — The ecosystem:** everyday crate selection (`chrono`/`jiff`, `regex`, `clap`, `tracing`), Serde serialisation, a multi-command CLI project (`clap`), Rayon & Tokio streams, gRPC (`tonic`), message queues (`NATS`, `RabbitMQ`, `Kafka`), Axum web servers, SQLx/PostgreSQL/Redis/`redb`, URL-shortener web API project, optional UI/WebAssembly (`Leptos`, `Tauri`, `egui`, `iced`, `Slint`) and games/embedded/data (`Bevy`, `no_std`, `Embassy`, `defmt`, `ndarray`, `Polars`) surveys, and observability & telemetry (`tracing`, OpenTelemetry/OTLP, Prometheus, `/health/live` vs `/health/ready`)
 - **Part 11 — Becoming a Rust developer:** performance & profiling (`hyperfine`, `criterion`, flame graphs, `dhat`, SIMD), a full-stack CLI + Axum + SQLite library manager capstone, and curated next steps
-- **Appendices:** glossary, Rust quick reference, compiler error catalogue, and bridges from Python, JavaScript, Go, Java, and C/C++
+- **Appendices:** glossary, Rust quick reference, compiler error catalogue, bridges from Python, JavaScript, Go, Java, and C/C++, and a from-source-to-silicon deep dive into how the compiler, the operating system and the processor run your code
 
 ## What it deliberately does not cover
 
@@ -82,7 +82,7 @@ npm run dev       # start development server at http://localhost:3000
 For a production build and server:
 
 ```sh
-npm run verify:content   # validates all 59 chapters, links & captured outputs
+npm run verify:content   # validates all 60 sections, links & captured outputs
 npm run typecheck        # TypeScript check
 npm run build            # builds all routes and static chapter pages
 npm start                # serves the production Next.js app on port 3000
