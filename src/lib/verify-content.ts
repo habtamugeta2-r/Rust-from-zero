@@ -1,3 +1,5 @@
+import fs from "node:fs";
+import path from "node:path";
 import { lintContent } from "./content-lint";
 import { loadGuide } from "./guide-parser";
 
@@ -31,7 +33,14 @@ if (guide.warnings.length > 0) {
   failed = true;
 }
 
-const { problems, info } = lintContent(guide, { checkReadmeStats: true });
+const archivePath = path.join(process.cwd(), "guide-src", "captured", "archived-orphans.json");
+const archivedCaptures = Object.keys(
+  JSON.parse(fs.readFileSync(archivePath, "utf8")) as Record<string, string>,
+);
+const { problems, info } = lintContent(guide, {
+  checkReadmeStats: true,
+  archivedCaptures,
+});
 const errors = problems.filter((problem) => problem.severity === "error");
 const warnings = problems.filter((problem) => problem.severity === "warn");
 

@@ -43,7 +43,7 @@ claiming a local pass that never happened.
   the database, why money is integer cents — with an explanation per answer
   (347 → 379 questions). `structure/project-quiz` is an error.
 - **The five appendices declared no reading time**, so the published total
-  silently excluded their 14,862 words of prose. They now declare a `@time`
+  silently excluded their 18,744 words counted by the structural audit. They now declare a `@time`
   measured from that prose at 200 words per minute (25/10/10/10/20), and the
   total includes them deliberately: 4,483 → 4,558 declared minutes. The
   decision is written in `PLAN.md`; the code, the README and the plan agree.
@@ -76,7 +76,7 @@ claiming a local pass that never happened.
   and complete, including 2.0.0's bare-index quiz answers; and **one test per
   lint rule** that injects the fault and asserts the rule fires, beside a
   clean fixture it must stay silent on. The 2.2.0 practice — verify a rule by
-  hand, once — is now permanent. 37 tests.
+  hand, once — is now permanent. 38 tests.
 - **ESLint and Prettier** behind one `npm run lint`, wired into CI. New
   dev-dependencies, each needed for that command and nothing else: `eslint`
   (the runner), `@eslint/js` (its recommended rules, imported directly by the
@@ -86,11 +86,12 @@ claiming a local pass that never happened.
   created or materially edited are formatted and checked; the hand-formatted
   remainder is listed in `.prettierignore`, which may only shrink. The whole
   tree was deliberately not restyled in this release.
-- **Capture-orphan detection.** The lint warns on a `captured/*.txt` that no
-  `auto` block references (3 exist: stale output from examples that changed)
-  and on an `auto` block whose capture is missing (none). The stale files are
-  kept — deleting captured output is forbidden — so these are the only three
-  warnings `verify:content` prints, stated here rather than silenced.
+- **Capture-orphan detection.** The lint warns on an unexpected `captured/*.txt`
+  that no `auto` block references and on an `auto` block whose capture is
+  missing. Three old outputs cannot be deleted under the archive rule, so
+  `guide-src/captured/archived-orphans.json` records them as intentional
+  historical files; they remain visible in lint information, while newly
+  unreferenced outputs still warn. No captured output was changed.
 - **One CI workflow.** `.github/workflows/build.yml` is now the single
   definition of green: a `guide` job on every push (deploy config, content,
   lint, tests, typecheck, build, structural audit) and an `examples` job on
@@ -120,7 +121,10 @@ claiming a local pass that never happened.
   search is a combobox whose `aria-activedescendant` follows the arrow keys
   with results as options, and the search buttons announce the dialog they
   open (`aria-haspopup`, `aria-expanded`). This is a list of fixes, not a
-  conformance claim: no WCAG audit was run, and none is claimed.
+  conformance claim: no WCAG audit was run, and none is claimed. The requested
+  keyboard-only walk across the five viewport widths and both themes was not
+  available in this environment; a code-level review is not a substitute, so
+  that manual verification remains open.
 - **Progress export and import.** The dashboard downloads your progress —
   finished chapters, quiz answers, solved exercises, bookmarks, theme and
   text size — as one JSON file, and imports it on another machine. The import

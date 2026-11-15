@@ -123,9 +123,10 @@ spelling, a `TODO`/`FIXME`/`TBD` in visible text, a tracked chapter without thre
 recap, a quiz or exercises (project chapters need a quiz too), a declared `@time` below 60% of the chapter's own reading time,
 duplicate titles or ids, a chapter no other chapter links to, a chapter that links to no other
 chapter, a link to a chapter id or route that does not exist, and a README statistics table that
-disagrees with `npm run stats`. It warns on a captured output that no `auto` block references
-(those files are kept, never deleted) and prints the glossary-link coverage, the number of
-cross-links and the long sentences without failing on them. Every rule has a test in
+disagrees with `npm run stats`. It warns on an unexpected captured output that no `auto` block
+references; the three retained historical exceptions are listed in
+`guide-src/captured/archived-orphans.json`, and captured files are never deleted. It prints the
+glossary-link coverage, the number of cross-links and the long sentences without failing on them. Every rule has a test in
 `tests/lint.test.ts`: add the fault-injecting test when you add a rule.
 
 ## Before you open a pull request
