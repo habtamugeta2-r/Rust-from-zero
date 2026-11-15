@@ -20,7 +20,7 @@ console.log(
   `verified guide content: ${guide.stats.totalChapters} chapters (${guide.stats.trackedChapters} tracked), ` +
     `${guide.stats.codeBlocks} code blocks, ${guide.stats.exercises} exercises, ` +
     `${guide.stats.questions} quiz questions, ${guide.stats.projects} projects, ` +
-    `${guide.searchIndex.length} search entries`
+    `${guide.searchIndex.length} search entries`,
 );
 
 let failed = false;
@@ -31,7 +31,7 @@ if (guide.warnings.length > 0) {
   failed = true;
 }
 
-const { problems, info } = lintContent(guide);
+const { problems, info } = lintContent(guide, { checkReadmeStats: true });
 const errors = problems.filter((problem) => problem.severity === "error");
 const warnings = problems.filter((problem) => problem.severity === "warn");
 
