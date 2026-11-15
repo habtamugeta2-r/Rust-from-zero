@@ -8,7 +8,11 @@
     "start": "next start",
     "typecheck": "tsc --noEmit",
     "verify:content": "tsx src/lib/verify-content.ts",
-    "verify:deploy": "node scripts/check-deploy-config.mjs"
+    "verify:deploy": "node scripts/check-deploy-config.mjs",
+    "stats": "tsx src/lib/stats.ts",
+    "test": "node --import tsx --test tests/*.test.ts",
+    "lint": "eslint . && prettier --check \"src/**/*.{ts,tsx}\" \"tests/**/*.ts\" \"scripts/*.mjs\" \"*.{json,mjs}\"",
+    "format": "prettier --write \"src/**/*.{ts,tsx}\" \"tests/**/*.ts\" \"scripts/*.mjs\" \"*.{json,mjs}\""
   },
   "dependencies": {
     "@fontsource-variable/jetbrains-mono": "^5.3.0",
@@ -21,12 +25,17 @@
     "shiki": "^4.6.0"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@tailwindcss/postcss": "^4.3.5",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
+    "eslint": "^10.15.0",
+    "eslint-config-prettier": "^10.1.8",
+    "prettier": "^3.10.1",
     "tailwindcss": "^4.3.5",
     "tsx": "^4.23.15",
-    "typescript": "^5.8.0"
+    "typescript": "^5.8.0",
+    "typescript-eslint": "^8.72.2"
   }
 }
