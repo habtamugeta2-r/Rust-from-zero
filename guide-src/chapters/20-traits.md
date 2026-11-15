@@ -6,7 +6,7 @@
 @time 55
 @learn Define a trait and implement it for your own types | Write functions that accept any type with a certain ability | Use the standard traits (`Debug`, `Display`, `Clone`, `PartialEq`, `Ord`, `Default`, `From`) | Store values of different types together with `dyn Trait` | Explain how traits replace inheritance
 
-A struct describes what a value **is**. A **trait** describes what a value **can do**. Traits are how Rust expresses "these different types share an ability", and they are behind much of what you have used so far: printing with `{}`, comparing with `==`, cloning, and the bounds on generic functions.
+Two different types may support the same operation without sharing a common parent class. A **trait** names a set of behaviour that types can implement. Rust uses traits for familiar operations such as formatting and comparison, and generic functions can require the traits they need through bounds. This chapter builds from implementations to trait bounds and dynamic dispatch.
 
 :::plain Traits and dispatch in one paragraph
 A **[[trait]]** is a set of methods a type can promise to provide, like an interface in other languages: `impl Display for Money` means `Money` can be formatted with `{}`. Generic code takes `T: Display` and is **statically dispatched**, with each call site compiled to a direct call. A `dyn Display` trait object is **dynamically dispatched**, resolved through a vtable at run time, which allows a `Vec<Box<dyn Draw>>` of different types at the cost of a pointer indirection. Traits can also supply default method bodies, and blanket implementations (`impl<T: Display> ToString for T`) give every qualifying type a method at once.

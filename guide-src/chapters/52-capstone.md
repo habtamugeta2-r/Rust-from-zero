@@ -7,7 +7,7 @@
 @time 240
 @learn Plan a program in layers: HTTP, rules, storage | Share one data model between a web API and a command-line tool | Store books in SQLite with SQLx | Import and export JSON with Serde | Handle errors uniformly with thiserror and anyhow | Test the API and the CLI without a network | Prepare the program for a server
 
-The earlier chapters each taught one ecosystem: Axum for HTTP, SQLx for databases, clap for command lines, Serde for JSON, thiserror and anyhow for errors. This capstone brings them together into one real program: a **personal library manager**. You can add books, mark them as reading or read, list and search them, and export them to JSON — either through a web API in a browser or through a command-line tool in a terminal.
+This capstone combines tools introduced earlier—Axum, SQLx, clap, Serde and Rust error-handling crates—in a personal library manager. The same application rules support both a web API and a command-line interface. You will add and search books, update their status, and import or export data, while keeping HTTP, domain logic and storage responsibilities distinct.
 
 The finished program works like this:
 

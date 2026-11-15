@@ -129,7 +129,7 @@ worse than none.
 |---|---|
 | 18 chapters with no outgoing cross-link | 0; the lint fails if one returns |
 | 8 project chapters without a quiz | 9 of 9 project chapters have a 4-question quiz on their decisions |
-| Glossary 98 of 253 terms linked | 211 of 253, wrapped at the term's first substantive explanation |
+| Glossary 98 of 253 terms linked at the 2.2.0 review | 207 of 253 in the current checkout, wrapped at the term's first substantive explanation |
 | Sentences over 55 words: 7 (8 after the new links) | 0 |
 | Appendices with no `@time`, excluded from the total | Each declares a measured `@time`; the total includes them |
 | `what-is-rust` the only tracked teaching chapter without a challenge exercise | It has one; `start` and `roadmap` stay challenge-free as orientation |

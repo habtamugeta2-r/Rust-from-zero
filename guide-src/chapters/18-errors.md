@@ -6,7 +6,7 @@
 @time 55
 @learn Tell apart errors a program should recover from and bugs that should stop it | Return, handle and pass on errors with `Result` and the `?` operator | Read and write files | Define your own error type | Choose between `panic!`, `Option` and `Result`, and compare `anyhow`, `thiserror`, `eyre` and `miette`
 
-Things go wrong. A file is missing, the user types letters where a number belongs, the network is down. A good program expects this and reacts sensibly. Rust takes an unusual and very deliberate approach: errors are **ordinary values** that functions return, and the compiler makes sure you do not ignore them.
+Files can be missing, input can be malformed, and network requests can fail. These are expected outcomes a program may need to handle, not necessarily bugs. Rust commonly represents recoverable failures as `Result` values returned from functions. The type makes the possibility visible, and the compiler warns when a `Result` is discarded without being handled.
 
 ## Two kinds of problems
 

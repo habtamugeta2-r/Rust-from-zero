@@ -6,7 +6,7 @@
 @time 45
 @learn Let a function use a value without taking ownership of it | Tell shared references (`&`) from mutable references (`&mut`) and use each | State the borrowing rules and explain which bugs they prevent | Read and fix the borrow checker's most common error messages
 
-At the end of the last chapter, a function had to take ownership of a `String` and then hand it back. That is like giving your car to a mechanic by signing the ownership papers over, and signing them back afterwards. In real life you just *lend* the car. Rust has the same idea, and calls it **borrowing**.
+Imagine asking a mechanic to inspect your car: you want them to look at it without transferring ownership. A function often needs the same arrangement with a value. Rust calls temporary access without taking ownership a **borrow**; a reference represents that access.
 
 ## Borrowing with `&`
 

@@ -60,7 +60,7 @@ What exactly happens inside the compiler, and what exactly the processor does wi
 
 A mistake in a program is called a **[[bug]]**. Some bugs are small, like a button in the wrong colour. Some are serious: a program that **crashes** (stops suddenly), loses your data, or lets a criminal break in.
 
-One family of bugs has caused huge damage for decades: **memory bugs**. A program keeps the data it is working with in the computer's memory. In older languages such as C and C++, the programmer must manage that memory by hand: ask for it, use it, give it back, and never touch it afterwards. A person who does this thousands of times will get it wrong sometimes. The results are crashes and security holes. Microsoft and Google have both reported that about 70% of the serious security bugs in their large C and C++ products were memory bugs.
+One family of bugs has caused serious harm for decades: **memory bugs**. A program keeps the data it is working with in the computer's memory. In languages such as C and C++, programmers can manage that memory directly: reserve it, use it, release it, and avoid using it afterwards. That flexibility makes mistakes possible; a program might read memory after it has been released or write past the end of a buffer. Such bugs can cause crashes and security vulnerabilities. Their prevalence varies by product and by how a report defines and counts a memory-safety issue.
 
 Languages such as Java, Python, JavaScript and Go avoid most of these bugs with a **[[garbage collector]]**: a helper that runs inside your program, watches the memory, and cleans up what is no longer used. That is safe, but it has a cost. The helper uses time and memory, and now and then it makes the program pause for a moment.
 
@@ -72,25 +72,25 @@ So for a long time programmers had to choose:
 | Java, Python, JavaScript, Go | Less. The garbage collector costs time and memory | Yes |
 | **Rust** | **Yes** | **Yes** |
 
-Rust gets both by using a new idea called **ownership**. The Rust compiler follows a small set of rules about who is responsible for each piece of data. With those rules it can prove, *before the program ever runs*, that the memory will be used correctly. No garbage collector is needed, so the program stays fast. You will learn ownership in [Part III](#ownership). It is the heart of Rust.
+Rust gets both by using a new idea called **ownership**. The Rust compiler checks a set of rules about who is responsible for each value and which references may use it. In safe Rust, these checks prevent important classes of memory misuse before the program runs. Rust does not need a tracing garbage collector to enforce those rules, though it still performs allocations and other work at run time. You will learn ownership in [Part III](#ownership); it is central to understanding the language.
 
 :::key Rust's promise
-Rust moves whole families of mistakes from "found by your users at run time" to "found by the compiler on your own computer". If a Rust program compiles, a large class of bugs simply cannot be in it.
+In safe Rust, many memory mistakes are rejected by the compiler before a program runs. This does not rule out logic errors, failures in unsafe code or libraries, or every possible memory-related defect; it narrows the kinds of mistakes ordinary safe code can express.
 :::
 
 ## What a compiling Rust program guarantees
 
-The promise above is worth making precise, because it is easy to over- or under-state it. When a Rust program compiles, the compiler has *proved* a specific list of things about the machine's memory. That list is short, and it is the reason people trust the language:
+The promise above needs a boundary. For code written in safe Rust, the compiler checks rules that prevent several classes of invalid memory access and data races, provided unsafe code and external libraries uphold their contracts. A successful build does not certify the whole program or every dependency. The guarantees relevant to this chapter are:
 
-- **No memory is read that the program was never given.** There are no reads from memory that has already been freed, no reads past the end of a list, and no pointers to data that no longer exists. The whole family of "use after free" and "out of bounds" bugs is excluded.
-- **Memory is never freed twice, and never freed while still in use.** There is one owner, and the owner decides the moment the data dies.
+- **Safe references remain valid and in bounds.** Safe Rust will not let you dereference a reference after its value has been dropped or index a slice outside its bounds. Raw pointers and unsafe code can bypass these checks, so their callers and authors must uphold the required invariants.
+- **Safe ownership prevents double-free and use-after-free through ordinary safe operations.** An owned value is dropped according to its ownership; unsafe code must not invalidate that guarantee.
 - **Data races are impossible in safe code.** Two parts of the program cannot change the same data at the same time and read a half-written value. [Chapter 15](#borrowing) shows exactly why.
 - **A variable always holds a value before it is read.** There is no "maybe nothing here" that quietly turns into a crash three lines later.
 
 Now notice what is *not* on the list. Compiling does not prove that your program does what you meant. If a function is supposed to sort a list but the logic is wrong, the compiler will build it happily. Rust removes *whole classes* of bugs from your program; it does not check your reasoning. This is what people mean when they say Rust is "safe": safe from a clearly defined set of low-level machine mistakes, not safe from every possible mistake. Knowing the difference keeps you from being surprised later.
 
 :::compare "Safe" and "unsafe" Rust
-Nearly everything you will write is in **safe** Rust, and every guarantee above is true of it. There is also **[[unsafe]] Rust**: a small set of extra tools for working at the very bottom of the machine — reading raw memory, talking to hardware, or using a library written in C. Unsafe does not mean "broken" or "dangerous to use"; it means *you, the programmer, make the safety argument that the compiler would otherwise make*. You are allowed to use those tools only where you can show the code you write is sound. The great majority of Rust programs — and all of this guide — stay entirely in safe Rust.
+Nearly everything you will write is in **safe** Rust, and every guarantee above is true of it. There is also **[[unsafe]] Rust**: a small set of extra tools for working at the very bottom of the machine — reading raw memory, talking to hardware, or using a library written in C. Unsafe does not mean "broken" or "dangerous to use"; it means *you, the programmer, make the safety argument that the compiler would otherwise make*. The compiler cannot verify the safety argument for you; the author of unsafe code must uphold its documented invariants. Most application code can remain safe, but this guide also examines unsafe Rust directly in its dedicated chapter.
 :::
 
 :::plain Zero-cost abstraction

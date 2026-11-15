@@ -6,7 +6,7 @@
 @level all
 @time 10
 
-If you already program in another language, most of what you know still holds: variables, functions, loops, collections and tests work as you expect. This page is a translation table for the rest. Find your language, read which Rust feature takes the place of each thing you are used to, and follow the link to the chapter.
+If you already know another language, familiar ideas such as functions, loops and collections provide a useful starting point, but their details may differ in Rust. This appendix compares selected concepts across languages and points to the Rust chapters that explain them. Treat each mapping as an orientation, not as a claim that the features behave identically.
 
 ## The six differences that matter
 

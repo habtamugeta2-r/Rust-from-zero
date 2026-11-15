@@ -6,7 +6,7 @@
 @time 100
 @learn Explain what WebAssembly is and what a module may and may not do | Compile a Rust function for the browser and call it from JavaScript | Change a web page from Rust, by hand and with the framework Leptos | Recognise the same ideas in Yew and Dioxus | Describe how a Tauri app divides the work between a web page and Rust | Tell apart the three designs of native GUI libraries, with egui, iced and Slint | Choose a toolkit for a given kind of app
 
-Until now your programs talked through a terminal or answered HTTP requests. This chapter is about programs that people click on: pages in a browser, and windows on a desktop. Rust offers three roads to them:
+A program can present its interface in a browser, in a desktop window or in a native graphical toolkit. Rust can participate in each approach, but the architecture and boundary between Rust and the UI differ. This chapter compares WebAssembly-based browser code, desktop webview shells and native GUI libraries so you can choose a direction for a project.
 
 1. **Rust inside a web page.** The Rust code is compiled to *WebAssembly* and runs in the browser, next to JavaScript or in place of it.
 2. **A web page inside a desktop window, with Rust behind it.** This is the design of *Tauri*.

@@ -7,7 +7,7 @@
 @time 90
 @learn Describe what makes a command-line tool pleasant to use | Define arguments, options, flags and subcommands with clap | Get help texts, validation and error messages generated for you | Build a complete to-do tool that stores its data as JSON | Test a command-line program
 
-Command-line tools are where many people first use Rust in earnest. The language suits them well: a Rust tool starts instantly, is a single file that needs nothing else installed, and runs on Linux, macOS and Windows. Many of the popular modern terminal tools are written in Rust: `ripgrep` (search), `fd` (find files), `bat` (show files), `eza` (list files), and `uv` and `ruff` for Python.
+A command-line interface (CLI) lets a user give a program instructions through a terminal. Rust is one option for building CLI tools: Cargo can produce a native executable, and Rust's type system helps make argument handling explicit. Portability and runtime dependencies depend on the target and how the program is linked. Examples of Rust CLI applications include `ripgrep`, `fd`, `bat` and `eza`.
 
 In [chapter 28](#project-search) you parsed arguments by hand. That works for two switches. Real tools have dozens of options, need help texts and error messages, and should behave the way users expect. The crate **clap** ("command line argument parser") does all of that from a description of your options.
 

@@ -6,7 +6,7 @@
 @time 90
 @learn Follow the three rules: measure a release build, find where the time goes, change one thing at a time | Compare whole programs with hyperfine and single functions with criterion | Read a flame graph | Count allocations and remove the needless ones | Recognise the common causes of slow programs: the algorithm, allocations, unbuffered files, hashing | Tell a real difference between two measurements from noise | Decide when a program is fast enough
 
-Rust programs are fast without special effort. For fifty chapters you have written plain, clear code, and it ran at a speed close to that of C and C++. So the first advice about performance is: do nothing, until something is too slow for its purpose.
+Rust gives you native compilation and control over many performance-relevant choices, but it does not make every program fast by default. Algorithms, allocation patterns, I/O and workload all matter. A sound first step is to define what "fast enough" means, measure a release build, and optimise only after you know where time is spent.
 
 When that day comes, this chapter gives you a method. It has three rules, and they matter more than any single trick:
 

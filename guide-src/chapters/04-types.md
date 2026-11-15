@@ -6,7 +6,7 @@
 @time 35
 @learn Choose the right number type and explain what the names like `i32` and `u8` mean | Calculate with whole numbers and decimals, and convert between them | Work with true/false values and single characters | Group several values in a tuple or an array | Explain what Rust does when a number gets too big or an index is out of range
 
-Every value in a program is of some **[[type]]**: a whole number, a number with decimals, a piece of text, a yes-or-no answer. The type decides how much memory the value needs and what you are allowed to do with it. You can multiply two numbers, but you cannot multiply two names.
+A **[[type]]** tells Rust what a value represents and which operations make sense for it. For example, integer values can be added, while text is handled with text operations. A type also determines a value's representation and layout; some types, such as slices, need context to determine their size.
 
 ## Why types matter
 

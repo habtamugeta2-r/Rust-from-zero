@@ -7,7 +7,7 @@
 @time 35
 @learn Contrast HDD mechanical seek latency with NAND Flash SSD pages/blocks and NVMe multi-queue PCIe lanes | Explain SSD FTL (Flash Translation Layer), write amplification, TRIM/discard, and wear leveling | Trace a block request through Linux blk-mq, DMA scatter-gather lists, and hardware NVMe submission/completion queues | Understand power-loss hazards (disk write caches, fsync barriers, checksums) for databases
 
-Every `File::write_all` and SQLite `COMMIT` eventually ends at physical storage silicon—a spinning magnetic platter (**HDD**) or solid-state **NAND Flash NVMe SSD** plugged directly into PCIe lanes. The file-system layer that sits on top of those blocks is in [file systems, the page cache and `mmap`](#filesystems-cache-mmap).
+A file write passes through several layers: a Rust API, the operating system's file system and caches, and eventually a storage device such as a hard disk or NVMe SSD. A successful `write_all` does not by itself promise that data has reached durable media, and a database commit's guarantees depend on its configuration and sync behaviour. This chapter traces the storage path; [file systems, the page cache and `mmap`](#filesystems-cache-mmap) covers the layer above it.
 
 Why does random 4 KiB I/O crawl at ~100 operations/sec on an HDD yet scream past **500,000+ IOPS** on an NVMe SSD? Why does overwriting 512 bytes on an SSD secretly force the drive controller to read, copy, and erase hundreds of kilobytes (**write amplification**)? And why can an SSD tell Linux `"write complete!"` while data still vanishes during a power failure unless `fsync` sends a flush barrier?
 

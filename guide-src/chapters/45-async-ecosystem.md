@@ -6,7 +6,7 @@
 @time 80
 @learn Use all processor cores for a computation with Rayon | Set up a Tokio runtime, run heavy work beside it, and shut it down cleanly | Process values that arrive over time with streams | Call web APIs with async reqwest or blocking ureq | Add timeouts and limits with tower layers
 
-Earlier chapters in this part explained the machinery of concurrency: threads, locks, channels, async state machines, futures, and wakers. In daily work you rarely build on that machinery directly. A handful of crates package the common patterns, and this chapter is a tour of them.
+Earlier chapters introduced concurrency primitives such as threads, locks, channels and futures. Applications often use libraries that build on these pieces, but choosing a crate depends on the task and its trade-offs. This chapter tours selected tools for parallel computation, asynchronous I/O, streams, HTTP clients and middleware, and shows where each fits.
 
 | The work | The tool | Why |
 |---|---|---|

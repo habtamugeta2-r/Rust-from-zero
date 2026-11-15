@@ -6,7 +6,7 @@
 @time 35
 @learn Remove duplicated code by writing a function once for many types | Define generic structs, enums and methods | Read and write the `<T>` notation with confidence | Explain why generic code in Rust is as fast as hand-written code
 
-You have been using generic types for a while: `Vec<i32>`, `Option<String>`, `Result<u32, io::Error>`, `HashMap<String, u32>`. The part in angle brackets says what the type holds. One `Vec` implementation works for every element type. In this chapter you learn to write such code yourself.
+Types such as `Vec<i32>` and `Option<String>` use a type parameter to say what kind of value they contain. **Generics** let you write a function or data type in terms of parameters, then use it with concrete types. This chapter shows how to declare those parameters and how trait bounds express the operations generic code requires.
 
 ## The problem: the same code twice
 

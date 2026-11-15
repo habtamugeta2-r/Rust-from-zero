@@ -7,7 +7,7 @@
 @time 35
 @learn Hand-desugar an async fn into a Poll state-machine enum matching what rustc emits | Explain why borrows held across .await create self-referential structs requiring Pin<&mut T> | Trace Tokio's multi-threaded work-stealing scheduler, LIFO slot, cooperative budget, and mio epoll parking | Connect Arc's Release/Acquire fence pattern, lock convoys, and lock-free CAS hazards to concurrent scaling
 
-You have used `async fn`, `.await`, `tokio::spawn`, and `select!`. Under the surface, there are **no green threads** (`go` goroutines) allocating invisible 4 KiB stacks, and **no garbage collector** keeping suspended frames alive! Instead, Rust compiles every `async fn` into a **zero-allocation stackless state-machine enum** driven by `Future::poll` and `Pin`, scheduled across a **work-stealing** thread pool coupled to `epoll`.
+An `async fn` creates a future: a value that stores the state needed to resume the function when it is polled. The compiler generates a state machine for that future, but it does not by itself choose a runtime or guarantee that no allocation occurs. An executor decides when to poll tasks and how to wait for external events; Tokio, for example, uses its scheduler and operating-system facilities to do that work. This chapter opens those layers and distinguishes the language machinery from the runtime's choices.
 
 Opening that machinery makes `Pin`, `!Unpin`, "`Future` is not `Send`", and Tokio scheduling hiccups crystal clear forever.
 

@@ -6,7 +6,7 @@
 @time 100
 @learn Explain the game loop and why movement is multiplied by the frame time | Write a small game with macroquad | Describe entities, components and systems, and run a Bevy app | Say what `no_std` means and what `core` still offers | Run a program for a microcontroller in an emulator and read its layers: PAC, HAL, `embedded-hal`, drivers | Test device logic on your own machine with a fake pin | Calculate with tables of numbers in ndarray and summarise data with Polars | Explain how a program learns a line from data
 
-Three more fields where Rust is used, and each of them could fill a book of its own. This chapter gives you a first working program in each field, the two or three ideas that everything else builds on, and a map of the crates.
+This chapter surveys three areas that use Rust: games, embedded devices and data work. Each has its own constraints, tools and learning path, so the aim here is orientation rather than mastery. You will meet a small example in each area, learn the central terms, and find a route for exploring further.
 
 :::note How the programs of this chapter were tested
 The Cortex-M3 bare-metal project (`thumbv7m-none-eabi`) is extracted and cross-compiled in CI by `tools/check.py --projects`, and the standalone `embedded-hal`, `heapless`, `ndarray`, and machine-learning listings are checked and run by `tools/check.py`. Windowed games (`macroquad`, `Bevy`) were built and played on Linux with real key presses, the QEMU firmware run and Raspberry Pi Pico binary were verified against their targets locally, and the Polars snippet was run against the chapter 26 sales data.

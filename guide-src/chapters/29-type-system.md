@@ -6,7 +6,7 @@
 @time 55
 @learn Convert between types safely with `From`, `TryFrom`, `FromStr` and `AsRef` | Use newtypes and type aliases to make code clearer and safer | Explain the never type, zero-sized types and dynamically sized types | Encode rules in types so that wrong programs do not compile (the typestate pattern) | Apply "parse, don't validate" and "make invalid states unrepresentable"
 
-So far you have used types to describe data. Experienced Rust programmers use them for something more: to make certain mistakes **impossible to write**. The compiler checks type rules before the program runs, at no cost while it runs. Types can enforce many important rules, but they complement tests rather than replace them.
+Types describe values, but they can also encode rules about which program states are representable. A carefully chosen type may make some invalid operations difficult or impossible to express through safe APIs. Type checking happens during compilation, but types do not replace tests or prove that the program meets every requirement. This chapter explores the design trade-offs.
 
 This chapter first completes the picture of conversions between types, then presents the less obvious types of the language, and ends with the design techniques that tie them together.
 

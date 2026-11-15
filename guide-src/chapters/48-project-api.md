@@ -7,7 +7,7 @@
 @time 180
 @learn Plan a web service as three layers: HTTP, rules and storage | Keep all SQL inside one repository type | Turn every failure into a clear JSON response | Protect routes with an API key | Test the whole API without opening a network port | Prepare a service for a real server
 
-In this project you build a complete web service: a **link shortener**. It turns a long web address into a short one. When somebody opens the short address, the service sends the browser on to the long one and counts the visit. Services such as bit.ly work this way.
+In this project you build a small **link-shortening service**. It accepts a long URL, stores it under a short code, and redirects a visitor who opens that code. The project combines HTTP handling, application rules and database access, while keeping its scope small enough to examine each layer.
 
 This is the finished program at work. `curl` is the command-line HTTP client from [chapter 64](#web). `-X POST` chooses the method, `-H` adds a header, `-d` supplies the body, and `-i` also shows the status line and the headers of the response.
 

@@ -6,7 +6,7 @@
 @time 30
 @learn Describe what memory is and what a pointer is | Explain the difference between the stack and the heap | Name the classic memory bugs and how they happen | Compare the three ways languages manage memory
 
-Now we turn to ownership, the idea that makes Rust different. Ownership is a set of rules about memory. They only make sense when you have a picture of what memory is and what can go wrong with it. This chapter gives you that picture. It has very little Rust in it, and what you learn here is true for every programming language.
+Before studying ownership, it helps to picture where a running program keeps its data and how it refers to that data. This chapter introduces memory, addresses, the stack and the heap, then uses common memory bugs to motivate Rust's rules. The broad ideas apply across languages, though the exact memory model and implementation differ.
 
 ## What memory is
 

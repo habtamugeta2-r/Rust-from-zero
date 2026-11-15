@@ -7,7 +7,7 @@
 @time 90
 @learn Design the data of a program with structs and enums before writing logic | Keep a list of structs in a `Vec` and change it through methods | Turn a line of text into a command with `match` | Separate "understanding the input" from "doing the work"
 
-In this project you build a to-do list that runs in the terminal. You type commands, and the program keeps a list of tasks in memory. It uses structs for tasks, a `Vec` for the list, an enum for the commands, and pattern matching to connect them.
+This project turns the types and control-flow tools from the earlier chapters into a small terminal to-do list. You will model a task with a struct, store tasks in a `Vec`, represent commands with an enum, then match each command to the operation it requests. The list lives in memory for this project, so it resets when the program exits.
 
 A session will look like this:
 

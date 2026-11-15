@@ -7,7 +7,7 @@
 @time 35
 @learn Contrast CISC (x86-64) variable-length encoding with RISC (ARM64/RISC-V) fixed 32-bit encoding | Trace the fetch-decode-execute cycle, status flags (ZF/CF/SF/OF), and addressing modes | Follow how Rust loops, bounds checks, and match arms lower to branches, jump tables, and cmov | Recognise how branchless conditional moves eliminate unpredictable jumps
 
-Every abstraction we built—enums, iterators, bounds checks, `match`, closures, async state machines—shrinks down to a linear stream of binary **machine instructions** sitting in `.text`. Yet not all processors speak the same binary dialect. Your Linux cloud server likely runs **x86-64** (CISC origins, variable 1–15 byte opcodes), while an Apple MacBook or AWS Graviton server runs **ARM64 / AArch64** (RISC load-store, fixed 4-byte opcodes), and open microcontrollers increasingly run **RISC-V**.
+For a native build, the compiler lowers Rust constructs into instructions for a target instruction set. The instruction encodings differ: x86-64 uses variable-length instructions, while AArch64 instructions have a fixed 4-byte encoding. Other targets, including RISC-V, have their own rules. The emitted instructions depend on the target and build options; this chapter compares these encodings and traces examples from Rust to machine code, building on [assembly and machine code](#assembly-machine-code) and [linking and ELF](#linking-elf).
 
 How does silicon decode raw bytes into ALU arithmetic and branches, and why does that hardware structure directly change how Rust's optimiser compiles your `if` expressions and `match` arms?
 

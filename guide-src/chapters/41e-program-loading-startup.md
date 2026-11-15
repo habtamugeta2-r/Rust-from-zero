@@ -7,7 +7,7 @@
 @time 35
 @learn Trace execve() from shell fork() into the Linux kernel ELF loader | Understand ld-linux, PT_INTERP, GOT/PLT lazy symbol resolution, and ASLR | Inspect argc, argv, envp, and auxv placed on the initial stack | Follow Rust's crt0 / std::rt::lang_start_internal execution before your fn main() runs
 
-You type `./hello` in a terminal and press Enter. Less than a millisecond later, `"Hello, world!"` prints. Yet your `fn main()` is nowhere near the first code that ran! Between pressing Enter and entering `main()`, your shell, the Linux kernel, the dynamic linker `ld-linux-x86-64.so.2`, C runtime initialisation (`crt0`), and Rust's standard runtime (`std::rt::lang_start`) execute hundreds of carefully ordered steps. The file formats those steps read are in [object files, linking and ELF](#linking-elf).
+Running `./hello` starts several layers before Rust calls your `main`: the shell creates a process, the Linux kernel loads the executable, and—when dynamically linked—the dynamic loader prepares its shared libraries. Runtime startup code then calls the program's entry point. The exact path depends on the binary, target and build options; [object files, linking and ELF](#linking-elf) introduces the file format involved.
 
 :::analogy Opening night at a theatre
 A play does not begin when the lead actor speaks line one. First the stage manager unlocks the theatre (`execve`), turns on the stage lights and props (`mmap` of `.text`, `.rodata`, `.data`), hires external musicians (`ld-linux` loading `libc.so.6`), checks safety alarms (`stack canary` and `guard pages`), and cues the stagehand (`lang_start`)—only *then* does `fn main()` walk onto the stage.

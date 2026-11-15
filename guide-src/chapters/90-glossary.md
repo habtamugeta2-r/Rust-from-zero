@@ -6,7 +6,7 @@
 @level all
 @time 25
 
-The technical words of this guide, in plain language. Type in the box to filter the list. Where a chapter explains the word in full, the entry links to it.
+Use this glossary when a technical term is unfamiliar or when you want to find where the guide discusses it. Definitions are brief orientation, not a replacement for the linked chapter's fuller explanation. Type a word in the filter to narrow the entries.
 
 :::glossary
 ABI :: The exact rules by which compiled code calls other compiled code: where arguments go, how values are laid out. The C ABI is the common language between programming languages. See [chapter 37](#ffi) and [chapter 45](#calling-conventions-execution).

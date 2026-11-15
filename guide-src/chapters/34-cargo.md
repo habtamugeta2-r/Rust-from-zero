@@ -6,7 +6,7 @@
 @time 50
 @learn Read and write every important section of `Cargo.toml` | Manage dependencies, versions and features | Tune builds with profiles | Organise several packages in a workspace | Document, install and publish a crate, and manage toolchains with rustup
 
-You have used Cargo since [chapter 4](#setup): `cargo new`, `cargo run`, `cargo test`, `cargo add`. Cargo is Rust's build tool and package manager in one, and one of the main reasons the language is pleasant to use. This chapter covers the rest of what a working Rust programmer needs from it.
+Cargo is Rust's build tool and package manager. It reads a project's manifest, resolves dependencies, builds targets and runs tests. You have already used commands such as `cargo new` and `cargo run`; this chapter explains manifests, workspaces, features, profiles and the other tools needed to manage a project as it grows.
 
 :::analogy A project control tower
 Cargo is the system that keeps the whole airport moving: which package is in the build, which versions are allowed, which features are active, and which test command the team is running. It turns a pile of files into a repeatable build.

@@ -7,7 +7,7 @@
 @time 35
 @learn Distinguish hardware interrupts (IRQ), CPU exceptions (trap/fault/abort), and POSIX signals | Explain how Linux Mutex and Condvar work via futex (fast uncontended atomic vs kernel sleep) | Understand async-signal safety and why Rust forbids heap allocations in raw signal handlers | Handle Ctrl+C / SIGTERM cleanly in production Rust programs via atomic flags or signal-hook/tokio
 
-How does a keyboard press, an incoming network packet, or `Ctrl+C` break into a busy CPU core? Why does `std::sync::Mutex::lock()` take ~15 nanoseconds when nobody else holds the lock, yet put your thread completely to sleep at `0%` CPU when contended—without spinning or hammering syscalls? And why can calling `println!` inside a raw Unix signal handler deadlock your program?
+A key press, network packet or `Ctrl+C` can arrive while a program is doing other work. The operating system and processor coordinate interrupts, signals and thread synchronisation so the program can respond. Their timing depends on hardware and workload. This chapter follows those mechanisms and explains why only a small set of operations is safe inside a low-level signal handler.
 
 In this chapter we look inside the reactive machinery of a live operating system: **hardware interrupts**, **CPU exceptions**, **POSIX signals**, and the Linux **`futex`** behind Rust's locks.
 

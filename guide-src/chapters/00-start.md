@@ -6,15 +6,15 @@
 @time 8
 @learn Find your way around the guide and its interactive parts | Follow a study routine that makes new knowledge stick | Know what to do when you get stuck
 
-Welcome. This guide teaches you both **how computers work internally** and **the Rust programming language**, starting from nothing. You do not need to know any other language, any maths beyond arithmetic, or any computer science beforehand. You need a computer, a terminal (Linux is used for hands-on systems inspection labs), and the patience to type things out and see what happens.
+Welcome. This guide starts with two questions: how does a computer carry out a program, and how can Rust help you write one safely? No previous programming or computer-science study is required. You will need a computer, a terminal for some exercises, and time to try the examples rather than only read them. Linux is used for several hands-on systems labs; where a task needs it, the chapter says so.
 
 ## What you will be able to do
 
-Finish this guide and you will understand the complete chain inside a modern computer:
+As you work through the guide, you will build a connected model of how a program moves through a computer:
 
 `Source Code → Compilation → Machine Code → Program Loading → Memory Allocation → Execution → CPU Instructions → Operating System → Hardware Interaction → Input/Output`
 
-Using Rust as your practical and experimental tool, you will be able to inspect compiler intermediate representations and ELF binaries, reason about virtual memory, allocators, CPU caches, calling conventions, Linux system calls, I/O multiplexing, networking protocols, and file systems—and build real command-line tools, concurrent systems services, and database-backed web APIs.
+Rust is the working tool throughout. You will practise reading compiler output and ELF binaries, tracing memory and I/O, and relating CPU, operating-system, networking and storage concepts to running programs. The projects then use those ideas to build command-line tools, concurrent services and database-backed web APIs.
 
 Learning systems programming is like learning to cook or to play an instrument. Reading alone does not work. **Each chapter gives you concepts, traces, and experiments to run, and the doing is where the learning happens.**
 

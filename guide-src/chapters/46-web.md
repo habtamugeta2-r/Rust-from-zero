@@ -6,7 +6,7 @@
 @time 100
 @learn Explain requests, responses, methods and status codes | Write a web server with routes and handlers in Axum | Read paths, query strings, headers, JSON and real-time streams with extractors | Share state, load layered configuration and protect secrets | Add authentication, authorisation, security headers and rate limits | Choose between REST, gRPC and GraphQL, and compare Axum with Actix Web and Rocket
 
-A **web server** is a program that waits for requests from the network and answers them. The web sites you visit and the apps on your phone all talk to such programs. Rust is a strong choice for writing them: it helps prevent memory-safety bugs and uses resources efficiently. It cannot guarantee that a server stays up, though; logic errors, panics, overload, and external outages still need careful design and testing.
+A **web server** receives requests and sends responses, often while handling many clients over time. Frameworks such as Axum provide routing and request extraction on top of HTTP libraries and operating-system I/O. Rust's type system can prevent some memory errors, but availability, correctness and security still depend on application design, configuration and testing.
 
 :::analogy A restaurant
 A guest (the client) hands an order slip (the request) to the waiter. The slip says what is wanted and for which table. The waiter (the router) looks at it and gives it to the right cook (a handler). The cook prepares a dish (the response), and the waiter brings it back. House rules apply to every order whoever cooks: orders are written in the book, and no order may take longer than twenty minutes (middleware). The pantry is shared by all cooks (state).

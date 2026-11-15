@@ -6,7 +6,7 @@
 @time 40
 @learn Define a struct that groups related values under one name | Create, read and change struct values | Give a struct behaviour with methods and associated functions | Print structs for debugging and add common abilities with `derive` | Explain how structs differ from classes in other languages
 
-So far you have used types that Rust provides: numbers, text, tuples, arrays. Real programs are about *things*: a user, an order, a rectangle, a song. A **[[struct]]** (short for *structure*) lets you define your own type that describes such a thing by grouping its parts under one name.
+A program often needs to keep related facts together: a user's name and email, or a rectangle's width and height. A **[[struct]]** is a type you define to group named fields into one value. This chapter builds structs, creates and updates their values, and gives them methods.
 
 ## The problem structs solve
 

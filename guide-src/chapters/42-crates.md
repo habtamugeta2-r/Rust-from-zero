@@ -6,7 +6,7 @@
 @time 50
 @learn Find crates for a task and judge their quality | Read a crate's documentation efficiently | Use the everyday crates: `rand`, `regex`, `chrono`, `itertools`, `tracing` | Name the standard choice for each common task | Keep dependencies safe and under control
 
-Rust's standard library is small on purpose. It has no random numbers, no regular expressions, no dates, no JSON and no HTTP. All of these live in **crates**: libraries published on **[[crates.io]]**, the community's registry, which holds well over 150,000 of them. Knowing the language is half of being productive in Rust. The other half is knowing which crate to reach for.
+The Rust standard library covers common language and operating-system tasks, but many formats and specialised tools come from third-party libraries. In Rust, a distributable package of code is called a **[[crate]]**; many crates are published in the community registry **[[crates.io]]**. This chapter shows how to search for a library, assess its fit and maintenance, and manage dependencies deliberately.
 
 This chapter shows how to find and judge crates, and introduces the ones you will use in almost every project. The chapters after it go deeper into the main areas: data formats, command-line tools, async and web, databases, and applications.
 

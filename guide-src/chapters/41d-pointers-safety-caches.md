@@ -7,7 +7,7 @@
 @time 35
 @learn Contrast Rust references, raw pointers, and dangling/aliased pointers at the machine level | Reproduce and recognise the classic memory safety bugs Rust rules out (UAF, double free, overflow, race) | Trace L1/L2/L3 CPU cache lines (64 bytes), spatial/temporal locality, and AoS vs SoA | Avoid false sharing across CPU cores with cache-line padding
 
-In the previous chapters you saw [virtual memory pages](#virtual-memory-address-spaces) (`4 KiB`) and [heap allocators](#allocators-heap-internals). Now drop one level closer to the silicon: **why does the exact arrangement of structs in RAM swing a Rust program's speed by 10×—and why do C and C++ suffer security vulnerabilities that Rust refuses to compile?**
+The previous chapters introduced [virtual memory](#virtual-memory-address-spaces) and [heap allocation](#allocators-heap-internals). This chapter connects pointer use and data layout to CPU caches, then explains how Rust's safe type system can prevent some memory errors that are possible in C and C++. Performance depends on the workload and layout; memory safety also depends on unsafe code and library contracts.
 
 Both questions come down to how raw addresses behave in hardware.
 

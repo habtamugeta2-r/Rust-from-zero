@@ -7,7 +7,7 @@
 @time 35
 @learn Trace packet encapsulation across Link (Ethernet/MAC), Network (IPv4/IPv6), Transport (TCP/UDP), and Application layers | Understand ARP address resolution, subnet masks (CIDR /24), default gateways, and NAT | Parse and construct Ethernet/IPv4 header bytes cleanly in Rust using big-endian network byte order | Contrast local LAN delivery (MAC hop-by-hop) vs global Internet routing (IP end-to-end)
 
-Before a single byte of an HTTP request leaves your Rust `TcpStream`, the Linux kernel and your network interface card (NIC) wrap it like nested Russian dolls: application text -> TCP header -> IP header -> Ethernet frame -> electrical signals or Wi-Fi radio waves. The transport layer that produces those TCP and UDP headers is [TCP, UDP and kernel sockets](#tcp-udp-sockets-kernel).
+Writing application bytes to a TCP socket hands them to the operating system's networking stack. TCP provides an ordered byte stream; IP routes packets between networks; and a link layer such as Ethernet carries each packet over a local connection. The layers add their own headers and work together, though packet boundaries do not correspond one-for-one with application writes. The TCP and UDP transport details are in [TCP, UDP and kernel sockets](#tcp-udp-sockets-kernel).
 
 Understanding those layers demystifies IP addresses, ports, localhost (`127.0.0.1`), subnets (`192.168.1.0/24`), NAT routers, and why network protocols always speak **big-endian** bytes. Bytes on the wire are memory in transit: [memory layout](#memory-layout) explains how a `u32` is stored, and [bits, bytes and representation](#bits-bytes-representation) covers the endianness rules behind the headers.
 

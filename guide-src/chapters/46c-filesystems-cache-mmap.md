@@ -7,7 +7,7 @@
 @time 35
 @learn Trace Linux VFS path resolution (/data/app.db -> dentries -> inodes -> ext4 extents) | Explain hard links vs symlinks, directory atomicity (rename() crash-safe file updates!), and file-system journaling | Understand how the Linux Page Cache makes repeated file reads 1,000x faster via DRAM | Contrast read()/write() syscalls with mmap() (zero-copy file mapping, SIGBUS hazards, and Rust safety limits)
 
-Notice something extraordinary if you run `ripgrep` across a 500 MB codebase twice in a row: the first scan might take `0.8 s`, and the second scan finishes in **`0.04 s`** (`20×` faster!) without changing a line of code. Why? Because Linux kept the entire codebase hot inside the **OS Page Cache**!
+A file scan may finish faster on a second run because recently read data can remain in the operating system's **page cache**. That is not guaranteed: the result depends on file size, available memory, competing work and storage. This chapter explains how Linux caches file data, how file-system metadata describes it, and how `mmap` exposes file contents through a process's address space.
 
 In this chapter we climb up one layer from raw NVMe blocks (the layer below is [storage hardware and NVMe](#storage-hardware-blocks)) to the **Linux VFS**, **`ext4` / CoW file systems (`btrfs`/`ZFS`/`APFS`)**, **crash-safe file replacement**, and **`mmap` memory-mapped files**. The descriptors that reach these files are the ones in [streams, file descriptors and buffering](#streams-fds-buffering).
 

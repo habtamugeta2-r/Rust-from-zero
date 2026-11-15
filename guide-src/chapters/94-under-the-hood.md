@@ -8,7 +8,7 @@
 
 This appendix is for readers who want the last layer of the story. [Chapter 13](#memory) introduced the stack and the heap. [Chapter 38](#memory-layout) showed how individual values are arranged byte by byte. This page takes the remaining step: what the compiler does between your source text and a running program, what the operating system does to start it, and what the processor does with each instruction once it is running.
 
-Everything here is simplified. Real compilers are vast, and both `rustc` and LLVM change with every release. The names of the stages, the order in which they run, and the ideas they embody are stable, and this page sticks to those. Where the details depend on the version, the machine or the optimisation level, it says so.
+Everything here is a model, not a specification of the compiler. `rustc` and LLVM evolve, and internal stage names or ordering can change between versions. The explanations focus on recurring ideas—parsing, type checking, optimisation, code generation and process startup—and flag details that depend on the toolchain, target or optimisation settings.
 
 :::analogy A factory with conveyor belts
 Picture a factory that turns raw steel into a finished car. No single worker builds the car. Instead there is a row of stations, each of which does one small, well-understood job: cut, weld, paint, polish. Each station takes the output of the previous one and passes its own output on. If a station rejects the material, the car is never built, and the station says exactly what was wrong. A compiler is that factory. Your source text goes in at one end, and a runnable program comes out at the other, with checks at every station along the way.
