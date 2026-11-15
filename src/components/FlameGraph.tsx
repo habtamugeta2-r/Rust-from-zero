@@ -71,7 +71,7 @@ export function FlameGraph({
   const [zoomId, setZoomId] = useState<string | null>(null);
 
   return (
-    <figure className="my-6 overflow-hidden rounded-2xl border border-[var(--g-line)] bg-[var(--g-surface)] p-4">
+    <figure className="my-6 overflow-hidden rounded-card border border-[var(--g-line)] bg-[var(--g-surface)] p-4 shadow-card">
       <div className="overflow-x-auto pb-1">
         <div className="flex min-w-[560px] items-end">
           {roots.map((root) => (

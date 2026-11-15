@@ -155,7 +155,7 @@ export function GuideShell({
         <div
           aria-hidden="true"
           onClick={() => setMobileDrawerOpen(false)}
-          className="no-print fixed inset-0 z-40 bg-black/45 backdrop-blur-[1px] lg:hidden"
+          className="no-print fixed inset-0 z-40 bg-black/40 backdrop-blur-sm lg:hidden"
         />
       )}
 
@@ -164,10 +164,10 @@ export function GuideShell({
         id="sidebar"
         aria-label="Guide navigation"
         className={`no-print fixed inset-y-0 left-0 z-50 flex w-[min(88vw,310px)] flex-col border-r border-[var(--g-line)] bg-[var(--g-sunken)] font-sans transition-transform duration-200 lg:sticky lg:top-0 lg:h-screen lg:w-auto lg:translate-x-0 ${
-          mobileDrawerOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full"
+          mobileDrawerOpen ? "translate-x-0 shadow-drawer" : "-translate-x-full"
         } ${desktopSidebarOpen ? "" : "lg:hidden"}`}
       >
-        <div className="relative flex items-center gap-3 px-4 pt-4 pb-3">
+        <div className="relative flex items-center gap-3 px-4 pt-4 pb-3.5">
           <Link
             href="/"
             className="flex min-w-0 flex-1 items-center gap-2.5 text-[var(--g-ink)]"
@@ -204,10 +204,10 @@ export function GuideShell({
               />
             </svg>
             <span className="truncate">
-              <strong className="block text-[15.5px] font-extrabold tracking-tight">
+              <strong className="block text-[15px] font-bold tracking-tight">
                 Rust from Zero
               </strong>
-              <small className="block text-[11.5px] text-[var(--g-ink3)]">
+              <small className="block text-xs text-[var(--g-ink3)]">
                 The complete hands-on guide
               </small>
             </span>
@@ -217,14 +217,14 @@ export function GuideShell({
             type="button"
             onClick={() => setMobileDrawerOpen(false)}
             aria-label="Close navigation"
-            className="grid h-8 w-8 place-items-center rounded-lg text-[var(--g-ink2)] hover:bg-[var(--g-line)]/50 lg:hidden"
+            className="grid h-8 w-8 place-items-center rounded-lg text-[var(--g-ink2)] hover:bg-[var(--g-line)]/60 lg:hidden"
           >
             <X className="h-4 w-4" />
           </button>
         </div>
 
         {/* Search */}
-        <div className="px-3 pb-2.5">
+        <div className="px-3 pb-3">
           <label className="relative flex items-center">
             <Search
               className="pointer-events-none absolute left-3 h-4 w-4 text-[var(--g-ink3)]"
@@ -239,21 +239,23 @@ export function GuideShell({
               aria-label="Search the whole guide"
               autoComplete="off"
               spellCheck={false}
-              className="w-full rounded-xl border border-[var(--g-line)] bg-[var(--g-surface)] py-2 pr-8 pl-9 text-[13px] text-[var(--g-ink)] placeholder:text-[var(--g-ink3)] focus:border-[var(--g-accent)] focus:outline-none"
+              className="h-9 w-full rounded-lg border border-[var(--g-line)] bg-[var(--g-surface)] pr-8 pl-9 text-[13px] text-[var(--g-ink)] shadow-card placeholder:text-[var(--g-ink3)] focus:border-[var(--g-accent)] focus:outline-none"
             />
-            <kbd className="pointer-events-none absolute right-2.5 hidden rounded border border-[var(--g-line)] bg-[var(--g-sunken)] px-1.5 py-0.5 text-[11px] font-medium text-[var(--g-ink3)] sm:inline-block">
+            <kbd className="pointer-events-none absolute right-2.5 hidden rounded-md border border-[var(--g-line)] bg-[var(--g-sunken)] px-1.5 py-0.5 text-[11px] font-medium text-[var(--g-ink3)] sm:inline-block">
               /
             </kbd>
           </label>
         </div>
 
         {/* Progress */}
-        <div className="border-b border-[var(--g-line)] px-4 pb-3">
-          <div className="mb-1.5 flex items-center justify-between text-xs">
-            <span className="text-[var(--g-ink2)]">
+        <div className="border-b border-[var(--g-line)] px-4 pb-3.5">
+          <div className="mb-2 flex items-center justify-between text-xs">
+            <span className="font-medium text-[var(--g-ink2)]">
               {doneCount} of {tracked.length} complete
             </span>
-            <strong className="font-bold text-[var(--g-ink)]">{donePct}%</strong>
+            <strong className="font-bold tabular-nums text-[var(--g-ink)]">
+              {donePct}%
+            </strong>
           </div>
           <div className="h-1.5 overflow-hidden rounded-full bg-[var(--g-line)]">
             <div
@@ -286,7 +288,7 @@ export function GuideShell({
                     setQuery("");
                     setHits(null);
                   }}
-                  className="block rounded-xl px-2.5 py-2 transition-colors hover:bg-[var(--g-surface)]"
+                  className="block rounded-lg px-2.5 py-2 transition-colors hover:bg-[var(--g-surface)]"
                 >
                   <div className="text-[11px] font-bold text-[var(--g-accent)]">
                     {h.num} · {h.chapterTitle}
@@ -299,7 +301,7 @@ export function GuideShell({
                   <div className="mt-0.5 line-clamp-2 text-[11.5px] text-[var(--g-ink2)]">
                     {h.before}
                     {h.match && (
-                      <mark className="rounded bg-amber-200/80 px-0.5 text-stone-950 dark:bg-amber-500/40 dark:text-amber-100">
+                      <mark className="rounded bg-amber-300/60 px-0.5 text-[#33291c] dark:bg-amber-500/30 dark:text-amber-100">
                         {h.match}
                       </mark>
                     )}
@@ -354,13 +356,13 @@ export function GuideShell({
                               <Link
                                 href={`/chapters/${c.id}`}
                                 aria-current={isActive ? "page" : undefined}
-                                className={`flex items-center gap-2 rounded-lg px-2 py-1.5 text-[13px] leading-snug transition-colors ${
+                                className={`relative flex items-center gap-2 rounded-lg px-2 py-1.5 text-[13px] leading-snug transition-colors ${
                                   isActive
-                                    ? "bg-[var(--g-accent-soft)] font-semibold text-[var(--g-accent)]"
+                                    ? "bg-[var(--g-accent-soft)] font-semibold text-[var(--g-accent)] before:absolute before:-left-[7px] before:top-1 before:bottom-1 before:w-[3px] before:rounded-full before:bg-[var(--g-accent)]"
                                     : "text-[var(--g-ink2)] hover:bg-[var(--g-surface)] hover:text-[var(--g-ink)]"
                                 }`}
                               >
-                                <span className="w-5 shrink-0 font-mono text-[11px] text-[var(--g-ink3)]">
+                                <span className="w-5 shrink-0 font-mono text-[11px] tabular-nums text-[var(--g-ink3)]">
                                   {c.num}
                                 </span>
                                 <span className="min-w-0 flex-1 truncate">
@@ -408,7 +410,7 @@ export function GuideShell({
 
       {/* Main Column */}
       <div className="flex min-w-0 flex-col">
-        <header className="no-print sticky top-0 z-20 flex h-13 items-center gap-2.5 border-b border-[var(--g-line)] bg-[var(--g-bg)]/90 px-4 backdrop-blur-md">
+        <header className="no-print sticky top-0 z-20 flex h-14 items-center gap-2.5 border-b border-[var(--g-line)] bg-[var(--g-bg)]/90 px-4 backdrop-blur-md">
           <button
             type="button"
             aria-label="Toggle navigation"
@@ -425,13 +427,15 @@ export function GuideShell({
             <Menu className="h-5 w-5" />
           </button>
 
-          <div className="min-w-0 flex-1 truncate font-sans text-xs sm:text-[13.5px]">
+          <div className="min-w-0 flex-1 truncate font-sans text-xs sm:text-[13px]">
             {activeChapter ? (
               <span className="flex items-center gap-1.5 truncate text-[var(--g-ink3)]">
                 <span className="hidden truncate sm:inline">
                   {activeChapter.partTitle}
                 </span>
-                <span className="hidden sm:inline">›</span>
+                <span className="hidden shrink-0 sm:inline" aria-hidden="true">
+                  ›
+                </span>
                 <strong className="truncate font-semibold text-[var(--g-ink)]">
                   {activeChapter.kind === "appendix"
                     ? `Appendix ${activeChapter.num} · `
@@ -453,31 +457,41 @@ export function GuideShell({
             )}
           </div>
 
-          <div className="flex items-center gap-1 font-sans">
-            <button
-              type="button"
-              onClick={() => stepFontSize(-1)}
-              aria-label="Smaller text"
-              title="Smaller text"
-              className="grid h-8 w-8 place-items-center rounded-lg text-xs font-bold text-[var(--g-ink2)] hover:bg-[var(--g-sunken)] hover:text-[var(--g-ink)]"
+          <div className="flex items-center gap-1.5 font-sans">
+            <div
+              className="flex items-center overflow-hidden rounded-lg border border-[var(--g-line)] bg-[var(--g-surface)] shadow-card"
+              role="group"
+              aria-label="Text size"
             >
-              A-
-            </button>
-            <button
-              type="button"
-              onClick={() => stepFontSize(1)}
-              aria-label="Larger text"
-              title="Larger text"
-              className="grid h-8 w-8 place-items-center rounded-lg text-sm font-bold text-[var(--g-ink2)] hover:bg-[var(--g-sunken)] hover:text-[var(--g-ink)]"
-            >
-              A+
-            </button>
+              <button
+                type="button"
+                onClick={() => stepFontSize(-1)}
+                aria-label="Smaller text"
+                title="Smaller text"
+                className="grid h-8 w-8 place-items-center text-[11px] font-bold text-[var(--g-ink2)] transition-colors hover:bg-[var(--g-sunken)] hover:text-[var(--g-ink)]"
+              >
+                A−
+              </button>
+              <div
+                className="h-5 w-px bg-[var(--g-line)]"
+                aria-hidden="true"
+              />
+              <button
+                type="button"
+                onClick={() => stepFontSize(1)}
+                aria-label="Larger text"
+                title="Larger text"
+                className="grid h-8 w-8 place-items-center text-[13px] font-bold text-[var(--g-ink2)] transition-colors hover:bg-[var(--g-sunken)] hover:text-[var(--g-ink)]"
+              >
+                A+
+              </button>
+            </div>
             <button
               type="button"
               onClick={toggleTheme}
               aria-label="Switch between light and dark theme"
               title="Switch theme"
-              className="grid h-8 w-8 place-items-center rounded-lg text-[var(--g-ink2)] hover:bg-[var(--g-sunken)] hover:text-[var(--g-ink)]"
+              className="grid h-8 w-8 place-items-center rounded-lg border border-[var(--g-line)] bg-[var(--g-surface)] text-[var(--g-ink2)] shadow-card transition-colors hover:bg-[var(--g-sunken)] hover:text-[var(--g-ink)]"
             >
               {theme === "dark" ? (
                 <Sun className="h-4 w-4" />
@@ -489,10 +503,10 @@ export function GuideShell({
 
           <div
             aria-hidden="true"
-            className="absolute right-0 bottom-0 left-0 h-[2px] bg-transparent"
+            className="absolute right-0 bottom-0 left-0 h-0.5 bg-transparent"
           >
             <div
-              className="h-full bg-[var(--g-accent)] transition-[width] duration-75"
+              className="h-full rounded-r-full bg-[var(--g-accent)] transition-[width] duration-75"
               style={{ width: `${scrollPct}%` }}
             />
           </div>

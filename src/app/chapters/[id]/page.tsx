@@ -62,32 +62,32 @@ export default async function ChapterPage({
     <div className="mx-auto flex max-w-6xl gap-10 px-5 py-8 sm:px-8 lg:py-12">
       <article className="min-w-0 max-w-3xl flex-1">
         {/* Chapter header */}
-        <header className="mb-8 border-b border-[var(--g-line)] pb-6">
-          <div className="flex flex-wrap items-center gap-2 font-sans text-xs font-semibold">
-            <span className="rounded-full bg-[var(--g-accent-soft)] px-3 py-1 text-[var(--g-accent)]">
+        <header className="mb-9 border-b border-[var(--g-line)] pb-7">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2 font-sans text-xs font-semibold">
+            <span className="rounded-full bg-[var(--g-accent-soft)] px-3 py-1 text-[11px] font-bold tracking-wide text-[var(--g-accent)]">
               {eyebrow}
             </span>
             <span className="text-[var(--g-ink3)]">{chapter.partTitle}</span>
             {chapter.time > 0 && (
-              <span className="ml-auto inline-flex items-center gap-1 text-[var(--g-ink3)]">
-                <Clock className="h-3.5 w-3.5" aria-hidden="true" />~
-                {chapter.time} min
+              <span className="ml-auto inline-flex items-center gap-1.5 text-[var(--g-ink3)]">
+                <Clock className="h-3.5 w-3.5" aria-hidden="true" />
+                ~{chapter.time} min
               </span>
             )}
           </div>
 
-          <h1 className="mt-3 font-sans text-3xl font-extrabold tracking-tight text-[var(--g-ink)] sm:text-4xl">
+          <h1 className="mt-3.5 font-sans text-[32px] leading-[1.15] font-bold tracking-[-0.02em] text-[var(--g-ink)] sm:text-[38px]">
             {chapter.title}
           </h1>
 
           {chapter.learnNodes.length > 0 && (
-            <div className="mt-5 rounded-2xl border border-[var(--g-line)] bg-[var(--g-surface)] p-4 font-sans">
-              <div className="mb-2 text-xs font-bold uppercase tracking-wider text-[var(--g-ink3)]">
+            <div className="mt-6 rounded-card border border-[var(--g-line)] bg-[var(--g-surface)] p-5 font-sans shadow-card">
+              <div className="mb-3 text-[11px] font-bold tracking-[0.08em] text-[var(--g-ink3)] uppercase">
                 In this chapter you will learn
               </div>
-              <ul className="space-y-1.5 text-sm text-[var(--g-ink2)]">
+              <ul className="grid gap-x-6 gap-y-2 text-sm leading-relaxed text-[var(--g-ink2)] sm:grid-cols-2">
                 {chapter.learnNodes.map((nodes, i) => (
-                  <li key={i} className="flex items-start gap-2">
+                  <li key={i} className="flex items-start gap-2.5">
                     <CheckCircle2
                       className="mt-0.5 h-4 w-4 shrink-0 text-[var(--g-accent)]"
                       aria-hidden="true"
@@ -121,7 +121,7 @@ export default async function ChapterPage({
           {prev ? (
             <Link
               href={`/chapters/${prev.id}`}
-              className="group flex items-center gap-3 rounded-2xl border border-[var(--g-line)] bg-[var(--g-surface)] p-4 transition-colors hover:border-[var(--g-accent)]"
+              className="group flex items-center gap-3 rounded-card border border-[var(--g-line)] bg-[var(--g-surface)] p-4 shadow-card transition-colors hover:border-[var(--g-accent)]"
             >
               <ArrowLeft className="h-4 w-4 shrink-0 text-[var(--g-ink3)] transition-transform group-hover:-translate-x-0.5 group-hover:text-[var(--g-accent)]" />
               <div className="min-w-0">
@@ -136,7 +136,7 @@ export default async function ChapterPage({
           ) : (
             <Link
               href="/"
-              className="group flex items-center gap-3 rounded-2xl border border-[var(--g-line)] bg-[var(--g-surface)] p-4 transition-colors hover:border-[var(--g-accent)]"
+              className="group flex items-center gap-3 rounded-card border border-[var(--g-line)] bg-[var(--g-surface)] p-4 shadow-card transition-colors hover:border-[var(--g-accent)]"
             >
               <ArrowLeft className="h-4 w-4 shrink-0 text-[var(--g-ink3)] transition-transform group-hover:-translate-x-0.5 group-hover:text-[var(--g-accent)]" />
               <div className="min-w-0">
@@ -153,7 +153,7 @@ export default async function ChapterPage({
           {next ? (
             <Link
               href={`/chapters/${next.id}`}
-              className="group flex items-center justify-end gap-3 rounded-2xl border border-[var(--g-line)] bg-[var(--g-surface)] p-4 text-right transition-colors hover:border-[var(--g-accent)]"
+              className="group flex items-center justify-end gap-3 rounded-card border border-[var(--g-line)] bg-[var(--g-surface)] p-4 text-right transition-colors hover:border-[var(--g-accent)]"
             >
               <div className="min-w-0">
                 <div className="text-[11px] font-semibold uppercase tracking-wider text-[var(--g-ink3)]">
@@ -168,7 +168,7 @@ export default async function ChapterPage({
           ) : (
             <Link
               href="/"
-              className="group flex items-center justify-end gap-3 rounded-2xl border border-[var(--g-line)] bg-[var(--g-surface)] p-4 text-right transition-colors hover:border-[var(--g-accent)]"
+              className="group flex items-center justify-end gap-3 rounded-card border border-[var(--g-line)] bg-[var(--g-surface)] p-4 text-right transition-colors hover:border-[var(--g-accent)]"
             >
               <div className="min-w-0">
                 <div className="text-[11px] font-semibold uppercase tracking-wider text-[var(--g-ink3)]">

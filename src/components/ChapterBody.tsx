@@ -92,9 +92,9 @@ async function renderBlock(
       const HeadingTag = `h${block.level}` as "h2" | "h3" | "h4";
       const cls =
         block.level === 2
-          ? "mt-12 mb-4 scroll-mt-20 border-b border-[var(--g-line)] pb-2 font-sans text-2xl font-bold tracking-tight text-[var(--g-ink)]"
+          ? "mt-12 mb-4 scroll-mt-20 border-b border-[var(--g-line)] pb-2.5 font-sans text-[26px] leading-tight font-bold tracking-[-0.015em] text-[var(--g-ink)]"
           : block.level === 3
-            ? "mt-8 mb-3 scroll-mt-20 font-sans text-xl font-bold tracking-tight text-[var(--g-ink)]"
+            ? "mt-8 mb-3 scroll-mt-20 font-sans text-[20px] leading-snug font-bold tracking-tight text-[var(--g-ink)]"
             : "mt-6 mb-2 scroll-mt-20 font-sans text-base font-bold text-[var(--g-ink)]";
       return (
         <HeadingTag key={key} id={block.id} className={cls}>
@@ -226,10 +226,10 @@ async function renderBlock(
       return (
         <aside
           key={key}
-          className={`my-6 rounded-r-2xl rounded-l-md border px-5 py-4 ${style.border} ${style.bg}`}
+          className={`my-6 rounded-well border px-5 py-4 ${style.border} ${style.bg}`}
         >
           <div
-            className={`mb-1.5 flex items-center gap-2 font-sans text-xs font-bold uppercase tracking-wider ${style.labelColor}`}
+            className={`mb-2 flex items-center gap-2 font-sans text-xs font-bold tracking-[0.06em] uppercase ${style.labelColor}`}
           >
             <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
             <span>{CALLOUT_LABELS[block.kind]}</span>
@@ -250,7 +250,7 @@ async function renderBlock(
       return (
         <details
           key={key}
-          className="my-5 rounded-2xl border border-[var(--g-line)] bg-[var(--g-surface)] px-5 py-3.5"
+          className="my-5 rounded-card border border-[var(--g-line)] bg-[var(--g-surface)] px-5 py-3.5"
         >
           <summary className="flex cursor-pointer list-none items-center gap-2 font-sans text-[15.5px] font-semibold text-[var(--g-ink)] hover:text-[var(--g-accent)]">
             <ChevronRight className="h-4 w-4 text-[var(--g-ink3)]" aria-hidden="true" />

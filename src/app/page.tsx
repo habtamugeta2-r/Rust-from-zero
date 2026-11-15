@@ -1,6 +1,6 @@
 import React from "react";
 import Link from "next/link";
-import { BookOpen, Code2, Hammer, Pencil } from "lucide-react";
+import { BadgeCheck } from "lucide-react";
 import { HomeContinueButton } from "@/components/HomeContinueButton";
 import { HomeRoutesSection } from "@/components/HomeRoutesSection";
 import { loadGuide } from "@/lib/guide-parser";
@@ -9,36 +9,85 @@ export default function HomePage() {
   const guide = loadGuide();
   const { stats, parts, routes, summaries } = guide;
 
+  const steps = [
+    {
+      n: "01",
+      title: "Read",
+      body: (
+        <>
+          Every idea starts with an everyday comparison. Every technical word
+          is explained the first time it appears, and again in the{" "}
+          <Link
+            href="/chapters/glossary"
+            className="font-medium text-[var(--g-accent)] underline decoration-[var(--g-accent)]/40"
+          >
+            glossary
+          </Link>
+          .
+        </>
+      ),
+    },
+    {
+      n: "02",
+      title: "Run",
+      body: (
+        <>
+          {stats.codeBlocks} code listings, and every Rust program among them
+          compiled and run with the real Rust compiler. Press{" "}
+          <strong className="text-[var(--g-ink)]">Run</strong> on a complete
+          example to open it in the free online Rust Playground.
+        </>
+      ),
+    },
+    {
+      n: "03",
+      title: "Practise",
+      body: (
+        <>
+          Guided exercises, practice tasks and challenges follow every
+          concept, each with a hint and a fully explained solution. Quizzes
+          give instant feedback.
+        </>
+      ),
+    },
+    {
+      n: "04",
+      title: "Build",
+      body: (
+        <>
+          Projects at every milestone: a game, a to-do app, a search tool, a
+          chat server, a command-line tool, a web API with a database, and a
+          capstone.
+        </>
+      ),
+    },
+  ];
+
   return (
     <div className="mx-auto max-w-5xl px-5 py-10 sm:px-8 lg:py-14">
       {/* Hero */}
-      <section className="grid items-center gap-10 lg:grid-cols-[1.25fr_0.95fr]">
+      <section className="grid items-center gap-10 lg:grid-cols-[1.25fr_0.95fr] lg:gap-14">
         <div>
-          <p className="inline-flex items-center gap-2 rounded-full border border-[var(--g-line)] bg-[var(--g-surface)] px-3.5 py-1 font-sans text-xs font-semibold text-[var(--g-ink2)]">
-            <span
-              className="h-2 w-2 rounded-full bg-emerald-500"
-              aria-hidden="true"
-            />
+          <p className="inline-flex items-center gap-2 rounded-full border border-[var(--g-line)] bg-[var(--g-surface)] px-3.5 py-1.5 font-sans text-xs font-semibold text-[var(--g-ink2)] shadow-card">
+            <BadgeCheck className="h-3.5 w-3.5 text-[var(--g-accent)]" />
             Self-study course · Rust 2024 edition · tested on Rust 1.100
           </p>
 
-          <h1 className="mt-4 font-sans text-4xl font-extrabold tracking-tight text-[var(--g-ink)] sm:text-5xl">
+          <h1 className="mt-5 font-sans text-[40px] leading-[1.08] font-bold tracking-[-0.02em] text-[var(--g-ink)] sm:text-[52px]">
             Learn Rust from zero.
             <br />
-            <em className="not-italic text-[var(--g-accent)]">
-              Build real things.
-            </em>
+            <span className="text-[var(--g-accent)]">Build real things.</span>
           </h1>
 
-          <p className="mt-4 max-w-xl text-[17.5px] leading-relaxed text-[var(--g-ink2)]">
+          <p className="mt-5 max-w-xl font-sans text-[17px] leading-relaxed text-[var(--g-ink2)]">
             A complete guide for people who have never written a line of code.
-            Plain language, everyday analogies and hundreds of exercises take you
-            from “what is a program?” to web servers, databases, games and
+            Plain language, everyday analogies and hundreds of exercises take
+            you from “what is a program?” to web servers, databases, games and
             beyond. Every Rust example is compiled and run, with its real
             output, and the{" "}
             <Link
               href="/chapters/next"
-              className="font-medium text-[var(--g-accent)] underline decoration-[var(--g-accent)]/40 underline-offset-4 hover:decoration-[var(--g-accent)]"
+              className="font-medium text-[var(--g-accent)] underline decoration-[var(--g-accent)]/40 underline-offset-4"
             >
               last chapter
             </Link>{" "}
@@ -47,71 +96,52 @@ export default function HomePage() {
 
           <HomeContinueButton chapters={summaries} />
 
-          <dl className="mt-9 grid grid-cols-2 gap-4 border-t border-[var(--g-line)] pt-6 font-sans sm:grid-cols-4">
-            <div>
-              <dt className="text-2xl font-extrabold text-[var(--g-ink)]">
-                {stats.trackedChapters}
-              </dt>
-              <dd className="text-xs font-medium text-[var(--g-ink3)]">
-                chapters
-              </dd>
-            </div>
-            <div>
-              <dt className="text-2xl font-extrabold text-[var(--g-ink)]">
-                {stats.exercises}
-              </dt>
-              <dd className="text-xs font-medium text-[var(--g-ink3)]">
-                exercises with solutions
-              </dd>
-            </div>
-            <div>
-              <dt className="text-2xl font-extrabold text-[var(--g-ink)]">
-                {stats.questions}
-              </dt>
-              <dd className="text-xs font-medium text-[var(--g-ink3)]">
-                quiz questions
-              </dd>
-            </div>
-            <div>
-              <dt className="text-2xl font-extrabold text-[var(--g-ink)]">
-                {stats.projects}
-              </dt>
-              <dd className="text-xs font-medium text-[var(--g-ink3)]">
-                hands-on projects
-              </dd>
-            </div>
+          <dl className="mt-10 grid grid-cols-2 gap-x-4 gap-y-6 border-t border-[var(--g-line)] pt-6 font-sans sm:grid-cols-4">
+            {[
+              [String(stats.trackedChapters), "chapters"],
+              [String(stats.exercises), "exercises with solutions"],
+              [String(stats.questions), "quiz questions"],
+              [String(stats.projects), "hands-on projects"],
+            ].map(([num, label]) => (
+              <div key={label} className="flex flex-col">
+                <dt className="order-2 mt-1.5 text-[13px] text-[var(--g-ink3)]">
+                  {label}
+                </dt>
+                <dd className="order-1 text-[28px] leading-none font-bold tracking-tight tabular-nums text-[var(--g-ink)]">
+                  {num}
+                </dd>
+              </div>
+            ))}
           </dl>
         </div>
 
-        {/* Hero decorative Rust + Terminal cards */}
+        {/* Hero visual: editor + terminal, always-dark code card */}
         <div className="space-y-4 font-mono text-[13px]" aria-hidden="true">
-          <div className="overflow-hidden rounded-2xl border border-stone-800 bg-[#181b21] text-stone-100 shadow-lg">
-            <div className="flex items-center gap-1.5 border-b border-stone-800 bg-[#1f232b] px-4 py-2.5 text-xs text-stone-400">
-              <span className="h-2.5 w-2.5 rounded-full bg-rose-400/80" />
-              <span className="h-2.5 w-2.5 rounded-full bg-amber-400/80" />
-              <span className="h-2.5 w-2.5 rounded-full bg-emerald-400/80" />
-              <span className="ml-2 font-medium text-stone-300">
-                src/main.rs
+          <div className="overflow-hidden rounded-card border border-[#2c2820] bg-[#191713] text-[#e8e3d8] shadow-pop">
+            <div className="flex items-center justify-between border-b border-[#2c2820] bg-[#211e19] px-4 py-2 text-[12px] text-[#8f887a]">
+              <span className="font-semibold text-[#c5beb0]">src/main.rs</span>
+              <span className="rounded-md bg-[#2c2820] px-2 py-0.5 text-[11px] font-semibold text-[#a89f8f]">
+                Rust · stable
               </span>
             </div>
-            <pre className="overflow-x-auto p-4 leading-relaxed">
+            <pre className="overflow-x-auto p-4 leading-[1.7]">
               <code>
-                <span className="text-rose-400">fn</span>{" "}
-                <span className="text-purple-300">main</span>() {"{\n"}
+                <span className="text-[#f47067]">fn</span>{" "}
+                <span className="text-[#dcbdfb]">main</span>() {"{\n"}
                 {"    "}
-                <span className="text-rose-400">let</span> learner ={" "}
-                <span className="text-emerald-300">{'"you"'}</span>;{"\n"}
+                <span className="text-[#f47067]">let</span> learner ={" "}
+                <span className="text-[#87d7a8]">{'"you"'}</span>;{"\n"}
                 {"    "}
-                <span className="text-rose-400">let</span> chapters ={" "}
-                <span className="text-amber-300">{stats.trackedChapters}</span>;
+                <span className="text-[#f47067]">let</span> chapters ={" "}
+                <span className="text-[#f2cc60]">{stats.trackedChapters}</span>;
                 {"\n\n"}
                 {"    "}
-                <span className="text-sky-300">println!</span>(
-                <span className="text-emerald-300">{'"Hello, {learner}!"'}</span>
+                <span className="text-[#61afef]">println!</span>(
+                <span className="text-[#87d7a8]">{'"Hello, {learner}!"'}</span>
                 );{"\n"}
                 {"    "}
-                <span className="text-sky-300">println!</span>(
-                <span className="text-emerald-300">
+                <span className="text-[#61afef]">println!</span>(
+                <span className="text-[#87d7a8]">
                   {'"'}
                   {"{chapters} chapters to go."}
                   {'"'}
@@ -121,17 +151,22 @@ export default function HomePage() {
             </pre>
           </div>
 
-          <div className="overflow-hidden rounded-2xl border border-[var(--g-line)] bg-[var(--g-surface)] shadow-sm">
+          <div className="overflow-hidden rounded-card border border-[var(--g-line)] bg-[var(--g-surface)] shadow-card">
             <div className="border-b border-[var(--g-line)] bg-[var(--g-sunken)] px-4 py-2 font-sans text-xs font-semibold text-[var(--g-ink3)]">
               Terminal
             </div>
-            <pre className="overflow-x-auto p-4 text-[var(--g-ink2)] leading-relaxed">
+            <pre className="overflow-x-auto p-4 text-[var(--g-ink2)] leading-[1.7]">
               <code>
-                <span className="text-[var(--g-ink3)]">$ </span>
+                <span className="select-none text-[var(--g-accent)]">$ </span>
                 <span className="font-semibold text-[var(--g-ink)]">
                   cargo run
                 </span>
-                {"\n"}Hello, you!{"\n"}
+                {"\n"}
+                <span className="text-[var(--g-ink3)]">
+                  Compiling your-first-program v0.1.0
+                  {"\n"}
+                </span>
+                Hello, you!{"\n"}
                 {stats.trackedChapters} chapters to go.
               </code>
             </pre>
@@ -140,77 +175,27 @@ export default function HomePage() {
       </section>
 
       {/* How this guide works */}
-      <section className="mt-16">
-        <h2 className="font-sans text-2xl font-bold tracking-tight text-[var(--g-ink)]">
+      <section className="mt-20">
+        <h2 className="font-sans text-[26px] font-bold tracking-tight text-[var(--g-ink)]">
           How this guide works
         </h2>
-        <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="rounded-2xl border border-[var(--g-line)] bg-[var(--g-surface)] p-5">
-            <BookOpen
-              className="h-5 w-5 text-[var(--g-accent)]"
-              aria-hidden="true"
-            />
-            <h3 className="mt-3 font-sans text-base font-bold text-[var(--g-ink)]">
-              Read
-            </h3>
-            <p className="mt-1.5 text-sm leading-relaxed text-[var(--g-ink2)]">
-              Every idea starts with an everyday comparison. Every technical
-              word is explained the first time it appears, and again in the{" "}
-              <Link
-                href="/chapters/glossary"
-                className="font-medium text-[var(--g-accent)] underline decoration-[var(--g-accent)]/40"
-              >
-                glossary
-              </Link>
-              .
-            </p>
-          </div>
-
-          <div className="rounded-2xl border border-[var(--g-line)] bg-[var(--g-surface)] p-5">
-            <Code2
-              className="h-5 w-5 text-[var(--g-accent)]"
-              aria-hidden="true"
-            />
-            <h3 className="mt-3 font-sans text-base font-bold text-[var(--g-ink)]">
-              Run
-            </h3>
-            <p className="mt-1.5 text-sm leading-relaxed text-[var(--g-ink2)]">
-              {stats.codeBlocks} code listings, and every Rust program among
-              them compiled and run with the real Rust compiler. Press{" "}
-              <strong className="text-[var(--g-ink)]">Run</strong> on a complete
-              example to open it in the free online Rust Playground.
-            </p>
-          </div>
-
-          <div className="rounded-2xl border border-[var(--g-line)] bg-[var(--g-surface)] p-5">
-            <Pencil
-              className="h-5 w-5 text-[var(--g-accent)]"
-              aria-hidden="true"
-            />
-            <h3 className="mt-3 font-sans text-base font-bold text-[var(--g-ink)]">
-              Practise
-            </h3>
-            <p className="mt-1.5 text-sm leading-relaxed text-[var(--g-ink2)]">
-              Guided exercises, practice tasks and challenges follow every
-              concept, each with a hint and a fully explained solution. Quizzes
-              give instant feedback.
-            </p>
-          </div>
-
-          <div className="rounded-2xl border border-[var(--g-line)] bg-[var(--g-surface)] p-5">
-            <Hammer
-              className="h-5 w-5 text-[var(--g-accent)]"
-              aria-hidden="true"
-            />
-            <h3 className="mt-3 font-sans text-base font-bold text-[var(--g-ink)]">
-              Build
-            </h3>
-            <p className="mt-1.5 text-sm leading-relaxed text-[var(--g-ink2)]">
-              Projects at every milestone: a game, a to-do app, a search tool, a
-              chat server, a command-line tool, a web API with a database, and a
-              capstone.
-            </p>
-          </div>
+        <div className="mt-7 grid gap-x-6 gap-y-8 sm:grid-cols-2 lg:grid-cols-4">
+          {steps.map((s) => (
+            <div key={s.n} className="border-t-2 border-[var(--g-line)] pt-4">
+              <div className="flex items-baseline justify-between font-sans">
+                <span className="text-[13px] font-bold tabular-nums text-[var(--g-accent)]">
+                  {s.n}
+                </span>
+                <span className="h-px w-8 bg-[var(--g-accent)]/50" />
+              </div>
+              <h3 className="mt-2.5 font-sans text-[17px] font-bold text-[var(--g-ink)]">
+                {s.title}
+              </h3>
+              <p className="mt-1.5 font-sans text-sm leading-relaxed text-[var(--g-ink2)]">
+                {s.body}
+              </p>
+            </div>
+          ))}
         </div>
       </section>
 

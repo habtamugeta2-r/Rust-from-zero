@@ -36,11 +36,11 @@ export function ExerciseCard({
 
   return (
     <div
-      className={`my-7 overflow-hidden rounded-2xl border transition-colors ${
+      className={`my-7 overflow-hidden rounded-card border transition-colors ${
         isDone
           ? "border-emerald-400/70 bg-[var(--g-surface)] dark:border-emerald-800/70"
-          : "border-[var(--g-line2)] bg-[var(--g-surface)]"
-      } shadow-sm`}
+          : "border-[var(--g-line)] bg-[var(--g-surface)]"
+      } shadow-card`}
     >
       <div className="flex flex-wrap items-center gap-2.5 border-b border-[var(--g-line)] bg-[var(--g-sunken)] px-5 py-3 font-sans">
         <span
@@ -49,7 +49,7 @@ export function ExerciseCard({
           <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
           {KIND_LABELS[kind]}
         </span>
-        <span className="font-bold text-[var(--g-ink)]">{title}</span>
+        <span className="text-[15px] font-bold tracking-tight text-[var(--g-ink)]">{title}</span>
         <label className="no-print ml-auto flex cursor-pointer items-center gap-1.5 text-xs font-semibold text-[var(--g-ink2)] select-none">
           <input
             type="checkbox"

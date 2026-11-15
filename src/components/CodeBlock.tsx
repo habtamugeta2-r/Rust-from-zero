@@ -94,19 +94,27 @@ export function CodeBlock(props: CodeBlockProps) {
 
   return (
     <figure
-      className={`my-5 overflow-hidden rounded-xl border ${borderTone} ${bgTone} ${
+      className={`my-6 overflow-hidden rounded-well border ${borderTone} ${bgTone} ${
         props.isSoft ? "code-soft" : ""
       }`}
     >
       <figcaption
-        className={`flex flex-wrap items-center gap-2 border-b border-[var(--g-line)] px-3.5 py-2 font-sans text-xs ${headTone}`}
+        className={`flex flex-wrap items-center gap-2.5 border-b border-[var(--g-line)] px-4 py-2 font-sans text-xs ${headTone}`}
       >
-        <span className="font-semibold uppercase tracking-wider text-[var(--g-ink3)]">
+        <span className="flex items-center gap-2 font-semibold tracking-[0.08em] text-[var(--g-ink3)] uppercase">
+          <span
+            className={`h-2 w-2 rounded-full ${
+              props.lang === "rust"
+                ? "bg-[var(--g-accent)]"
+                : "bg-[var(--g-line2)]"
+            }`}
+            aria-hidden="true"
+          />
           {props.label}
         </span>
 
         {props.filename && (
-          <span className="rounded bg-[var(--g-surface)] px-2 py-0.5 font-mono text-[11.5px] font-medium text-[var(--g-ink2)] ring-1 ring-[var(--g-line)]">
+          <span className="rounded-md bg-[var(--g-surface)] px-2 py-0.5 font-mono text-[11px] font-medium text-[var(--g-ink2)] ring-1 ring-[var(--g-line)]">
             {props.filename}
             {props.isContinuation ? " (continued)" : ""}
           </span>
@@ -130,7 +138,7 @@ export function CodeBlock(props: CodeBlockProps) {
               type="button"
               onClick={handleCopy}
               title="Copy this code"
-              className="inline-flex items-center gap-1 rounded-md border border-[var(--g-line2)] bg-[var(--g-surface)] px-2 py-1 text-[11.5px] font-medium text-[var(--g-ink2)] transition-colors hover:border-[var(--g-accent)] hover:text-[var(--g-ink)]"
+              className="inline-flex items-center gap-1.5 rounded-md border border-[var(--g-line2)] bg-[var(--g-surface)] px-2.5 py-1 text-[11.5px] font-semibold text-[var(--g-ink2)] transition-colors hover:border-[var(--g-accent)] hover:text-[var(--g-ink)]"
             >
               {copied ? (
                 <>
@@ -150,7 +158,7 @@ export function CodeBlock(props: CodeBlockProps) {
                 type="button"
                 onClick={handlePlay}
                 title="Open this example in the online Rust Playground"
-                className="inline-flex items-center gap-1 rounded-md bg-[var(--g-accent)] px-2.5 py-1 text-[11.5px] font-semibold text-white transition-colors hover:bg-[var(--g-accent-hover)]"
+                className="inline-flex items-center gap-1.5 rounded-md bg-[var(--g-accent)] px-3 py-1 text-[11.5px] font-bold text-white transition-colors hover:bg-[var(--g-accent-hover)]"
               >
                 <Play className="h-3 w-3 fill-current" />
                 <span>Run</span>
