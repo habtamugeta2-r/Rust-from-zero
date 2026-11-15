@@ -92,6 +92,26 @@ The editable chapters live in [`guide-src/chapters/`](./guide-src/chapters/),
 captured outputs live in [`guide-src/captured/`](./guide-src/captured/), and the
 Next.js parser, syntax highlighter and UI live in [`src/`](./src/).
 
+## Deploy to Vercel
+
+The repository is a standard Next.js App Router project and deploys to Vercel
+with no extra configuration:
+
+```sh
+npx vercel        # preview deployment
+npx vercel --prod # production deployment
+```
+
+Or import the repository in the Vercel dashboard (framework preset: **Next.js**;
+Node.js 22.x). The `/api/search` route runs as a serverless function; the
+chapter pages are fully prerendered static output.
+
+Canonical URLs, `sitemap.xml`, `robots.txt` and OpenGraph metadata are derived
+from the deployment origin at build time (`VERCEL_PROJECT_PRODUCTION_URL` /
+`VERCEL_URL`), so they are correct on both preview and production deploys with
+no edits. To pin them to a custom domain, set `NEXT_PUBLIC_SITE_URL` (e.g.
+`https://rust-from-zero.example.com`) in the project's environment variables.
+
 ## Verify
 
 ```sh

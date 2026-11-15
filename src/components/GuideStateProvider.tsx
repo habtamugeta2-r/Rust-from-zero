@@ -87,7 +87,6 @@ export function GuideStateProvider({
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const [tip, setTip] = useState<TipState | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const hydrated = useRef(false);
 
   // Hydrate saved state cleanly after mount
   useEffect(() => {
@@ -119,7 +118,6 @@ export function GuideStateProvider({
     document.documentElement.classList.toggle("dark", resolvedTheme === "dark");
     document.documentElement.setAttribute("data-theme", resolvedTheme);
     document.documentElement.style.setProperty("--guide-fs", `${resolvedFs}px`);
-    hydrated.current = true;
   }, []);
 
   const persistState = useCallback(

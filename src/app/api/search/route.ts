@@ -1,16 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { loadGuide } from "@/lib/guide-parser";
-
-export interface SearchHit {
-  chapterId: string;
-  num: string;
-  chapterTitle: string;
-  anchor: string;
-  heading: string;
-  before: string;
-  match: string;
-  after: string;
-}
+import type { SearchHit } from "@/lib/guide-types";
 
 export function GET(request: NextRequest) {
   const q = (request.nextUrl.searchParams.get("q") ?? "").trim();
@@ -82,5 +72,14 @@ export function GET(request: NextRequest) {
     };
   });
 
-  return NextResponse.json({ hits });
+  return NextResponse.json(
+    { hits },
+    {
+      headers: {
+        // The search index is static per deployment, so let the CDN cache it.
+        "Cache-Control":
+          "public, max-age=60, s-maxage=600, stale-while-revalidate=1200",
+      },
+    }
+  );
 }

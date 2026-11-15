@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { SITE_URL } from "@/lib/site";
 
 export default function robots(): MetadataRoute.Robots {
   return {
@@ -6,6 +7,6 @@ export default function robots(): MetadataRoute.Robots {
       userAgent: "*",
       allow: "/",
     },
-    sitemap: "https://habtamugeta2-r.github.io/Rust-from-zero/sitemap.xml",
+    sitemap: `${SITE_URL}/sitemap.xml`,
   };
 }

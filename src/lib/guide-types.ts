@@ -175,6 +175,17 @@ export interface SearchEntry {
   weight: number;
 }
 
+export interface SearchHit {
+  chapterId: string;
+  num: string;
+  chapterTitle: string;
+  anchor: string;
+  heading: string;
+  before: string;
+  match: string;
+  after: string;
+}
+
 export interface LoadedGuide {
   parts: PartMeta[];
   routes: RouteMeta[];
