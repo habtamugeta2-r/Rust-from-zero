@@ -447,6 +447,120 @@ body {
   color: var(--g-accent-2);
 }
 
+.guide-figure-open {
+  position: relative;
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: zoom-in;
+}
+
+.guide-figure-zoom {
+  position: absolute;
+  right: 0.65rem;
+  bottom: 0.65rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.6rem;
+  border-radius: 999px;
+  background: rgb(20 19 17 / 0.78);
+  color: #f3efe6;
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+  font-weight: 600;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.guide-figure-open:hover .guide-figure-zoom,
+.guide-figure-open:focus-visible .guide-figure-zoom {
+  opacity: 1;
+}
+
+@media (hover: none) {
+  .guide-figure-zoom {
+    opacity: 0.9;
+  }
+}
+
+/* Full-screen figure viewer. The plate keeps its paper colours, centred
+   on the app's own backdrop so it reads as “the same figure, bigger”. */
+.guide-lightbox {
+  width: min(72rem, calc(100vw - 2rem));
+  max-height: calc(100dvh - 2rem);
+  margin: auto;
+  padding: 0;
+  overflow: auto;
+  border: 1px solid var(--g-line2);
+  border-radius: var(--radius-card);
+  background: var(--g-surface);
+  color: var(--g-ink);
+  box-shadow: var(--g-shadow-drawer);
+}
+
+.guide-lightbox::backdrop {
+  background: rgb(12 11 9 / 0.66);
+  backdrop-filter: blur(3px);
+}
+
+.guide-lightbox-head {
+  position: sticky;
+  top: 0;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  justify-content: space-between;
+  padding: 0.7rem 1rem;
+  border-bottom: 1px solid var(--g-line);
+  background: var(--g-surface);
+  font-family: var(--font-sans);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.guide-lightbox-close {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid var(--g-line2);
+  border-radius: 999px;
+  background: var(--g-sunken);
+  color: var(--g-ink2);
+  cursor: pointer;
+}
+
+.guide-lightbox-close:hover {
+  border-color: var(--g-accent);
+  color: var(--g-accent);
+}
+
+.guide-lightbox img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.guide-lightbox-caption {
+  padding: 0.8rem 1rem 1rem;
+  border-top: 1px solid var(--g-line);
+  font-family: var(--font-sans);
+  font-size: 0.88rem;
+  line-height: 1.55;
+  color: var(--g-ink2);
+}
+
+@media print {
+  .guide-lightbox {
+    display: none !important;
+  }
+}
+
 /* Section rule: a short rust tick fading into the hairline. */
 .guide-prose hr {
   height: 2px;

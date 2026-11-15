@@ -47,6 +47,8 @@ Like `Rc`, an `Arc` gives **read-only** access. Many threads reading the same da
 
 To *change* shared data, the threads must take turns. A **mutex** (from "mutual exclusion") makes sure that only one thread at a time can reach the data.
 
+![Diagram of Arc and Mutex: threads clone an Arc that owns a Mutex guarding a counter](/images/arc-mutex.svg "`Arc` shares ownership between threads. The `Mutex` inside shares access, one thread at a time.")
+
 :::plain Mutexes, atomics, and channels
 Shared mutation has three standard tools. A **[[mutex]]** (`Mutex<T>`) lets one thread at a time reach the data, and the lock's lifetime is a Rust guard, so forgetting to unlock is impossible. An **atomic** (`AtomicUsize`) updates a single number without a lock, and its `Ordering` says what other threads are allowed to observe. A **channel** (`mpsc`, `crossbeam`) avoids sharing entirely: one owner keeps the data and others send messages. In Rust the lock *owns* the data it guards, so the compiler prevents reading a `Mutex<T>`'s value without taking the lock — the class of bug that makes C++ shared state so error-prone is a type error here.
 :::

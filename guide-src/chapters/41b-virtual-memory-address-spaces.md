@@ -110,6 +110,8 @@ Notice the strict **W^X** (Write XOR Execute) discipline: `.text` is `r-xp` (rea
 
 Memory is not mapped byte by byte—tracking 256 TiB per byte would need more RAM than exists on Earth. Instead, virtual and physical memory are sliced into fixed-size **[[page]]s** (commonly **4 KiB**, `4096 = 2^12` bytes on x86-64; 4 KiB, 16 KiB on Apple Silicon ARM64, or 64 KiB on some servers).
 
+![Diagram of virtual memory translation: virtual address, page tables with TLB, physical frame in RAM](/images/virtual-memory.svg "Translation in one picture. The table below splits the address bit by bit.")
+
 Every 64-bit virtual address on x86-64 with 4-level paging splits cleanly into index fields:
 
 | Bits | Width | Role |

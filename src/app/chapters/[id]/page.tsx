@@ -102,7 +102,11 @@ export default async function ChapterPage({ params }: { params: Promise<{ id: st
             </h1>
 
             {chapter.learnNodes.length > 0 && (
-              <div className="mt-6 rounded-card border border-[var(--g-line)] bg-[var(--g-surface)] p-5 font-sans shadow-card">
+              <div className="relative mt-6 overflow-hidden rounded-card border border-[var(--g-line)] bg-[var(--g-surface)] p-5 font-sans shadow-card">
+                <span
+                  aria-hidden="true"
+                  className="absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-[var(--g-accent)] to-[var(--g-accent-2)]"
+                />
                 <div className="mb-3 text-[11px] font-bold tracking-[0.08em] text-[var(--g-ink3)] uppercase">
                   In this chapter you will learn
                 </div>

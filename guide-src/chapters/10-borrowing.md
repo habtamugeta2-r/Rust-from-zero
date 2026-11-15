@@ -133,6 +133,8 @@ In [chapter 10](#functions), a function could not change the caller's number, be
 2. A reference must never outlive the value it points to.
 :::
 
+![Diagram of the borrowing rules: many shared readers, or one mutable writer](/images/borrowing-rules.svg "Many readers, or one writer. The diagram below the rules makes the choice visible.")
+
 :::analogy A shared document
 Any number of people can read a document at the same time. Nothing can go wrong, because nobody changes anything. But if one person is rewriting it, nobody else should be reading it at that moment. They might read a half-finished sentence. And two people editing the same paragraph at once would destroy each other's work. So: many readers, or one writer.
 :::

@@ -18,6 +18,7 @@ import { ChecklistWidget } from "./ChecklistWidget";
 import { CodeBlock } from "./CodeBlock";
 import { ExerciseCard } from "./ExerciseCard";
 import { FlameGraph } from "./FlameGraph";
+import { GuideFigure } from "./GuideFigure";
 import { GlossaryDirectory } from "./GlossaryDirectory";
 import { InlineRenderer } from "./InlineRenderer";
 import { MemoryStepper } from "./MemoryStepper";
@@ -190,19 +191,14 @@ async function renderBlock(
 
     case "figure":
       return (
-        <figure key={key} className="guide-figure">
-          {/* Chapter diagrams are self-contained SVG plates in public/images;
-              a plain <img> keeps them crisp at any width and theme. */}
-          <img src={block.src} alt={block.alt} loading="lazy" decoding="async" />
-          {block.caption.length > 0 && (
-            <figcaption>
-              <span className="guide-figure-label" aria-hidden="true">
-                Figure
-              </span>
-              <InlineRenderer nodes={block.caption} />
-            </figcaption>
-          )}
-        </figure>
+        <GuideFigure
+          key={key}
+          src={block.src}
+          alt={block.alt}
+          caption={
+            block.caption.length > 0 ? <InlineRenderer nodes={block.caption} /> : null
+          }
+        />
       );
 
     case "flame":

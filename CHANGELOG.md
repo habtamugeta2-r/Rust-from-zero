@@ -4,6 +4,35 @@ All notable changes to the guide are recorded here. The version number tracks
 the web application in `package.json`; the chapters themselves are content, and
 they change continuously.
 
+## 3.2.0 — pictures everywhere they earn their place
+
+3.1.0 proved the figure system on four chapters. 3.2.0 takes it to the
+chapters where readers most often stall, and makes every figure big
+enough to actually read.
+
+### Added
+
+- **A figure lightbox.** Every chapter figure (and the home-page journey)
+  now opens full-screen in a native `<dialog>`: Esc or a backdrop click
+  closes it, focus returns to the figure, and the caption travels with
+  the enlarged plate. Dense diagrams no longer have to fit the 46rem
+  reading column to be legible.
+- **Four more diagrams**, in the same palette and plate style:
+  the borrowing rules (many readers *or* one writer) in the borrowing
+  chapter, virtual-address translation through page tables and the TLB
+  in the virtual-memory chapter, `Arc` (ownership) versus `Mutex`
+  (access) in the shared-state chapter, and the DNS → TCP → TLS → HTTP
+  stack in the web-request trace chapter. Eight chapters now carry a
+  figure, and every figure is checked by the parser like the first four.
+
+### Changed
+
+- **Chapter headers** carry the rust-to-teal gradient as a hairline on
+  the “you will learn” card, tying the chapter opening to the section
+  rules introduced in 3.1.0.
+- No Rust example changed, so rule one — every printed output is real
+  captured output — is untouched, as in 3.0.0 and 3.1.0.
+
 ## 3.1.0 — the visual edition
 
 3.0.0 made the guide's numbers and rules trustworthy; 3.1.0 makes the guide

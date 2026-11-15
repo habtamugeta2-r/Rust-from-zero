@@ -3,6 +3,7 @@ import Link from "next/link";
 import { BadgeCheck } from "lucide-react";
 import { GuideSearchButton } from "@/components/GuideSearchButton";
 import { HomeContinueButton } from "@/components/HomeContinueButton";
+import { GuideFigure } from "@/components/GuideFigure";
 import { HomeRoutesSection } from "@/components/HomeRoutesSection";
 import { loadGuide } from "@/lib/guide-parser";
 import { courseJsonLd } from "@/lib/seo";
@@ -191,22 +192,13 @@ export default function HomePage() {
       </section>
 
       {/* The journey, in one picture */}
-      <figure className="guide-figure mt-14">
-        <img
+      <div className="mt-14">
+        <GuideFigure
           src="/images/end-to-end-trace.svg"
           alt="Diagram of the end-to-end journey: write, compile, load, execute, ask the kernel, see output"
-          loading="lazy"
-          decoding="async"
+          caption="Every chapter opens one layer of this picture — compiler, linker, loader, CPU, memory, kernel, terminal — and teaches the Rust that lives there."
         />
-        <figcaption>
-          <span className="guide-figure-label" aria-hidden="true">
-            The journey
-          </span>
-          Every chapter opens one layer of this picture — compiler, linker,
-          loader, CPU, memory, kernel, terminal — and teaches the Rust that
-          lives there.
-        </figcaption>
-      </figure>
+      </div>
 
       {/* How this guide works */}
       <section className="mt-20">
