@@ -11,6 +11,10 @@ Before a single byte of an HTTP request leaves your Rust `TcpStream`, the Linux 
 
 Understanding those layers demystifies IP addresses, ports, localhost (`127.0.0.1`), subnets (`192.168.1.0/24`), NAT routers, and why network protocols always speak **big-endian** bytes.
 
+:::plain Encapsulation, MTU, and NAT in one paragraph
+**Encapsulation** is each layer putting its own header in front of the data the layer above handed it, so one HTTP request becomes TCP payload, then IP payload, then Ethernet payload. The **MTU** (Maximum Transmission Unit) is the largest IP packet a link will carry — `1,500` bytes on Ethernet — so anything bigger is split and reassembled, and the usable TCP payload (the **MSS**) is smaller by the header sizes. **NAT** is a router rewriting source IP and port on the way out and reversing the mapping on the way back, which is how an entire home shares one public IPv4 address. All three ideas exist because addresses identify *locations*, not machines, and every link along the path has different limits.
+:::
+
 :::analogy Mailing a letter inside nested envelopes
 Think of the **IP header** as the outer street address (`From: Addis Ababa -> To: Tokyo`) that never changes across the whole international journey, while the **Ethernet MAC header** is the local courier sticker swapped at every single sorting hub along the route (`Your laptop -> Wi-Fi router -> ISP fiber switch -> Undersea gateway -> Tokyo server`).
 :::
@@ -22,6 +26,41 @@ Think of the **IP header** as the outer street address (`From: Addis Ababa -> To
 | **3. Transport** | Segment (TCP) / Datagram (UDP) | **16-bit Port** (`443`, `5432`) | End-to-end multiplexing, ordering, reliability, congestion (`TCP`/`UDP`) |
 | **2. Internet / Network** | **Packet** | **IPv4 (32-bit)** / **IPv6 (128-bit)** | Hop-by-hop routing across different networks (`IP`, `ICMP`, `NAT`) |
 | **1. Link & Physical** | **Frame** | **48-bit MAC** (`aa:bb:cc:dd:ee:ff`) | Local wire / Wi-Fi hop delivery + **CRC32** error detection |
+:::
+
+The seven-layer **OSI** model is the teaching model you will see in every textbook; the four-layer **TCP/IP** model above is what the kernel actually implements, and the mapping is many-to-one:
+
+| OSI layer | TCP/IP layer | In Linux | Lives in |
+|---|---|---|---|
+| 7 Application | Application | `HTTP`, `TLS`, `DNS`, `SMTP`, `ssh` | user space (your Rust program, `hyper`, `rustls`) |
+| 6 Presentation | Application | Serde/JSON, UTF-8, TLS record encryption | user space |
+| 5 Session | Application | TLS session resumption, cookie sessions | user space |
+| 4 Transport | Transport | TCP, UDP, QUIC, SCTP | kernel (`net/ipv4/tcp.c`, `net/ipv4/udp.c`) |
+| 3 Network | Internet | IPv4, IPv6, ICMP, IPsec, NAT | kernel (`net/ipv4/`, `net/ipv6/`) |
+| 2 Data link | Link | Ethernet, Wi-Fi (802.11), ARP, VLAN, PPP | kernel driver + NIC firmware |
+| 1 Physical | Link | copper, fibre, radio; 1000BASE-T line coding | PHY chip / cable |
+
+Layers 5 and 6 never existed as separate code in the Internet stack — TLS folded session and presentation into one library, and JSON folded presentation into the application. That collapse is why the four-layer model describes the system you can actually inspect with `ss`, `tcpdump` and `strace`, while the seven-layer model still gives you the vocabulary to say *"is this a layer-3 or a layer-7 problem?"*.
+
+## IPv4 vs IPv6: same job, different header
+
+Both are layer 3, both are routed hop by hop, and they coexist on every modern host. The differences are worth knowing because they change what your Rust code must handle:
+
+| | **IPv4** | **IPv6** |
+|---|---|---|
+| Address size | 32 bits, `192.168.1.42` | 128 bits, `2001:db8::1` (written in hex groups, `::` collapses zeros) |
+| Address supply | ~4.3 billion, exhausted; needs [[NAT]] | `2^128`, effectively unlimited; NAT is optional |
+| Header | `20` bytes minimum, variable up to `60` with options; `IHL` field says how long | fixed `40` bytes, options moved to extension headers chained by `next header` |
+| Header checksum | yes, recomputed at every router | **none** — the link and transport layers already checksum, so routers touch fewer bytes |
+| Fragmentation | routers may fragment; the destination reassembles | routers **never** fragment; the source must use Path MTU Discovery (ICMPv6 "packet too big") |
+| Local address resolution | **[[ARP]]** broadcast (`ff:ff:ff:ff:ff:ff`) | **NDP** (Neighbour Discovery) over ICMPv6 multicast |
+| Address configuration | DHCP, or manual | stateless autoconfiguration (SLAAC) from a router advertisement, or DHCPv6 |
+| Loopback | `127.0.0.1` | `::1` |
+| Rust type | `std::net::Ipv4Addr` | `std::net::Ipv6Addr` |
+| Socket call | `AF_INET` | `AF_INET6` (dual-stack sockets accept IPv4-mapped `::ffff:192.168.1.42`) |
+
+:::plain Why the IPv6 header dropped the checksum
+Every router used to recompute the IPv4 header checksum because the TTL field changes on every hop. That is wasted work: TCP and UDP carry a checksum over a pseudo-header that already covers the IP addresses, and Ethernet/Wi-Fi carry a CRC32 over the frame. IPv6 therefore has no header checksum at all, and routers forward a packet by decrementing `Hop Limit` and nothing else. It is the same reasoning as replacing a `Vec<u8>` copy with a borrowed slice: do the work once, where the data is already hot, instead of at every stop along the way.
 :::
 
 ## Encapsulation & MTU (`1,500` bytes)
@@ -39,7 +78,16 @@ When your Rust server calls `stream.write(b"GET / HTTP/1.1\r\n")`, bytes travel 
 ```
 :::
 
-Notice **`MTU = 1,500` bytes**: standard Ethernet limits the payload inside an Ethernet frame to 1,500 bytes. Subtract 20 bytes for IPv4 + 20 bytes for TCP (more with TCP timestamp options), and each TCP segment normally holds up to **`MSS = 1,460` bytes** of your application data—larger buffers get sliced across multiple packets automatically by the kernel (or hardware TCP Segmentation Offload / **TSO** on the NIC!).
+Notice the **[[MTU]] = `1,500` bytes**: standard Ethernet limits the payload inside an Ethernet frame to 1,500 bytes. Subtract 20 bytes for IPv4 + 20 bytes for TCP (more with TCP timestamp options), and each TCP segment normally holds up to **`MSS = 1,460` bytes** of your application data—larger buffers get sliced across multiple packets automatically by the kernel (or hardware TCP Segmentation Offload / **TSO** on the NIC!).
+
+Check the MTU of an interface yourself, and note that `lo` (loopback) is far larger — there is no wire to fit inside:
+
+```sh
+$ ip link show wlan0 | head -1
+2: wlan0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP mode DORMANT
+$ ip link show lo | head -1
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN mode DEFAULT
+```
 
 ## How your laptop knows where to send a packet: CIDR, Gateway & ARP
 
@@ -107,7 +155,52 @@ v4, hdr=20B, len=60, ttl=64, proto=6, 192.168.1.42 -> 93.184.216.34
 ## `localhost` (`127.0.0.1` / `::1`) & NAT (`Network Address Translation`)
 
 - **Loopback (`127.0.0.1` / `::1`):** Traffic sent to `127.0.0.1` never touches an Ethernet cable or Wi-Fi radio—the Linux kernel routes the buffer directly inside its `lo` software loopback interface (even supporting jumbo `65,536`-byte loopback MTUs!).
-- **NAT & Private IP ranges (`10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`):** Because 4.3 billion IPv4 addresses ran short long ago, homes and offices share one public IP via **NAT**: your router rewrites `(192.168.1.42 : 51422)` on outgoing packets to `(public_ip : 40001)`, records the mapping in a NAT table, and rewrites incoming replies back! Meanwhile **IPv6 (`128`-bit, `2^128` addresses)** gives every device globally routable addresses natively without needing NAT hacks.
+- **NAT & Private IP ranges (`10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`):** Because 4.3 billion IPv4 addresses ran short long ago, homes and offices share one public IP via **[[NAT]]**: your router rewrites `(192.168.1.42 : 51422)` on outgoing packets to `(public_ip : 40001)`, records the mapping in a NAT table, and rewrites incoming replies back! Meanwhile **IPv6 (`128`-bit, `2^128` addresses)** gives every device globally routable addresses natively without needing NAT hacks.
+
+Both address families are first-class in `std::net`, and the same `SocketAddr` enum covers them. This program parses both, walks the bytes, and applies a subnet mask without any crate:
+
+```rust run
+use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
+
+fn main() {
+    // Parse from text exactly as a config file or a URL hands it to you.
+    let v4: Ipv4Addr = "192.168.1.42".parse().unwrap();
+    let v6: Ipv6Addr = "2001:db8::1".parse().unwrap();
+
+    // 4 bytes vs 16 bytes: that difference is the whole address-space story.
+    println!("v4 has {} bytes: {:?}", v4.octets().len(), v4.octets());
+    println!("v6 has {} bytes: {:?}", v6.octets().len(), v6.octets());
+
+    // A /24 mask is 24 one-bits, so "is this local?" is one AND.
+    let mask = u32::from_be_bytes([255, 255, 255, 0]);
+    let me = u32::from_be_bytes(v4.octets());
+    for peer in ["192.168.1.10", "93.184.216.34"] {
+        let peer: Ipv4Addr = peer.parse().unwrap();
+        let local = (me & mask) == (u32::from_be_bytes(peer.octets()) & mask);
+        println!("{peer}: local = {local}");
+    }
+
+    // An IPv4 address inside IPv6: 0xffff in group 6, then the four IPv4 bytes.
+    let mapped = Ipv6Addr::new(0, 0, 0, 0, 0, 0xffff, 0xc0a8, 0x012a);
+    println!("192.168.1.42 as v6 = {mapped}");
+    println!("unwrapped again = {:?}", mapped.to_ipv4_mapped());
+
+    // A dual-stack listener binds an IpAddr, so one socket serves both families.
+    let any: IpAddr = IpAddr::V6(Ipv6Addr::UNSPECIFIED);
+    println!("bind address = {any}");
+}
+```
+```output
+v4 has 4 bytes: [192, 168, 1, 42]
+v6 has 16 bytes: [32, 1, 13, 184, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]
+192.168.1.10: local = true
+93.184.216.34: local = false
+192.168.1.42 as v6 = ::ffff:192.168.1.42
+unwrapped again = Some(192.168.1.42)
+bind address = ::
+```
+
+The `::ffff:192.168.1.42` form is why a single dual-stack listener on `[::]:8080` also accepts IPv4 clients: the kernel maps the IPv4 peer into an IPv6 address, and `to_ipv4_mapped()` unwraps it. One socket, both protocols, no duplicated code.
 
 :::details Wire parsing in production: `etherparse`, `smoltcp`, and zero-copy slices
 Notice how `parse_ipv4(&[u8])` borrowed `&[u8]` without allocating a single `Vec` or `String`! High-speed Rust packet tools (`smoltcp` for embedded TCP/IP, `etherparse`, and eBPF packet filters) parse multi-gigabit packet streams entirely via zero-copy slice borrowing and `from_be_bytes`!

@@ -274,7 +274,7 @@ A `Layout` describes how many bytes are needed and how they must be aligned ([ch
 
 ### A lock built by hand: `UnsafeCell`
 
-[Chapter 32](#smart-pointers) and [chapter 56](#shared-state) showed types that change their content through a shared reference: `Cell`, `RefCell`, `Mutex`, the atomics. All of them are built on one type, **`UnsafeCell<T>`**. It is the only legal way in Rust to change data behind a `&`. Its method `get` returns a raw pointer to the content, and from there on the responsibility is yours.
+[Chapter 32](#smart-pointers) showed `Cell` and `RefCell`, which change their content through a shared reference, and [chapter 56](#shared-state) will introduce their multi-threaded cousins (`Mutex` and the atomics). All of them are built on one type, **`UnsafeCell<T>`**. It is the only legal way in Rust to change data behind a `&`. Its method `get` returns a raw pointer to the content, and from there on the responsibility is yours.
 
 To see how the pieces of the last chapters fit together, here is a complete lock. It waits by trying again and again, which is called a **spin lock**:
 
@@ -444,7 +444,7 @@ fn main() {
 2
 ```
 
-Even inside `unsafe`, Rust refuses to create a *reference* to a `static mut` (`println!("{}", COUNTER)` would, and is an error), because such a reference could be made invalid from anywhere. In new code there is almost never a reason to use `static mut`. An atomic, a `Mutex` or a `OnceLock` in a plain `static` does the same job safely, as shown in [chapter 56](#shared-state).
+Even inside `unsafe`, Rust refuses to create a *reference* to a `static mut` (`println!("{}", COUNTER)` would, and is an error), because such a reference could be made invalid from anywhere. In new code there is almost never a reason to use `static mut`. An atomic, a `Mutex` or a `OnceLock` in a plain `static` does the same job safely ([chapter 56](#shared-state) covers all three).
 
 ### Unsafe traits
 

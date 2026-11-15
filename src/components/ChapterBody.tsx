@@ -90,12 +90,14 @@ async function renderBlock(
   switch (block.type) {
     case "heading": {
       const HeadingTag = `h${block.level}` as "h2" | "h3" | "h4";
+      // Heading sizes are in `em`, so they follow the reader's A- / A+ setting
+      // instead of staying fixed while the prose grows around them.
       const cls =
         block.level === 2
-          ? "mt-12 mb-4 scroll-mt-20 border-b border-[var(--g-line)] pb-2.5 font-sans text-[26px] leading-tight font-bold tracking-[-0.015em] text-[var(--g-ink)]"
+          ? "mt-12 mb-4 scroll-mt-20 border-b border-[var(--g-line)] pb-2.5 font-sans text-[1.45em] leading-tight font-bold tracking-[-0.015em] text-[var(--g-ink)]"
           : block.level === 3
-            ? "mt-8 mb-3 scroll-mt-20 font-sans text-[20px] leading-snug font-bold tracking-tight text-[var(--g-ink)]"
-            : "mt-6 mb-2 scroll-mt-20 font-sans text-base font-bold text-[var(--g-ink)]";
+            ? "mt-8 mb-3 scroll-mt-20 font-sans text-[1.14em] leading-snug font-bold tracking-tight text-[var(--g-ink)]"
+            : "mt-6 mb-2 scroll-mt-20 font-sans text-[1em] font-bold text-[var(--g-ink)]";
       return (
         <HeadingTag key={key} id={block.id} className={cls}>
           <InlineRenderer nodes={block.children} />

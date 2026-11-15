@@ -82,7 +82,11 @@ add_and_double:
 
 ## From assembly mnemonics to raw machine code bytes
 
-Assembly is just a human-readable shorthand for raw numeric bytes (**machine code**). The **assembler** (built right into LLVM or invoked as `as`) replaces every mnemonic and register name with exact binary opcodes.
+:::plain Assembly vs machine code
+**[[Assembly]]** (`lea eax, [rdi + rsi]`) and **[[machine code]]** (`8d 04 37`) are not two different programming levels—they are two spellings of the **exact same CPU instructions**. Assembly uses short English words (*mnemonics*) and [[register]] names for humans; machine code is the raw sequence of numeric [[opcode]] bytes that the CPU actually fetches from memory.
+:::
+
+The **assembler** (built right into LLVM or invoked as `as`) replaces every mnemonic and register name with exact binary opcodes.
 
 Let us inspect the real bytes generated for `int add(int a, int b) { return a + b; }` via `objdump -d -M intel`:
 
@@ -93,9 +97,10 @@ Let us inspect the real bytes generated for `int add(int a, int b) { return a + 
 ```
 
 Look at those four hexadecimal bytes (`8d 04 37 c3`):
-- `0x8d` is the x86-64 opcode byte for `LEA`.
+
+- `0x8d` is the x86-64 [[opcode]] byte for `LEA`.
 - `0x04` is the **ModR/M** byte saying "destination is `eax` (`000`) and source uses an indexed SIB byte (`100`)".
-- `0x37` is the **SIB (Scale-Index-Base)** byte encoding `rdi` (base `111`) + `rsi` (index `110`) * 1!
+- `0x37` is the **SIB (Scale-Index-Base)** byte encoding `rdi` (base `111`) + `rsi` (index `110`) * 1.
 - `0xc3` is the single-byte opcode for `RET`.
 
 ## Memory, execution, OS, and hardware view

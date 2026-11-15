@@ -54,7 +54,7 @@ export default async function ChapterPage({
             : `Chapter ${chapter.num}`;
 
   return (
-    <div className="mx-auto flex max-w-6xl gap-10 px-5 py-8 sm:px-8 lg:py-12">
+    <div className="mx-auto flex max-w-6xl flex-col gap-0 px-5 py-8 sm:px-8 lg:py-12 xl:flex-row xl:gap-10">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
@@ -122,6 +122,9 @@ export default async function ChapterPage({
             </div>
           )}
         </header>
+
+        {/* Table of contents: a collapsed panel below xl, a sticky rail above it */}
+        <ChapterRail headings={chapter.headings} />
 
         {/* Body */}
         <div className="guide-prose">
@@ -204,8 +207,6 @@ export default async function ChapterPage({
           )}
         </nav>
       </article>
-
-      <ChapterRail headings={chapter.headings} />
     </div>
   );
 }

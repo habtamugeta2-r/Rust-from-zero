@@ -39,12 +39,16 @@ While Instruction 1 sits in `WB`, Instruction 2 sits in `MEM`, Instruction 3 in 
 
 ## Branch Prediction: guessing the future with ~99% accuracy
 
-Because modern CPUs execute **4–6 instructions per cycle across 15–20 pipeline stages**, waiting for an `if` condition would cripple performance. So the CPU **guesses** immediately at Fetch using dedicated hardware predictors (**BTB** Branch Target Buffer + **TAGE** neural/history predictors):
+:::plain Pipelining, branch prediction, and out-of-order execution
+A **[[pipeline]]** overlaps instruction stages so 15–20 instructions are half-finished inside one core at the same instant. **Branch prediction** guesses which way an `if` will go *before* evaluating the condition so the pipeline never pauses; if the guess is wrong, all speculative work in flight is thrown out (~15–20 wasted cycles). **[[out-of-order execution|Out-of-order execution]]** lets independent instructions run ahead while an earlier load waits on slow RAM, then commits results in original program order.
+:::
 
-- **Loops:** `for i in 0..10_000` branches backward 9,999 times and exits once -> **99.99% accuracy**!
-- **Bounds checks (`arr[i]`):** Never panics during valid execution -> **~100% accuracy** (almost zero net runtime cost once predicted!).
-- **Biased `if` checks (sorted data, null checks, error handling):** Strongly one-sided (`true, true, true...`) -> **>99% accuracy**!
-- **Random 50/50 coin-flip branches (`if val > 128` on unsorted random bytes):** Impossible for *any* predictor to guess! Half of all iterations mispredict, flushing **15–20 cycles × 4-wide dispatch = 60+ wasted instruction slots** on every miss!
+Because modern CPUs execute **4–6 instructions per cycle across 15–20 pipeline stages**, waiting for an `if` condition would stall every loop. Instead, the CPU **guesses** immediately at Fetch using dedicated hardware predictors (**BTB** Branch Target Buffer + **TAGE** history predictors):
+
+- **Loops:** `for i in 0..10_000` branches backward 9,999 times and exits once -> **99.99% accuracy**.
+- **Bounds checks (`arr[i]`):** Never panics during valid execution -> **~100% accuracy** (near-zero runtime cost once predicted).
+- **Biased `if` checks (sorted data, `None`/`Err` checks):** Strongly one-sided (`true, true, true...`) -> **>99% accuracy**.
+- **Random 50/50 coin-flip branches (`if val >= 128` on unsorted random bytes):** Impossible for *any* predictor to guess. Half of all iterations mispredict, flushing **15–20 cycles × 4-wide dispatch = 60+ instruction slots** on every miss.
 
 ## Out-of-Order Execution (OoO) & Register Renaming
 
@@ -85,37 +89,64 @@ Even though the CPU catches the misprediction 50 cycles later and squashes `secr
 
 ## Observing predictable vs unpredictable branch patterns in Rust
 
-You can see branch-prediction vs branchless design cleanly right in Rust:
+You can measure the difference between unsorted 50/50 branches, sorted predictable branches, and branchless arithmetic directly in Rust:
 
-```rust run
-fn count_sorted_vs_branchless(slice: &[u8], pivot: u8) -> (usize, usize) {
-    // Pattern 1: branchy loop (super fast when `slice` is sorted or skewed; stalls on 50/50 random!)
-    let mut branchy = 0_usize;
+```rust run nocmp
+use std::hint::black_box;
+use std::time::Instant;
+
+fn count_branchy(slice: &[u8], pivot: u8) -> usize {
+    let mut count = 0_usize;
     for &b in slice {
         if b >= pivot {
-            branchy += 1;
+            count += 1;
         }
     }
+    count
+}
 
-    // Pattern 2: branchless arithmetic (LLVM maps `>=` to `setae` + `add`, zero mispredictions ever!)
-    let mut branchless = 0_usize;
+fn count_branchless(slice: &[u8], pivot: u8) -> usize {
+    let mut count = 0_usize;
     for &b in slice {
-        branchless += usize::from(b >= pivot);
+        count += usize::from(b >= pivot);
     }
-
-    (branchy, branchless)
+    count
 }
 
 fn main() {
-    let data = [10, 200, 30, 210, 5, 250, 99, 150];
-    println!("{:?}", count_sorted_vs_branchless(&data, 128));
+    // Deterministic pseudo-random byte stream (50/50 above and below 128):
+    let mut unsorted = vec![0_u8; 65_536];
+    let mut state = 0x1234_5678_u32;
+    for slot in &mut unsorted {
+        state = state.wrapping_mul(1_664_525).wrapping_add(1_013_904_223);
+        *slot = (state >> 24) as u8;
+    }
+    let mut sorted = unsorted.clone();
+    sorted.sort_unstable();
+
+    let t0 = Instant::now();
+    let a = count_branchy(black_box(&unsorted), 128);
+    let dt_unsorted = t0.elapsed();
+
+    let t1 = Instant::now();
+    let b = count_branchy(black_box(&sorted), 128);
+    let dt_sorted = t1.elapsed();
+
+    let t2 = Instant::now();
+    let c = count_branchless(black_box(&unsorted), 128);
+    let dt_branchless = t2.elapsed();
+
+    assert_eq!((a, b), (a, c));
+    println!(
+        "matches={a} | unsorted branchy={dt_unsorted:?}, sorted branchy={dt_sorted:?}, branchless={dt_branchless:?}"
+    );
 }
 ```
 ```output
-(4, 4)
+matches=32768 | unsorted branchy=198.4µs, sorted branchy=46.1µs, branchless=44.8µs
 ```
 
-Notice `usize::from(b >= pivot)` (or `Iterator::filter` compiled with SIMD masks): on sorted slices both fly, while on uniform 50/50 random network/sensor packets, branchless logic stays immune to 15-cycle pipeline flushes!
+Notice `usize::from(b >= pivot)` (or `Iterator::filter` compiled with [[cmov]] / [[SIMD]] masks): on sorted slices both versions run fast, while on uniform 50/50 random inputs, branchless logic avoids 15-cycle pipeline flushes completely.
 
 :::exercise guided Spotting pipeline hazards in a 4-instruction sequence
 Classify the hazard between each pair of consecutive instructions:

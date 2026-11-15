@@ -15,6 +15,7 @@ You can tell the time just by reading the dial (`Vec::push`, `Option::unwrap`). 
 :::
 
 Rust's standard library is layered in three concentric crates:
+
 1. **`core`** — OS-independent, allocator-independent foundations: primitive intrinsics, `Option`, `Result`, `Cell`, `UnsafeCell`, `MaybeUninit`, `ManuallyDrop`, `NonNull`, slices, and `Iterator`.
 2. **`alloc`** — Heap-backed containers built over a global allocator (`GlobalAlloc`): `Box<T>`, `RawVec<T>`, `Vec<T>`, `String`, `Rc<T>`, `Arc<T>`, `BTreeMap`.
 3. **`std`** — OS integration (`std::fs`, `std::net`, `std::io`, `std::thread`, `std::sync::Mutex`), built on `core`, `alloc`, and OS syscalls or `libc`.
@@ -38,18 +39,21 @@ String (24 bytes):             Rc<T> (8 bytes on stack):
                                  Heap:  [ strong: Cell<usize> | weak: Cell<usize> | value: T ]
 ```
 
-Look closely at five crucial implementation details inside `alloc`:
-- **`NonNull<T>` over `*mut T`:** `Box`, `Vec`, and `Rc` store `core::ptr::NonNull<T>` rather than a nullable `*mut T`. That tells the compiler *"this pointer is never `0` (null)"*—unlocking **niche optimisation**!
+Five implementation details inside `alloc` explain why these types are both safe and compact:
+
+- **`NonNull<T>` over `*mut T`:** `Box`, `Vec`, and `Rc` store `core::ptr::NonNull<T>` rather than a nullable `*mut T`. That tells the compiler *"this pointer is never `0` (null)"*—unlocking **[[niche]] optimisation**.
 - **Co-variance and `PhantomData<T>`:** `NonNull<T>` is covariant in `T` (unlike `*mut T`, which is invariant) and carries zero bytes. Containers add `PhantomData<T>` so the **drop checker (`dropck`)** knows the wrapper logically owns a `T` and drops it when destroyed.
-- **`RawVec` growth and ZSTs:** When a non-zero-sized `Vec<T>` fills up, `RawVec` grows capacity roughly exponentially (doubling from small capacities like 4 → 8 → 16) so repeated `push` calls take **amortised O(1)** time. For **zero-sized types** (ZSTs like `Vec<()>`), `RawVec` allocates **zero heap bytes**, sets `ptr` to `NonNull::dangling()` (a well-aligned non-zero address), and reports capacity as `usize::MAX`!
+- **`RawVec` growth and ZSTs:** When a non-zero-sized `Vec<T>` fills up, `RawVec` grows capacity roughly exponentially (doubling from small capacities like 4 → 8 → 16) so repeated `push` calls take **amortised O(1)** time. For **zero-sized types** (ZSTs like `Vec<()>`), `RawVec` allocates **zero heap bytes**, sets `ptr` to `NonNull::dangling()` (a well-aligned non-zero address), and reports capacity as `usize::MAX`.
 - **`String` is literally `struct String { vec: Vec<u8> }`:** Every `String` invariant reduces to one guarantee: the `len` initialised bytes inside `vec` are always valid UTF-8.
-- **`RcBox<T>` uses `Cell<usize>`:** Even though `Rc<T>` only hands out shared `&Rc<T>` references, cloning or dropping changes `strong`/`weak` counts via `Cell` (which wraps `UnsafeCell`).
+- **`RcBox<T>` uses `Cell<usize>`:** Even though `Rc<T>` only hands out shared `&Rc<T>` references, cloning or dropping changes `strong`/`weak` counts via `Cell` (which wraps `UnsafeCell` for [[interior mutability]]).
 
 ## Niche optimisation: why `Option<&T>` costs zero extra bytes
 
-An ordinary enum like `enum Status { Ok(u64), Err(u64) }` needs a **discriminant** tag byte plus padding (`16` bytes total). Yet `Option<&T>`, `Option<Box<T>>`, and `Option<NonZeroU64>` are **only 8 bytes**—identical to the bare pointer or integer!
+An ordinary enum like `enum Status { Ok(u64), Err(u64) }` needs a **[[discriminant]]** tag byte plus alignment padding (`16` bytes total). Yet `Option<&T>`, `Option<Box<T>>`, and `Option<NonZeroU64>` are **only 8 bytes**—identical to the bare pointer or integer.
 
-Why? Because a valid reference `&T`, `Box<T>`, or `NonNull<T>` can **never hold the bit pattern `0`**, and `bool` only ever uses bit patterns `0` and `1` (leaving `2..=255` unused). The compiler spots that forbidden bit pattern (a **niche**) and encodes `None` directly using `0` (or `2` for `Option<bool>`):
+:::plain What is a niche?
+A **[[niche]]** is a bit pattern inside a type's bytes that no valid value of that type may ever use. For example, a Rust reference `&T` may never be `0` (null), and a `bool` uses only `0` (`false`) and `1` (`true`), leaving `2` through `255` unused. When you wrap that type in `Option`, `rustc` stores `None` inside one of those unused bit patterns instead of adding an extra tag byte.
+:::
 
 ```text
 &u64 (8 bytes):         [ non-zero 64-bit address ]
@@ -90,7 +94,7 @@ Option<bool>      : 1 B
 ExplicitTwoU64    : 16 B
 ```
 
-Look closely at line 6: `Option<bool>` is `1 byte`! Wait—check singular vs plural in `println!` above: `1 byte` vs `8 bytes`! Let's make sure the `output` block matches `1 bytes` vs `1 byte`! Look at our code above: `"Option<bool>      : {} bytes"` prints `"1 bytes"`, NOT `"1 byte"`! Good catch!! Let's check EVERY character of our `println!` formats before saving! Either write `"Option<bool>      : {} byte(s)"` or match `"1 bytes"`—even cleaner, write `size={}` or `bytes` consistently! Let's fix that cleanly when inspecting below.
+Notice line 6: `Option<bool>` takes just **1 byte** (`0 = Some(false)`, `1 = Some(true)`, `2 = None`), whereas `ExplicitTwoU64` has no unused bit pattern in `u64` and therefore needs a separate tag plus 7 padding bytes (`16 B`).
 
 ## `UnsafeCell<T>`: the one true door to interior mutability
 
@@ -155,18 +159,21 @@ if some_condition {
 
 If `some_condition` was `false`, `s` still owns its heap buffer and **must** be dropped. If `true`, `consume` already dropped it, so dropping again would **double-free**!
 
-During **MIR drop elaboration**:
+During **[[MIR]] drop elaboration**:
+
 - When moves happen statically on all paths (or none), `rustc` emits unconditional drop calls or omits them completely—**zero runtime overhead**.
 - Only when ownership state at scope exit depends on a runtime branch does `rustc` place a tiny 1-byte boolean **drop flag** on the stack (`_drop_flag = true` initially, set to `false` when moved) and inspect it before calling `drop`.
-- At compile time, `std::mem::needs_drop::<T>()` lets generic code like `Vec<T>::clear()` skip looping over elements completely when `T` is `i32` or `[u8; 64]` (`needs_drop::<i32>() == false`), turning `Vec<i32>::clear()` into a single `self.len = 0` instruction!
+- At compile time, `std::mem::needs_drop::<T>()` lets generic code like `Vec<T>::clear()` skip looping over elements completely when `T` is `i32` or `[u8; 64]` (`needs_drop::<i32>() == false`), turning `Vec<i32>::clear()` into a single `self.len = 0` instruction.
 
 ## Pointer provenance and why Undefined Behaviour breaks LLVM
 
-To beginners, a pointer looks like "just a 64-bit integer address". To the Rust compiler and LLVM, a pointer carries **provenance**: invisible permission metadata tracking *which* allocation (stack local, heap `Box`, static array) that pointer is allowed to access, and whether it came from `&` (read-only) or `&mut` (exclusive).
+:::plain Pointer provenance
+**[[Provenance|provenance]]** means a pointer is more than a raw 64-bit house number: it also carries a "hall pass" recording *which* variable or heap block it came from and whether it has read-only or read-write permission. Forging a pointer from a plain integer (`usize as *const T`) throws away that hall pass, which can confuse optimiser passes that track aliasing.
+:::
 
-Two pointers can share the exact same numeric address (`0x7ffd...100`) while having different provenance! Converting an integer back into a pointer (`usize as *const T`) destroys provenance unless you use Strict Provenance APIs (`ptr.addr()`, `ptr.with_addr(...)`) that borrow valid provenance from a live pointer into the same allocation.
+Two pointers can share the exact same numeric address (`0x7ffd...100`) while having different provenance. Converting an integer back into a pointer (`usize as *const T`) loses provenance unless you use Rust's Strict Provenance APIs (`ptr.addr()`, `ptr.with_addr(...)`) that derive valid provenance from a live pointer into the same allocation.
 
-When `unsafe` code violates aliasing or out-of-bounds provenance (Undefined Behaviour), LLVM does not crash cleanly at the line of the bug—it treats UB as **mathematically impossible**, allowing constant-propagation and dead-code passes to delete null checks, fuse conflicting branches, or return stale register values!
+When `unsafe` code violates aliasing or out-of-bounds provenance ([[undefined behaviour]]), LLVM does not crash cleanly at the line of the bug—it treats undefined behaviour as **mathematically impossible**, allowing constant-propagation and dead-code passes to delete null checks, fuse conflicting branches, or return stale register values.
 
 ## Practical experiment: verify `needs_drop`, `RawVec`-style layout, and provenance
 

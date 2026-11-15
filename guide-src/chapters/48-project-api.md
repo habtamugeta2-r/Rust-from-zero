@@ -27,7 +27,7 @@ $ curl http://localhost:3000/links/book
 
 The first request stores a link under the code `book`. The second one follows it: the answer `307 Temporary Redirect` with a `location` header tells a browser where to go next. The third one shows the facts about the link, with one visit counted.
 
-The project brings together Axum for HTTP ([chapter 64](#web)), SQLx with SQLite for storage ([chapter 68](#databases)), Serde for JSON ([chapter 78](#serde)), and `thiserror`, `anyhow`, `tracing` and `rand` from [chapter 77](#crates). It also keeps a promise of [chapter 72](#testing-strategies): the tests exercise the whole API without a network.
+The project brings together everything from the last few chapters: Axum for HTTP ([chapter 64](#web)), SQLx with SQLite for storage ([chapter 68](#databases)), Serde for JSON ([chapter 78](#serde)), and `thiserror`, `anyhow`, `tracing` and `rand` from [chapter 77](#crates). It also keeps a promise made in [chapter 72](#testing-strategies): the tests exercise the whole API without a network.
 
 :::analogy A cloakroom for web addresses
 A link shortener works like the cloakroom of a theatre. You hand over a bulky coat (a long address) and get a small ticket (a short code). Whoever shows the ticket is led to the coat.

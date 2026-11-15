@@ -112,6 +112,12 @@ Rust is developed in the open by volunteers and paid engineers from many organis
 - **Command-line tools:** small, fast programs you run by typing a command. You will build several.
 - **Web servers and services:** the programs behind websites and apps. See [Part X](#web).
 - **System software:** kernels, drivers, embedded firmware, databases, and low-level Linux tools.
+- **Programs that run inside a web page**, through a technology called WebAssembly.
+- **Desktop and mobile apps**, and **games**.
+- **Embedded software:** the code inside small devices such as sensors, watches and robots.
+- **Operating systems, browsers and databases:** the foundations other software stands on.
+
+You do not need to aim for any of these yet. Everything starts with the same small building blocks.
 
 ## The ten-layer journey from text to hardware
 
@@ -122,11 +128,7 @@ Source Code (.rs) → Compilation → Machine Code → Program Loading → Memor
       → Execution → CPU Instructions → Operating System → Hardware Interaction → Input/Output
 ```
 
-This guide does not treat Rust as abstract magic. Across the chapters ahead you will trace **both** how Rust works as a language and how each step behaves inside the compiler, memory, processor, operating system, and storage or network hardware.
-- **Programs that run inside a web page**, through a technology called WebAssembly.
-- **Desktop and mobile apps**, and **games**.
-- **Embedded software:** the code inside small devices such as sensors, watches and robots.
-- **Operating systems, browsers and databases:** the foundations other software stands on.
+This guide does not treat Rust as abstract magic. Across the chapters ahead you will trace **both** how Rust works as a language and how each step behaves inside the [[compiler]], [[virtual memory]], processor, [[kernel]], and storage or network hardware.
 
 ## Rust compared with other languages
 

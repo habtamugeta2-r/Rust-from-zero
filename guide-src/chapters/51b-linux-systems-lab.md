@@ -5,7 +5,7 @@
 @short Linux systems inspector lab
 @level intermediate
 @time 45
-@learn Combine Parts I-XI systems concepts into a working Linux /proc & syscall diagnostic tool in Rust | Parse ELF headers, /proc/self/maps segments, /proc/self/status kernel metrics, and FD tables from scratch | Build a fast, zero-copy buffered CLI pipeline measuring user-space buffering vs system metrics | Verify systems invariants (alignment, page masks, endianness, RAII cleanup) with deterministic unit tests
+@learn Combine Parts I-XI systems concepts into a working Linux /proc & syscall diagnostic tool in Rust | Parse ELF headers, /proc/self/maps segments, /proc/self/status kernel metrics, /proc/net/tcp sockets and FD tables from scratch | Count every heap allocation with a global allocator and inspect the same program with readelf, strace, perf, gdb and Valgrind | Verify systems invariants (alignment, page masks, endianness, RAII cleanup) with deterministic unit tests
 
 Look at how far you have come: in Part I you learned bits, endianness, and CPUs; in Part II you opened ELF binaries and disassembly; in Parts IV–VIII you mapped virtual memory, allocators, `syscall`, threads, `epoll`, and hardware caches; and in Parts X–XI you traced packets, sockets, blocks, and file systems.
 
@@ -183,7 +183,178 @@ regions=4 (4KiB pages: exec=1, rw=66, ro=1)
 
 Notice why `[heap]` (`0x55608aa87000 - 0x55608aa66000 = 0x21000 = 33 pages = 132 KiB`) and `[stack]` (`0x21000 = 33 pages = 132 KiB`) add up to `66` `rw-p` pages (`264 KiB` virtual)!
 
-## Step 3: Live Complete Self-Diagnostic Program on Linux
+## Step 2b: Reading the kernel's own socket table
+
+`/proc/self/maps` and `/proc/self/status` describe memory; `/proc/net/tcp` describes the network, and it is the same data `ss` prints. Every non-header line is one socket, and the fields that matter are columns `1` (local address), `2` (peer address) and `3` (TCP state):
+
+```text
+  sl  local_address rem_address   st tx_queue rx_queue tr tm->when retrnsmt   uid  timeout inode
+   0: 0100007F:1F90 00000000:0000 0A 00000000:00000000 00:00000000 00000000  1000        0 18213
+```
+
+Two traps make this a real parsing exercise. First, **the addresses are hex but byte-reversed** (`0100007F` is `127.0.0.1`, not `127.0.0.1` read left to right). Second, **the state is a hex number**, not a word (`0A` is `LISTEN`). This parser handles both and is pure `std`:
+
+```rust run
+fn parse_hex_addr(field: &str) -> Option<(std::net::Ipv4Addr, u16)> {
+    let (ip, port) = field.split_once(':')?;
+    let port = u16::from_str_radix(port, 16).ok()?;
+    let raw = u32::from_str_radix(ip, 16).ok()?;
+    // The kernel prints the 4 address bytes in host order: reverse them back.
+    Some((std::net::Ipv4Addr::from(raw.to_le_bytes()), port))
+}
+
+fn state_name(hex: &str) -> &'static str {
+    match hex {
+        "01" => "ESTABLISHED",
+        "02" => "SYN_SENT",
+        "06" => "TIME_WAIT",
+        "08" => "CLOSE_WAIT",
+        "0A" => "LISTEN",
+        _ => "OTHER",
+    }
+}
+
+fn parse_net_tcp(table: &str) -> Vec<(std::net::SocketAddr, &'static str)> {
+    table
+        .lines()
+        .skip(1) // the header row
+        .filter_map(|line| {
+            let cols: Vec<&str> = line.split_whitespace().collect();
+            if cols.len() < 4 {
+                return None;
+            }
+            let (ip, port) = parse_hex_addr(cols[1])?;
+            Some((std::net::SocketAddr::from((ip, port)), state_name(cols[3])))
+        })
+        .collect()
+}
+
+fn main() {
+    // Two real rows from a laptop: a local dev server and an outbound TLS connection.
+    let table = r#"  sl  local_address rem_address   st
+   0: 0100007F:1F90 00000000:0000 0A 00000000:00000000 00:00000000 00:00000000
+   1: 0100007F:C350 5DB8D822:01BB 01 00000000:00000000 00:00000000 00:00000000
+"#;
+    for (addr, state) in parse_net_tcp(table) {
+        println!("{addr} {state}");
+    }
+}
+```
+```output
+127.0.0.1:8080 LISTEN
+127.0.0.1:50000 ESTABLISHED
+```
+
+`5DB8D822` decodes to `34.216.184.93`, the peer of the second connection, which this program prints only for the local side — a useful reminder that `/proc/net/tcp` gives you the 4-tuple of *each* socket, and joining the two halves is how tools like `ss` reconstruct a connection.
+
+## Step 2c: Counting every allocation with a global allocator
+
+Parts IV and VI explained the allocator from the outside. This lab shows it from the inside, with about thirty lines: a `#[global_allocator]` that wraps `System` and counts every call. It compiles on stable Rust and needs no crate:
+
+```rust run nocmp
+use std::alloc::{GlobalAlloc, Layout, System};
+use std::sync::atomic::{AtomicUsize, Ordering};
+
+struct CountingAllocator;
+
+static ALLOCS: AtomicUsize = AtomicUsize::new(0);
+static BYTES: AtomicUsize = AtomicUsize::new(0);
+static FREES: AtomicUsize = AtomicUsize::new(0);
+
+unsafe impl GlobalAlloc for CountingAllocator {
+    unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
+        ALLOCS.fetch_add(1, Ordering::Relaxed);
+        BYTES.fetch_add(layout.size(), Ordering::Relaxed);
+        // SAFETY: we forward the exact layout we were given.
+        unsafe { System.alloc(layout) }
+    }
+
+    unsafe fn dealloc(&self, ptr: *mut u8, layout: Layout) {
+        FREES.fetch_add(1, Ordering::Relaxed);
+        // SAFETY: ptr and layout came from the matching alloc call.
+        unsafe { System.dealloc(ptr, layout) }
+    }
+}
+
+#[global_allocator]
+static GLOBAL: CountingAllocator = CountingAllocator;
+
+fn report(label: &str) {
+    println!(
+        "{label}: allocs={} frees={} live={} bytes={}",
+        ALLOCS.load(Ordering::Relaxed),
+        FREES.load(Ordering::Relaxed),
+        ALLOCS.load(Ordering::Relaxed) - FREES.load(Ordering::Relaxed),
+        BYTES.load(Ordering::Relaxed),
+    );
+}
+
+fn main() {
+    report("start");
+    let v: Vec<u32> = (0..1000).collect();
+    report("after Vec of 1000 u32");
+    drop(v);
+    report("after drop");
+    let s = String::from("hello");
+    report("after String::from");
+    println!("{s}");
+}
+```
+
+Three lessons fall out of running it, and they are the reason every allocator chapter eventually shows this program:
+
+- **The counts are not the ones you expect.** Between `start` and the first `report` there are already allocations: `println!` itself allocates, and so does the stdout lock. Reading the *difference* between two labels is the only honest measurement.
+- **`frees` never equals `allocs`.** The runtime keeps buffers alive for the life of the program, so "live" is a floor, not a leak counter.
+- **`Ordering::Relaxed` is enough here** because every counter is independent; you are not using one to publish another. The moment you use a counter to decide *when* to print, you need `Acquire`/`Release`.
+
+The same pattern, with `jemalloc` or `mimalloc` underneath instead of `System`, is how production services get allocation metrics into Prometheus without instrumenting a single call site.
+
+## Step 3: A command-line lab you can run in five minutes
+
+Every tool in this guide is a command you can run yourself. Here is the sequence a working systems programmer actually types when a Rust program misbehaves, in the order that finds the answer fastest:
+
+```sh
+# 1. What did the compiler emit? Intermediate artifacts, not just a binary.
+rustc --emit=obj,asm,llvm-ir -O hello.rs     # hello.o, hello.s, hello.ll
+
+# 2. What is inside the binary? Sections, symbols, dynamic dependencies.
+readelf -hW ./hello                          # ELF header: class, machine, entry
+readelf -SW ./hello | head -20               # sections: .text .rodata .data .bss
+readelf -dW ./hello | head                  # needed shared objects (libc, libgcc)
+nm -C ./hello | grep ' T '                  # defined text symbols, demangled
+
+# 3. What does the machine code do?
+objdump -d --no-show-raw-insn ./hello | head -40
+
+# 4. Which syscalls does it make? This is the ground truth.
+strace -f -e trace=openat,read,write,mmap,exit_group ./hello
+
+# 5. Where does the time go? Sample, do not guess.
+perf stat -d ./hello                         # cycles, instructions, cache misses
+perf record -g ./hello && perf report        # flame-graph input, no root needed
+
+# 6. If it crashes, take the core apart.
+rust-gdb ./hello                              # Rust-aware pretty printers
+RUST_BACKTRACE=full ./hello                   # panics only, but zero setup
+
+# 7. If it leaks or corrupts memory, ask a second opinion.
+valgrind --leak-check=full --show-leak-kinds=all ./hello
+```
+
+The tools answer different questions, and confusing them wastes hours:
+
+| Question | Tool | What you are looking at |
+|---|---|---|
+| Did the compiler do what I meant? | `--emit=asm`, `--emit=llvm-ir` | its own output, before linking |
+| What is in the binary? | `readelf`, `nm`, `objdump` | sections, symbols, relocations |
+| What did the program *ask the kernel* for? | `strace` | real syscalls, real arguments, real errors |
+| Where does the CPU time go? | `perf stat`, `perf record` | hardware counters, sampled stacks |
+| What happens at a crash? | `rust-gdb`, core dump, `RUST_BACKTRACE` | registers, frames, unwound stack |
+| Is memory used correctly? | Valgrind, Miri | invalid reads, leaks, undefined behaviour |
+
+Two of these deserve a standing habit. Run `strace -f -e trace=%file` whenever a program cannot find a file: the syscall log tells you the exact path it tried, which is usually a current-directory or `PATH` surprise rather than a bug. And run `perf stat` before optimising anything, because the answer to "where is the time" is regularly not where the code *looks* slow.
+
+## Step 4: Live Complete Self-Diagnostic Program on Linux
 
 Now wire `elf_probe` (`/proc/self/exe`), `parse_proc_maps` (`/proc/self/maps`), `/proc/self/status`, and open file descriptors (`/proc/self/fd`) together into one live Linux inspection binary:
 

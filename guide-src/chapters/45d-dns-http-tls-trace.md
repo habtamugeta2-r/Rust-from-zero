@@ -15,6 +15,10 @@ let body = reqwest::get("https://example.com/data").await?.text().await?;
 
 Before `"example.com"` responds with JSON or HTML, your machine resolves DNS names to IP addresses, opens a TCP connection, negotiates **TLS 1.3** cryptography (via `rustls` or OpenSSL), sends an **HTTP** request, receives encrypted TCP packets through NIC interrupts and `epoll`, decrypts them in user space, and delivers `&str` bytes!
 
+:::plain DNS, TLS, and HTTP in one paragraph
+**DNS** turns a name into an IP address by asking a chain of servers, each answer carrying a **TTL** that says how long to cache it. **[[TLS]]** then turns the TCP connection into an authenticated, encrypted channel: the server proves its identity with a certificate chain, both sides derive a shared key with ephemeral Diffie–Hellman, and every later byte is encrypted and integrity-checked. **HTTP** is what travels inside that channel — text in HTTP/1.1, binary frames in HTTP/2, and independent streams over QUIC in HTTP/3. Each layer exists to solve one problem: naming, trust, or meaning.
+:::
+
 :::analogy Calling a foreign bank securely
 First you check your phone contacts (`/etc/hosts`) or directory assistance (**DNS**) to get the building's street number (`IP`). Next you walk up and knock (**TCP 3-way handshake**). Before sharing account numbers, you verify the teller's passport (**X.509 Certificate** signed by a trusted **CA**) and agree on a private shared secret pad (**X25519 Diffie-Hellman -> TLS 1.3 symmetric keys**). Only inside that encrypted tunnel do you speak the structured bank request (**HTTP**) and verify every sealed envelope (**AEAD ChaCha20-Poly1305 / AES-GCM**).
 :::
@@ -28,6 +32,42 @@ First you check your phone contacts (`/etc/hosts`) or directory assistance (**DN
 | TCP Head-of-Line blocking? | Yes | **Yes!** (1 lost TCP packet pauses *all* HTTP/2 streams on that connection!) | **Fixed!** (Packet loss pauses only the affected QUIC stream!) |
 | Handshake latency (cold TLS) | TCP (1 RTT) + TLS 1.3 (1 RTT) = 2 RTT | TCP + TLS 1.3 (ALPN `h2`) = 2 RTT | **1 RTT** (QUIC combines transport + TLS 1.3; `0-RTT` resume!) |
 :::
+
+Both HTTP/2 and HTTP/3 replace HTTP/1.1's text lines with **binary framing**, because a parser that reads a length and then a fixed number of bytes cannot be tricked into mis-splitting a message the way a text parser can. In HTTP/2 every frame begins with the same 9-byte header:
+
+```text
+ HTTP/2 frame header (always 9 bytes, big-endian)
+┌───────────────┬───────────────┬──────────────────┬─────────────────────────┐
+│ Length (24 b) │ Type (8 b)    │ Flags (8 b)      │ Stream ID (31 b + 1 R)  │
+└───────────────┴───────────────┴──────────────────┴─────────────────────────┘
+   payload size   0=DATA 1=HEADERS   END_STREAM,        which stream this
+                  ...   3=SETTINGS   END_HEADERS        frame belongs to
+```
+
+A single request/response is then a sequence of frames, all interleaved on one TCP connection with frames from other requests:
+
+```text
+stream 1: HEADERS(END_HEADERS) → DATA → DATA(END_STREAM)
+stream 3:            HEADERS(END_HEADERS) → DATA(END_STREAM)
+stream 5: HEADERS(END_HEADERS) → DATA(END_STREAM)
+             ▲ all three share one TCP byte stream and one TLS record stream
+```
+
+The `Stream ID` is what lets the receiver demultiplex: the kernel delivers one ordered byte stream, and the HTTP/2 state machine cuts it back into per-stream messages. That works beautifully until a TCP segment is lost: the kernel cannot deliver *any* later bytes, so the frames of every stream behind the hole wait. This is **TCP head-of-line blocking at the transport layer**, and it is the only reason HTTP/3 exists.
+
+HTTP/3 keeps the frame concept but moves each stream onto its own **[[QUIC]]** stream, which is a first-class object in the protocol rather than an ID inside a shared byte stream:
+
+```text
+QUIC connection (one UDP 4-tuple, one TLS 1.3 handshake)
+├── stream 0  (control: settings, GOAWAY)
+├── stream 1  request 1 : HEADERS → DATA        lost packet here?
+├── stream 3  request 3 : HEADERS → DATA        ...only stream 1 stalls
+└── stream 5  request 5 : HEADERS → DATA        ...these keep flowing
+```
+
+Because QUIC acknowledges and retransmits **per stream**, a lost packet only delays the stream it belonged to. QUIC also carries the TLS handshake itself, so the transport and crypto setup share one round trip instead of two, and a resumed connection can send data in `0-RTT`.
+
+One field chooses between all of this before a single byte of HTTP is sent: **[[ALPN]]** (Application-Layer Protocol Negotiation), an extension in the TLS `ClientHello` that lists the protocols the client speaks (`h2`, `http/1.1`, `h3`). The server picks one and echoes it in `ServerHello`, so port `443` serves an old `curl` and a modern browser without guessing and without an extra round trip.
 
 ## Step 1: DNS Resolution (`/etc/hosts` -> UDP Port 53 -> Caching)
 
@@ -116,6 +156,66 @@ parsed response = Some((200, "OK"))
 ```
 
 Notice the **`\r\n\r\n`** blank line: that is the framing boundary separating HTTP headers from the response body (whose length is declared either via `Content-Length: N` or `Transfer-Encoding: chunked`).
+
+The same request in HTTP/2 is unreadable to a human but trivial for a machine to delimit. Here is a 9-byte frame header parsed and re-emitted, with no HTTP crate at all:
+
+```rust run
+#[derive(Debug, PartialEq)]
+struct FrameHeader {
+    length: u32,
+    kind: u8,
+    flags: u8,
+    stream_id: u32,
+}
+
+const DATA: u8 = 0x0;
+const HEADERS: u8 = 0x1;
+const END_STREAM: u8 = 0x1;
+
+fn parse_frame_header(raw: &[u8; 9]) -> FrameHeader {
+    // 24-bit length, then type, flags, and a 31-bit stream id (top bit reserved).
+    let length = (u32::from(raw[0]) << 16) | (u32::from(raw[1]) << 8) | u32::from(raw[2]);
+    let stream_id = u32::from_be_bytes([raw[5] & 0x7f, raw[6], raw[7], raw[8]]);
+    FrameHeader { length, kind: raw[3], flags: raw[4], stream_id }
+}
+
+fn build_frame_header(length: u32, kind: u8, flags: u8, stream_id: u32) -> [u8; 9] {
+    let len = length.to_be_bytes();
+    let sid = stream_id.to_be_bytes();
+    [len[1], len[2], len[3], kind, flags, sid[0] & 0x7f, sid[1], sid[2], sid[3]]
+}
+
+fn name(kind: u8) -> &'static str {
+    match kind {
+        DATA => "DATA",
+        HEADERS => "HEADERS",
+        0x4 => "SETTINGS",
+        0x6 => "PING",
+        _ => "OTHER",
+    }
+}
+
+fn main() {
+    // A HEADERS frame that ends the stream: length 87, type 1, flags END_STREAM, stream 1.
+    let request = build_frame_header(87, HEADERS, END_STREAM, 1);
+    let parsed = parse_frame_header(&request);
+    println!("{:?}", parsed);
+    println!("{} bytes of {} on stream {}", parsed.length, name(parsed.kind), parsed.stream_id);
+    println!("ends stream = {}", parsed.flags & END_STREAM != 0);
+
+    // A DATA frame carrying 512 bytes on stream 3, no flags set.
+    let body = parse_frame_header(&build_frame_header(512, DATA, 0, 3));
+    println!("{} bytes of {} on stream {}", body.length, name(body.kind), body.stream_id);
+}
+```
+```output
+FrameHeader { length: 87, kind: 1, flags: 1, stream_id: 1 }
+87 bytes of HEADERS on stream 1
+ends stream = true
+512 bytes of DATA on stream 3
+```
+
+Every HTTP/2 and HTTP/3 implementation starts with exactly this function. The length field is what makes the parser safe: read `N` bytes, and the next frame starts at a known offset — no scanning for `\r\n`, no ambiguity when the body happens to contain newlines.
 
 ## Step 4: The Complete Packet & Syscall Trace of `reqwest::get`
 

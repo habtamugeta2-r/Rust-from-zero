@@ -50,7 +50,12 @@ Notice the crucial shortcut built right into `Box::new(())` and `Vec::<()>::new(
 
 ## How general-purpose allocators fight fragmentation
 
-An allocator faces two competing enemies:
+:::plain External vs internal fragmentation
+Imagine parking cars along a street curb. **External fragmentation** happens when cars leave scattered 2-metre gaps between them: there are 10 metres of empty curb in total, yet nowhere wide enough to park one 4-metre car. **Internal fragmentation** happens when you paint fixed 5-metre parking bays: parking happens instantly with zero gaps between bays, at the small cost of leaving empty space inside a bay when a tiny car parks in it.
+:::
+
+An allocator faces both kinds of waste:
+
 1. **External fragmentation:** Plenty of free bytes exist in total, scattered in tiny unadjacent holes (`[16B used][16B free][16B used][16B free]`), so a 32-byte request cannot fit even though 32 bytes are free.
 2. **Internal fragmentation:** A 33-byte request gets rounded up into a 48-byte or 64-byte size-class slot, wasting the leftover 15–31 bytes inside the slot.
 
@@ -66,9 +71,10 @@ Classic `ptmalloc2` stores an 8-byte **chunk header** (`prev_size` + `size` + `A
 
 ## Rust's `GlobalAlloc`, `Layout`, and building a real bump allocator
 
-Every Rust allocator implements two `unsafe` traits (or `GlobalAlloc` in stable Rust):
-- **`Layout`:** Carries `(size, align)`, enforcing at construction that `align` is a power of two and `size` rounded up to `align` does not overflow `isize::MAX`.
-- **`GlobalAlloc`:** Exposes `alloc(layout) -> *mut u8` and `dealloc(ptr, layout)` (plus default `alloc_zeroed` and `realloc`). Notice that Rust passes `layout` back to **`dealloc`**, sparing size-class allocators from storing an inline size tag next to every single allocation!
+Every Rust allocator works around two core types in `std::alloc`:
+
+- **`Layout`:** Carries `(size, align)`, enforcing at construction that [[alignment]] is a power of two and `size` rounded up to `align` does not overflow `isize::MAX`.
+- **`GlobalAlloc`:** Exposes `alloc(layout) -> *mut u8` and `dealloc(ptr, layout)` (plus default `alloc_zeroed` and `realloc`). Notice that Rust passes `layout` back to **`dealloc`**, sparing size-class allocators from storing an inline size tag next to every single [[allocation]]!
 
 Let's write and test a genuine **bump (arena) allocator** backed by a fixed byte buffer, seeing every detail of alignment rounding and pointer bumping firsthand:
 

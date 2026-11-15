@@ -32,10 +32,15 @@ This is the **C10K / C10M problem**, and solving it cleanly produced Linux's **`
 ## Step 1: Non-blocking `O_NONBLOCK` and `WouldBlock` (`EAGAIN`)
 
 Before any multiplexer works, each socket is flipped into **non-blocking mode** (`stream.set_nonblocking(true)` in Rust, calling `fcntl(fd, F_SETFL, O_NONBLOCK)`). In non-blocking mode, `read()` **never puts the OS thread to sleep**:
+
 - If kernel receive buffers hold bytes right now, `read()` copies them immediately and returns `Ok(n)`.
 - If the socket receive buffer is empty, `read()` returns immediately with `-EAGAIN` -> `Err(io::ErrorKind::WouldBlock)`.
 
-Now you only need one kernel mechanism that answers: **"Sleep until *at least one* of these 50,000 registered FDs leaves `WouldBlock` and becomes readable or writable!"**
+Now you only need one kernel mechanism that answers: *"Sleep until at least one of these 50,000 registered FDs leaves `WouldBlock` and becomes readable or writable."*
+
+:::plain Readiness (`epoll`) vs completion (`io_uring`)
+**Readiness** (**[[epoll]]**) tells you *"Socket 42 now has bytes waiting—go call `read(42, ...)` yourself."* **Completion** (**[[io_uring]]**) lets you hand the kernel a buffer upfront (*"Put up to 4 KiB from FD 42 into `buf`"*), and notifies you only after the bytes are **already sitting in `buf`**.
+:::
 
 ## Step 2: Inside `epoll` (`epoll_create1`, `epoll_ctl`, `epoll_wait`)
 
@@ -147,7 +152,19 @@ before packet: Err(WouldBlock)
 drained 6 bytes until WouldBlock: "RUST!!"
 ```
 
-Look closely at Step 3: **draining in a loop until `WouldBlock`** is the exact invariant every edge-triggered `epoll` / `mio` / Tokio driver relies on!
+Look closely at Step 3: **draining in a loop until `WouldBlock`** is the exact invariant every edge-triggered `epoll` / `mio` / Tokio driver relies on.
+
+## End-to-end trace: `std::fs::File::open` and `read` down to hardware
+
+Before moving to CPU microarchitecture in Part VIII, connect everything from Parts VI and VII by tracing `let data = std::fs::read("config.toml")?;` from Rust down to an [[NVMe]] SSD and back:
+
+1. **`openat` syscall:** `File::open("config.toml")` calls `openat(AT_FDCWD, "config.toml\0", O_RDONLY | O_CLOEXEC)`.
+2. **Kernel [[VFS]] path walk:** Inside Ring 0, VFS walks `"config.toml"` in the in-RAM **[[dentry]] cache**; on a cache hit it finds the target **[[inode]]** immediately without touching disk, checks your process's `UID`/`GID` against the inode's read permission bit, allocates an Open File Description (`offset = 0`), and returns `FD 3` wrapped in Rust's RAII `File`.
+3. **`read` syscall & [[page cache]] check:** `file.read_to_end(&mut buf)` calls `read(3, user_ptr, chunk_len)`. The kernel hashes `(inode, page_index = 0)` inside the OS **Page Cache**:
+   - **Warm cache hit (~1 µs):** The 4 KiB file page is already in DRAM from an earlier read. The kernel copies the bytes straight into `buf` (`copy_to_user`) and updates `offset`.
+   - **Cold cache miss (~40 µs on NVMe):** The kernel allocates a fresh 4 KiB page-cache frame, submits a block read request through `blk-mq` into an NVMe hardware submission queue, puts your thread to sleep (`TASK_UNINTERRUPTIBLE` at `0%` CPU), and lets other threads use the CPU core.
+4. **[[DMA]] & hardware [[interrupt]]:** The NVMe controller transfers the 4 KiB flash page directly into that physical RAM frame over PCIe via DMA, posts an NVMe completion entry, and raises an MSI-X hardware interrupt.
+5. **Wake-up & RAII `close`:** The interrupt handler marks the page-cache frame up-to-date and moves your thread back onto the scheduler run queue. Your resumed `read` copies the bytes into `buf` and returns `Ok(n)`. Finally, `File`'s `Drop` destructor calls `close(3)`, releasing the file descriptor cleanly.
 
 :::exercise guided Comparing `select()`/`poll()` vs `epoll_wait()` at 100,000 connections
 Suppose a server holds `100,000` idle connections and only `2` sockets receive data during a millisecond.

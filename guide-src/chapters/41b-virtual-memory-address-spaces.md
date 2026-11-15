@@ -11,6 +11,10 @@ Earlier chapters spoke about "addresses in memory" as if your program touched ph
 
 Virtual memory is the hardware-plus-OS illusion that gives every running process its own private, linear address space while the [[kernel]] quietly multiplexes physical RAM frames underneath.
 
+:::plain Virtual address vs physical frame
+A **[[virtual memory|virtual address]]** is the private address number your Rust variables see (`0x7ffe...`). A **physical frame** is an actual 4,096-byte (`4 KiB`) slice of DRAM silicon on the motherboard. Every time your program reads or writes a pointer, the CPU's [[MMU]] looks up that virtual page in the process's [[page table]] to find the real physical frame.
+:::
+
 :::analogy Post-office boxes vs street addresses
 Think of virtual addresses as post-office box numbers inside your own private building. Box `0x1000` in your building and Box `0x1000` in your neighbour's building look identical on paper, yet the postal clerk (the CPU's [[MMU]]) walks behind the counter with a secret lookup ledger (the **page table**) to fetch entirely different physical storage bins in the warehouse.
 :::
@@ -56,9 +60,10 @@ On Linux x86-64 (48-bit virtual addresses with 4-level paging, covering 256 TiB 
 :::
 
 Look closely at the bottom and middle:
-- Address `0x0` (`NULL`) is deliberately unmapped. Dereferencing a null raw pointer in C or unsafe Rust triggers an instant hardware page fault (`SIGSEGV`) instead of silently touching real RAM.
-- Between the stack and the mmap area sits an unmapped **guard page**. If infinite recursion blows past the stack limit and touches the guard page, the OS raises a stack-overflow fault rather than letting the stack silently overwrite heap variables.
-- **ASLR** (Address Space Layout Randomisation) shuffles the base offsets of `.text`, `[heap]`, `mmap`, and `[stack]` on every launch so attackers cannot hardcode jump addresses.
+
+- Address `0x0` (`NULL`) is deliberately unmapped. Dereferencing a null raw pointer in C or unsafe Rust triggers an instant hardware [[page fault]] (`SIGSEGV`) instead of silently touching real RAM.
+- Between the stack and the mmap area sits an unmapped **[[guard page]]**. If infinite recursion blows past the stack limit and touches the guard page, the OS raises a stack-overflow fault rather than letting the stack silently overwrite heap variables.
+- **[[ASLR]]** (Address Space Layout Randomisation) shuffles the base offsets of `.text`, `[heap]`, `mmap`, and `[stack]` on every launch so attackers cannot hardcode jump addresses.
 
 ## Reading `/proc/self/maps` live from Rust
 
@@ -148,8 +153,9 @@ When a page-table entry has `Present = 0` or violates permissions (`W=0` on a wr
 
 :::details Stack growth vs heap exhaustion
 Notice why a Rust `Box::new` vs a local variable behave differently when RAM runs tight:
+
 - **Stack:** Starts small (often 1–2 pages mapped upfront out of an 8 MiB virtual reservation) and grows page-by-page downward via minor faults until hitting the unmapped guard page (triggering stack overflow).
-- **Heap:** Managed by user-space allocator code calling `brk()` or `mmap()`. Calling `std::alloc::alloc` or pushing onto a `Vec` can request gigabytes in virtual space before physical frames back it—until a real write exhausts RAM/swap and wakes the Linux **OOM killer**.
+- **Heap:** Managed by user-space allocator code calling `brk()` or [[mmap]]. Calling `std::alloc::alloc` or pushing onto a `Vec` can request gigabytes in virtual space before physical frames back it—until a real write exhausts RAM/swap and wakes the Linux **OOM killer**.
 :::
 
 :::exercise guided Inspecting page alignment and addresses

@@ -26,6 +26,10 @@ User-space programs (`Ring 3` on x86-64, `EL0` on ARM64) are passengers inside t
 
 ## Inside the `syscall` instruction (x86-64 vs ARM64)
 
+:::plain Ordinary function call vs system call
+An ordinary **`call`** stays inside your own process (Ring 3), jumps to any function address in `.text`, and costs ~1 nanosecond. A **`syscall`** crosses a hardware security wall from Ring 3 user space into Ring 0 [[kernel]] space, jumps only to one fixed kernel gate (`MSR_LSTAR`), swaps stacks, validates every pointer you passed, and costs ~50–300 nanoseconds.
+:::
+
 How does a normal user-space function safely enter `Ring 0` without letting user code jump to an arbitrary address inside the kernel?
 
 On x86-64, the hardware provides a dedicated **`syscall`** instruction (and **`svc #0`** on ARM64). Unlike `call`, `syscall` does **not** let user code pick a jump target: the CPU jumps straight to a single fixed kernel entry point stored inside the privileged **`MSR_LSTAR`** register by the kernel at boot!
@@ -54,7 +58,7 @@ Look closely at **Row 4 (`R10` instead of `RCX`)**: when the CPU executes `sysca
 
 Even an ultra-trivial syscall like `getpid()` takes hundreds of CPU cycles (~50–150 ns, and more under hardware Spectre/Meltdown KPTI page-table isolation) because of saving/restoring registers, validating parameters, crossing Ring 3 <-> Ring 0, and checking kernel permissions.
 
-For ultra-frequent read-only syscalls like `Instant::now()` (`clock_gettime`), Linux cheats cleverly using the **`[vdso]`** (Virtual Dynamic Shared Object)! Remember `[vdso]` in `/proc/self/maps` and `AT_SYSINFO_EHDR` in `auxv`? The kernel maps one **read-only shared memory page** containing the current monotonic clock tick counter and a small lookup function directly into every user process. Calling `Instant::now()` reads that shared page right in Ring 3—turning a ~100 ns kernel transition into a **~10–15 ns user-space memory read**!
+For ultra-frequent read-only syscalls like `Instant::now()` (`clock_gettime`), Linux avoids the kernel transition using **[[vDSO|vdso]]** (Virtual Dynamic Shared Object). Remember `[vdso]` in `/proc/self/maps` and `AT_SYSINFO_EHDR` in `auxv`? The kernel maps one **read-only shared memory page** containing the current monotonic clock tick counter and a small lookup function directly into every user process. Calling `Instant::now()` reads that shared page right in Ring 3—turning a ~100 ns kernel transition into a **~10–15 ns user-space memory read**.
 
 ```rust run nocmp
 use std::process;
@@ -75,8 +79,9 @@ fn main() {
 ## Error codes at the kernel boundary: `-errno` -> `std::io::Error`
 
 At the Linux syscall boundary, there is no `Result<T, E>` enum. `sys_open` or `sys_read` simply returns a single signed 64-bit integer in `RAX`:
+
 - `>= 0`: success (e.g., byte count read, or new file descriptor number `3`).
-- `-4095 ..= -1`: failure! The negated number is **`errno`** (`-ENOENT = -2` missing file, `-EACCES = -13` permission denied, `-EAGAIN = -11` try again on non-blocking socket).
+- `-4095 ..= -1`: failure. The negated number is **`errno`** (`-ENOENT = -2` missing file, `-EACCES = -13` permission denied, `-EAGAIN = -11` try again on non-blocking socket).
 
 `libc` translates `-errno` into `-1` and stores the positive error code in thread-local `errno`; Rust's `std::io::Error::last_os_error()` reads that `errno` and turns it into ergonomic `Result<T, std::io::Error>` (`ErrorKind::NotFound`, `PermissionDenied`, `WouldBlock`).
 

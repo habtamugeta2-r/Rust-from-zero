@@ -169,36 +169,6 @@ Use a concrete question: "I understand ownership in simple cases but not in a st
 This exercise trains the habit of making your confusion precise. The goal is not to feel bad about the gap; it is to convert uncertainty into a next action. That is how Rust learning becomes durable.
 :::
 
-:::quiz Check your understanding
-? Why is a loop of build, read code, and explain useful?
-- It guarantees that you will never need to ask for help
-- It replaces the compiler with a teacher
-+ It turns learning into practice and makes gaps in your understanding visible
-- It is the only way to finish a project
-= Learning in a loop keeps your knowledge connected to real work and helps you notice where you are still guessing.
-
-? Which resource is best for a beginner who wants to improve compiler-message reading?
-- The Rust blog
-- The Cargo Book
-+ Rustlings
-- The Rust Reference
-= Rustlings is built for small fixes, so it helps you practice reading compiler messages as you make mistakes on purpose.
-
-? Why is it valuable to choose just one topic at a time?
-- Because all topics are equally important right away
-- Because reading ten books is faster than reading one
-+ Because focused study is easier to connect to one real project and easier to finish
-- Because the guide lists only one topic per chapter
-= One topic at a time keeps your attention on the skill that matters right now.
-
-? What is a good first contribution to open source?
-- A giant rewrite of a library
-- A feature that changes the API for everyone
-+ A small documentation fix, a test, or a clear reproduction of a bug
-- A patch with no explanation
-= Small, well-described contributions are the easiest way to start helping in a project and to learn from experienced maintainers.
-:::
-
 ## People
 
 - The **[users forum](https://users.rust-lang.org)** is the place for questions of every level, and answers there are patient.
@@ -209,20 +179,6 @@ This exercise trains the habit of making your confusion precise. The goal is not
 ## Giving back
 
 Open-source projects need more than code. Good first contributions are a fix in the documentation of a crate after it confused you, a missing example, a test for a reported bug, or a clear bug report with a small program that shows the problem. Many projects mark suitable tasks with a label such as "good first issue". And when you have written a tool that others could use, publish it ([chapter 70](#cargo)).
-
-:::exercise guided Plan the next thirty days
-Pick the project you wrote down in [chapter 1](#what-is-rust), or a new one. Write three steps, each small enough to finish in one evening, and put a date next to each. The first step should be something you already know how to do — creating the project and printing one line is allowed.
-::hint
-If a step takes longer than an evening, it is not a step yet. "Add a database" is a month. "Make the program read one line from a file" is an evening.
-::solution
-There is no single right plan, but a workable shape looks like this:
-
-1. **By Tuesday:** `cargo new mytool`, print one hard-coded line, commit it.
-2. **By Thursday:** read a file given on the command line, print its first ten lines.
-3. **By Sunday:** count the words in that file and print the count.
-
-Notice the direction: each step is *runnable* and each one changes one thing. A plan whose steps you cannot run is a wish list. When a step turns out to be harder than expected, split it — that is not failure, it is the normal way plans are made.
-:::
 
 :::exercise practice Write a question worth answering
 Think of the last problem you could not solve. Write the forum post you would send: what you wanted, the smallest program that shows the problem, the full compiler message, and what you expected instead. Do not send it anywhere.

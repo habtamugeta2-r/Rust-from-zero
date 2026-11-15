@@ -30,7 +30,7 @@ Every signal serves a different question:
 
 ## Structured logging and spans with `tracing`
 
-[Chapter 77](#crates) introduced the basics of `tracing` and `log`. In a service, two upgrades turn development logging into production telemetry: **machine-readable JSON** and **runtime filtering with `EnvFilter`**.
+You met `tracing` and `log` in [chapter 60](#async-ecosystem). In a service, two upgrades turn development logging into production telemetry: **machine-readable JSON** and **runtime filtering with `EnvFilter`**.
 
 ```toml file=Cargo.toml
 [dependencies]

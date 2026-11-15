@@ -6,7 +6,11 @@
 @time 45
 @learn Compare high-level languages, low-level languages, compilers, and interpreters | Trace source code through lexing, parsing, AST, name resolution, HIR, MIR, and LLVM IR | Explain why Rust performs type checking on HIR and borrow checking on MIR | Inspect real intermediate representations emitted by `rustc`
 
-When you write `let sum = a + b;` in Rust and run `cargo run`, `rustc` does not jump straight from your text file to CPU machine instructions in one giant leap. Instead, the compiler runs an assembly line of distinct representations, each checking a different class of truth and shedding surface syntax until only hardware-ready operations remain.
+When you write `let sum = a + b;` in Rust and run `cargo run`, `rustc` does not jump straight from your text file to CPU machine instructions in one giant leap. Instead, the [[compiler]] runs an assembly line of distinct representations, each checking a different class of truth and shedding surface syntax until only hardware-ready operations remain.
+
+:::note A gentle tour before Part III
+In Part II (Chapters 5–7), we open the hood of `rustc` so you can see how source text turns into a runnable program. Whenever a compiler stage mentions a Rust concept you have not met yet—such as *traits*, *generics*, or the *borrow checker*—do not worry about memorising it now: [Part III](#variables) teaches every single one from zero starting in [Chapter 8](#variables).
+:::
 
 ## Starting point: languages, compilation, and interpretation
 
@@ -55,7 +59,11 @@ Here is the actual pipeline inside `rustc` from `.rs` source text to an executab
   Assembly (.s) ─▶ Object File (.o) ─▶ ELF Executable Binary
 ```
 
-Let us follow one small concrete Rust program across every compiler stage!
+Let us follow one small concrete Rust program across every compiler stage.
+
+:::plain What is an Intermediate Representation (IR)?
+An **Intermediate Representation (IR)** is a simplified internal language that the compiler uses between your `.rs` file and final machine code. Instead of trying to check types, prove memory safety, and optimise CPU registers all at once on messy human text, `rustc` steps down through three purpose-built IRs: **[[HIR]]** (for types and traits), **[[MIR]]** (for ownership and the [[borrow checker]]), and **[[LLVM IR]]** (for speed optimisations).
+:::
 
 ## Source code: the sample program we will trace
 
@@ -146,16 +154,17 @@ fn add(_1: i32, _2: i32) -> i32 {
 }
 ```
 
-Wait—look closely at that real MIR structure!
+Notice five details in that real [[MIR]] structure:
+
 - Every local variable and temporary gets an internal numbered slot (`_0` for the return value, `_1`, `_2` for parameters).
 - Every block runs straight-line statements from top to bottom with zero hidden nested expressions.
-- In debug builds (`opt-level=0`), MIR emits explicit overflow checks (`CheckedAdd` + `assert(!overflow)`) so integer wrap-around panics instead of silently wrapping!
+- In debug builds (`opt-level=0`), MIR emits explicit overflow checks (`CheckedAdd` + `assert(!overflow)`) so integer wrap-around panics instead of silently wrapping.
 - **MIR borrow checking** (including Non-Lexical Lifetimes) walks these basic blocks to prove that no reference outlives its owner, no value is used after being moved, and no mutable reference aliases another active reference.
-- **Drop elaboration** inserts exact `drop(_slot)` edges on both normal returns and panic unwind paths (`unwind -> bb_cleanup`)!
+- **Drop elaboration** inserts exact `drop(_slot)` edges on both normal returns and panic unwind paths (`unwind -> bb_cleanup`).
 
 ## Stage 5: LLVM IR and optimisation passes
 
-Once MIR proves your Rust code is type-safe and memory-safe, `rustc` translates MIR (for each concrete monomorphised type!) into **LLVM IR**—a strongly typed, target-independent virtual assembly language in **Static Single Assignment (SSA)** form (where every virtual register `%0`, `%1` is assigned exactly once):
+Once MIR proves your Rust code is type-safe and memory-safe, `rustc` translates MIR (for each concrete type via [[monomorphisation]]) into **[[LLVM IR]]**—a strongly typed, target-independent virtual assembly language in **Static Single Assignment (SSA)** form (where every virtual register `%0`, `%1` is assigned exactly once):
 
 ```llvm
 define noundef i32 @add(i32 noundef %a, i32 noundef %b) unnamed_addr {
@@ -166,10 +175,11 @@ start:
 ```
 
 Here, LLVM runs dozens of architecture-independent and target-tuned optimisation passes when compiling with `--release` (`-C opt-level=3`):
-- **Inlining:** Replaces `add(10, 32)` inside `main` with its body.
-- **Constant folding & propagation:** Turns `10 + 32` directly into the constant `42` at compile time!
+
+- **[[Inlining|inlining]]:** Replaces `add(10, 32)` inside `main` with its body.
+- **Constant folding & propagation:** Turns `10 + 32` directly into the constant `42` at compile time.
 - **Dead code elimination:** Deletes branches and computations whose values are never observed.
-- **Loop unrolling & auto-vectorisation:** Rewrites scalar loops into multi-lane SIMD instructions.
+- **Loop unrolling & auto-vectorisation:** Rewrites scalar loops into multi-lane [[SIMD]] instructions.
 - **Aliasing optimisations (`noalias`):** Because Rust's borrow checker guaranteed `&mut T` cannot alias any other live reference, LLVM can freely keep variables in registers across calls—an optimisation C compilers rarely dare unless programmers manually annotate `restrict`.
 
 :::compare Why `rustc` compiles slower than C or Go, yet runs so fast
