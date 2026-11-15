@@ -16,7 +16,7 @@ export const metadata: Metadata = {
     template: "%s · Rust from Zero",
   },
   description:
-    "A complete self-study Rust programming course for absolute beginners: 55 chapters from first principles to web APIs, async Rust, systems code and eight real projects, with 190 exercises, quizzes and tested Rust 2024 examples.",
+    "Learn Rust from zero: 55 plain-English chapters from your first line of syntax to the bytes on the heap and the stack, then on to web APIs, async and systems code. 190 solved exercises, quizzes and 8 real projects, every example compiled and run.",
   alternates: {
     canonical: "/",
   },

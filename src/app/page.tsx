@@ -92,9 +92,10 @@ export default function HomePage() {
           <p className="mt-5 max-w-xl font-sans text-[17px] leading-relaxed text-[var(--g-ink2)]">
             A complete guide for people who have never written a line of code.
             Plain language, everyday analogies and hundreds of exercises take
-            you from “what is a program?” to web servers, databases, games and
-            beyond. Every Rust example is compiled and run, with its real
-            output, and the{" "}
+            you from “what is a program?” and your first line of syntax,
+            through the bytes on the heap and the stack, all the way to web
+            servers, databases, games and beyond. Every Rust example is
+            compiled and run, with its real output, and the{" "}
             <Link
               href="/chapters/next"
               className="font-medium text-[var(--g-accent)] underline decoration-[var(--g-accent)]/40 underline-offset-4"
