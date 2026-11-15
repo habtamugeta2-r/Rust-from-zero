@@ -126,7 +126,7 @@ export function MemoryStepper({
         </div>
       </div>
 
-      <ol className="divide-y divide-[var(--g-line)]/40 bg-[var(--g-code-bg)] py-2 font-mono text-[13.5px] leading-relaxed">
+      <ol className="divide-y divide-[var(--g-line)]/40 overflow-x-auto bg-[var(--g-code-bg)] py-2 font-mono text-[13.5px] leading-relaxed">
         {highlightedLines.map((htmlLine, idx) => {
           const lineNum = idx + 1;
           const active = current.lines.includes(lineNum);
@@ -134,7 +134,7 @@ export function MemoryStepper({
           return (
             <li
               key={lineNum}
-              className={`flex items-baseline gap-3 px-4 py-0.5 transition-colors ${
+              className={`flex w-max min-w-full items-baseline gap-3 px-4 py-0.5 transition-colors ${
                 active
                   ? "border-l-4 border-[var(--g-accent)] bg-[var(--g-accent-soft)]/70 font-medium"
                   : seen
@@ -142,11 +142,11 @@ export function MemoryStepper({
                     : "border-l-4 border-transparent opacity-65"
               }`}
             >
-              <span className="w-5 shrink-0 select-none text-right text-[11px] text-[var(--g-ink3)]">
+              <span className="w-6 shrink-0 select-none text-right text-[11px] text-[var(--g-ink3)]">
                 {lineNum}
               </span>
               <code
-                className="shiki min-w-0 flex-1 whitespace-pre"
+                className="shiki w-max min-w-0 whitespace-pre"
                 dangerouslySetInnerHTML={{ __html: htmlLine || " " }}
               />
             </li>

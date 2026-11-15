@@ -71,6 +71,17 @@ export function GuideShell({
     setMobileDrawerOpen(false);
   }, [pathname]);
 
+  // Lock the page behind the mobile drawer: without this a touch drag on the
+  // scrim scrolls the article under the menu, which reads as a glitch.
+  useEffect(() => {
+    if (!mobileDrawerOpen) return;
+    const { overflow } = document.body.style;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = overflow;
+    };
+  }, [mobileDrawerOpen]);
+
   // Reading progress bar
   useEffect(() => {
     const onScroll = () => {
@@ -414,6 +425,8 @@ export function GuideShell({
           <button
             type="button"
             aria-label="Toggle navigation"
+            aria-expanded={desktopSidebarOpen || mobileDrawerOpen}
+            aria-controls="sidebar"
             title="Toggle navigation"
             onClick={() => {
               if (window.innerWidth < 1024) {
@@ -502,8 +515,14 @@ export function GuideShell({
           </div>
 
           <div
-            aria-hidden="true"
-            className="absolute right-0 bottom-0 left-0 h-0.5 bg-transparent"
+            role="progressbar"
+            aria-label="Reading progress"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={Math.round(scrollPct)}
+            className={`absolute right-0 bottom-0 left-0 h-0.5 bg-transparent transition-opacity ${
+              activeChapter ? "opacity-100" : "opacity-0"
+            }`}
           >
             <div
               className="h-full rounded-r-full bg-[var(--g-accent)] transition-[width] duration-75"
