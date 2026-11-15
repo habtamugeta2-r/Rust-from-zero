@@ -30,6 +30,10 @@ tomas: hi sara                           sara: hello everyone
 
 The project brings together async concurrency (tasks, channels, shared state, `select!`) with much of what came before: enums and pattern matching for the commands, `Drop` for clean-up, a library with a thin `main`, and tests.
 
+:::plain One owner, many clients, messages between
+A chat server is an exercise in **ownership under concurrency**. Many client sockets are alive at once, and each must be able to send to all the others. The simple, correct design puts the shared state (the list of connected clients and the room) behind a single mutex or a single owner task, and every client's read loop becomes a producer that sends into it. Broadcast channels or a fan-out of `mpsc` senders do the writing. The project's real subject is choosing between a shared `Mutex`, a channel, and a lock-free structure, and being able to say why.
+:::
+
 ## Step 0: plan
 
 ### The protocol

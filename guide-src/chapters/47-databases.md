@@ -8,6 +8,10 @@
 
 So far, your programs kept their data in memory or in a file that they read and wrote as a whole. That stops working when the data grows, when several users change it at the same moment, or when you need questions answered such as "all orders of last month above 100 birr, by customer". A **database** is a program made for exactly this: it stores data safely, finds it fast, and lets many clients work at once.
 
+:::plain Tables, indexes, and transactions
+A relational database stores rows in **tables**, and an **index** is a second sorted structure that turns a full scan into a few page reads, at the cost of extra writes on every `INSERT`. **SQL** is the declarative language for asking questions, and `EXPLAIN QUERY PLAN` is how you find out whether the database used your index or scanned everything. A **transaction** groups statements so that they commit together or not at all, with `ACID` standing for the four guarantees, and **SQLx** in Rust checks your queries against a real database at compile time so a renamed column becomes a build error instead of a runtime one.
+:::
+
 :::analogy A library with a librarian
 In a large library you do not walk along the shelves yourself. You hand the librarian a precise request: "all books by this author, newest first". The librarian knows the catalogue, finds the books quickly, and makes sure that two readers never take the same copy home. A database is the library together with its librarian, and the language of the requests is called SQL.
 :::

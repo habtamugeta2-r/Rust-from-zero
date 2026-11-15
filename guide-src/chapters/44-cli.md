@@ -11,6 +11,10 @@ Command-line tools are where many people first use Rust in earnest. The language
 
 In [chapter 28](#project-search) you parsed arguments by hand. That works for two switches. Real tools have dozens of options, need help texts and error messages, and should behave the way users expect. The crate **clap** ("command line argument parser") does all of that from a description of your options.
 
+:::plain Arguments, options, flags, and subcommands
+A command line is a small language, and clap is its grammar. **Arguments** are positional values (`todo add "buy milk"`), **options** take a value (`--port 8080`), **flags** are switches with no value (`--verbose`), and **subcommands** are a second word that selects a whole different set of arguments. With derive, a `struct` describes the top level and an `enum` describes the subcommands, `Cli::parse()` turns `std::env::args` into a typed value or prints help and exits, and `try_parse_from` does the same for tests. Exit codes matter too: `0` for success, non-zero for failure, so scripts can branch on the result.
+:::
+
 ## The parts of a command line
 
 ```text

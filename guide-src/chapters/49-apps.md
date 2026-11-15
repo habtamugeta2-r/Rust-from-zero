@@ -18,6 +18,10 @@ To make the tools easy to compare, most examples build the same tiny program: a 
 A program with a window cannot run in the playground, so the code blocks here have no Run button. In CI, `tools/check.py --projects` and `tools/check.py --ext` automatically extract and compile the browser WebAssembly (`wasm32-unknown-unknown` for `wasm-bindgen`, `web-sys`, Leptos, and Yew) and WASI (`wasm32-wasip1`) projects, and run the pure-Rust `cargo test` unit tests (`wasm_hello` and `text_stats`). Desktop GUI and Tauri examples require platform windowing/WebView libraries (GTK/WebKit, Wayland/X11) and were built, started, and clicked on Linux with the crate versions shown. This corner of the Rust world changes faster than the language itself: if a newer crate version rejects a line, the crate's changelog and docs show the updated spelling, while the architectural ideas stay.
 :::
 
+:::plain Where Rust runs outside the terminal
+Rust's deployment targets reach well beyond a server process. **WebAssembly** compiles to a sandboxed bytecode that browsers and edge runtimes execute at near-native speed, which is how Rust powers Figma-class tools and Cloudflare Workers. **Leptos, Yew and Dioxus** build browser UIs in Rust and compile to Wasm. **Tauri** ships a Rust backend with a system webview as the front end, producing a desktop app a fraction of Electron's size. **egui, iced and Slint** render native windows without a webview at all. Each option is a trade of binary size, start-up time, and ecosystem maturity, and the survey's job is to tell you which trade fits which app.
+:::
+
 ## WebAssembly: Rust in the browser
 
 :::analogy A calculator in a locked room

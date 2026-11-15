@@ -10,6 +10,10 @@ This is the most important chapter in the guide. Ownership is the idea that lets
 
 ## The three rules
 
+:::plain Ownership, moves, and drops in one paragraph
+**[[ownership|Ownership]]** is the rule that every value in Rust has exactly one **owner**, a variable. When the owner goes out of scope the value is **dropped** and its memory is freed, with no garbage collector. Assigning a value to another variable, passing it to a function, or putting it in a `Vec` **moves** it: the old name becomes unusable, and the compiler refuses to let you read it again. A `Copy` type such as `i32` is the exception — it is duplicated instead of moved — and a **borrow** (`&T`) lets you use a value without taking ownership at all.
+:::
+
 :::key The rules of ownership
 1. Every value has an **owner**: the variable that holds it.
 2. A value has **only one** owner at a time.

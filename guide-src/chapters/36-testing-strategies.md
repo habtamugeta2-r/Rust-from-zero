@@ -8,6 +8,10 @@
 
 [Chapter 27](#testing) taught the mechanics: `#[test]`, the assertion macros, unit and integration tests. This chapter is about using them well in a growing project, and about the more powerful techniques and tools.
 
+:::plain The test pyramid, in Rust terms
+Three levels of test, each answering a different question. **Unit tests** sit next to the code and check one function in isolation, so they are fast and precise. **Integration tests** in `tests/` drive the public API the way a user would, catching wiring mistakes the unit tests cannot see. **End-to-end tests** start the real server against a real database and are slow and few, because their job is to prove the pieces fit, not to cover every branch. The pyramid is a budget: many cheap tests at the bottom, a handful at the top, and no level trying to do another level's work.
+:::
+
 ## What to test where
 
 :::analogy Checking a car

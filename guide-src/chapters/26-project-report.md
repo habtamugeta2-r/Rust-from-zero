@@ -32,6 +32,10 @@ Coffee beans             87.50        12.3 %
 
 The project is a workout for closures and iterators, and it brings back structs, error handling, collections, lifetimes and tests.
 
+:::plain Data in, report out
+The report project is the classic shape of a data pipeline: **read** rows from a file, **parse** them into a typed record (`Result` per line, so bad rows become a count rather than a panic), **aggregate** with iterators into the numbers you need, and **format** the output with the width and alignment a human can scan. The `struct` and `enum` types do the validation, so the rest of the program never re-checks anything, and the formatting step is pure so it can be tested against a fixed string.
+:::
+
 ## Step 0: plan the pipeline
 
 Data flows through the program in one direction:

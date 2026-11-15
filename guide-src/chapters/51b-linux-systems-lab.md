@@ -24,6 +24,10 @@ Tools like `readelf`, `pmap`, and `htop` are not black magic written in secret k
 | "Did my server leak file descriptors?" | Wait for `EMFILE` crash | Count entries inside **`/proc/self/fd`**! |
 :::
 
+:::plain The inspector, in one paragraph
+Three parsers and one `main`. `elf_probe` reads the first bytes of `/proc/self/exe` to recover the ELF class, endianness, machine and entry point. `proc_maps` decodes `/proc/self/maps` into virtual memory areas with permissions and page counts, which is how you audit `W^X`. `proc_status` pulls numbers such as `VmRSS` and `voluntary_ctxt_switches` out of `/proc/self/status`, and the same trick reads `/proc/net/tcp` and `/proc/self/fd`. Each parser is a pure function from `&str` or `&[u8]` to a typed struct, which is what makes them unit-testable without a kernel to inspect. `main` wires them together, and the tools in the CLI lab (`readelf`, `strace`, `perf`, `gdb`) confirm what the parsers found.
+:::
+
 ## Architecture of our `sysinspect` Tool
 
 We structure our systems lab cleanly as three small, focused modules that compose together cleanly:

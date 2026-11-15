@@ -10,6 +10,10 @@ When a program runs on your laptop, `println!` or `dbg!` is enough to see what i
 
 **Observability** is designing a program so that operators can understand what is happening inside it purely from its external signals. In production Rust services, those signals rest on three pillars: structured logs, distributed traces, and numeric metrics — paired with health endpoints so load balancers know when an instance can take traffic.
 
+:::plain Logs, metrics, and traces
+Three signals answer three different questions about a running service. **Logs** are discrete events, cheap to write and expensive to search at scale, best emitted as one JSON object per line with fields you can filter on. **Metrics** are counters, gauges and histograms — aggregated numbers that make dashboards and alerts possible. **Traces** follow one request through every service as a tree of timed spans, which is the only one of the three that shows you *where* inside a slow request the time went. `tracing` produces spans and events; `tracing-subscriber` decides whether they become text, JSON, or OpenTelemetry spans, and `RUST_LOG` changes the level at run time without a rebuild.
+:::
+
 :::analogy The cockpit instruments and the black box
 Flying an aircraft at night without instruments and reading a crash note afterwards is like debugging a production outage with scattered `println!` lines. Modern aircraft carry two complementary systems: live cockpit gauges (speed, altitude, fuel flow — your **metrics** and **health checks**) and flight-data recorders that record timestamped events linked to exact flight legs (**logs** and **traces**). Together they let you notice a rising engine temperature *before* anything catches fire, and reconstruct the exact chain of events if something fails.
 :::

@@ -29,6 +29,10 @@ The first request stores a link under the code `book`. The second one follows it
 
 The project brings together everything from the last few chapters: Axum for HTTP ([chapter 64](#web)), SQLx with SQLite for storage ([chapter 68](#databases)), Serde for JSON ([chapter 78](#serde)), and `thiserror`, `anyhow`, `tracing` and `rand` from [chapter 77](#crates). It also keeps a promise made in [chapter 72](#testing-strategies): the tests exercise the whole API without a network.
 
+:::plain HTTP semantics, storage, and layering
+A JSON API is three layers stacked. **Routing** maps `method + path` to a handler and decides status codes, which is where REST lives: `GET` is safe, `POST` creates, `PUT` replaces, `DELETE` removes, and `201`, `204`, `307`, `404` and `422` each mean something specific. **Storage** is SQLx against SQLite, with queries checked at compile time and a transaction per request. **State** is a pool, cloned into every handler through `with_state`. Keeping the three apart is what makes the API testable without a network and swappable later — the same handlers run against a test database with no code changes.
+:::
+
 :::analogy A cloakroom for web addresses
 A link shortener works like the cloakroom of a theatre. You hand over a bulky coat (a long address) and get a small ticket (a short code). Whoever shows the ticket is led to the coat.
 

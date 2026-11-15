@@ -6,9 +6,13 @@
 @time 35
 @learn Choose the right number type and explain what the names like `i32` and `u8` mean | Calculate with whole numbers and decimals, and convert between them | Work with true/false values and single characters | Group several values in a tuple or an array | Explain what Rust does when a number gets too big or an index is out of range
 
-Every value in a program is of some **type**: a whole number, a number with decimals, a piece of text, a yes-or-no answer. The type decides how much memory the value needs and what you are allowed to do with it. You can multiply two numbers, but you cannot multiply two names.
+Every value in a program is of some **[[type]]**: a whole number, a number with decimals, a piece of text, a yes-or-no answer. The type decides how much memory the value needs and what you are allowed to do with it. You can multiply two numbers, but you cannot multiply two names.
 
 ## Why types matter
+
+:::plain Type, value, and width in one paragraph
+A **type** is a promise about what a value is and what you may do with it: `i32` is a whole number stored in 32 bits, `f64` is a decimal, `bool` is `true` or `false`, `char` is one Unicode character. The **width** (the `32` in `i32`) sets both the range of values and the memory each one takes, which is why `u8` stops at 255 and `i32` does not. Rust fixes every value's type at compile time, so a mistake like adding text to a number is caught before the program runs, and a runtime overflow or bad index panics instead of quietly corrupting something.
+:::
 
 :::analogy Types are like containers
 A kitchen has egg boxes, milk cartons and spice jars. Each is built for one kind of thing. Nobody pours milk into an egg box. A type is the same idea for data: it says what kind of thing is stored and how big the container is.
@@ -26,7 +30,7 @@ A computer stores everything as **bits**. A bit is a tiny switch that is either 
 
 ## Whole numbers: integers
 
-A whole number is called an **integer**. Rust has several integer types. The name tells you two things:
+A whole number is called an **[[integer]]**. Rust has several integer types. The name tells you two things:
 
 - **`i` or `u`:** `i` types are *signed*: they can be negative or positive. `u` types are *unsigned*: zero or positive only.
 - **A number:** how many bits the value uses. More bits mean a larger range and more memory.

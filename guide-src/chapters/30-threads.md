@@ -17,6 +17,10 @@ Doing several things at once is one of the hardest parts of programming in most 
 - A **process** is a running program with its own, separate memory. Your browser and your editor are processes.
 - A **thread** is one line of execution inside a process. Every program starts with one, the **main thread**, and can start more. All threads of a process share its memory.
 
+:::plain Threads, joins, and data races
+A **thread** is an independent line of execution inside one process, with its own stack and registers but a shared heap. `thread::spawn` starts one, and `handle.join()` waits for it and collects its return value. Because the heap is shared, the compiler enforces `Send` and `Sync`: a type may only be moved to another thread if it is `Send`, and shared by reference only if it is `Sync`. `'static` bounds on spawned closures keep a thread from outliving the data it borrows, and **scoped threads** (`thread::scope`) lift that requirement safely by guaranteeing every thread is joined before the scope ends.
+:::
+
 :::analogy Cooks in one kitchen
 A restaurant kitchen with one cook can prepare one dish at a time. Hire three more, and four dishes are in progress at once. But the cooks share one kitchen: one fridge, one spice rack, one order board. If two of them grab the same pan, or one changes an order while another is reading it, there is chaos. More cooks means more speed, and it means rules for sharing.
 :::

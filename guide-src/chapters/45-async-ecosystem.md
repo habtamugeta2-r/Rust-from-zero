@@ -19,6 +19,10 @@ Earlier chapters in this part explained the machinery of concurrency: threads, l
 
 ## Rayon: all cores for one calculation
 
+:::plain The async ecosystem in one paragraph
+Rust ships `async`/`await` as syntax but deliberately ships no runtime, so the ecosystem fills the gap. **Tokio** provides the reactor and the scheduler that poll futures on `epoll`-ready events, `spawn` for background tasks, and the `#[tokio::main]` macro that starts it. **Rayon** is the other half of the picture: a work-stealing thread pool for CPU-bound data parallelism, where `par_iter()` turns a sequential iterator into a parallel one. On top of the runtime sit `reqwest` for HTTP, `tower` for composable layers around a service, `tonic` for gRPC, and `serde` for every wire format. Choosing a runtime is a real architectural decision, and it is why the guide shows both a `tokio::spawn` and a `rayon` version of the same job.
+:::
+
 :::analogy A team of movers
 Four movers empty a lorry. Each one gets a quarter of the boxes. One of them has only light boxes and is finished early. A good mover does not sit down then: he walks over to a colleague who is behind, and takes boxes from the far end of that pile. Nobody plans this in advance, and still everyone is busy until the lorry is empty. Rayon's worker threads behave this way. The technique is called **work stealing**.
 :::

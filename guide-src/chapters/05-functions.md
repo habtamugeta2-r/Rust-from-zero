@@ -6,7 +6,11 @@
 @time 25
 @learn Write your own functions and call them | Pass values into a function and get a result back | Explain the difference between a statement and an expression | Document a function with comments that tools can read
 
-So far all your code lived inside `main`. That stops working as programs grow. A **function** is a group of instructions with a name. You write the instructions once and then run them from anywhere by using the name. Functions are the main tool for keeping a program readable.
+So far all your code lived inside `main`. That stops working as programs grow. A **[[function]]** is a group of instructions with a name. You write the instructions once and then run them from anywhere by using the name. Functions are the main tool for keeping a program readable.
+
+:::plain Parameters, arguments, and return values in one paragraph
+A **function** is a named block of work with a list of inputs (**parameters**) and one output (the **return value**, which is `()` — nothing — if you do not name one). The values you pass in are the **arguments**, and they must match the parameter types exactly. Inside, `return` or a final expression produces the result, and the compiler checks every call site, so a wrong number or wrong type of argument is a compile error rather than a surprise at run time.
+:::
 
 :::analogy A function is a machine with a slot and a tray
 Think of a coffee machine. You put something in (water, beans), press the button, and something comes out (coffee). You do not need to know what happens inside. A function is the same: values go in, work happens, a result comes out. Once it exists, you only need its name and what to put in.

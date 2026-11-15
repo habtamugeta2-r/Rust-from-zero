@@ -11,6 +11,10 @@ Notice something extraordinary if you run `ripgrep` across a 500 MB codebase twi
 
 In this chapter we climb up one layer from raw NVMe blocks to the **Linux VFS**, **`ext4` / CoW file systems (`btrfs`/`ZFS`/`APFS`)**, **crash-safe file replacement**, and **`mmap` memory-mapped files**.
 
+:::plain Paths, inodes, links, and the page cache
+A **path** is a name, not a file: the kernel walks each component through the directory cache until it reaches an **inode**, the record of one file's permissions, size, timestamps and disk extents. A **hard link** is a second name for the same inode (the `nlink` count says how many), while a **symbolic link** is a tiny file whose *content* is another path. Reads go through the **page cache**, so a second read of a `500 MB` tree costs DRAM bandwidth rather than NVMe latency, and `mmap` maps those same page-cache frames into your address space to avoid the copy — at the price of `unsafe`, because another process can change or truncate the file underneath you.
+:::
+
 :::analogy A library catalog, reading table, and checkout slips
 - **Directories (`dentry`)** are name-to-number index cards mapping `"notes.txt"` -> **Inode `#8821`** (a file can even appear on two cards at once—a **hard link**!).
 - **Inodes** hold permissions, size, timestamps, and the map of **disk extents** (where the bytes live on SSD), *not* the filename!

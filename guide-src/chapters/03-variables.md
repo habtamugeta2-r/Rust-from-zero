@@ -6,7 +6,7 @@
 @time 25
 @learn Store a value under a name with `let` and use it | Explain why Rust variables cannot change unless you write `mut` | Use shadowing, scopes and constants correctly | Read the compiler errors that variables cause
 
-Now we begin writing Rust yourself, one small building block at a time. Back in [chapter 4](#setup)'s pancake-recipe exercise, the number `3` had to be typed in four separate places. Real programs are full of values that are used again and again: a player's score, a price, a name. A **variable** lets you store a value once, give it a name, and use the name wherever you need the value.
+Now we begin writing Rust yourself, one small building block at a time. Back in [chapter 4](#setup)'s pancake-recipe exercise, the number `3` had to be typed in four separate places. Real programs are full of values that are used again and again: a player's score, a price, a name. A **[[variable]]** lets you store a value once, give it a name, and use the name wherever you need the value.
 
 ## Your first variable
 

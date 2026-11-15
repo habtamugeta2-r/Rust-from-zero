@@ -10,6 +10,10 @@ So far you have used types to describe data. Experienced Rust programmers use th
 
 This chapter first completes the picture of conversions between types, then presents the less obvious types of the language, and ends with the design techniques that tie them together.
 
+:::plain Newtypes, phantom types, and zero-cost guarantees
+Rust's type system is a proof tool you can use at compile time for free. A **newtype** (`struct Metres(f64)`) makes two identical representations incompatible, so you cannot pass miles where metres are expected. **Phantom types** (`struct Password<State>`) carry information in the type parameter with no field and no runtime cost. **Enums with payloads** make invalid states unrepresentable, which is why `Option<T>` and `Result<T, E>` replace null pointers and error codes. Each of these compiles away: the check happens in the type checker, and the binary is exactly as small as the plain version.
+:::
+
 :::analogy Labels on shipping boxes
 Every value in Rust carries a type label. A newtype is a label that says, "this is not just a number; it is a percentage, a distance, or an amount in a specific unit." The compiler checks the label before the code runs, so many dangerous mistakes are impossible to write.
 :::

@@ -10,6 +10,10 @@ Code can be correct and still feel foreign. Every language has its own way of sa
 
 This chapter gathers the habits of experienced Rust programmers. Most of the pieces you have seen already. Here they are side by side, as a reference to come back to.
 
+:::plain Idiomatic Rust
+**Idiomatic** Rust is the set of habits that make a program look like the standard library: take `&str` and `&[T]` rather than `&String` and `&Vec<T>`, return `impl Trait` instead of a concrete type, implement `From` instead of a pile of constructors, let the type system carry invariants in newtypes, prefer `Iterator` chains to index loops, and use `?` instead of nested `match`. These are not style preferences for their own sake: each one is what makes the borrow checker quiet, the optimizer effective, and the next reader unsurprised. Knowing the idioms is how you stop fighting the compiler and start using it.
+:::
+
 :::analogy Driving on the correct side of the road
 Every place has a pattern for how traffic moves. Rust has patterns for names, returns and ownership too. They are not arbitrary—they make the code more predictable, easier to scan and easier to compare across projects.
 :::

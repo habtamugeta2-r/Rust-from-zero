@@ -6,7 +6,7 @@
 @time 45
 @learn Write closures and pass them to functions | Explain how a closure captures values from its surroundings | Tell `Fn`, `FnMut` and `FnOnce` apart and know when `move` is needed | Return closures from functions and store them in structs
 
-You have already written closures without much explanation: `v.retain(|x| *x > 2)`, `some.map(|n| n * 2)`, `people.sort_by_key(|p| p.age)`. The part between the bars and after them is a **closure**: a small function without a name, written right where it is needed.
+You have already written closures without much explanation: `v.retain(|x| *x > 2)`, `some.map(|n| n * 2)`, `people.sort_by_key(|p| p.age)`. The part between the bars and after them is a **[[closure]]**: a small function without a name, written right where it is needed.
 
 Closures matter because they let you pass **behaviour** to a function, in the same way that you pass data. `sort_by_key` knows how to sort. What to sort *by* is your decision, and you hand it over as a closure.
 

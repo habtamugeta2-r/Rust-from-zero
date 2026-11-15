@@ -8,6 +8,10 @@
 
 [Chapter 25](#traits) covered the everyday use of traits. This chapter collects the features you meet when you read the standard library, design a library of your own, or wonder how `a + b` works for your own type. You can read it once now and come back when you need a particular tool.
 
+:::plain Associated types, GATs, and operator traits
+Chapter 25's traits described what a type can *do*; the advanced forms describe how traits combine. An **associated type** (`type Item`) makes a trait carry one type per implementation, which is why `Iterator` can only yield one kind of value. A **super-trait** (`trait Sorted: Ord`) requires implementors to satisfy another trait first. **Operator traits** (`Add`, `Index`, `Deref`) are ordinary traits that overload syntax, and `impl Trait` in argument and return position hides a concrete type without a `Box`. **Blanket implementations** give a method to every type that meets a bound, and **trait objects** (`dyn Trait`) trade static dispatch for one vtable lookup.
+:::
+
 :::analogy A manager with special rules
 A trait is like a job description: it says what a type must be able to do. Associated types are the extra details that each person in that role supplies, like "this team produces numbers, that team produces strings".
 :::

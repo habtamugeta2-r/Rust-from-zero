@@ -34,6 +34,10 @@ Goodbye!
 
 Create the project with `cargo new todo`, open `src/main.rs`, and build it step by step. Run the program after every step.
 
+:::plain One data type, one function per command
+This project's shape repeats in every command-line tool you will ever write. The `Todo` items live in one `Vec`, the command line becomes an `enum` of subcommands through clap, and a single `run(command, &mut items) -> String` function does the work and returns what to print. `main` reads the file, calls `run`, prints the result, and writes the file back. Keeping the logic free of `stdout` and of the file system is what makes it testable: the tests call `run` directly and never touch a terminal.
+:::
+
 ## Step 0: plan the data first
 
 In the guessing game you planned the *steps*. For a bigger program, experienced Rust programmers start with a different question: **what data does the program work with?** Once the types are right, much of the code writes itself, and the compiler can check a lot more.

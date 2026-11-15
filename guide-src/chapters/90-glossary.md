@@ -33,6 +33,7 @@ binding :: A name attached to a value. `let x = 5;` binds the name `x` to 5.
 bit :: The smallest unit of data: 0 or 1. Eight bits make a byte.
 block :: Code between `{` and `}`. A block is an expression: its value is the value of its last expression.
 block alignment :: The rule that a device transfers and a file system allocates in fixed units (`512` B or `4 KiB` sectors, `4 KiB` pages), so a small write still costs a whole block. See [chapter 66](#storage-hardware-blocks).
+boolean :: A value of type `bool`, which is either `true` or `false`. Every `if`, `while` and `match` guard needs one. See [chapter 6](#control-flow).
 borrow checker :: The part of the compiler that checks the rules for references: many readers or one writer, and no reference outlives its value. See [chapter 15](#borrowing).
 borrowing :: Using a value through a reference, without becoming its owner.
 bound :: A requirement on a type parameter: `T: Display` means "any type `T` that can be printed". See [chapter 24](#generics).
@@ -51,6 +52,7 @@ CI :: Continuous integration: a server that builds and tests the project automat
 CIDR :: Classless Inter-Domain Routing: prefix notation such as `192.168.1.0/24` telling how many leading bits of an IP address identify the network versus the host. See [chapter 61](#network-layers-ethernet-ip).
 Clippy :: A tool with several hundred extra checks that suggests better ways to write code: `cargo clippy`.
 clone :: An explicit, complete copy of a value, made with `.clone()`. It may be expensive.
+character :: A single Unicode scalar value, written `'a'`, of type `char`, which is four bytes wide because it can hold any code point. See [chapter 4](#types).
 closure :: A function without a name that can use variables from the place where it was written: `|x| x + offset`. See [chapter 29](#closures).
 cmov :: Conditional move: a branchless CPU instruction (`cmovne`, `csel`) that selects between two register values using status flags without jumping or risking a branch misprediction. See [chapter 52](#isa-opcodes-control-flow).
 collection :: A type that holds many values: `Vec`, `HashMap`, `HashSet` and others. See [chapter 20](#collections).
@@ -157,6 +159,7 @@ move :: Handing a value over to a new owner. The old variable can no longer be u
 MTU :: Maximum Transmission Unit: the largest payload (typically 1,500 bytes on Ethernet) that a single link-layer frame can carry without fragmentation. See [chapter 61](#network-layers-ethernet-ip).
 mutable :: Changeable. Asked for with `mut`.
 mutex :: A lock that lets only one thread at a time reach the data inside it. See [chapter 56](#shared-state).
+mutability :: Whether a binding or borrow may be changed. Rust asks for `let mut` explicitly, and a `&mut T` is the only reference that can write. See [chapter 3](#variables).
 namespace :: A Linux kernel isolation boundary (`mnt`, `pid`, `net`, `user`, `uts`, `ipc`) giving a group of processes its own view of process IDs, network interfaces, or mount points; combined with cgroups to build containers. See [chapter 48](#processes-threads-scheduling).
 NAPI :: New API: the Linux network driver scheme that switches from one interrupt per packet to a single interrupt followed by batched polling, so a flood of packets cannot livelock the CPU in interrupt handlers. See [chapter 62](#tcp-udp-sockets-kernel).
 NAT :: Network Address Translation: a router rewriting private LAN `IP:port` pairs (such as `192.168.1.42:51422`) to its single public IP address and back. See [chapter 61](#network-layers-ethernet-ip).
@@ -203,6 +206,7 @@ run time :: The time while the program is running. Also: the support code that a
 runtime (async) :: The library that runs async tasks and wakes them when they can continue. Tokio is the usual one.
 rustc :: The Rust compiler. You normally start it through Cargo.
 rustup :: The tool that installs and updates Rust itself.
+ring buffer :: A fixed-size circular array of slots shared between a device and a driver, so producer and consumer index into it without allocating. Network cards, NVMe drives and io_uring all use one. See [chapter 62](#tcp-udp-sockets-kernel).
 scope :: The region of code in which a name is valid, usually up to the closing `}` of its block.
 semantic versioning :: The convention for version numbers `major.minor.patch`: a change that breaks users raises the first number. Short: semver.
 Send :: The marker trait for types that may be moved to another thread. See [chapter 55](#threads).

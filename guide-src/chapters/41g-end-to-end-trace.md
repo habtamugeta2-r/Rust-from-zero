@@ -20,6 +20,10 @@ fn main() {
 
 It looks effortless—eleven tokens and a macro. Underneath, all ten layers of your computer execute in perfect lockstep. Let's trace every single nanosecond and byte from source text to glowing pixels on your screen!
 
+:::plain The whole path, in one paragraph
+This chapter is the guide folded into a single trace. One line of Rust — `let name = String::from("Habtamu"); println!("{}", name);` — touches every layer you have met: `rustc` turns it into MIR then LLVM IR then machine code; the linker builds an ELF file; the kernel's loader maps that ELF into a fresh address space and jumps to `_start`; `lang_start` sets up the runtime; `String::from` reaches the allocator and the heap; `println!` locks stdout and issues a `write` syscall through the vDSO-less path into the kernel; the TTY driver copies bytes to the terminal; and the process exits with a status the shell reads. Following those ten stages once makes every later chapter a detail of a picture you already hold.
+:::
+
 :::analogy Following a parcel from app tap to doorstep
 When you tap "Order" on a phone, the screen hides ten separate organisations: the mobile app (`Rust source`), warehouse software (`MIR/LLVM`), barcoded container (`ELF sections`), city map (`Virtual Memory`), local courier (`glibc malloc`), driver relay (`CPU registers`), customs border (`syscall`), postal hub (`Linux Kernel VFS/TTY`), delivery van (`stdout pipe/PTY`), and your doorbell (`Terminal glyph rendering`). This chapter tracks our 7-byte parcel `"Habtamu"` across every checkpoint without skipping a single door.
 :::

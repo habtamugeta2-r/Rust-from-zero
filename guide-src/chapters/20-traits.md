@@ -8,6 +8,10 @@
 
 A struct describes what a value **is**. A **trait** describes what a value **can do**. Traits are how Rust expresses "these different types share an ability", and they are behind much of what you have used so far: printing with `{}`, comparing with `==`, cloning, and the bounds on generic functions.
 
+:::plain Traits and dispatch in one paragraph
+A **[[trait]]** is a set of methods a type can promise to provide, like an interface in other languages: `impl Display for Money` means `Money` can be formatted with `{}`. Generic code takes `T: Display` and is **statically dispatched**, with each call site compiled to a direct call. A `dyn Display` trait object is **dynamically dispatched**, resolved through a vtable at run time, which allows a `Vec<Box<dyn Draw>>` of different types at the cost of a pointer indirection. Traits can also supply default method bodies, and blanket implementations (`impl<T: Display> ToString for T`) give every qualifying type a method at once.
+:::
+
 :::analogy A job description
 "Driver: can start, steer and stop a vehicle." The description says nothing about who the driver is: young or old, employee or freelancer. Anyone who has these skills can do the job, and whoever hires a driver can rely on the skills without knowing the person. A trait is a job description for types.
 :::

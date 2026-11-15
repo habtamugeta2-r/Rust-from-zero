@@ -10,6 +10,10 @@ Everything you have written so far was **safe Rust**: the compiler guaranteed th
 
 Some things cannot be proved by any compiler: that an address handed over by the operating system really points to usable memory, or that a function written in C keeps its promises. For these cases Rust has a second mode, entered with the keyword `unsafe`.
 
+:::plain What unsafe actually permits
+`unsafe` does not turn off the borrow checker, does not turn off type checking, and does not make code faster. It unlocks exactly five abilities: dereferencing a raw pointer, calling an `unsafe` function, reading or writing a `static mut`, implementing an `unsafe` trait, and accessing a `union` field. With those come the responsibilities the compiler can no longer check, gathered in `# Safety` documentation and checked by tools such as Miri. The right instinct is that `unsafe` is rare, small, and wrapped in a safe API whose comments explain why each one of those five permissions is genuinely available.
+:::
+
 :::analogy The maintenance hatch
 A machine on a factory floor has guards so that nobody can reach into the moving parts. A trained technician sometimes has to open a guard to repair the machine. The guard is not removed from the factory. It is opened at one marked spot, by someone who knows the procedure, for as short a time as possible. `unsafe` is that hatch.
 :::

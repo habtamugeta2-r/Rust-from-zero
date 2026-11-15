@@ -35,13 +35,17 @@ fn main() {
 
 The second version reads like a description of the result: take the numbers, keep the even ones, square each, sum them. There is no variable that changes, no index, and nothing to get off by one.
 
+:::plain Iterators and laziness in one paragraph
+An **iterator** produces a sequence of values one at a time through `next()`, and everything else in the chapter is built on that one method. **Adapters** such as `map`, `filter` and `take` are lazy: they build a new iterator and do no work until something consumes it. A **consumer** such as `collect`, `sum` or `for_each` drives the chain to the end. Because the whole pipeline compiles into one loop over the source, an iterator chain is as fast as hand-written indexing — usually faster, since the compiler can drop bounds checks it has already proven unnecessary.
+:::
+
 :::analogy An assembly line
 Items travel along a conveyor belt past a row of stations. One station throws out the damaged items. The next one paints each item. At the end, a worker packs them into a box. Each station does one small job on one item at a time. An iterator chain is such an assembly line for data.
 :::
 
 ## What an iterator is
 
-An **iterator** is a value that hands out a sequence of items, one at a time. The whole idea is one trait with one required method:
+An **[[iterator]]** is a value that hands out a sequence of items, one at a time. The whole idea is one trait with one required method:
 
 ```rust
 trait Iterator {
