@@ -97,11 +97,23 @@ components, keep these rules or the layout will regress the way it did in 1.x:
    are what made anchor jumps land in the wrong place.
 5. **Test at 375, 768, 1024, 1240 and 1440 px wide**, in both themes, with the
    sidebar open and closed, and with `Tab` only.
+6. **Search has one implementation.** Ranking, snippets and highlighting live in
+   `src/lib/search.ts`; `/api/search`, the palette and `/search` all call it.
+   Change the algorithm there, never in a component.
+7. **Anything stateful renders its server markup first.** Saved progress is read
+   after mount, so a component may *enrich* its output once storage is available
+   but must not swap its text or size on hydration — that is what made the home
+   hero jump in 2.0.0. Reserve space for anything that appears later.
+8. **Keep the palette and the drawer honest.** Both are dialogs: focus moves in
+   on open, `Esc` closes, focus returns to the trigger, and the page behind is
+   scroll-locked. Add a control to `no-print` if it is chrome rather than prose.
 
 ## Before you open a pull request
 
 - [ ] `npm run verify:content`, `npm run verify:deploy`, `npm run typecheck`, and `npm run build` pass cleanly.
 - [ ] The layout still behaves at 375, 768, 1024, 1240 and 1440 px (see “Interface changes”).
+- [ ] `/`, `⌘K`, the palette and `/search?q=` all return the same hits, and `/progress`
+      updates when a chapter, quiz or bookmark changes.
 - [ ] `python3 guide-src/tools/audit.py --strict` reports **0 structural remarks**.
 - [ ] `python3 guide-src/tools/check.py` passes for every chapter you touched
       (and `--ext` if you touched a crate example).

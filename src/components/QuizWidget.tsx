@@ -31,8 +31,8 @@ export function QuizWidget({
     (q) => saved[String(q.index)] !== undefined
   ).length;
   const correctCount = questions.filter((q) => {
-    const picked = saved[String(q.index)];
-    return picked !== undefined && q.options[picked]?.correct;
+    const answer = saved[String(q.index)];
+    return answer !== undefined && q.options[answer.picked]?.correct;
   }).length;
 
   return (
@@ -70,9 +70,10 @@ export function QuizWidget({
 
       <div className="divide-y divide-[var(--g-line)]">
         {questions.map((q) => {
-          const picked = saved[String(q.index)];
-          const isAnswered = picked !== undefined;
-          const isOk = isAnswered && q.options[picked]?.correct;
+          const answer = saved[String(q.index)];
+          const picked = answer?.picked;
+          const isAnswered = answer !== undefined;
+          const isOk = isAnswered && q.options[answer.picked]?.correct;
           const promptId = `${quizId}-q${q.index}-prompt`;
 
           return (
@@ -119,7 +120,7 @@ export function QuizWidget({
                       type="button"
                       disabled={isAnswered}
                       aria-describedby={isAnswered ? promptId : undefined}
-                      onClick={() => setQuizAnswer(quizId, q.index, oi)}
+                      onClick={() => setQuizAnswer(quizId, q.index, oi, opt.correct)}
                       className={`flex w-full items-start gap-3 rounded-lg border px-3.5 py-2.5 text-left font-sans text-[15px] leading-relaxed transition-colors ${cls} disabled:cursor-default`}
                     >
                       <span

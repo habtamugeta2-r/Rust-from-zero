@@ -2,23 +2,34 @@
 
 import React, { useEffect } from "react";
 import { Check, CircleCheck } from "lucide-react";
+import { ChapterBookmark } from "./ChapterBookmark";
 import { useGuideState } from "./GuideStateProvider";
 
 export function ChapterActions({
   chapterId,
+  chapterTitle,
   trackDone,
 }: {
   chapterId: string;
+  chapterTitle: string;
   trackDone: boolean;
 }) {
   const { state, toggleDone, setLastChapter, showToast } = useGuideState();
   const isDone = Boolean(state.done[chapterId]);
 
+  // Reading a chapter is what makes it "last opened", whether or not it is
+  // finished — the palette and the home page both continue from here.
   useEffect(() => {
     setLastChapter(chapterId);
   }, [chapterId, setLastChapter]);
 
-  if (!trackDone) return null;
+  if (!trackDone) {
+    return (
+      <div className="no-print my-10 flex justify-end">
+        <ChapterBookmark chapterId={chapterId} title={chapterTitle} />
+      </div>
+    );
+  }
 
   const onToggle = () => {
     toggleDone(chapterId);
@@ -54,19 +65,24 @@ export function ChapterActions({
         </div>
       </div>
 
-      <button
-        type="button"
-        aria-pressed={isDone}
-        onClick={onToggle}
-        className={`inline-flex min-h-11 items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors ${
-          isDone
-            ? "border border-emerald-500/70 bg-transparent text-emerald-800 hover:bg-emerald-100/60 dark:border-emerald-700 dark:text-emerald-200 dark:hover:bg-emerald-950/40"
-            : "bg-[var(--g-accent)] text-white hover:bg-[var(--g-accent-hover)]"
-        }`}
-      >
-        <Check className="h-4 w-4" aria-hidden="true" />
-        <span>{isDone ? "Completed — click to undo" : "Mark as complete"}</span>
-      </button>
+      <div className="flex flex-wrap items-center gap-2.5">
+        <ChapterBookmark chapterId={chapterId} title={chapterTitle} />
+        <button
+          type="button"
+          aria-pressed={isDone}
+          onClick={onToggle}
+          className={`inline-flex min-h-11 items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors ${
+            isDone
+              ? "border border-emerald-500/70 bg-transparent text-emerald-800 hover:bg-emerald-100/60 dark:border-emerald-700 dark:text-emerald-200 dark:hover:bg-emerald-950/40"
+              : "bg-[var(--g-accent)] text-white hover:bg-[var(--g-accent-hover)]"
+          }`}
+        >
+          <Check className="h-4 w-4" aria-hidden="true" />
+          <span>
+            {isDone ? "Completed — click to undo" : "Mark as complete"}
+          </span>
+        </button>
+      </div>
     </div>
   );
 }

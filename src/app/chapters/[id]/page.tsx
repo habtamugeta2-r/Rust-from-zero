@@ -10,6 +10,7 @@ import {
   Flag,
 } from "lucide-react";
 import { ChapterActions } from "@/components/ChapterActions";
+import { ChapterBookmark } from "@/components/ChapterBookmark";
 import { BlockList } from "@/components/ChapterBody";
 import { ChapterRail, ChapterTocTrigger } from "@/components/ChapterRail";
 import { InlineRenderer } from "@/components/InlineRenderer";
@@ -109,6 +110,10 @@ export default async function ChapterPage({
                 {chapter.partTitle}
               </span>
               <ChapterTocTrigger headings={chapter.headings} />
+              <ChapterBookmark
+                chapterId={chapter.id}
+                title={chapter.title}
+              />
               {chapter.time > 0 && (
                 <span className="ml-auto inline-flex items-center gap-1.5 text-[var(--g-ink3)]">
                   <Clock className="h-3.5 w-3.5" aria-hidden="true" />
@@ -151,6 +156,7 @@ export default async function ChapterPage({
           {/* Completion action */}
           <ChapterActions
             chapterId={chapter.id}
+            chapterTitle={chapter.title}
             trackDone={chapter.kind !== "appendix"}
           />
 

@@ -55,7 +55,12 @@ export const viewport: Viewport = {
   ],
 };
 
-const THEME_INIT_SCRIPT = `(function(){try{var raw=localStorage.getItem("rust-guide-v1");var d=raw?JSON.parse(raw):null;var theme=(d&&(d.theme==="dark"||d.theme==="light"))?d.theme:(window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light");document.documentElement.classList.toggle("dark",theme==="dark");document.documentElement.setAttribute("data-theme",theme);if(d&&typeof d.fs==="number"&&d.fs>=15&&d.fs<=24){document.documentElement.style.setProperty("--guide-fs",d.fs+"px");}}catch(e){}})();`;
+/**
+ * Runs before first paint so a reader who chose dark never sees a light flash.
+ * "system" is the default, and it is resolved here rather than in React so the
+ * first frame is already correct on a statically cached page.
+ */
+const THEME_INIT_SCRIPT = `(function(){try{var raw=localStorage.getItem("rust-guide-v1");var d=raw?JSON.parse(raw):null;var mode=(d&&(d.theme==="dark"||d.theme==="light"||d.theme==="system"))?d.theme:"system";var theme=mode==="system"?(window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"):mode;document.documentElement.classList.toggle("dark",theme==="dark");document.documentElement.setAttribute("data-theme",theme);document.documentElement.setAttribute("data-theme-mode",mode);if(d&&typeof d.fs==="number"&&d.fs>=15&&d.fs<=24){document.documentElement.style.setProperty("--guide-fs",d.fs+"px");}}catch(e){}})();`;
 
 export default function RootLayout({
   children,

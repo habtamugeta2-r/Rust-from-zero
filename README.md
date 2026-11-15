@@ -109,6 +109,10 @@ component changes.
 | Reading measure | `.chapter-article` (`--measure`) | Prose is capped at 46rem (~72 characters) no matter how wide the window is |
 | Section sheet | `.toc-trigger` | Below `1240px` the outline opens as a dialog from the chapter header instead of being stacked on top of the article |
 | Type scale | `--guide-fs` | The A− / A+ control in the header (and in the drawer on phones) scales the prose only |
+| Command palette | `CommandPalette` | `/`, `⌘K` or `Ctrl-K` opens one dialog that searches every heading and paragraph *and* offers continue / progress / roadmap / theme |
+| Results page | `/search?q=` | Server-rendered, grouped by chapter, matched words highlighted, `noindex` |
+| Progress page | `/progress` | Chapters, quizzes, exercises and bookmarks in one dashboard |
+| Theme | `data-theme` on `<html>` | Light, dark, or *system*; the choice is applied before first paint |
 
 Geometry lives in CSS custom properties in
 [`src/app/globals.css`](./src/app/globals.css): `--shell-header`,
@@ -116,11 +120,32 @@ Geometry lives in CSS custom properties in
 offsets, anchor jumps (`scroll-padding-top`) and the rail all read from those
 variables, which is why a jump never hides a heading behind the header.
 
+### Finding things and keeping your place
+
+Search is one implementation, not three. `src/lib/search.ts` ranks hits and cuts
+snippets from the same index for the API route, the palette and the results
+page, so they cannot disagree. Around it sit the four things a reader needs to
+stay oriented:
+
+- **Command palette** (`src/components/CommandPalette.tsx`) — the single search
+  surface, reachable from the header, the home page, or `/` and `⌘K`. Arrow keys
+  move, `Enter` opens, `Esc` closes and returns focus to the trigger.
+- **`/search`** — the same hits, but as a linkable page: grouped by chapter, with
+  suggested topics when the query is empty.
+- **`/progress`** — chapters done, overall completion, quiz accuracy, exercises
+  solved, bookmarks, what to read next, and what is still untouched.
+- **Bookmarks** — a chapter can be pinned from its header or its completion card;
+  bookmarks are a reading list and survive "Reset progress".
+
+Progress, quiz answers, solved exercises, bookmarks, text size and the theme
+choice live in `localStorage` under one key and are read after mount; the chapter
+paint itself never waits for them.
+
 Accessibility is part of the layout contract: one visible focus ring, a skip
-link, `aria-current` on the active chapter and section, a focus-trapped drawer
-and outline sheet, keyboard scrolling for wide code and tables, `inert` instead
-of `aria-hidden` for the off-screen drawer, reduced-motion support, and a print
-stylesheet that drops every piece of chrome.
+link, `aria-current` on the active chapter and section, a focus-trapped drawer,
+outline sheet and palette, keyboard scrolling for wide code and tables, `inert`
+instead of `aria-hidden` for the off-screen drawer, reduced-motion support, and a
+print stylesheet that drops every piece of chrome.
 
 ## Verify
 

@@ -15,12 +15,14 @@ import {
   ChevronRight,
   Flag,
   Menu,
+  Monitor,
   Moon,
   Search,
   Sun,
   X,
 } from "lucide-react";
 import type { ChapterSummary, PartMeta, SearchHit } from "@/lib/guide-types";
+import { CommandPalette } from "./CommandPalette";
 import { useGuideState } from "./GuideStateProvider";
 
 const SIDEBAR_KEY = "rust-guide-sidebar";
@@ -36,8 +38,14 @@ export function GuideShell({
 }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { state, persistent, resetAllProgress, toggleTheme, theme, stepFontSize } =
-    useGuideState();
+  const {
+    state,
+    persistent,
+    resetAllProgress,
+    cycleTheme,
+    themeMode,
+    stepFontSize,
+  } = useGuideState();
 
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -51,10 +59,10 @@ export function GuideShell({
   const [activeHit, setActiveHit] = useState(-1);
   const [scrollPct, setScrollPct] = useState(0);
   const [confirmReset, setConfirmReset] = useState(false);
+  const [paletteOpen, setPaletteOpen] = useState(false);
 
   const searchRef = useRef<HTMLInputElement>(null);
   const drawerRef = useRef<HTMLElement>(null);
-  const wantsSearchFocus = useRef(false);
 
   const activeChapterId = pathname.startsWith("/chapters/")
     ? pathname.slice("/chapters/".length)
@@ -123,15 +131,10 @@ export function GuideShell({
         ) ?? []
       ).filter((el) => el.offsetParent !== null);
 
-    // Opening from the search button should land in the search field; opening
-    // from the menu button should not summon the on-screen keyboard, so focus
-    // the first link instead.
-    if (wantsSearchFocus.current && searchRef.current) {
-      searchRef.current.focus();
-      wantsSearchFocus.current = false;
-    } else {
-      focusables()[0]?.focus();
-    }
+    // Focus the first link rather than the search field, so opening the menu on
+    // a phone does not summon the on-screen keyboard. Search lives in the
+    // command palette now, which manages its own focus.
+    focusables()[0]?.focus();
 
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== "Tab") return;
@@ -169,19 +172,6 @@ export function GuideShell({
     setActiveHit(-1);
   }, [pathname]);
 
-  // Focus the search input once it is actually on screen.
-  useEffect(() => {
-    if (!wantsSearchFocus.current) return;
-    if (isDesktop && !sidebarOpen) return;
-    if (!isDesktop && !drawerOpen) return;
-    const id = window.setTimeout(() => {
-      searchRef.current?.focus();
-      searchRef.current?.select();
-      wantsSearchFocus.current = false;
-    }, 40);
-    return () => window.clearTimeout(id);
-  }, [sidebarOpen, drawerOpen, isDesktop]);
-
   /* ---------------- reading progress (rAF-throttled) ---------------- */
 
   useEffect(() => {
@@ -210,29 +200,17 @@ export function GuideShell({
 
   /* ---------------- keyboard shortcuts ---------------- */
 
-  const openSearch = useCallback(() => {
-    wantsSearchFocus.current = true;
-    if (isDesktop) {
-      setSidebarOpen(true);
-    } else {
-      setDrawerOpen(true);
-    }
-    // Already open: no state change will trigger the focus effect.
-    window.setTimeout(() => {
-      if (wantsSearchFocus.current) {
-        searchRef.current?.focus();
-        searchRef.current?.select();
-        wantsSearchFocus.current = false;
-      }
-    }, 60);
-  }, [isDesktop]);
+  const openPalette = useCallback(() => {
+    setDrawerOpen(false);
+    setPaletteOpen(true);
+  }, []);
 
-  // Any page can ask for the search field (the home page has a Search button).
+  // Any page can summon search (the home page has a Search button).
   useEffect(() => {
-    const onRequest = () => openSearch();
+    const onRequest = () => openPalette();
     window.addEventListener("rust-guide:search", onRequest);
     return () => window.removeEventListener("rust-guide:search", onRequest);
-  }, [openSearch]);
+  }, [openPalette]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -243,6 +221,7 @@ export function GuideShell({
 
       if (event.key === "Escape") {
         setDrawerOpen(false);
+        setPaletteOpen(false);
         if (query || hits) {
           setQuery("");
           setHits(null);
@@ -258,12 +237,12 @@ export function GuideShell({
         event.key.toLowerCase() === "k" && (event.metaKey || event.ctrlKey);
       if (isSlash || isCmdK) {
         event.preventDefault();
-        openSearch();
+        openPalette();
       }
     };
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
-  }, [query, hits, openSearch]);
+  }, [query, hits, openPalette]);
 
   /* ---------------- search ---------------- */
 
@@ -418,12 +397,21 @@ export function GuideShell({
         {/* Progress */}
         <div className="border-b border-[var(--g-line)] px-4 pb-3.5">
           <div className="mb-2 flex items-center justify-between gap-2 text-xs">
-            <span className="font-medium text-[var(--g-ink2)]">
+            <Link
+              href="/progress"
+              title="Open your progress dashboard"
+              className="rounded font-medium text-[var(--g-ink2)] underline-offset-2 hover:text-[var(--g-accent)] hover:underline"
+            >
               {doneCount} of {tracked.length} complete
-            </span>
-            <strong className="font-bold tabular-nums text-[var(--g-ink)]">
+            </Link>
+            <Link
+              href="/progress"
+              tabIndex={-1}
+              aria-hidden="true"
+              className="font-bold tabular-nums text-[var(--g-ink)] hover:text-[var(--g-accent)]"
+            >
               {donePct}%
-            </strong>
+            </Link>
           </div>
           <div
             role="progressbar"
@@ -627,6 +615,30 @@ export function GuideShell({
               </button>
             </div>
           </div>
+          <nav
+            aria-label="Study tools"
+            className="mb-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11.5px] font-semibold"
+          >
+            <Link
+              href="/progress"
+              className="text-[var(--g-ink2)] underline-offset-2 hover:text-[var(--g-accent)] hover:underline"
+            >
+              Progress
+            </Link>
+            <Link
+              href="/search"
+              className="text-[var(--g-ink2)] underline-offset-2 hover:text-[var(--g-accent)] hover:underline"
+            >
+              Search
+            </Link>
+            <Link
+              href="/chapters/roadmap"
+              className="text-[var(--g-ink2)] underline-offset-2 hover:text-[var(--g-accent)] hover:underline"
+            >
+              Roadmap
+            </Link>
+          </nav>
+
           <div className="flex items-center justify-between gap-2">
             <span>{persistent ? "Saved in browser" : "Session-only progress"}</span>
             {confirmReset ? (
@@ -711,12 +723,28 @@ export function GuideShell({
           <div className="flex shrink-0 items-center gap-1.5 font-sans">
             <button
               type="button"
-              onClick={openSearch}
+              onClick={openPalette}
               aria-label="Search the guide"
               title="Search (press / or ⌘K)"
-              className="grid h-9 w-9 place-items-center rounded-lg border border-[var(--g-line)] bg-[var(--g-surface)] text-[var(--g-ink2)] shadow-card hover:bg-[var(--g-sunken)] hover:text-[var(--g-ink)] lg:hidden"
+              className="grid h-9 w-9 place-items-center rounded-lg border border-[var(--g-line)] bg-[var(--g-surface)] text-[var(--g-ink2)] shadow-card hover:bg-[var(--g-sunken)] hover:text-[var(--g-ink)] md:hidden"
             >
               <Search className="h-4 w-4" aria-hidden="true" />
+            </button>
+
+            <button
+              type="button"
+              onClick={openPalette}
+              title="Search (press / or ⌘K)"
+              className="hidden h-9 items-center gap-2 rounded-lg border border-[var(--g-line)] bg-[var(--g-surface)] px-2.5 text-[12.5px] font-medium text-[var(--g-ink3)] shadow-card transition-colors hover:bg-[var(--g-sunken)] hover:text-[var(--g-ink)] md:flex"
+            >
+              <Search className="h-3.5 w-3.5" aria-hidden="true" />
+              <span className="hidden lg:inline">Search the guide</span>
+              <kbd
+                aria-hidden="true"
+                className="rounded border border-[var(--g-line)] bg-[var(--g-sunken)] px-1 font-sans text-[10px] font-semibold text-[var(--g-ink3)]"
+              >
+                /
+              </kbd>
             </button>
 
             <div
@@ -747,15 +775,17 @@ export function GuideShell({
 
             <button
               type="button"
-              onClick={toggleTheme}
-              aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}
-              title={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}
+              onClick={cycleTheme}
+              aria-label={`Theme: ${themeLabel(themeMode)}. ${themeHint(themeMode)}`}
+              title={`Theme: ${themeLabel(themeMode)} — ${themeHint(themeMode)}`}
               className="grid h-9 w-9 place-items-center rounded-lg border border-[var(--g-line)] bg-[var(--g-surface)] text-[var(--g-ink2)] shadow-card transition-colors hover:bg-[var(--g-sunken)] hover:text-[var(--g-ink)]"
             >
-              {theme === "dark" ? (
-                <Sun className="h-4 w-4" aria-hidden="true" />
-              ) : (
+              {themeMode === "system" ? (
+                <Monitor className="h-4 w-4" aria-hidden="true" />
+              ) : themeMode === "dark" ? (
                 <Moon className="h-4 w-4" aria-hidden="true" />
+              ) : (
+                <Sun className="h-4 w-4" aria-hidden="true" />
               )}
             </button>
           </div>
@@ -781,8 +811,22 @@ export function GuideShell({
           {children}
         </main>
       </div>
+
+      <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
     </div>
   );
+}
+
+function themeLabel(mode: "light" | "dark" | "system"): string {
+  return mode === "system" ? "follows your system" : `${mode} mode`;
+}
+
+function themeHint(mode: "light" | "dark" | "system"): string {
+  return mode === "light"
+    ? "Switch to dark"
+    : mode === "dark"
+      ? "Follow the system setting"
+      : "Switch to light";
 }
 
 /** The gear-and-tick mark, drawn inline so it needs no network request. */
