@@ -8,7 +8,7 @@
 
 [Chapter 8](#memory) introduced the stack and the heap. This chapter goes one level deeper and looks at how individual values are stored, byte by byte. You need this knowledge to exchange data with other languages, to read and write binary file formats, and to understand why one data structure is fast and another is slow.
 
-All the numbers in this chapter are for a 64-bit computer, which is what almost everyone uses today.
+All the numbers in this chapter are for a 64-bit computer, which is what almost everyone uses today. This chapter stops at the byte. For what happens between your source text and those bytes — the compiler pipeline, the linker, the operating system's loader, and the fetch–decode–execute cycle of the processor — see [the silicon appendix](#under-the-hood).
 
 ## Size and alignment
 
