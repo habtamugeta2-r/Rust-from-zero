@@ -1,5 +1,5 @@
 @id threads
-@part p7
+@part p9
 @title Threads: doing several things at once
 @short Threads
 @level advanced
@@ -224,7 +224,7 @@ true
 `thread::available_parallelism()` reports how many threads can really run at the same time on this machine. Starting many more threads than that gains nothing for calculations, because the cores are already busy.
 
 :::tip The easy way: Rayon
-The crate **`rayon`** reduces this whole pattern to one word. Write `numbers.par_iter().sum()` in place of `numbers.iter().sum()`, and Rayon splits the work across all cores for you. [Chapter 45](#async-ecosystem) shows it.
+The crate **`rayon`** reduces this whole pattern to one word. Write `numbers.par_iter().sum()` in place of `numbers.iter().sum()`, and Rayon splits the work across all cores for you. [Chapter 60](#async-ecosystem) shows it.
 :::
 
 ## Channels: passing messages
@@ -303,7 +303,7 @@ The Go language made a slogan of this style: *do not communicate by sharing memo
 
 ## `Send` and `Sync`: how the compiler knows
 
-Why did the compiler accept a `Vec<String>` being moved into a thread? And how does it know what is dangerous? Through two marker traits ([chapter 28](#advanced-traits)):
+Why did the compiler accept a `Vec<String>` being moved into a thread? And how does it know what is dangerous? Through two marker traits ([chapter 33](#advanced-traits)):
 
 - **`Send`**: a type is `Send` if a value of it may be **moved to another thread**.
 - **`Sync`**: a type is `Sync` if it may be **used from several threads at once** through shared references.

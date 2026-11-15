@@ -1,5 +1,5 @@
 @id borrowing
-@part p2
+@part p3
 @title References and borrowing
 @short References and borrowing
 @level beginner
@@ -124,7 +124,7 @@ fn add_bonus(points: &mut i32) {
 15
 ```
 
-In [chapter 5](#functions), a function could not change the caller's number, because it got a copy. With `&mut` it can, and the caller can see it in the call.
+In [chapter 10](#functions), a function could not change the caller's number, because it got a copy. With `&mut` it can, and the caller can see it in the call.
 
 ## The borrowing rules
 
@@ -199,7 +199,7 @@ This "the borrow lives until its last *use*, not until the end of the scope" beh
 
 ## Why the rules exist: a real bug they prevent
 
-The rules can feel like bureaucracy until you see what they stop. A `Vec` is a list that can grow. You will study it in [chapter 15](#collections). For now: `vec![1, 2, 3]` creates one, and `.push(4)` adds an element at the end.
+The rules can feel like bureaucracy until you see what they stop. A `Vec` is a list that can grow. You will study it in [chapter 20](#collections). For now: `vec![1, 2, 3]` creates one, and `.push(4)` adds an element at the end.
 
 ```rust fail E0502
 fn main() {
@@ -218,7 +218,11 @@ Why would that be dangerous? A `Vec` stores its elements in one block on the hea
 In C++ the equivalent code compiles without complaint, and the program then reads freed memory. The bug even has a name there: *iterator invalidation*. It may seem to work in testing and crash, or silently produce garbage, in production. Java and Python avoid the crash with a garbage collector, but have a related problem: changing a list while looping over it gives an error at run time or wrong results. Rust rejects the program at compile time.
 :::
 
-The "many readers or one writer" rule also prevents **data races**: two parts of a program changing the same data at the same time. You will see in [Part 7](#threads) that this makes programs that run on several processor cores far safer in Rust than in other languages.
+The "many readers or one writer" rule also prevents **data races**: two parts of a program changing the same data at the same time. You will see in [Part IX](#threads) that this makes programs that run on several processor cores far safer in Rust than in other languages.
+
+:::details Under the hood: references are addresses with LLVM `noalias` superpowers
+In machine code, `&T` and `&mut T` are just plain 64-bit memory addresses (one machine word, unless `T` is a slice or `dyn Trait`). What makes them special is what the borrow checker guarantees *before* LLVM optimises the code: every `&T` is guaranteed non-null and aligned, and every `&mut T` is annotated `noalias` in LLVM IR, letting the optimiser cache reads in CPU registers without worrying that another pointer quietly rewrote the same address.
+:::
 
 
 ## A second way to see the rules: what each name may do
@@ -310,7 +314,7 @@ fn make_text() -> &String {
 ```error auto
 ```
 
-`s` is dropped when the function ends, so the returned reference would point at freed memory. The error message talks about a "lifetime", which is Rust's word for how long a reference stays valid. [Chapter 21](#lifetimes) explains lifetimes in full. The fix here is simple: return the `String` itself and move ownership to the caller.
+`s` is dropped when the function ends, so the returned reference would point at freed memory. The error message talks about a "lifetime", which is Rust's word for how long a reference stays valid. [Chapter 26](#lifetimes) explains lifetimes in full. The fix here is simple: return the `String` itself and move ownership to the caller.
 
 ```rust run
 fn make_text() -> String {
@@ -343,7 +347,7 @@ When the borrow checker rejects your code, it has usually found a real problem, 
 2. **Shorten the borrow.** Finish using a reference before you change the value. Often it is enough to move one line.
 3. **Copy out what you need.** If you only need a number from inside the data, store the number, not a reference to it: `let first = numbers[0];` copies the integer.
 4. **Clone.** It costs some time and memory, but it is always correct.
-5. **Ask what would go wrong.** Suppose the compiler accepted your code: which name would be left looking at freed or half-changed data? If you can point at it, the compiler has found a real bug and the design has to change. If you cannot, the code is probably safe, but written in a way the compiler cannot follow, and a small rearrangement is enough. [Chapter 15](#collections) walks through the cases that come up most often with lists.
+5. **Ask what would go wrong.** Suppose the compiler accepted your code: which name would be left looking at freed or half-changed data? If you can point at it, the compiler has found a real bug and the design has to change. If you cannot, the code is probably safe, but written in a way the compiler cannot follow, and a small rearrangement is enough. [Chapter 20](#collections) walks through the cases that come up most often with lists.
 
 :::recap
 - `&value` borrows: it creates a reference without moving ownership.

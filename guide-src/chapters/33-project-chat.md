@@ -1,5 +1,5 @@
 @id project-chat
-@part p7
+@part p9
 @kind project
 @title Project: a chat server
 @short Project: chat server
@@ -28,7 +28,7 @@ tomas: hi sara                           sara: hello everyone
 * tom left
 ```
 
-The project brings together Part 7 (tasks, channels, shared state, `select!`) with much of what came before: enums and pattern matching for the commands, `Drop` for clean-up, a library with a thin `main`, and tests.
+The project brings together async concurrency (tasks, channels, shared state, `select!`) with much of what came before: enums and pattern matching for the commands, `Drop` for clean-up, a library with a thin `main`, and tests.
 
 ## Step 0: plan
 
@@ -63,7 +63,7 @@ A text protocol can be tried out by hand and read by eye, which makes mistakes e
 - **A broadcast channel is the room.** Tokio's `broadcast` channel delivers every message to *every* receiver. A task that wants to say something sends into the channel, and each task holds a receiver.
 - **A shared set of names** makes sure no two members have the same name, and answers `/who`.
 
-Notice how little is shared. Messages travel through a channel, as recommended in [chapter 31](#shared-state). The only data behind a lock is the set of names, and it is locked for an instant at a time.
+Notice how little is shared. Messages travel through a channel, as recommended in [chapter 56](#shared-state). The only data behind a lock is the set of names, and it is locked for an instant at a time.
 
 ### The files
 
@@ -155,7 +155,7 @@ impl Shared {
 
 A name must be acceptable and must be free. Taking a name has a counterpart that is easy to forget: the name must be given back when the member leaves, **whichever way** they leave. They may type `/quit`, close the window, lose their connection, or the server may hit an error while writing to them.
 
-Rust has a tool that makes forgetting impossible: `Drop`, from [chapter 27](#smart-pointers). A `Member` value represents a registered name. When it is dropped, for any reason, the name is released.
+Rust has a tool that makes forgetting impossible: `Drop`, from [chapter 32](#smart-pointers). A `Member` value represents a registered name. When it is dropped, for any reason, the name is released.
 
 ```rust
 impl Shared {
@@ -213,7 +213,7 @@ fn check_name(name: &str) -> Result<(), String> {
 - In `rename`, the new name is inserted before the old one is removed, so the member never stands without a name. `std::mem::replace(&mut a, b)` puts `b` into `a` and returns the old content of `a`. Here it stores the new name and hands back the old one for the announcement.
 - `drop` uses `if let Ok(...)` and not `unwrap()`. A destructor should never panic: it may be running *because* of a panic, and a second panic at that moment ends the whole program.
 
-The only way to get a `Member` is `join`, and losing a `Member` always frees the name. The set of names and the set of living `Member` values cannot disagree. This is the idea of [chapter 29](#type-system) again: a value whose existence proves a fact.
+The only way to get a `Member` is `join`, and losing a `Member` always frees the name. The set of names and the set of living `Member` values cannot disagree. This is the idea of [chapter 34](#type-system) again: a value whose existence proves a fact.
 
 ## Step 3: understand the input
 
@@ -848,12 +848,12 @@ Worth noticing in the design:
 - **Failures are contained.** An error in one session ends one task.
 - **Clean-up cannot be skipped**, because it lives in `Drop`.
 
-A server for the real world needs more. It should limit the length of a line (a client that sends gigabytes without a line break would fill the memory), limit how fast a client may send, encrypt the connections with TLS, and identify users with passwords. The crates for those jobs appear in Part 10.
+A server for the real world needs more. It should limit the length of a line (a client that sends gigabytes without a line break would fill the memory), limit how fast a client may send, encrypt the connections with TLS, and identify users with passwords. Those layers are explored in [Part X](#dns-http-tls-trace).
 
 :::details When one server becomes several
 This chat server holds every room in one process. That is the right design for thousands of users, and it stops working when you need two servers behind a load balancer: a message sent to server A never reaches the clients connected to server B.
 
-The usual next step is to make the servers **stateless** and move the shared state out: room membership and message history into a database, and the live fan-out through a message broker — each server subscribes to `room.*` and delivers to its own clients ([chapter 45](#async-ecosystem) covers the brokers). Redis pub/sub is the smallest version of this; NATS is the next.
+The usual next step is to make the servers **stateless** and move the shared state out: room membership and message history into a database, and the live fan-out through a message broker — each server subscribes to `room.*` and delivers to its own clients ([chapter 60](#async-ecosystem) covers the brokers). Redis pub/sub is the smallest version of this; NATS is the next.
 
 Beyond that the questions stop being about Rust and start being about distributed systems, and they have names worth recognising before you meet them in an incident report:
 
@@ -1024,4 +1024,4 @@ This design is simple, and it has a cost: every task wakes up for every private 
 - I added private messages.
 :::
 
-You have finished Part 7. You can now write programs that do many things at once, with threads for heavy work and async tasks for waiting, and you know how Rust keeps both safe. Part 8 turns to the everyday engineering tools that keep larger Rust projects healthy—Cargo workspaces, formatting, Clippy, debugging, CI, and testing strategies—before Part 9 explores advanced corners of the language and Part 10 tours the ecosystem.
+You have built a concurrent async chat server with tasks, channels, and shared state, and you know how Rust keeps multi-core execution safe. Next, [Concurrency in practice](#async-ecosystem) scales these primitives with Rayon and Tokio middleware before Part X dives into the network stack itself.

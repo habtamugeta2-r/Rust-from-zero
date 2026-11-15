@@ -47,9 +47,11 @@ export default async function ChapterPage({
       ? `Project · Chapter ${chapter.num}`
       : chapter.kind === "appendix"
         ? `Appendix ${chapter.num}`
-        : chapter.num === "0"
-          ? "Before you start"
-          : `Chapter ${chapter.num}`;
+        : chapter.id === "roadmap"
+          ? "Curriculum map"
+          : chapter.num === "0"
+            ? "Before you start"
+            : `Chapter ${chapter.num}`;
 
   return (
     <div className="mx-auto flex max-w-6xl gap-10 px-5 py-8 sm:px-8 lg:py-12">

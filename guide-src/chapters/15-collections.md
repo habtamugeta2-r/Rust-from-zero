@@ -147,7 +147,7 @@ sum 110, largest Some(99)
 
 `insert` and `remove` in the middle must shift all later elements by one place, so they get slow on very long vectors. `push` and `pop` at the end are always fast.
 
-Everything you learned about slices in [chapter 11](#slices-strings) applies: `&v` turns into a slice `&[T]` automatically, so a function that takes `&[i32]` accepts a vector, and `&v[1..3]` borrows a part of it.
+Everything you learned about slices in [chapter 16](#slices-strings) applies: `&v` turns into a slice `&[T]` automatically, so a function that takes `&[i32]` accepts a vector, and `&v[1..3]` borrows a part of it.
 
 ### How a vector grows
 
@@ -165,7 +165,7 @@ fn main() {
 ```output auto
 ```
 
-When the block is full, the vector asks for a bigger block (usually twice the size), moves all elements there, and frees the old one. That is the moment that made the borrow checker reject `numbers.push(4)` while a reference to an element existed, in [chapter 10](#borrowing). Because the size doubles each time, moving happens rarely, and `push` is fast on average. If you know roughly how many elements are coming, `Vec::with_capacity(n)` reserves the room at once.
+When the block is full, the vector asks for a bigger block (usually twice the size), moves all elements there, and frees the old one. That is the moment that made the borrow checker reject `numbers.push(4)` while a reference to an element existed, in [chapter 15](#borrowing). Because the size doubles each time, moving happens rarely, and `push` is fast on average. If you know roughly how many elements are coming, `Vec::with_capacity(n)` reserves the room at once.
 
 ### Ownership of the elements
 
@@ -214,9 +214,9 @@ Some("Lena") ["Sara"]
 
 ### When the borrow checker objects to a list
 
-Three situations cause most of the borrow errors with lists. For each one, ask the question from [chapter 10](#borrowing): what would go wrong if this compiled?
+Three situations cause most of the borrow errors with lists. For each one, ask the question from [chapter 15](#borrowing): what would go wrong if this compiled?
 
-**1. A reference kept across a change.** This is the bug from chapter 10: `let first = &numbers[0];`, then `numbers.push(4);`, then `first` is used. The push may move all the elements, and `first` would point at freed memory. Keep the *position* (`let first = 0;`) and write `numbers[first]` when you need the element, or clone the element.
+**1. A reference kept across a change.** This is the bug from [chapter 15](#borrowing): `let first = &numbers[0];`, then `numbers.push(4);`, then `first` is used. The push may move all the elements, and `first` would point at freed memory. Keep the *position* (`let first = 0;`) and write `numbers[first]` when you need the element, or clone the element.
 
 **2. Changing the list inside a loop over it.**
 
@@ -442,6 +442,10 @@ You can also write `for (name, age) in &ages`. The example collects and sorts th
 
 :::warn A `HashMap` has no order
 The pairs of a `HashMap` come out in an order that looks random, and it can be different each time the program runs. Never rely on it. If you need a stable order, sort the keys as above, or use a `BTreeMap`, described below.
+:::
+
+:::details Under the hood: `Vec` doubling and SwissTable `HashMap`
+Inside `alloc`, `Vec<T>` grows its capacity roughly exponentially (typically doubling once capacity passes 4 elements), copying existing elements into the new heap buffer with `realloc` so appending stays fast on average (**amortised O(1)**). Meanwhile, Rust's `HashMap` uses Google's **SwissTable** (`hashbrown`) design: keys hash to a flat probe array accompanied by 1-byte **control metadata tags** checked 16 slots at a time using CPU **SIMD** instructions!
 :::
 
 :::details How a hash map finds things so fast

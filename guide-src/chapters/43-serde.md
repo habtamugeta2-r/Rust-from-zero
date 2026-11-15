@@ -1,5 +1,5 @@
 @id serde
-@part p10
+@part p13
 @title Data formats with Serde: JSON, TOML and more
 @short Serde and data formats
 @level intermediate
@@ -129,7 +129,7 @@ error: invalid value: integer `300`, expected u8 at line 1 column 27
 error: EOF while parsing an object at line 1 column 26
 ```
 
-A wrong type, a missing field, a number too big for a `u8`, and a missing brace are all caught. This is "parse, don't validate" from [chapter 29](#type-system), for free: once you hold a `User`, the data has the right shape, and the rest of the program needs no checks. In languages where JSON becomes a loose dictionary, such mistakes surface later, somewhere deep in the program.
+A wrong type, a missing field, a number too big for a `u8`, and a missing brace are all caught. This is "parse, don't validate" from [chapter 34](#type-system), for free: once you hold a `User`, the data has the right shape, and the rest of the program needs no checks. In languages where JSON becomes a loose dictionary, such mistakes surface later, somewhere deep in the program.
 
 ## Shaping the output with attributes
 
@@ -465,7 +465,7 @@ Because the bytes carry no names, adding or removing a field can break files wri
 
 ### Tables: CSV
 
-[Chapter 26](#project-report) read a table of sales by splitting lines at commas, and noted that real CSV files are harder: a field may contain a comma or a quote. The crate `csv` knows these rules, and with Serde each row becomes a struct:
+[Chapter 31](#project-report) read a table of sales by splitting lines at commas, and noted that real CSV files are harder: a field may contain a comma or a quote. The crate `csv` knows these rules, and with Serde each row becomes a struct:
 
 ```toml
 [dependencies]
@@ -524,7 +524,7 @@ Sara,"mug ""XL""",1,7.25
 ```
 
 - The columns are matched to the fields by the names in the first line, so their order in the file does not matter.
-- `"Smith, John"` is one field with a comma inside, and `""` inside quotes stands for one quote character. The hand-written parser of chapter 26 would have split the first row into five fields.
+- `"Smith, John"` is one field with a comma inside, and `""` inside quotes stands for one quote character. The hand-written parser of [chapter 31](#project-report) would have split the first row into five fields.
 - `deserialize` returns an iterator of `Result`s. A bad row (here `many` is not a number) gives an error with its line number, and the program decides whether to skip it or to stop.
 - To work with a file, use `csv::Reader::from_path("sales.csv")` and `csv::Writer::from_path(…)`.
 
@@ -801,11 +801,11 @@ true
 {"kind":"join","user":"lena"}
 ```
 
-The enum is the protocol's specification in code. An unknown kind is rejected at the border, and the `match` must handle every kind that exists. When a fourth message kind is added to the enum, the compiler leads you to every place that needs to deal with it. This is how the chat server of [chapter 33](#project-chat) would look with a JSON protocol.
+The enum is the protocol's specification in code. An unknown kind is rejected at the border, and the `match` must handle every kind that exists. When a fourth message kind is added to the enum, the compiler leads you to every place that needs to deal with it. This is how the chat server of [chapter 59](#project-chat) would look with a JSON protocol.
 :::
 
 :::exercise challenge Save the to-do list as JSON
-In [chapter 18](#errors) you saved the to-do list in a home-made text format that broke on special characters. Replace it with JSON. A `TodoFile` has a `version` number and a list of tasks. A `Task` has an `id`, a `title`, a `done` flag, a `priority` (`low`, `normal` or `high`) and a list of `tags`. Files written by an older version, without `done`, `priority` and `tags`, must still load. Write `save` and `load` with helpful error messages, using `anyhow`.
+In [chapter 23](#errors) you saved the to-do list in a home-made text format that broke on special characters. Replace it with JSON. A `TodoFile` has a `version` number and a list of tasks. A `Task` has an `id`, a `title`, a `done` flag, a `priority` (`low`, `normal` or `high`) and a list of `tags`. Files written by an older version, without `done`, `priority` and `tags`, must still load. Write `save` and `load` with helpful error messages, using `anyhow`.
 ::hint
 Use `#[serde(default)]` on the three newer fields. `Priority` needs `Default`: derive it and mark the `Normal` variant with `#[default]`. Use `#[serde(rename_all = "lowercase")]` on the enum. In `save` and `load`, add context to errors with `.with_context(|| format!(…))`. Print an error with `{error:#}` to see the whole chain in one line.
 ::solution

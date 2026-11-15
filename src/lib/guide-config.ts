@@ -4,86 +4,100 @@ export const RAW_PARTS: Omit<PartMeta, "partLabel" | "partTitle">[] = [
   { key: "welcome", title: "Start here", level: "", blurb: "" },
   {
     key: "p1",
-    title: "First steps",
+    title: "Understanding computers from the inside",
     level: "Beginner",
     blurb:
-      "What programming is, how to install Rust, and the building blocks every program is made of: values, functions, decisions and loops.",
+      "Hardware and software, CPU registers, the ALU and control unit, RAM/ROM/SSD/HDD, system buses, binary and hex representation, and setting up your Rust and Linux inspection toolkit.",
   },
   {
     key: "p2",
-    title: "Ownership: Rust's big idea",
+    title: "From source code to machine instructions",
     level: "Beginner",
     blurb:
-      "How computers store data, and the one rule set that lets Rust be both safe and fast: ownership, borrowing and slices.",
+      "Lexing, parsing, ASTs, semantic analysis, HIR, MIR, LLVM IR, optimisation, assembly, machine code, static and dynamic linking, ELF binaries, and inspecting compiled Rust code.",
   },
   {
     key: "p3",
-    title: "Modelling data",
+    title: "Rust language and compiler internals",
     level: "Beginner",
     blurb:
-      "Describe real things in code with structs and enums, take them apart with pattern matching, and store many of them in collections.",
+      "Variables, types, ownership, borrowing, slices, structs, enums, collections, generics, traits, lifetimes, smart pointers, memory layout, unsafe Rust, and standard library internals at the machine level.",
   },
   {
     key: "p4",
-    title: "Building bigger programs",
+    title: "Memory management and organisation",
     level: "Intermediate",
     blurb:
-      "Organise code into modules, handle errors properly, and write flexible, reusable code with generics, traits and lifetimes. Then prove it works with tests.",
+      "Virtual vs physical memory, address spaces, page tables, protection, stack/heap/static segments, real allocators, pointer arithmetic, leaks/overflows, and CPU cache hierarchy.",
   },
   {
     key: "p5",
-    title: "Functional style",
+    title: "How programs execute",
     level: "Intermediate",
     blurb:
-      "Closures and iterators: short, expressive code that runs as fast as hand-written loops.",
+      "Executable launch, OS loaders, process memory layout, _start and lang_start, calling conventions, stack frames, CPU instruction cycles, destructors, and full end-to-end execution traces.",
   },
   {
     key: "p6",
-    title: "Memory and types mastery",
+    title: "Operating system internals",
     level: "Intermediate",
     blurb:
-      "Smart pointers for sharing and shaping data, and a deeper look at Rust's type system.",
+      "User space vs kernel space, system calls, processes and threads, scheduling, context switching, futexes, interrupts, signals, file descriptors, permissions, and Linux architecture.",
   },
   {
     key: "p7",
-    title: "Concurrency",
-    level: "Advanced",
+    title: "Input and output (I/O)",
+    level: "Intermediate",
     blurb:
-      "Do many things at once without fear: threads, channels, shared state and async/await.",
+      "Standard streams, terminals, file descriptors, read/write syscalls, buffering, non-blocking I/O, epoll, io_uring, and tracing Rust Read/Write calls down to kernel hardware.",
   },
   {
     key: "p8",
-    title: "Tooling and workflow",
-    level: "Intermediate",
+    title: "CPU architecture and instruction execution",
+    level: "Advanced",
     blurb:
-      "Everyday Cargo workspaces, formatting with rustfmt, Clippy lints, debugging, CI, and professional testing strategies.",
+      "x86-64 and ARM64 ISAs, instruction decoding, pipelining, branch prediction, superscalar and out-of-order execution, MESI cache coherency, hardware atomics, and SIMD.",
   },
   {
     key: "p9",
-    title: "Advanced Rust",
+    title: "Concurrency and asynchronous programming",
     level: "Advanced",
     blurb:
-      "Macros, unsafe code, talking to other languages, memory layout, and the idioms experienced Rust developers rely on.",
+      "Threads, shared memory, Send/Sync, atomics, memory ordering, futex-backed mutexes, channels, async/await state machines, futures, wakers, executors, and Tokio.",
   },
   {
     key: "p10",
-    title: "The ecosystem",
-    level: "Intermediate",
+    title: "Networking and communication",
+    level: "Advanced",
     blurb:
-      "Goal-based domain guides and optional surveys: Serde, Clap, Tokio, Axum, SQLx, observability, UI, games, and embedded.",
+      "OSI and TCP/IP models, Ethernet, IP, routing, TCP, UDP, DNS, HTTP, TLS, BSD sockets, kernel sk_buff buffers, end-to-end HTTP tracing, Axum web servers, and observability.",
   },
   {
     key: "p11",
-    title: "Becoming a Rust developer",
+    title: "Storage and file systems",
     level: "Advanced",
     blurb:
-      "Performance, a full capstone project, and a plan for what to do after this guide.",
+      "HDD and SSD/NVMe internals, blocks and sectors, file systems, inodes, journaling, kernel page cache, mmap, std::fs operations, and relational databases.",
+  },
+  {
+    key: "p12",
+    title: "Practical system programming with Rust",
+    level: "Advanced",
+    blurb:
+      "Cargo workflows, quality tooling, testing strategies, CLI utilities, performance profiling, hands-on Linux inspection labs (GDB, objdump, readelf, strace, perf, /proc), and capstone.",
+  },
+  {
+    key: "p13",
+    title: "Applied Rust ecosystem and next steps",
+    level: "Intermediate",
+    blurb:
+      "Crate selection, Serde data formats, UI/WebAssembly/Tauri, games and embedded systems, and where to continue your journey.",
   },
   {
     key: "app",
     title: "Appendices",
     level: "",
-    blurb: "Glossary, cheat sheets and reference tables to keep open while you code.",
+    blurb: "Glossary, systems and Rust reference tables, compiler error catalogue, and translation guides.",
   },
 ];
 
@@ -119,40 +133,98 @@ export const CORE_IDS = [
   "testing-strategies",
 ];
 
+export const SYSTEMS_IDS = [
+  "what-is-rust",
+  "hardware-architecture",
+  "bits-bytes-representation",
+  "setup",
+  "compilation-pipeline",
+  "assembly-machine-code",
+  "linking-elf",
+  "memory",
+  "ownership",
+  "borrowing",
+  "slices-strings",
+  "smart-pointers",
+  "advanced-traits",
+  "type-system",
+  "unsafe",
+  "ffi",
+  "memory-layout",
+  "rust-stdlib-internals",
+  "virtual-memory-address-spaces",
+  "allocators-heap-internals",
+  "pointers-safety-caches",
+  "program-loading-startup",
+  "calling-conventions-execution",
+  "end-to-end-trace",
+  "kernel-syscalls-processes",
+  "processes-threads-scheduling",
+  "sync-interrupts-signals",
+  "streams-fds-buffering",
+  "blocking-epoll-io-uring",
+  "isa-opcodes-control-flow",
+  "pipelines-branch-prediction-ooo",
+  "cache-coherency-atomics-simd",
+  "threads",
+  "shared-state",
+  "async",
+  "concurrency-async-internals",
+  "network-layers-ethernet-ip",
+  "tcp-udp-sockets-kernel",
+  "dns-http-tls-trace",
+  "storage-hardware-blocks",
+  "filesystems-cache-mmap",
+  "performance",
+  "linux-systems-lab",
+];
+
 export const ROUTES: RouteMeta[] = [
   {
     id: "all",
     label: "All chapters",
     summary:
-      "The complete curriculum: every language chapter, tool, domain overview, and all 8 projects.",
+      "The complete 13-part curriculum: computer systems from hardware up, Rust internals, and 9 hands-on projects.",
     chapters: null,
   },
   {
     id: "core",
-    label: "Core path",
+    label: "Core Rust path",
     summary:
-      "Parts 1–5 + Part 8 Tooling: the beginner foundation and everyday Cargo, formatting, Clippy, and testing workflow.",
+      "Beginner-friendly Rust syntax, ownership, traits, testing, Cargo, formatting, Clippy, and testing strategies.",
     chapters: CORE_IDS,
+  },
+  {
+    id: "systems",
+    label: "Systems & internals",
+    summary:
+      "Hardware, compiler IR/ELF, Rust internals, virtual memory, allocators, OS kernel, I/O, CPU pipelines, networking, storage & Linux lab.",
+    chapters: SYSTEMS_IDS,
   },
   {
     id: "cli",
     label: "CLI tools",
     summary:
-      "Core path plus everyday crate selection, Serde, and the Clap command-line tool project.",
-    chapters: [...CORE_IDS, "crates", "serde", "cli"],
+      "Core path plus I/O streams, everyday crate selection, Serde, and the Clap command-line tool project.",
+    chapters: [...CORE_IDS, "streams-fds-buffering", "crates", "serde", "cli"],
   },
   {
     id: "web",
     label: "Web & APIs",
     summary:
-      "Core path plus concurrency, async, Axum, SQLx databases, URL shortener API, observability, and capstone.",
+      "Core path plus concurrency, async/epoll, TCP/TLS/HTTP, Axum, SQLx databases, URL shortener API, observability, and capstone.",
     chapters: [
       ...CORE_IDS,
       "smart-pointers",
+      "blocking-epoll-io-uring",
       "threads",
       "shared-state",
       "async",
+      "concurrency-async-internals",
       "project-chat",
+      "network-layers-ethernet-ip",
+      "tcp-udp-sockets-kernel",
+      "dns-http-tls-trace",
       "crates",
       "serde",
       "async-ecosystem",
@@ -161,26 +233,6 @@ export const ROUTES: RouteMeta[] = [
       "project-api",
       "observability",
       "capstone",
-    ],
-  },
-  {
-    id: "systems",
-    label: "Systems & deep dive",
-    summary:
-      "Core path plus smart pointers, type system, threads, Part 9 (macros, unsafe, FFI, layout, idioms), and performance.",
-    chapters: [
-      ...CORE_IDS,
-      "smart-pointers",
-      "advanced-traits",
-      "type-system",
-      "threads",
-      "shared-state",
-      "macros",
-      "unsafe",
-      "ffi",
-      "memory-layout",
-      "idioms",
-      "performance",
     ],
   },
   {
@@ -231,6 +283,10 @@ export const LANG_LABELS: Record<string, string> = {
   dockerfile: "Dockerfile",
   css: "CSS",
   tree: "Folder layout",
+  asm: "Assembly",
+  llvm: "LLVM IR",
+  mir: "Rust MIR",
+  diff: "Diff",
 };
 
 export const CHECK_FLAGS = new Set([

@@ -8,7 +8,7 @@ import { SITE_URL } from "./site";
 
 export const SITE_NAME = "Rust from Zero";
 export const SITE_TAGLINE =
-  "The complete hands-on guide to the Rust programming language";
+  "Computer systems, Rust internals, and systems programming from the inside out";
 
 /** Stable "first published" date for the whole guide. */
 const PUBLISHED = "2026-11-14";
@@ -138,7 +138,7 @@ export function courseJsonLd(
     name: SITE_NAME,
     alternateName: "Rust tutorial",
     description: clip(
-      "A complete self-study course that teaches the Rust programming language from absolute zero: from the first line of syntax, through numbers, lists, bytes, the heap and the stack, to building web services, async code and systems software. Plain-language explanations, real compiler output, 193 solved exercises, quizzes and eight hands-on projects.",
+      "A complete self-study course teaching computer systems internals and Rust from zero: hardware, compiler stages, ELF, memory, Linux OS kernel, I/O, CPU pipelines, networking, storage, and web backends. Plain explanations, 274 solved exercises, 351 quizzes, and 9 hands-on projects.",
       300,
     ),
     url: SITE_URL,

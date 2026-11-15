@@ -1,5 +1,5 @@
 @id types
-@part p1
+@part p3
 @title Basic data types: numbers, truth values, characters and groups
 @short Basic data types
 @level beginner
@@ -194,7 +194,7 @@ checked:    None
 checked:    Some(201)
 ```
 
-`wrapping_add` wraps around on purpose. `saturating_add` stops at the largest value. `checked_add` gives `None` ("no valid answer") on overflow and `Some(result)` otherwise. You will learn about `Some` and `None` in [chapter 13](#enums). The `{:?}` placeholder is explained at the end of this chapter.
+`wrapping_add` wraps around on purpose. `saturating_add` stops at the largest value. `checked_add` gives `None` ("no valid answer") on overflow and `Some(result)` otherwise. You will learn about `Some` and `None` in [chapter 18](#enums). The `{:?}` placeholder is explained at the end of this chapter.
 
 :::compare What other languages do
 In C and C++, overflowing a signed integer is "undefined behaviour": the program may do anything, and compilers use that freedom in ways that have caused real security holes. Java silently wraps around. Python switches to bigger numbers automatically, which is safe but slow. Rust makes you notice the problem while you develop, and lets you choose the behaviour.
@@ -269,7 +269,7 @@ fn main() {
 44
 ```
 
-Converting to a *bigger* type is always safe. Converting to a *smaller* type with `as` can silently change the value, as the last lines show (300 − 256 = 44). Later you will meet safer conversions that report the problem instead ([chapter 28](#type-system)).
+Converting to a *bigger* type is always safe. Converting to a *smaller* type with `as` can silently change the value, as the last lines show (300 − 256 = 44). Later you will meet safer conversions that report the problem instead ([chapter 34](#type-system)).
 
 :::compare Why so strict?
 C, Java and JavaScript convert between number types automatically in many places, and the rules are complicated enough to cause real bugs: a large number quietly squeezed into a small type, or decimals quietly dropped. In Rust every conversion is visible in the code. You type a little more, and you can always see what happens.
@@ -330,7 +330,7 @@ true
 r
 ```
 
-Single quotes mean one character (`'a'`, a `char`). Double quotes mean text of any length (`"a"`, a *string*). They are different types. A `char` always takes four bytes, which is exactly enough for any single **Unicode scalar value**. There are a few things that a person sees as one character — some emoji, a letter with a separate accent mark — that are actually built from several of these units, and those do not fit in one `char`. You will meet that subtlety properly in [chapter 11](#slices-strings), because text is more complicated than it looks.
+Single quotes mean one character (`'a'`, a `char`). Double quotes mean text of any length (`"a"`, a *string*). They are different types. A `char` always takes four bytes, which is exactly enough for any single **Unicode scalar value**. There are a few things that a person sees as one character — some emoji, a letter with a separate accent mark — that are actually built from several of these units, and those do not fit in one `char`. You will meet that subtlety properly in [chapter 16](#slices-strings), because text is more complicated than it looks.
 
 ## Groups of values: tuples
 
@@ -358,7 +358,7 @@ Sara is 29. Member: true
 - `let (name, age, is_member) = person;` unpacks the tuple into three variables in one step. This is called **destructuring**.
 - The type of this tuple is written `(&str, i32, bool)`.
 
-Tuples are good for small groups, such as a pair of coordinates `(x, y)`. For anything bigger you will use a *struct*, which gives each part a name ([chapter 12](#structs)).
+Tuples are good for small groups, such as a pair of coordinates `(x, y)`. For anything bigger you will use a *struct*, which gives each part a name ([chapter 17](#structs)).
 
 The empty tuple `()` is called the **unit** type. It means "nothing useful here", and you will meet it in the next chapter.
 
@@ -418,7 +418,7 @@ On your computer the first line has a number in parentheses after the name, for 
 In C, reading `days[7]` would not stop the program. It would read whatever lies in memory after the array and carry on with garbage, or leak secret data. Many famous security holes are exactly this mistake. Rust checks every index while the program runs. A clean stop with a clear message is far better than a program that silently works with wrong data.
 :::
 
-An array cannot grow or shrink. For a list that can, Rust has the *vector* (`Vec`), which you will use all the time from [chapter 15](#collections) on.
+An array cannot grow or shrink. For a list that can, Rust has the *vector* (`Vec`), which you will use all the time from [chapter 20](#collections) on.
 
 ## Printing for programmers: `{:?}`
 

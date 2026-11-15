@@ -1,12 +1,12 @@
 @id memory
-@part p2
+@part p3
 @title How a program uses memory: the stack and the heap
 @short Memory: stack and heap
 @level beginner
 @time 30
 @learn Describe what memory is and what a pointer is | Explain the difference between the stack and the heap | Name the classic memory bugs and how they happen | Compare the three ways languages manage memory
 
-Part 2 is about ownership, the idea that makes Rust different. Ownership is a set of rules about memory. They only make sense when you have a picture of what memory is and what can go wrong with it. This chapter gives you that picture. It has very little Rust in it, and what you learn here is true for every programming language.
+Now we turn to ownership, the idea that makes Rust different. Ownership is a set of rules about memory. They only make sense when you have a picture of what memory is and what can go wrong with it. This chapter gives you that picture. It has very little Rust in it, and what you learn here is true for every programming language.
 
 ## What memory is
 

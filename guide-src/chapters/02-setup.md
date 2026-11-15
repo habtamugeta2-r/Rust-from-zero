@@ -197,7 +197,7 @@ fn main() {
 }
 ```
 
-- **`fn`** is short for *function*. A function is a named group of instructions. You will write your own in [chapter 5](#functions).
+- **`fn`** is short for *function*. A function is a named group of instructions. You will write your own in [chapter 10](#functions).
 - **`main`** is the function's name. This name is special: every Rust program starts by running the function called `main`.
 - **`()`** would hold the inputs of the function. `main` has none, so the brackets are empty.
 - **`{` and `}`** mark where the function's instructions begin and end. Everything between them is called the function's *body*.
@@ -269,7 +269,25 @@ Putting `//` in front of a line of code switches it off without deleting it. Pro
 | `cargo fmt` | Tidies the layout of your code | Before you save your work |
 | `cargo clippy` | Checks for common mistakes and suggests cleaner Rust | Regularly before sharing your code |
 
-Formatting (`cargo fmt --check`), testing (`cargo test`), and linting (`cargo clippy`) are built in from day one. You will use these commands long before any advanced Rust features, and Part 8 ([chapter 34](#cargo) through [chapter 36](#testing-strategies)) covers this everyday engineering workflow in depth.
+Formatting (`cargo fmt --check`), testing (`cargo test`), and linting (`cargo clippy`) are built in from day one. You will use these commands long before any advanced Rust features, and Part XII ([chapter 70](#cargo) through [chapter 72](#testing-strategies)) covers this everyday engineering workflow in depth.
+
+## Your Linux systems inspection toolkit
+
+Because this guide explores what `rustc` and the operating system actually produce, Linux provides a set of inspection utilities that turn black boxes into open glass. Check which ones are installed on your machine (most come pre-installed with `binutils`, `gdb`, `strace`, and `linux-tools` / `perf`):
+
+```sh
+$ which rustc cargo objdump readelf nm ldd strace ltrace gdb lldb perf
+```
+
+| Tool | What it lets you inspect |
+|---|---|
+| `rustc`, `cargo` | Compiler front-end, intermediate representations (`--emit=mir,llvm-ir,asm`), and build orchestration |
+| `objdump`, `readelf`, `nm`, `ldd` | Machine instructions, ELF headers/sections/segments, symbol tables, and shared libraries |
+| `rust-gdb` / `gdb` / `lldb` | Live CPU registers, stack frames, memory addresses, and breakpoints |
+| `strace`, `ltrace` | System calls made to the Linux kernel and calls into shared C libraries |
+| `perf`, `/proc`, `valgrind` | CPU cache/branch counters, kernel per-process tables, and heap profiling |
+
+If a tool such as `strace` or `gdb` is missing on Ubuntu/Debian, you can add the standard suite later with `sudo apt install build-essential binutils gdb strace ltrace`. Even before installing extra tools, `rustc`, `cargo`, `objdump`, `readelf`, `nm`, and `/proc` give you plenty to examine right away.
 
 :::plain Debug and release
 A **debug build** (the default) compiles quickly but runs slowly, and it contains extra information that helps you find bugs. A **release build** (`--release`) takes longer to compile because the compiler works hard to make the program fast. Use debug while you develop and release for the final program. The speed difference can be ten times or more.
@@ -489,5 +507,5 @@ Pancakes for 3 people
 - 300 ml milk
 ```
 
-It works, but the number `3` is written four times. To cook for 5 people you would have to change it in four places, and it is easy to miss one. The next chapter fixes that with **variables**: you give the value a name once and use the name everywhere.
+It works, but the number `3` is written four times. To cook for 5 people you would have to change it in four places, and it is easy to miss one. In Part II you first see how source code like this turns into assembly and ELF machine executables, and then Part III fixes the repetition with **variables**: you give the value a name once and use the name everywhere.
 :::

@@ -1,5 +1,5 @@
 @id apps
-@part p10
+@part p13
 @title Apps with a user interface: WebAssembly, Tauri and native windows
 @short Apps and WebAssembly
 @level intermediate
@@ -29,14 +29,14 @@ Imagine you hire a brilliant calculator, a person who computes anything you ask 
 Three properties shape everything that follows:
 
 - **A module can only compute.** By itself it cannot read a file, open a network connection or change the page. It may call the functions that the surrounding program hands to it, the **imports**, and it offers functions of its own, the **exports**. The surrounding program is called the **host**. In a browser, the host is the page with its JavaScript. A closed box like this is called a **sandbox**.
-- **Only numbers cross the border.** A Wasm function takes numbers and returns numbers. A text or a struct must be copied into the memory of the module, and then its address and length are passed. You met this problem in [chapter 39](#ffi), and the solution is the same: generated **glue code**.
+- **Only numbers cross the border.** A Wasm function takes numbers and returns numbers. A text or a struct must be copied into the memory of the module, and then its address and length are passed. You met this problem in [chapter 37](#ffi), and the solution is the same: generated **glue code**.
 - **Rust needs no helper inside the module.** There is no garbage collector to ship, so the files are small. The first module of this chapter has 16 kilobytes.
 
 The tools:
 
 | Tool | What it does |
 |---|---|
-| target `wasm32-unknown-unknown` | lets `rustc` produce Wasm. In this target triple ([chapter 34](#cargo)), `wasm32` is the processor, and the two `unknown`s say: no vendor, no operating system |
+| target `wasm32-unknown-unknown` | lets `rustc` produce Wasm. In this target triple ([chapter 70](#cargo)), `wasm32` is the processor, and the two `unknown`s say: no vendor, no operating system |
 | crate `wasm-bindgen` | generates the glue: Rust code on one side of the border, a JavaScript file on the other |
 | program `wasm-pack` | one command that runs Cargo, the glue generator and a size optimiser, and puts the result into a folder `pkg` |
 
@@ -49,7 +49,7 @@ cargo install wasm-pack
 
 ### A Rust function for a web page
 
-Create a library with `cargo new --lib wasm_hello`. The manifest asks for a `cdylib`, the kind of library that a foreign host loads ([chapter 39](#ffi)):
+Create a library with `cargo new --lib wasm_hello`. The manifest asks for a `cdylib`, the kind of library that a foreign host loads ([chapter 37](#ffi)):
 
 ```toml proj=wasm_hello file=Cargo.toml
 [package]
@@ -169,7 +169,7 @@ export function greet(name) {
 }
 ```
 
-This is the hand-written FFI of [chapter 39](#ffi), written for you by a tool.
+This is the hand-written FFI of [chapter 37](#ffi), written for you by a tool.
 :::
 
 Now the page. Put this file next to `Cargo.toml`:
@@ -559,7 +559,7 @@ What does a framework cost in download size? Measured for the counters above, as
 | Leptos | 210 KB | 54 KB |
 | Yew | 338 KB | 93 KB |
 
-These are the sizes with default settings. The size settings of [chapter 34](#cargo) (`opt-level = "z"`, `lto = true`) make them smaller. Most of the size is the framework itself, which is paid for only once.
+These are the sizes with default settings. The size settings of [chapter 70](#cargo) (`opt-level = "z"`, `lto = true`) make them smaller. Most of the size is the framework itself, which is paid for only once.
 
 ### One language on both sides
 
@@ -763,14 +763,14 @@ How the two halves talk:
 - `#[tauri::command]` puts a function on the menu. The page calls it by name with `invoke("file_stats", { path: … })`.
 - The arguments travel as JSON, and Serde fills the Rust parameters from it. The return value travels back the same way: `FileStats` derives `Serialize` and arrives as a JavaScript object with the fields `lines`, `words` and `bytes`.
 - `invoke` returns a promise. `Ok(value)` fulfils it, and `Err(message)` rejects it, which lands in the `catch` block. The error type must be serialisable, and a `String` is the simplest choice.
-- `State<'_, History>` is data that lives as long as the app. It is registered once with `.manage(…)`, and any command can ask for it as a parameter. Several commands may run at the same moment, so the data sits in a `Mutex` ([chapter 31](#shared-state)).
+- `State<'_, History>` is data that lives as long as the app. It is registered once with `.manage(…)`, and any command can ask for it as a parameter. Several commands may run at the same moment, so the data sits in a `Mutex` ([chapter 56](#shared-state)).
 - `generate_handler![…]` is the menu itself. A function that is not listed there cannot be called from the page.
 
 :::warn Names change their style at the border
 JavaScript names are written in camelCase, and Tauri converts the names of arguments. A Rust parameter `file_path` must be passed from JavaScript as `filePath`. With the wrong spelling, the call is rejected with this message: "invalid args `filePath` for command `file_stats`: command file_stats missing required key filePath".
 :::
 
-Treat the page like a client on the network. Check every argument inside the command, as you do in a web handler ([chapter 46](#web)). Tauri adds a second line of defence, the **capabilities**: the files in `src-tauri/capabilities` list which built-in features of Tauri a window may use, such as file dialogs, notifications or the clipboard. What is not listed is refused. Most of these features come as plug-in crates with names like `tauri-plugin-dialog`.
+Treat the page like a client on the network. Check every argument inside the command, as you do in a web handler ([chapter 64](#web)). Tauri adds a second line of defence, the **capabilities**: the files in `src-tauri/capabilities` list which built-in features of Tauri a window may use, such as file dialogs, notifications or the clipboard. What is not listed is refused. Most of these features come as plug-in crates with names like `tauri-plugin-dialog`.
 
 `cargo tauri build` produces the installers for the system it runs on. For the example, the package for Debian and Ubuntu came to 1.8 MB, with a program of 5 MB inside. The package names the WebKitGTK library of the system as a requirement, which is exactly why it can be this small.
 
@@ -931,7 +931,7 @@ fn main() -> Result<(), slint::PlatformError> {
 - `text: "Clicks: " + root.count;` is a **binding**: a formula as in the spreadsheet. When `count` changes, the text follows.
 - Simple reactions stay in the markup: `clicked => { root.count += 1; }`.
 - `callback reset();` declares an event that the Rust side handles. The macro generates `on_reset`, which takes a closure.
-- The closure must not own the window, because the window owns the closure, and the two would keep each other alive for ever. `as_weak()` gives a weak handle, the same idea as `Weak` in [chapter 27](#smart-pointers).
+- The closure must not own the window, because the window owns the closure, and the two would keep each other alive for ever. `as_weak()` gives a weak handle, the same idea as `Weak` in [chapter 32](#smart-pointers).
 
 Slint was designed for devices with small screens and little memory as well as for desktops, and the same markup can be used from C++, JavaScript and Python. Read its licence before you use it in a product: Slint is offered under the GPL, under a free licence with conditions, and under a paid one. egui and iced use the permissive MIT licence (egui also Apache-2.0), like most Rust crates.
 
@@ -946,7 +946,7 @@ Slint was designed for devices with small screens and little memory as well as f
 These projects do not all promise the same stability. The egui documentation warns that it is under heavy development and that releases may include breaking changes. The iced project describes itself as experimental and its own documentation may assume advanced Rust knowledge. Before adopting either for a long-lived product, check the exact release's changelog, minimum supported Rust version, supported platforms, and migration policy. The examples here teach their core models; they are not a guarantee of API stability.
 :::
 
-More names you will meet: `gtk4` with `relm4` on top binds the GTK toolkit of the GNOME desktop. `cxx-qt` connects Rust to the Qt toolkit. And `ratatui` builds full-screen interfaces inside a terminal ([chapter 44](#cli)).
+More names you will meet: `gtk4` with `relm4` on top binds the GTK toolkit of the GNOME desktop. `cxx-qt` connects Rust to the Qt toolkit. And `ratatui` builds full-screen interfaces inside a terminal ([chapter 73](#cli)).
 
 :::compare GUI libraries elsewhere
 egui is modelled on Dear ImGui, a C++ library that is popular for tools in game studios. The Elm architecture of iced is the idea behind Redux in the JavaScript world. The markup of Slint will remind you of QML from Qt, and its bindings of SwiftUI and Jetpack Compose. In C++, C# or Swift, one toolkit usually dominates a platform. Rust has no such standard yet, and several good candidates.

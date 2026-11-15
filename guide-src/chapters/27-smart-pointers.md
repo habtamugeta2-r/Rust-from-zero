@@ -1,5 +1,5 @@
 @id smart-pointers
-@part p6
+@part p3
 @title Smart pointers: `Box`, `Rc`, `RefCell` and friends
 @short Smart pointers
 @level advanced
@@ -17,7 +17,7 @@ A smart pointer is like a keycard that both opens a room and keeps track of who 
 | `Box<T>` | one owner, data on the heap |
 | `Rc<T>` | several owners, read-only, one thread |
 | `RefCell<T>` | borrowing rules checked while the program runs, not at compile time |
-| `Arc<T>`, `Mutex<T>` | the same ideas, safe to use from several threads ([chapter 31](#shared-state)) |
+| `Arc<T>`, `Mutex<T>` | the same ideas, safe to use from several threads ([chapter 56](#shared-state)) |
 
 :::analogy A visitor badge vs a shared locker key
 A normal reference (`&T`) is a visitor badge: it lets you read what is in a room, but it cannot keep the building open after the owner locks up and leaves. A smart pointer like `Box<T>` or `Rc<T>` is a deed or shared key card that actually keeps the data alive until the last holder steps out and closes the door.
@@ -142,7 +142,7 @@ The linked list above is a teaching example. For a real sequence of values, a `V
 
 ### 2. Trait objects
 
-You met `Box<dyn Shape>` in [chapter 20](#traits). Values of different types have different sizes, so a collection of "anything that implements `Shape`" stores boxes, which all have the same size.
+You met `Box<dyn Shape>` in [chapter 25](#traits). Values of different types have different sizes, so a collection of "anything that implements `Shape`" stores boxes, which all have the same size.
 
 ### 3. Large values
 
@@ -169,7 +169,7 @@ fn main() {
 HELLO!
 ```
 
-You have relied on this since [chapter 11](#slices-strings): `&String` turns into `&str`, and `&Vec<T>` into `&[T]`, by the same mechanism. `String` implements `Deref` with the target `str`.
+You have relied on this since [chapter 16](#slices-strings): `&String` turns into `&str`, and `&Vec<T>` into `&[T]`, by the same mechanism. `String` implements `Deref` with the target `str`.
 
 ## `Drop`: code that runs at the end
 
@@ -210,7 +210,7 @@ cleaning up first
 - Values are dropped at the end of their scope, in the **reverse** order of their creation.
 - `drop(value)` is an ordinary function that takes ownership of its argument and lets it go out of scope immediately.
 
-You will rarely write `Drop` yourself. You benefit from it all the time: it is how a `File` closes itself, how a `Vec` frees its memory, and how a lock releases itself ([chapter 31](#shared-state)).
+You will rarely write `Drop` yourself. You benefit from it all the time: it is how a `File` closes itself, how a `Vec` frees its memory, and how a lock releases itself ([chapter 56](#shared-state)).
 
 :::compare RAII
 Tying a resource (memory, a file, a lock, a network connection) to a value, so that the resource is released when the value dies, is a technique from C++ with the awkward name **RAII** ("resource acquisition is initialization"). In Java, Python or Go you write `try … finally`, `with` or `defer` each time, and can forget it. In Rust the clean-up is attached to the type once, and then it cannot be forgotten.
@@ -494,7 +494,7 @@ no_spaces (borrowed)
 somespaceshere (owned)
 ```
 
-A `Cow<str>` can be used like a `&str` through `Deref`. The `'_` in the return type is the placeholder lifetime from [chapter 21](#lifetimes): it shows the reader that the result may borrow from the argument. `Cow` is a tool for making code faster, and you can ignore it until you need it.
+A `Cow<str>` can be used like a `&str` through `Deref`. The `'_` in the return type is the placeholder lifetime from [chapter 26](#lifetimes): it shows the reader that the result may borrow from the argument. `Cow` is a tool for making code faster, and you can ignore it until you need it.
 
 ## Choosing a pointer
 
@@ -507,7 +507,7 @@ A `Cow<str>` can be used like a `&str` through `Deref`. The `'_` in the return t
 | several owners that can change the value | `Rc<RefCell<T>>` |
 | a pointer back to an owner, without owning | `Weak<T>` |
 | to change a small `Copy` field through `&self` | `Cell<T>` |
-| the same across threads | `Arc<T>`, `Arc<Mutex<T>>` ([chapter 31](#shared-state)) |
+| the same across threads | `Arc<T>`, `Arc<Mutex<T>>` ([chapter 56](#shared-state)) |
 
 The order of this table is also the order of preference. Plain references and single ownership are the simplest and the fastest, and the compiler checks them completely. Reach for `Rc` and `RefCell` when the shape of your data truly demands shared ownership.
 
@@ -834,5 +834,5 @@ Three things in this small program come up again and again in Rust:
 2. **`as_ref()` and `as_deref()` to look without taking.** `peek` and the iterator only borrow. The iterator holds `Option<&Node<T>>`: the node it will give out next.
 3. **A drop that does not call itself.** Without the `impl Drop`, Rust would drop the first node, which drops the second node inside it, which drops the third, a million calls deep. Tried without it, this program stopped with `thread 'main' has overflowed its stack`. The loop unlinks each node before it is dropped, so every node is dropped alone.
 
-For real work, use a `Vec`: `push` and `pop` do the same job, and the values sit side by side in memory, which is much faster to walk through ([chapter 51](#performance)). A linked list is worth writing once, because it trains exactly the moves that the borrow checker asks for.
+For real work, use a `Vec`: `push` and `pop` do the same job, and the values sit side by side in memory, which is much faster to walk through ([chapter 74](#performance)). A linked list is worth writing once, because it trains exactly the moves that the borrow checker asks for.
 :::

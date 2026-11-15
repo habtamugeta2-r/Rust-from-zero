@@ -1,5 +1,5 @@
 @id project-guessing
-@part p1
+@part p3
 @kind project
 @title Project: a number guessing game
 @short Project: guessing game
@@ -9,7 +9,7 @@
 
 You now know enough to build a complete program that someone can use. In this project the computer picks a secret number between 1 and 100, and the player guesses until they find it. After each guess the program says "too small" or "too big".
 
-This project needs Rust installed on your computer, because it reads from the keyboard and uses a library from the internet. If you skipped the installation, go back to [chapter 2](#setup) first.
+This project needs Rust installed on your computer, because it reads from the keyboard and uses a library from the internet. If you skipped the installation, go back to [chapter 4](#setup) first.
 
 A session will look like this:
 
@@ -74,13 +74,13 @@ Run it with `cargo run`, type something, and press {{Enter}}. Several things her
 - **`use std::io;`** Rust comes with a large collection of ready-made code called the **standard library**, or `std`. Its part called `io` (for *input/output*) handles reading and writing. This line makes the name `io` available in your file.
 - **`String::new()`** creates a new, empty piece of text that can grow. The variable is `mut` because reading will put characters into it.
 - **`io::stdin()`** gives access to the keyboard input of the terminal ("standard input").
-- **`.read_line(&mut input)`** waits until the player presses {{Enter}} and adds everything they typed to `input`. The `&mut` in front means "you may change my variable". Why that is needed is the subject of [chapter 10](#borrowing).
-- **`.expect("...")`** Reading can fail, for example if the terminal is closed. `read_line` therefore does not just "work": it reports whether it worked. `.expect` says "if it failed, stop the program and show this message". [Chapter 18](#errors) covers this in depth.
+- **`.read_line(&mut input)`** waits until the player presses {{Enter}} and adds everything they typed to `input`. The `&mut` in front means "you may change my variable". Why that is needed is the subject of [chapter 15](#borrowing).
+- **`.expect("...")`** Reading can fail, for example if the terminal is closed. `read_line` therefore does not just "work": it reports whether it worked. `.expect` says "if it failed, stop the program and show this message". [Chapter 23](#errors) covers this in depth.
 
 The call is written over three lines only to keep it readable. `io::stdin().read_line(&mut input).expect("...")` is one instruction, ending in one semicolon.
 
 :::plain Modules and the path separator
-The double colon `::` is a path separator, like the `/` in a file name. Rust organises code into **modules**, and the standard library is a tree of them. `std::io` means "the `io` module inside `std`", and `std::cmp::Ordering` (you will meet it in Step 4) means "the type `Ordering` inside the `cmp` module inside `std`". A `use` line at the top of a file brings one of those names into your file so you can write it short: `use std::io;` lets you write `io::stdin()` instead of `std::io::stdin()`. Your own project is a module too — everything in `src/main.rs` lives in a module called `main` — and later you will split a program across several files, one module per file, in [chapter 17](#modules).
+The double colon `::` is a path separator, like the `/` in a file name. Rust organises code into **modules**, and the standard library is a tree of them. `std::io` means "the `io` module inside `std`", and `std::cmp::Ordering` (you will meet it in Step 4) means "the type `Ordering` inside the `cmp` module inside `std`". A `use` line at the top of a file brings one of those names into your file so you can write it short: `use std::io;` lets you write `io::stdin()` instead of `std::io::stdin()`. Your own project is a module too — everything in `src/main.rs` lives in a module called `main` — and later you will split a program across several files, one module per file, in [chapter 22](#modules).
 :::
 
 ## Step 2: pick a secret number
@@ -160,7 +160,7 @@ The result of `parse` is one of two things: `Ok` with the number inside, or `Err
 In many languages a failed conversion "throws an exception" that flies through the program until something catches it, or crashes the program if nothing does. In Rust, a function that can fail returns a value that says "it worked, here is the result" or "it failed, here is why". The compiler makes sure you look at it. You cannot forget to handle the failure.
 :::
 
-You have now met one of Rust's two "maybe" types: **`Result`**, which means "it worked, here is the value" or "it failed, here is why". Its sibling is **`Option`**, which means "there is a value" or "there is none at all". Both are ordinary values that you handle with `match`, and [chapter 13](#enums) shows them in full.
+You have now met one of Rust's two "maybe" types: **`Result`**, which means "it worked, here is the value" or "it failed, here is why". Its sibling is **`Option`**, which means "there is a value" or "there is none at all". Both are ordinary values that you handle with `match`, and [chapter 18](#enums) shows them in full.
 
 ## Step 4: compare the guess with the secret
 
@@ -182,7 +182,7 @@ fn main() {
 Too big.
 ```
 
-`guess.cmp(&secret)` compares two values and answers with one of exactly three possibilities: `Ordering::Less`, `Ordering::Greater` or `Ordering::Equal`. The `match` has one arm for each. If you forget one, the program does not compile, so no case can be missed. (The `&` means "look at this value without taking it". It is explained in [chapter 10](#borrowing).)
+`guess.cmp(&secret)` compares two values and answers with one of exactly three possibilities: `Ordering::Less`, `Ordering::Greater` or `Ordering::Equal`. The `match` has one arm for each. If you forget one, the program does not compile, so no case can be missed. (The `&` means "look at this value without taking it". It is explained in [chapter 15](#borrowing).)
 
 You could write the same with `if guess < secret { ... } else if guess > secret { ... } else { ... }`. Both are correct. The `match` version lets the compiler check that all cases are covered.
 
@@ -342,7 +342,7 @@ if distance != 0 && distance <= 5 {
 }
 ```
 
-`abs_diff` avoids the overflow problem you met in [chapter 4](#types): with `u32` values, `3 - 5` cannot be stored, because a `u32` cannot be negative. In a debug build that subtraction would panic. Whenever you subtract unsigned numbers, ask yourself which one is bigger.
+`abs_diff` avoids the overflow problem you met in [chapter 9](#types): with `u32` values, `3 - 5` cannot be stored, because a `u32` cannot be negative. In a debug build that subtraction would panic. Whenever you subtract unsigned numbers, ask yourself which one is bigger.
 :::
 
 ## What you have learned
@@ -364,4 +364,4 @@ if distance != 0 && distance <= 5 {
 - I changed something of my own (a different range, different messages, a "play again" question).
 :::
 
-You have finished Part 1. You can now write small programs with variables, types, functions, decisions and loops. Part 2 covers the idea that sets Rust apart from every other language: ownership.
+You have finished the opening syntax track. You can now write small programs with variables, types, functions, decisions and loops. Next comes the idea that sets Rust apart from every other language: ownership and memory.

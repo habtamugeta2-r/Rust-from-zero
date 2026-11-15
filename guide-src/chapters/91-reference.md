@@ -13,38 +13,38 @@ A **keyword** is a word that belongs to the language. You cannot use it as a nam
 
 | Keyword | Meaning | Chapter |
 |---|---|---|
-| `as` | convert between simple types (`x as f64`); rename in a `use` | [29](#type-system), [17](#modules) |
-| `async`, `await` | write and wait for asynchronous code | [32](#async) |
-| `break`, `continue` | leave a loop; go to its next round | [6](#control-flow) |
-| `const` | a constant; also `const fn` and `const` generics | [3](#variables), [19](#generics) |
-| `crate` | the root of the current crate, in paths | [17](#modules) |
-| `dyn` | a trait object: `dyn Trait` | [20](#traits) |
-| `else` | the other branch of `if` and of `let … else` | [6](#control-flow), [13](#enums) |
-| `enum` | define an enum | [13](#enums) |
-| `extern` | functions of another language | [39](#ffi) |
-| `false`, `true` | the two values of `bool` | [4](#types) |
-| `fn` | define a function | [5](#functions) |
-| `for`, `in` | loop over an iterator | [6](#control-flow), [25](#iterators) |
-| `if` | a decision; also a guard in `match` | [6](#control-flow), [14](#patterns) |
-| `impl` | methods for a type, or a trait for a type; `impl Trait` | [12](#structs), [20](#traits) |
-| `let` | a new variable | [3](#variables) |
-| `loop`, `while` | repeat for ever; repeat while a condition holds | [6](#control-flow) |
-| `match` | compare a value with patterns | [6](#control-flow), [13](#enums), [14](#patterns) |
-| `mod` | define a module | [17](#modules) |
-| `move` | a closure takes ownership of what it uses | [24](#closures), [30](#threads) |
-| `mut` | allow change: `let mut`, `&mut` | [3](#variables), [10](#borrowing) |
-| `pub` | make an item visible outside its module | [17](#modules) |
-| `ref` | bind by reference in a pattern (older style) | [14](#patterns) |
-| `return` | leave a function with a value | [5](#functions) |
-| `self`, `Self` | the value a method is called on; its type | [12](#structs) |
-| `static` | a value that lives for the whole run | [31](#shared-state) |
-| `struct` | define a struct | [12](#structs) |
-| `super` | the parent module, in paths | [17](#modules) |
-| `trait` | define a trait | [20](#traits) |
-| `type` | a type alias; an associated type | [29](#type-system), [28](#advanced-traits) |
-| `unsafe` | code whose safety the compiler cannot check | [38](#unsafe) |
-| `use` | bring a path into scope | [17](#modules) |
-| `where` | bounds on type parameters, after the signature | [19](#generics) |
+| `as` | convert between simple types (`x as f64`); rename in a `use` | [34](#type-system), [22](#modules) |
+| `async`, `await` | write and wait for asynchronous code | [57](#async) |
+| `break`, `continue` | leave a loop; go to its next round | [11](#control-flow) |
+| `const` | a constant; also `const fn` and `const` generics | [8](#variables), [24](#generics) |
+| `crate` | the root of the current crate, in paths | [22](#modules) |
+| `dyn` | a trait object: `dyn Trait` | [25](#traits) |
+| `else` | the other branch of `if` and of `let … else` | [11](#control-flow), [18](#enums) |
+| `enum` | define an enum | [18](#enums) |
+| `extern` | functions of another language | [37](#ffi) |
+| `false`, `true` | the two values of `bool` | [9](#types) |
+| `fn` | define a function | [10](#functions) |
+| `for`, `in` | loop over an iterator | [11](#control-flow), [30](#iterators) |
+| `if` | a decision; also a guard in `match` | [11](#control-flow), [19](#patterns) |
+| `impl` | methods for a type, or a trait for a type; `impl Trait` | [17](#structs), [25](#traits) |
+| `let` | a new variable | [8](#variables) |
+| `loop`, `while` | repeat for ever; repeat while a condition holds | [11](#control-flow) |
+| `match` | compare a value with patterns | [11](#control-flow), [18](#enums), [19](#patterns) |
+| `mod` | define a module | [22](#modules) |
+| `move` | a closure takes ownership of what it uses | [29](#closures), [55](#threads) |
+| `mut` | allow change: `let mut`, `&mut` | [8](#variables), [15](#borrowing) |
+| `pub` | make an item visible outside its module | [22](#modules) |
+| `ref` | bind by reference in a pattern (older style) | [19](#patterns) |
+| `return` | leave a function with a value | [10](#functions) |
+| `self`, `Self` | the value a method is called on; its type | [17](#structs) |
+| `static` | a value that lives for the whole run | [56](#shared-state) |
+| `struct` | define a struct | [17](#structs) |
+| `super` | the parent module, in paths | [22](#modules) |
+| `trait` | define a trait | [25](#traits) |
+| `type` | a type alias; an associated type | [34](#type-system), [33](#advanced-traits) |
+| `unsafe` | code whose safety the compiler cannot check | [36](#unsafe) |
+| `use` | bring a path into scope | [22](#modules) |
+| `where` | bounds on type parameters, after the signature | [24](#generics) |
 
 A few more words have a meaning only in special places, and can be used as names elsewhere: `union`, `macro_rules`, `raw`, `safe`, and `'static` among the lifetimes.
 
@@ -148,7 +148,7 @@ fn main() {
 
 ### Working with single bits
 
-An integer is a row of bits ([chapter 4](#types)). Six operators work on the bits directly. They are used for sets of yes-or-no flags packed into one number, for file formats and network protocols, and for hardware.
+An integer is a row of bits ([chapter 9](#types)). Six operators work on the bits directly. They are used for sets of yes-or-no flags packed into one number, for file formats and network protocols, and for hardware.
 
 ```rust run
 const READ: u8 = 0b001;
@@ -191,7 +191,7 @@ For more than a few flags, the crate `bitflags` gives them a type of their own, 
 | `"text"` | a `&str`. `\n`, `\t`, `\\`, `\"` and `\u{…}` work inside |
 | `r"C:\temp"`, `r#"say "hi""#` | a raw string: backslashes (and, with `#`, quotation marks) mean themselves |
 | `b"bytes"` | a byte string: `&[u8; 5]` |
-| `c"text"` | a C string, with a zero byte at the end: `&CStr` ([chapter 39](#ffi)) |
+| `c"text"` | a C string, with a zero byte at the end: `&CStr` ([chapter 37](#ffi)) |
 | `(1, "a")`, `()` | a tuple; the empty tuple, called "unit" |
 | `[1, 2, 3]`, `[0; 8]` | an array; an array of eight zeros |
 
@@ -239,7 +239,7 @@ fn main() {
 | 10 | `{{` `}}` | a real brace |
 | 11 | `{:#?}` | `Debug` spread over several lines |
 
-`{:p}` prints the address in a pointer or reference. To make your own type work with `{}`, implement `Display` ([chapter 20](#traits)). For `{:?}`, derive `Debug`.
+`{:p}` prints the address in a pointer or reference. To make your own type work with `{}`, implement `Display` ([chapter 25](#traits)). For `{:?}`, derive `Debug`.
 
 ## Traits you can derive
 
@@ -257,7 +257,7 @@ fn main() {
 | `Hash` | use as a key in a `HashMap` or `HashSet` | needs `Eq`. Equal values must have equal hashes, which the derived versions guarantee |
 | `Default` | `Type::default()` and `..Default::default()` | numbers become 0, text empty, `bool` false, `Option` `None`. For an enum, mark one variant with `#[default]` |
 
-A common full set for a small value type is `#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Default)]`. Crates add more: `Serialize` and `Deserialize` from serde ([chapter 43](#serde)), `Error` from thiserror ([chapter 18](#errors)), `Parser` from clap ([chapter 44](#cli)).
+A common full set for a small value type is `#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Default)]`. Crates add more: `Serialize` and `Deserialize` from serde ([chapter 78](#serde)), `Error` from thiserror ([chapter 23](#errors)), `Parser` from clap ([chapter 73](#cli)).
 
 ## `Option` and `Result`: which method?
 
@@ -279,9 +279,9 @@ A common full set for a small value type is `#[derive(Debug, Clone, Copy, Partia
 | `Result<T, E>` | the value, or a fallback | `unwrap_or(x)`, `unwrap_or_else(\|e\| …)`, `unwrap_or_default()` |
 | `Result<T, E>` | to stop with a message if this "cannot happen" | `expect("why it cannot fail")` |
 | `Option<Result<T, E>>` | `Result<Option<T>, E>` | `transpose()` |
-| many `Result<T, E>` | one `Result<Vec<T>, E>` | `collect()` ([chapter 25](#iterators)) |
+| many `Result<T, E>` | one `Result<Vec<T>, E>` | `collect()` ([chapter 30](#iterators)) |
 
-[Chapter 41](#idioms) shows these in use.
+[Chapter 40](#idioms) shows these in use.
 
 ## A map of the standard library
 
@@ -289,59 +289,59 @@ You reach everything with `use std::…`. The most used items need no `use` at a
 
 | Module | What is in it | Chapter |
 |---|---|---|
-| `std::collections` | `HashMap`, `HashSet`, `BTreeMap`, `BTreeSet`, `VecDeque`, `BinaryHeap` | [15](#collections) |
-| `std::fmt` | `Display`, `Debug`, `Formatter`, `Write` for text | [20](#traits) |
-| `std::fs` | files and folders: `read_to_string`, `write`, `File`, `read_dir`, `create_dir_all` | [18](#errors), [23](#project-search) |
-| `std::io` | `stdin`, `stdout`, `Read`, `Write`, `BufRead`, `BufReader`, `BufWriter`, `Error` | [7](#project-guessing), [18](#errors), [51](#performance) |
-| `std::path` | `Path` and `PathBuf`: file paths that work on every system | [23](#project-search) |
-| `std::env` | command-line arguments (`args`) and environment variables (`var`) | [23](#project-search), [46](#web) |
-| `std::process` | `exit`, `ExitCode`, and `Command` to run other programs | [44](#cli) |
-| `std::time` | `Duration`, `Instant` (a stopwatch), `SystemTime` (the clock) | [30](#threads), [51](#performance) |
-| `std::thread` | `spawn`, `scope`, `sleep`, `available_parallelism` | [30](#threads) |
-| `std::sync` | `Arc`, `Mutex`, `RwLock`, `Condvar`, `OnceLock`, `LazyLock`; `mpsc` channels; `atomic` types | [30](#threads), [31](#shared-state) |
-| `std::rc`, `std::cell` | `Rc`, `Weak`; `Cell`, `RefCell`, `UnsafeCell` | [27](#smart-pointers), [38](#unsafe) |
-| `std::borrow` | `Cow`: borrowed or owned | [27](#smart-pointers) |
-| `std::mem` | `swap`, `replace`, `take`, `size_of`, `drop`, `forget` | [40](#memory-layout) |
-| `std::ptr` | tools for raw pointers | [38](#unsafe) |
-| `std::cmp` | `Ordering`, `min`, `max`, `Reverse` | [20](#traits), [24](#closures) |
-| `std::ops` | the traits behind the operators: `Add`, `Index`, `Deref`, `Drop`, `Fn`, ranges | [28](#advanced-traits) |
-| `std::iter` | `Iterator` and its helpers: `once`, `repeat`, `from_fn`, `successors` | [25](#iterators) |
-| `std::convert` | `From`, `Into`, `TryFrom`, `TryInto`, `AsRef` | [29](#type-system) |
-| `std::str`, `std::string`, `std::char` | text: `FromStr`, `from_utf8`, `String`, character tools | [11](#slices-strings) |
-| `std::num` | number errors (`ParseIntError`), `NonZero`, `Wrapping` | [18](#errors), [40](#memory-layout) |
-| `std::error` | the trait `Error` | [18](#errors) |
-| `std::any` | `Any`, `type_name` | [28](#advanced-traits) |
-| `std::marker` | `Send`, `Sync`, `Sized`, `Copy`, `PhantomData` | [28](#advanced-traits), [29](#type-system) |
-| `std::net` | `TcpListener`, `TcpStream`, `UdpSocket`, addresses | [32](#async) |
-| `std::ffi`, `std::os` | `CString`, `CStr`, `OsString`; things special to one operating system | [39](#ffi) |
-| `std::future`, `std::pin`, `std::task` | the parts under `async` | [32](#async) |
-| `std::hint` | `black_box`, `spin_loop` | [51](#performance) |
-| `std::panic` | `catch_unwind`, panic hooks | [39](#ffi) |
+| `std::collections` | `HashMap`, `HashSet`, `BTreeMap`, `BTreeSet`, `VecDeque`, `BinaryHeap` | [20](#collections) |
+| `std::fmt` | `Display`, `Debug`, `Formatter`, `Write` for text | [25](#traits) |
+| `std::fs` | files and folders: `read_to_string`, `write`, `File`, `read_dir`, `create_dir_all` | [23](#errors), [28](#project-search) |
+| `std::io` | `stdin`, `stdout`, `Read`, `Write`, `BufRead`, `BufReader`, `BufWriter`, `Error` | [12](#project-guessing), [23](#errors), [74](#performance) |
+| `std::path` | `Path` and `PathBuf`: file paths that work on every system | [28](#project-search) |
+| `std::env` | command-line arguments (`args`) and environment variables (`var`) | [28](#project-search), [64](#web) |
+| `std::process` | `exit`, `ExitCode`, and `Command` to run other programs | [73](#cli) |
+| `std::time` | `Duration`, `Instant` (a stopwatch), `SystemTime` (the clock) | [55](#threads), [74](#performance) |
+| `std::thread` | `spawn`, `scope`, `sleep`, `available_parallelism` | [55](#threads) |
+| `std::sync` | `Arc`, `Mutex`, `RwLock`, `Condvar`, `OnceLock`, `LazyLock`; `mpsc` channels; `atomic` types | [55](#threads), [56](#shared-state) |
+| `std::rc`, `std::cell` | `Rc`, `Weak`; `Cell`, `RefCell`, `UnsafeCell` | [32](#smart-pointers), [36](#unsafe) |
+| `std::borrow` | `Cow`: borrowed or owned | [32](#smart-pointers) |
+| `std::mem` | `swap`, `replace`, `take`, `size_of`, `drop`, `forget` | [38](#memory-layout) |
+| `std::ptr` | tools for raw pointers | [36](#unsafe) |
+| `std::cmp` | `Ordering`, `min`, `max`, `Reverse` | [25](#traits), [29](#closures) |
+| `std::ops` | the traits behind the operators: `Add`, `Index`, `Deref`, `Drop`, `Fn`, ranges | [33](#advanced-traits) |
+| `std::iter` | `Iterator` and its helpers: `once`, `repeat`, `from_fn`, `successors` | [30](#iterators) |
+| `std::convert` | `From`, `Into`, `TryFrom`, `TryInto`, `AsRef` | [34](#type-system) |
+| `std::str`, `std::string`, `std::char` | text: `FromStr`, `from_utf8`, `String`, character tools | [16](#slices-strings) |
+| `std::num` | number errors (`ParseIntError`), `NonZero`, `Wrapping` | [23](#errors), [38](#memory-layout) |
+| `std::error` | the trait `Error` | [23](#errors) |
+| `std::any` | `Any`, `type_name` | [33](#advanced-traits) |
+| `std::marker` | `Send`, `Sync`, `Sized`, `Copy`, `PhantomData` | [33](#advanced-traits), [34](#type-system) |
+| `std::net` | `TcpListener`, `TcpStream`, `UdpSocket`, addresses | [57](#async) |
+| `std::ffi`, `std::os` | `CString`, `CStr`, `OsString`; things special to one operating system | [37](#ffi) |
+| `std::future`, `std::pin`, `std::task` | the parts under `async` | [57](#async) |
+| `std::hint` | `black_box`, `spin_loop` | [74](#performance) |
+| `std::panic` | `catch_unwind`, panic hooks | [37](#ffi) |
 
-Without an operating system, a program uses `core` (everything that needs neither memory allocation nor a system) and `alloc` (`Box`, `Vec`, `String`), which together make up most of `std` ([chapter 50](#games-embedded)).
+Without an operating system, a program uses `core` (everything that needs neither memory allocation nor a system) and `alloc` (`Box`, `Vec`, `String`), which together make up most of `std` ([chapter 80](#games-embedded)).
 
 ## Attributes you will see
 
 | Attribute | Meaning | Chapter |
 |---|---|---|
-| `#[derive(…)]` | generate trait implementations | [12](#structs) |
-| `#[allow(lint)]`, `#[warn(…)]`, `#[deny(…)]`, `#[expect(…)]` | silence a warning, switch it on, make it an error, or say "this warning must appear here" | [35](#quality-tools) |
-| `#[cfg(…)]`, `#[cfg_attr(…)]` | compile the item only under a condition | [34](#cargo) |
-| `#[test]`, `#[should_panic]`, `#[ignore]` | a test; a test that must panic; a test that runs only on request | [22](#testing) |
-| `#[must_use]` | warn when the result is thrown away | [37](#macros) |
-| `#[deprecated]` | warn users that the item will go away | [37](#macros) |
-| `#[non_exhaustive]` | more fields or variants may come: users must be ready for them | [41](#idioms) |
-| `#[inline]`, `#[cold]` | hints for the optimiser | [51](#performance) |
-| `#[repr(C)]`, `#[repr(u8)]`, `#[repr(transparent)]` | fix the layout of a type in memory | [40](#memory-layout) |
+| `#[derive(…)]` | generate trait implementations | [17](#structs) |
+| `#[allow(lint)]`, `#[warn(…)]`, `#[deny(…)]`, `#[expect(…)]` | silence a warning, switch it on, make it an error, or say "this warning must appear here" | [71](#quality-tools) |
+| `#[cfg(…)]`, `#[cfg_attr(…)]` | compile the item only under a condition | [70](#cargo) |
+| `#[test]`, `#[should_panic]`, `#[ignore]` | a test; a test that must panic; a test that runs only on request | [27](#testing) |
+| `#[must_use]` | warn when the result is thrown away | [35](#macros) |
+| `#[deprecated]` | warn users that the item will go away | [35](#macros) |
+| `#[non_exhaustive]` | more fields or variants may come: users must be ready for them | [40](#idioms) |
+| `#[inline]`, `#[cold]` | hints for the optimiser | [74](#performance) |
+| `#[repr(C)]`, `#[repr(u8)]`, `#[repr(transparent)]` | fix the layout of a type in memory | [38](#memory-layout) |
 | `#[track_caller]` | when this function panics, report the line of its caller | |
-| `#[macro_export]` | make a `macro_rules!` macro public | [37](#macros) |
-| `#[global_allocator]` | choose the allocator for the whole program | [51](#performance) |
-| `#![no_std]`, `#![no_main]` | a crate without the standard library; without the usual start | [50](#games-embedded) |
-| `#![forbid(unsafe_code)]` | refuse `unsafe` in the whole crate | [38](#unsafe) |
+| `#[macro_export]` | make a `macro_rules!` macro public | [35](#macros) |
+| `#[global_allocator]` | choose the allocator for the whole program | [74](#performance) |
+| `#![no_std]`, `#![no_main]` | a crate without the standard library; without the usual start | [80](#games-embedded) |
+| `#![forbid(unsafe_code)]` | refuse `unsafe` in the whole crate | [36](#unsafe) |
 
 ## HTTP status codes
 
-HTTP status codes are part of every web service, and the numbers matter to clients. The ones a Rust web service sends, in practice ([chapter 46](#web)):
+HTTP status codes are part of every web service, and the numbers matter to clients. The ones a Rust web service sends, in practice ([chapter 64](#web)):
 
 | Code | Name | Meaning | When a server sends it |
 |---|---|---|---|
@@ -369,14 +369,45 @@ The two that are most often confused are **401** and **403**: authentication ver
 
 The full list, with the official definitions, is in [RFC 9110](https://www.rfc-editor.org/rfc/rfc9110).
 
+## Computer Systems & Linux Internals Quick Reference
+
+Quick lookup tables for [Part I](#hardware-architecture), [Part II](#compilation-pipeline), [Part IV–VIII](#virtual-memory-address-spaces), and [the Linux Systems Lab](#linux-systems-lab):
+
+### Calling Conventions & Linux `syscall` Registers
+
+| Slot | x86-64 System V C Call | x86-64 Linux `syscall` | ARM64 (AArch64) C Call | ARM64 Linux `svc #0` |
+|---|---|---|---|---|
+| Syscall # | — | `RAX` | — | `X8` |
+| Arg 1 | `RDI` | `RDI` | `X0` | `X0` |
+| Arg 2 | `RSI` | `RSI` | `X1` | `X1` |
+| Arg 3 | `RDX` | `RDX` | `X2` | `X2` |
+| Arg 4 | `RCX` | `R10` | `X3` | `X3` |
+| Arg 5 | `R8` | `R8` | `X4` | `X4` |
+| Arg 6 | `R9` | `R9` | `X5` | `X5` |
+| Return | `RAX` (+ `RDX`) | `RAX` (`-4095..-1` = `-errno`) | `X0` (+ `X1`) | `X0` |
+| Callee-saved | `RBX, RBP, R12–R15` | all preserved except `RCX, R11` | `X19–X28, X29, X30` | preserved |
+
+### Essential Linux Binary & Process Inspection Commands
+
+| Command | Purpose |
+|---|---|
+| `rustc --emit=mir,llvm-ir,asm` | Inspect Rust MIR, LLVM IR, and target assembly |
+| `objdump -d -M intel <bin>` | Disassemble executable machine bytes with Intel mnemonics |
+| `readelf -h -S -l -s <bin>` | Inspect ELF header, sections (`.text`, `.rodata`, `.data`, `.bss`), `PT_LOAD` segments, symbols |
+| `nm -C <bin>` | List demangled symbols in an object file or executable |
+| `ldd <bin>` | Print shared library dependencies (`libc.so.6`, `ld-linux-x86-64.so.2`) |
+| `strace -f -e trace=file,network ./prog` | Trace live Linux syscalls (`openat`, `read`, `write`, `mmap`, `futex`, `epoll_wait`) |
+| `cat /proc/self/maps` | Inspect live process Virtual Memory Areas (`r-xp`, `rw-p`, `[heap]`, `[stack]`, `[vdso]`) |
+| `cat /proc/self/status` | Inspect `Pid`, `Threads`, `VmRSS`, and context switch counts |
+
 ## More tables in the chapters
 
-- The basic types, with sizes and ranges: [chapter 4](#types).
-- All patterns: [chapter 14](#patterns).
-- The most used iterator methods: [chapter 25](#iterators).
-- Which smart pointer for which job: [chapter 27](#smart-pointers).
-- Naming rules: [chapter 41](#idioms).
-- The Cargo commands: [chapter 34](#cargo).
+- The basic types, with sizes and ranges: [chapter 9](#types).
+- All patterns: [chapter 19](#patterns).
+- The most used iterator methods: [chapter 30](#iterators).
+- Which smart pointer for which job: [chapter 32](#smart-pointers).
+- Naming rules: [chapter 40](#idioms).
+- The Cargo commands: [chapter 70](#cargo).
 - The common compiler errors and their repairs: [the errors appendix](#errors-ref).
 
 ## Authoritative and current sources

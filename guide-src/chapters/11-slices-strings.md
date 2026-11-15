@@ -1,5 +1,5 @@
 @id slices-strings
-@part p2
+@part p3
 @title Strings and slices
 @short Strings and slices
 @level beginner
@@ -69,7 +69,7 @@ tic-tac
 - **`+`** glues text onto a `String`. The left side must be a `String` and is *moved* into the result. Everything added must be a `&str`, so a `String` on the right needs a `&`. After this line `first` cannot be used any more, but `second` can. When this feels confusing, use `format!`.
 
 :::note Growing a `String` can move its characters
-The characters of a `String` live on the heap, in a buffer of a certain size (the *capacity* from the table above). When a `push_str` needs more room than is left, the `String` asks for a bigger buffer, moves all the characters into it, and frees the old one. This is exactly the move a `Vec` can make in [chapter 10](#borrowing), and it is the reason the compiler will not let you keep a borrow of part of a `String` while the `String` might grow: the part you borrowed could be sent to a new place in memory. You will not feel this while learning — the compiler keeps it correct for you — but it is the same idea underneath.
+The characters of a `String` live on the heap, in a buffer of a certain size (the *capacity* from the table above). When a `push_str` needs more room than is left, the `String` asks for a bigger buffer, moves all the characters into it, and frees the old one. This is exactly the move a `Vec` can make in [chapter 15](#borrowing), and it is the reason the compiler will not let you keep a borrow of part of a `String` while the `String` might grow: the part you borrowed could be sent to a new place in memory. You will not feel this while learning — the compiler keeps it correct for you — but it is the same idea underneath.
 :::
 
 ## Slices: borrowing a part
@@ -265,7 +265,7 @@ Slicing with fixed numbers such as `&text[0..3]` is only safe when you know what
 :::
 
 :::compare Text in other languages
-- **C:** a string is a row of bytes that ends with a zero byte. It does not know its own length. Forgetting the final zero, or writing past the end, causes the buffer overflows described in [chapter 8](#memory).
+- **C:** a string is a row of bytes that ends with a zero byte. It does not know its own length. Forgetting the final zero, or writing past the end, causes the buffer overflows described in [chapter 13](#memory).
 - **Java and JavaScript:** strings are stored as 16-bit units. `"🦀".length` is 2 in JavaScript, although it is one character, and taking "the first character" can give half an emoji.
 - **Python 3:** indexing by character works, at the price of a storage format that can use up to 4 bytes for every character.
 - **Go:** strings are byte sequences like in Rust, and indexing gives a byte without warning.

@@ -1,5 +1,5 @@
 @id databases
-@part p10
+@part p11
 @title Databases: SQL with SQLx, Diesel and SeaORM
 @short Databases
 @level intermediate
@@ -381,7 +381,7 @@ sara 7500, tomas 4500
 
 - `pool.begin()` starts a transaction. Statements run on it with `&mut *transaction` in place of `&pool`.
 - `commit()` makes the changes permanent.
-- If the transaction value is **dropped without a commit**, everything is undone. This is called a **rollback**. An early `return` or a `?` therefore cleans up by itself. It is RAII from [chapter 12](#structs), applied to a database.
+- If the transaction value is **dropped without a commit**, everything is undone. This is called a **rollback**. An early `return` or a `?` therefore cleans up by itself. It is RAII from [chapter 17](#structs), applied to a database.
 - `CHECK (cents >= 0)` is a **constraint**: a rule that the database enforces for every row, whoever writes. Rules that must always hold belong into the schema, as the last line of defence.
 
 Databases promise four properties for transactions, known as **ACID**: *atomic* (all or nothing), *consistent* (the rules hold afterwards), *isolated* (transactions running at the same time do not see each other's half-done work), and *durable* (what is committed survives a crash).
@@ -563,7 +563,7 @@ Running `sqlx migrate run` again does nothing, because both are recorded as inst
 sqlx::migrate!().run(&pool).await?;
 ```
 
-The macro reads the folder while the program is compiled. Cargo compiles again only when a Rust file changes, so a new migration file alone would go unnoticed. A build script ([chapter 39](#ffi)) next to `Cargo.toml` tells Cargo to watch the folder. The command `sqlx migrate build-script` writes it for you:
+The macro reads the folder while the program is compiled. Cargo compiles again only when a Rust file changes, so a new migration file alone would go unnoticed. A build script ([chapter 37](#ffi)) next to `Cargo.toml` tells Cargo to watch the folder. The command `sqlx migrate build-script` writes it for you:
 
 ```rust file=build.rs
 fn main() {
@@ -766,12 +766,12 @@ GET /books/2 -> 200 OK  {"id":2,"title":"Neuromancer","year":1984}
 GET /books/9 -> 404 Not Found  {"error":"not found"}
 ```
 
-(The helper `send` is the one from the [previous chapter](#web).)
+(The helper `send` is the one from [the Axum chapter](#web).)
 
 - The same `Book` struct derives `FromRow` for the database and `Serialize` for JSON. A row becomes a struct, and the struct becomes the response.
 - `INSERT … RETURNING id, title, year` inserts a row and returns it in one statement, with the id that the database chose.
 - `impl From<sqlx::Error> for ApiError` lets `?` convert database errors. They become a 500 response with a neutral message, and the details are logged.
-- Compared with the notes API of the last chapter, the `Mutex` is gone. The database handles concurrent access, and the data survives a restart.
+- Compared with the in-memory notes API of [the Axum chapter](#web), the `Mutex` is gone. The database handles concurrent access using pages, B-trees, and write-ahead logging on top of the file-system durability mechanisms you studied earlier in this part, so data survives a restart.
 
 ### Testing with a database
 

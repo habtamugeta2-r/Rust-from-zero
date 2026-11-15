@@ -1,5 +1,5 @@
 @id quality-tools
-@part p8
+@part p12
 @title Tools for quality: formatting, linting, debugging, CI
 @short Quality tools
 @level intermediate
@@ -193,7 +193,7 @@ pedantic = { level = "warn", priority = -1 }
 When you switch a lint off, add a comment with the reason. `#[expect(lint_name)]` is a stricter relative of `#[allow]`: it silences the lint and warns you if the lint no longer fires, so that stale exceptions do not pile up.
 
 :::tip Clippy as a teacher
-Run Clippy on everything you write while learning. Its suggestions preview many of the idioms gathered later in [chapter 41](#idioms), applied to your own code at the moment you need them. Read the linked explanations. Do not treat the list as orders, though: if a suggestion makes the code less clear, keep your version and allow the lint with a reason.
+Run Clippy on everything you write while learning. Its suggestions preview many of the idioms gathered later in [chapter 40](#idioms), applied to your own code at the moment you need them. Read the linked explanations. Do not treat the list as orders, though: if a suggestion makes the code less clear, keep your version and allow the lint with a reason.
 :::
 
 ## The compiler's own help
@@ -244,7 +244,7 @@ fn main() {
 [src/main.rs:3:5] values.len() = 3
 ```
 
-For structs, derive `Debug` and print with `{:#?}`. For a program that runs for a long time, replace ad hoc printing with proper **logging**, which can be switched on and off by level. The crates for that, `log` and `tracing`, are covered in [chapter 42](#crates).
+For structs, derive `Debug` and print with `{:#?}`. For a program that runs for a long time, replace ad hoc printing with proper **logging**, which can be switched on and off by level. The crates for that, `log` and `tracing`, are covered in [chapter 77](#crates).
 
 ### Backtraces
 
@@ -354,7 +354,7 @@ One more line earns its place in any project that reads a database:
           SQLX_OFFLINE: "true"
 ```
 
-`SQLX_OFFLINE=true` tells SQLx to check its queries against the saved description in the `.sqlx/` folder instead of connecting to a live database ([chapter 47](#databases)). The cache step keeps compiled dependencies between runs, which saves minutes. Larger projects add a matrix that runs the tests on Linux, Windows and macOS, a job on the oldest supported Rust version, and `cargo audit` on a schedule.
+`SQLX_OFFLINE=true` tells SQLx to check its queries against the saved description in the `.sqlx/` folder instead of connecting to a live database ([chapter 68](#databases)). The cache step keeps compiled dependencies between runs, which saves minutes. Larger projects add a matrix that runs the tests on Linux, Windows and macOS, a job on the oldest supported Rust version, and `cargo audit` on a schedule.
 
 Run the same commands yourself before you push. Many people put them in a script, or use a tool such as `just`, a simple command runner:
 

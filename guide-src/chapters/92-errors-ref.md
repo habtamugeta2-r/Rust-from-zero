@@ -40,7 +40,7 @@ A method that works:
 2. **Read all of it.** The `^^^` marks the place where the compiler gave up. The `---` marks show the earlier lines that caused the problem, and the real mistake is often there.
 3. **Try the `help`.** It is right more often than not. Think for a moment whether it does what you *mean*: a suggested `.clone()` compiles, and may still not be what you want.
 4. **Ask for the long explanation.** `rustc --explain E0382` prints a page about that error with examples.
-5. **Ask what would go wrong** if the compiler accepted the program ([chapter 10](#borrowing)). The answer usually shows the repair.
+5. **Ask what would go wrong** if the compiler accepted the program ([chapter 15](#borrowing)). The answer usually shows the repair.
 
 ## Ownership and moves
 
@@ -134,7 +134,7 @@ Many readers or one writer, never both. `first` reads from the list until the la
 - Finish reading before you write: move the `println!` above the `push`.
 - Copy out what you need: `let first = list[0];`.
 - Keep a position, not a reference.
-- Inside a loop over the list: collect the changes and apply them after the loop ([chapter 15](#collections)).
+- Inside a loop over the list: collect the changes and apply them after the loop ([chapter 20](#collections)).
 
 ### E0499: two mutable borrows at once
 
@@ -155,8 +155,8 @@ Only one `&mut` to a value can be in use at a time.
 **Repairs:**
 
 - Use the first reference for the last time before you create the second.
-- For two elements of one list: `split_at_mut`, `swap` or `get_disjoint_mut` ([chapter 15](#collections)).
-- For two fields of a struct: borrow the fields directly, not through a method ([chapter 12](#structs)).
+- For two elements of one list: `split_at_mut`, `swap` or `get_disjoint_mut` ([chapter 20](#collections)).
+- For two fields of a struct: borrow the fields directly, not through a method ([chapter 17](#structs)).
 
 ### E0596: cannot borrow as mutable
 
@@ -193,7 +193,7 @@ Variables do not change unless you allow it.
 **Repairs:**
 
 - `let mut count = 0;`
-- Or create a new variable with the same name: `let count = count + 1;` ([chapter 3](#variables)).
+- Or create a new variable with the same name: `let count = count + 1;` ([chapter 8](#variables)).
 
 ### E0381: used before it has a value
 
@@ -276,7 +276,7 @@ The function returns a reference, there are two references among the parameters,
 
 **Repairs:**
 
-- Say it: `fn pick<'a>(a: &'a str, b: &'a str) -> &'a str` ([chapter 21](#lifetimes)).
+- Say it: `fn pick<'a>(a: &'a str, b: &'a str) -> &'a str` ([chapter 26](#lifetimes)).
 - In a struct: `struct Parser<'a> { input: &'a str }`, or own the data with a `String`.
 - If the function creates the value, return an owned type.
 
@@ -316,8 +316,8 @@ The closure borrows `name`, and a new thread may run longer than the function th
 **Repairs:**
 
 - `move`: `thread::spawn(move || …)` gives the closure ownership.
-- To share with several threads: `Arc::clone` for each one, then `move` ([chapter 31](#shared-state)).
-- To really borrow: `thread::scope` ([chapter 30](#threads)).
+- To share with several threads: `Arc::clone` for each one, then `move` ([chapter 56](#shared-state)).
+- To really borrow: `thread::scope` ([chapter 55](#threads)).
 
 ## Types and traits
 
@@ -339,7 +339,7 @@ The most frequent error of all. The compiler shows the type it expected and the 
 - Text to number: `"5".parse::<u32>()` (a `Result`).
 - Number to number: `x as f64`, or `u64::from(x)`.
 - `&str` to `String`: `.to_string()`. `String` to `&str`: `&text`.
-- `Option<T>` where `T` is expected: handle the `None` case first ([chapter 13](#enums)).
+- `Option<T>` where `T` is expected: handle the `None` case first ([chapter 18](#enums)).
 - "expected `()`, found …" at the end of a function: the return type is missing, or a `;` after the last expression threw the value away.
 
 ### E0277: a trait is not implemented
@@ -362,11 +362,11 @@ An operation needs a trait that the type does not have. This one code covers man
 
 **Repairs:**
 
-- "doesn't implement `Display`": print with `{:?}` after `#[derive(Debug)]`, or implement `Display` ([chapter 20](#traits)).
+- "doesn't implement `Display`": print with `{:?}` after `#[derive(Debug)]`, or implement `Display` ([chapter 25](#traits)).
 - "the `?` operator can only be used in a function that returns `Result`": give the function (also `main`) the return type `Result<(), Box<dyn std::error::Error>>`.
 - "cannot add a float to an integer": convert one side, `count as f64 + 2.5`.
-- "the trait bound `T: …` is not satisfied": add the bound to your generic function ([chapter 19](#generics)).
-- "cannot be sent between threads safely": an `Rc` or `RefCell` crossed a thread. Use `Arc` and `Mutex` ([chapter 31](#shared-state)).
+- "the trait bound `T: …` is not satisfied": add the bound to your generic function ([chapter 24](#generics)).
+- "cannot be sent between threads safely": an `Rc` or `RefCell` crossed a thread. Use `Arc` and `Mutex` ([chapter 56](#shared-state)).
 - "the size … cannot be known at compilation time": a `str` or `[T]` without `&`, or a `dyn Trait` without `Box`.
 
 ### E0599: no method with this name
@@ -411,7 +411,7 @@ Operators are traits: `==` is `PartialEq`, `<` is `PartialOrd`, `+` is `Add`. Yo
 **Repairs:**
 
 - `#[derive(PartialEq)]` for `==`, `#[derive(PartialOrd)]` for `<`.
-- Implement `std::ops::Add` for `+` ([chapter 28](#advanced-traits)).
+- Implement `std::ops::Add` for `+` ([chapter 33](#advanced-traits)).
 - In a generic function: add the bound, `T: PartialOrd`.
 
 ### E0282: type annotations needed
@@ -451,7 +451,7 @@ Rust has no optional parameters and no default values for them.
 **Repairs:**
 
 - Pass every argument.
-- For optional settings: an `Option<T>` parameter, a struct of options with `Default`, or a builder ([chapter 41](#idioms)).
+- For optional settings: an `Option<T>` parameter, a struct of options with `Default`, or a builder ([chapter 40](#idioms)).
 
 ## Names, modules and privacy
 
@@ -518,7 +518,7 @@ Everything in a module is private unless marked `pub`, and the fields of a `pub 
 **Repairs:**
 
 - Make the field public: `pub balance: i64`.
-- Better, if the field has rules to protect: keep it private and add a method, `pub fn balance(&self) -> i64` ([chapter 17](#modules)).
+- Better, if the field has rules to protect: keep it private and add a method, `pub fn balance(&self) -> i64` ([chapter 22](#modules)).
 
 ## Patterns
 
@@ -589,7 +589,7 @@ A `Folder` would contain a `Folder`, which contains a `Folder`, without end.
 
 **Repairs:**
 
-- Put the inner value behind a pointer: `Option<Box<Folder>>` ([chapter 27](#smart-pointers)).
+- Put the inner value behind a pointer: `Option<Box<Folder>>` ([chapter 32](#smart-pointers)).
 
 ### E0038: this trait cannot be used as `dyn`
 
@@ -611,13 +611,13 @@ fn main() {
 
 Behind a `dyn Shape` the concrete type is unknown, so a method that returns `Self` or has type parameters cannot be called through it.
 
-Rust changed the vocabulary here: what older books and forum answers call **object safety** is now **dyn compatibility**, and the compiler's own message uses the new phrase. A trait is dyn compatible when every method can be called through a fat pointer — no `Self` by value, no generic type parameters, no associated constants, and no associated types without a specified value. [Chapter 28](#advanced-traits) walks through the rules one by one.
+Rust changed the vocabulary here: what older books and forum answers call **object safety** is now **dyn compatibility**, and the compiler's own message uses the new phrase. A trait is dyn compatible when every method can be called through a fat pointer — no `Self` by value, no generic type parameters, no associated constants, and no associated types without a specified value. [Chapter 33](#advanced-traits) walks through the rules one by one.
 
 **Repairs:**
 
 - Add `where Self: Sized` to that method: it is then left out of the trait object.
 - Return `Box<dyn Shape>` in place of `Self`.
-- Or use generics (`impl Shape`) where you do not need a mixed list ([chapter 28](#advanced-traits)).
+- Or use generics (`impl Shape`) where you do not need a mixed list ([chapter 33](#advanced-traits)).
 
 ### E0117: a foreign trait for a foreign type
 
@@ -639,7 +639,7 @@ You may implement a trait only if the trait or the type is defined in your crate
 
 **Repairs:**
 
-- Wrap the type in a struct of your own: `struct Names(Vec<String>);`, and implement the trait for that ([chapter 28](#advanced-traits)).
+- Wrap the type in a struct of your own: `struct Names(Vec<String>);`, and implement the trait for that ([chapter 33](#advanced-traits)).
 - Or define your own trait and implement it for the foreign type.
 
 ## Unsafe and async
@@ -660,7 +660,7 @@ The function has requirements that the compiler cannot check, and the caller mus
 
 **Repairs:**
 
-- `unsafe { danger(); }`, with a `// SAFETY:` comment that says why the requirements hold ([chapter 38](#unsafe)).
+- `unsafe { danger(); }`, with a `// SAFETY:` comment that says why the requirements hold ([chapter 36](#unsafe)).
 
 ### E0728: `await` outside async code
 
@@ -682,7 +682,7 @@ fn main() {
 **Repairs:**
 
 - Make the calling function `async`.
-- At the top: `#[tokio::main] async fn main()`, or `runtime.block_on(…)` ([chapter 32](#async)).
+- At the top: `#[tokio::main] async fn main()`, or `runtime.block_on(…)` ([chapter 57](#async)).
 - An async function that calls itself gives E0733: put the inner call in `Box::pin(…)`.
 
 ## Messages without a code
@@ -714,4 +714,4 @@ A warning does not stop the build, and it is nearly always right.
 | `value assigned … is never read` | the variable is overwritten before anyone looks at it |
 | `unused comparison`, `comparison is useless` | a test that is always true or always false, such as `x >= 0` for an unsigned number |
 
-`cargo clippy` adds several hundred more checks of this kind ([chapter 35](#quality-tools)).
+`cargo clippy` adds several hundred more checks of this kind ([chapter 71](#quality-tools)).

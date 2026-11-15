@@ -1,5 +1,5 @@
 @id closures
-@part p5
+@part p3
 @title Closures: functions you can carry around
 @short Closures
 @level intermediate
@@ -155,7 +155,7 @@ fn main() {
 6 11
 ```
 
-`make_adder` is a function that builds functions. Each closure it returns carries its own `n`. `move` is needed in two typical places: when a closure is **returned** from a function, and when it is handed to a **new thread** ([chapter 30](#threads)).
+`make_adder` is a function that builds functions. Each closure it returns carries its own `n`. `move` is needed in two typical places: when a closure is **returned** from a function, and when it is handed to a **new thread** ([chapter 55](#threads)).
 
 :::plain What a closure really is
 There is no magic. For each closure, the compiler creates a hidden struct with one field per captured variable, and one method that contains the body. `make_adder(5)` returns a struct holding the number 5. Calling the closure calls the method. That is why closures are exactly as fast as ordinary functions, and why each closure has its own unique type that has no name you can write.
@@ -460,7 +460,7 @@ One sorting routine, three orders, each chosen by a small closure. `Reverse` is 
 :::exercise challenge Remember results
 Some calculations are slow. Write a struct `Cache<F>` that wraps a function `F: Fn(u64) -> u64` and remembers every result in a `HashMap`, so that the function is run only once per input. Give it a method `get(&mut self, input: u64) -> u64`. Prove that it works by counting how often the wrapped function really runs.
 ::hint
-The struct has two fields: `function: F` and `results: HashMap<u64, u64>`. In `get`, look in the map first. If the input is not there, call `(self.function)(input)`, store the result and return it. To count the calls from outside, the wrapped closure cannot change a plain counter, because the bound is `Fn`. Use a `std::cell::Cell<u32>`, which allows changing a value through a shared reference (more about it in [chapter 27](#smart-pointers)).
+The struct has two fields: `function: F` and `results: HashMap<u64, u64>`. In `get`, look in the map first. If the input is not there, call `(self.function)(input)`, store the result and return it. To count the calls from outside, the wrapped closure cannot change a plain counter, because the bound is `Fn`. Use a `std::cell::Cell<u32>`, which allows changing a value through a shared reference (more about it in [chapter 32](#smart-pointers)).
 ::solution
 ```rust run
 use std::cell::Cell;

@@ -1,5 +1,5 @@
 @id ownership
-@part p2
+@part p3
 @title Ownership: one owner for every value
 @short Ownership and moves
 @level beginner
@@ -24,7 +24,7 @@ The rest of this chapter shows what these rules mean in code.
 
 ## Rule 3 in action: the value is dropped with its owner
 
-You already know scopes from [chapter 3](#variables): a variable lives until the closing `}` of its block. Ownership adds one thing. When a variable goes out of scope, Rust also cleans up everything the variable owns. Rust calls this **dropping** the value.
+You already know scopes from [chapter 8](#variables): a variable lives until the closing `}` of its block. Ownership adds one thing. When a variable goes out of scope, Rust also cleans up everything the variable owns. Rust calls this **dropping** the value.
 
 ```rust run
 fn main() {
@@ -143,7 +143,7 @@ Why is `x` still usable? An integer lives entirely on the stack. Copying it mean
 | `bool` and `char` | Anything that owns heap data or another resource, such as an open file |
 | Tuples and arrays that contain only `Copy` types, such as `(i32, f64)` or `[u8; 4]` | Tuples and arrays that contain a non-`Copy` type, such as `(i32, String)` |
 
-A rule of thumb: if a value is small, lives only on the stack, and needs no clean-up, it is `Copy`. In [chapter 12](#structs) you will see how to make your own types `Copy`.
+A rule of thumb: if a value is small, lives only on the stack, and needs no clean-up, it is `Copy`. In [chapter 17](#structs) you will see how to make your own types `Copy`.
 
 ## Ownership and functions
 
@@ -277,8 +277,10 @@ At the end of a block, the compiler drops the values that block created, startin
 - **No hidden costs.** Moves are always cheap. An expensive copy is always written as `.clone()`.
 - **Not only memory.** The same rules close files, release network connections and unlock locks at the right moment. Anything that needs cleaning up can be tied to an owner.
 
-:::details How a value cleans itself up: the `Drop` trait
-You never wrote the code that freed `greeting`'s characters in this chapter; the compiler inserted it. It does so by calling a special method that a type may provide, called `drop`. A type opts in to doing something at the moment its last owner goes out of scope by implementing a marker called the **`Drop` trait**, and the compiler arranges for that `drop` to run at exactly the right place. The standard library does this for `String` and `Vec` to free their heap memory, and for file handles and other resources to close them. That is why one set of ownership rules can free a piece of text and close a file at the same time: in both cases the machine is just "run this value's `drop` when it dies".
+:::details How a value cleans itself up: the `Drop` trait and shallow moves
+Under the hood, moving a `String` (`let b = a;`) performs only a tiny bitwise copy (`memcpy`) of its 24-byte `(ptr, cap, len)` stack header into `b`—the characters on the heap never move! The compiler simply marks `a` as uninitialised in MIR so no `drop` runs on `a`.
+
+When a variable *does* stay owned until the end of its block, the compiler calls its **`Drop` trait** destructor (`drop`). The standard library implements `Drop` for `String` and `Vec` to return their heap buffer to the allocator, and for file handles and locks to close or unlock them automatically.
 :::
 
 :::recap

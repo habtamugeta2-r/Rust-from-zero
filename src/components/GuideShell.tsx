@@ -362,7 +362,7 @@ export function GuideShell({
                                     : "text-[var(--g-ink2)] hover:bg-[var(--g-surface)] hover:text-[var(--g-ink)]"
                                 }`}
                               >
-                                <span className="w-5 shrink-0 font-mono text-[11px] tabular-nums text-[var(--g-ink3)]">
+                                <span className="min-w-[1.6rem] shrink-0 font-mono text-[11px] tabular-nums text-[var(--g-ink3)]">
                                   {c.num}
                                 </span>
                                 <span className="min-w-0 flex-1 truncate">

@@ -1,74 +1,53 @@
-# Rust from Zero
+# Rust from Zero — Systems & Internals Edition
 
-An interactive, self-study guide that teaches Rust from nothing — no previous
-programming language, no computer science, no maths beyond arithmetic. It
-finishes with the libraries and tools that real Rust projects are built from:
-`serde`, Tokio, Clap, Axum, SQLx, OpenTelemetry, Tauri, Bevy and more.
+An interactive, self-study guide that teaches both **how computers work internally** and **the Rust programming language**, starting from zero. It bridges transistors, CPU registers, compilation stages (`AST` -> `HIR` -> `MIR` -> `LLVM IR`), assembly and ELF executables, Rust language & standard-library internals, virtual memory, allocators, OS kernels, I/O (`epoll`/`io_uring`), CPU microarchitecture, concurrency/async internals, TCP/IP networking, storage filesystems, and full-stack Rust applications (`serde`, Tokio, Clap, Axum, SQLx, OpenTelemetry, Tauri, Bevy, and more).
 
 The guide runs as a **Next.js (App Router, TypeScript, Tailwind CSS)** web
 application built directly from the Markdown chapters in
 [`guide-src/chapters/`](./guide-src/chapters/) and captured compiler outputs in
 [`guide-src/captured/`](./guide-src/captured/). Reading progress, completed
-exercises, quiz answers, themes, font size and full-text search all work
-out of the box.
+exercises, quiz answers, themes, font size, learning-route filters, and
+full-text search all work out of the box.
 
 ## What is in it
 
 | | |
 |---|---|
-| Chapters | 55, including 8 complete projects, plus 5 appendices (60 sections total) |
-| Examples | 1,179 code blocks, **916 of them Rust** |
-| Exercises | 193, every one with a hint and a worked solution |
-| Quiz questions | 243, each with an explanation of the answer |
+| Sections | 88 total across 13 Parts + 5 Appendices (81 numbered chapters + 2 welcome guides + 5 appendices), including 9 projects & labs |
+| Examples | 1,308 code blocks, **991 of them Rust** (plus x86-64/ARM64 assembly, LLVM IR, C, SQL, and Linux CLI) |
+| Exercises | 274, every one with a hint and a worked solution |
+| Quiz questions | 351, each with an explanation of the answer |
 | Captured output | 104 real compiler messages and program outputs |
 | Stack | Next.js 16 App Router, React 19, TypeScript, Tailwind CSS v4, Shiki |
 
-Every chapter follows the same rhythm: the idea in plain words, an analogy, a
-small example, exercises, a quiz, and a recap. Every verified **Rust example is
-compiled and run against its printed output** by `guide-src/tools/check.py`, and
-the output you see in the guide is that captured real output — not something
-typed by hand. Compiler error messages are real diagnostics from a real
-compiler, on the real line numbers.
+Every chapter follows the same rhythm: the idea in plain words, an analogy,
+comparison tables, runnable examples and machine-level walkthroughs, exercises,
+a quiz, and a recap. Verified Rust examples are compiled and checked against
+printed output by `guide-src/tools/check.py` (Rust Edition 2024).
 
-The ecosystem moves faster than any book: a crate's current version, feature
-flags and supported platforms belong in its own documentation, and every crate
-this guide names is linked to it. Use the guide for the map and the reasons, and
-upstream docs for today's exact numbers.
+## What the guide covers (13 Parts + 5 Appendices)
 
-## What the guide covers
+Explore the full dependency graph in the **[Complete Learning Roadmap](./guide-src/chapters/00b-roadmap.md)** (`#roadmap`) or filter by route (**Core Rust**, **Systems & internals**, **CLI tools**, **Web & APIs**, **Optional surveys**) directly on the home page:
 
-The guide is organised around a **Core Rust Path** (Parts 1–5 + Part 8 Tooling, ~24 hours), **goal-based routes** (CLI tools, Web & APIs, Systems & deep dive), and **optional ecosystem survey chapters** (`49-apps`, `50-games-embedded`). You can filter by route directly on the home page or in [chapter 0](./guide-src/chapters/00-start.md).
-
-- **Part 1 — First steps:** what programming is, Cargo, variables, types, functions, control flow, and a guessing game project
-- **Part 2 — Ownership: Rust's big idea:** memory model, ownership, borrowing, and slices
-- **Part 3 — Modelling data:** structs, enums, pattern matching, collections, and a CLI to-do manager
-- **Part 4 — Building bigger programs:** modules, error handling (`Result`, `thiserror`, `anyhow`), generics, traits (`use<...>` lifetime capture), lifetimes, testing, and a file-search CLI project
-- **Part 5 — Functional style:** closures, iterators, and a streaming report generator project
-- **Part 6 — Memory and types mastery:** smart pointers (`Box`, `Rc`, `Arc`, `RefCell`), advanced traits & GATs, typestates, and zero-cost abstractions
-- **Part 7 — Concurrency:** threads, channels, `Mutex`/`RwLock`/atomics (`parking_lot`, `Acquire`/`Release`), `async`/`await`, `JoinSet`, `pin-project-lite`, and a multi-user async chat server
-- **Part 8 — Tooling and workflow:** Cargo workspaces, Edition 2024, `build.rs`, `cargo-deny`, formatting (`rustfmt`), Clippy, CI, and testing strategies (`proptest`, `insta`, `criterion`, fuzzing)
-- **Part 9 — Advanced Rust:** declarative & procedural macros, `unsafe` (`ManuallyDrop`, soundness invariants), C/Python FFI (`bindgen`, `cbindgen`, `PyO3`), memory layout, and idiomatic Rust
-- **Part 10 — The ecosystem:** everyday crate selection (`chrono`/`jiff`, `regex`, `clap`, `tracing`), Serde serialisation, a multi-command CLI project (`clap`), Rayon & Tokio streams, gRPC (`tonic`), message queues (`NATS`, `RabbitMQ`, `Kafka`), Axum web servers, SQLx/PostgreSQL/Redis/`redb`, URL-shortener web API project, optional UI/WebAssembly (`Leptos`, `Tauri`, `egui`, `iced`, `Slint`) and games/embedded/data (`Bevy`, `no_std`, `Embassy`, `defmt`, `ndarray`, `Polars`) surveys, and observability & telemetry (`tracing`, OpenTelemetry/OTLP, Prometheus, `/health/live` vs `/health/ready`)
-- **Part 11 — Becoming a Rust developer:** performance & profiling (`hyperfine`, `criterion`, flame graphs, `dhat`, SIMD), a full-stack CLI + Axum + SQLite library manager capstone, and curated next steps
-- **Appendices:** glossary, Rust quick reference, compiler error catalogue, bridges from Python, JavaScript, Go, Java, and C/C++, and a from-source-to-silicon deep dive into how the compiler, the operating system and the processor run your code
+- **Welcome (`00-start`, `00b-roadmap`):** How to study with the 10-stage systems lens, plus the complete chapter-by-chapter dependency map
+- **Part I — Understanding computers from the inside:** why Rust exists, hardware architecture (CPU, ALU, registers, caches, DRAM, buses), bits/bytes/two's complement/IEEE-754/UTF-8/endianness, and setting up Rust + Linux inspection tools
+- **Part II — From source code to machine instructions:** `rustc` pipeline (lexing, AST, HIR, MIR, LLVM IR), code generation, x86-64/ARM64 assembly, machine opcodes, object files, linking, and ELF segments
+- **Part III — Rust language and compiler internals:** syntax, ownership, borrowing, slices, structs, enums, collections, modules, errors, generics, traits, lifetimes, closures, iterators, smart pointers, advanced traits, typestates, macros, `unsafe`, FFI, memory layout, standard-library internals (`RawVec`, `Vec`, `String`, `Box`, `RcBox`, `UnsafeCell`, `MaybeUninit`, provenance), idioms, and 4 progressive projects
+- **Part IV — Memory management and organisation:** virtual address spaces, 4-level page tables, MMU/TLB, `/proc/self/maps`, real allocators (`GlobalAlloc`, slabs, `jemalloc`/`mimalloc`, writing a bump allocator), safety bugs, and 64-byte CPU cache locality & false sharing
+- **Part V — How programs execute:** `fork`/`execve`, `ld-linux`, GOT/PLT, `_start` to `std::rt::lang_start`, System V AMD64 vs AAPCS64 calling conventions, stack frames, and a complete 10-layer end-to-end execution trace
+- **Part VI — Operating system internals:** Ring 3 vs Ring 0, Linux `syscall` ABI, `vDSO`, processes vs threads (`clone`), EEVDF scheduling, context switching, hardware IRQs, POSIX signals, and `futex`
+- **Part VII — Input and output (I/O):** file descriptors, pipes, `BufReader`/`BufWriter`, non-blocking `EAGAIN`, `epoll`, and `io_uring`
+- **Part VIII — CPU architecture and instruction execution:** CISC vs RISC ISAs, flags & `cmov`, 5-stage pipelines, branch prediction, superscalar OoO execution & Spectre, MESI coherency, store buffers, `Acquire`/`Release`, and SIMD vectorisation
+- **Part IX — Concurrency and asynchronous programming:** threads, `Arc`/`Mutex`/atomics, `async`/`.await`, async state-machine lowering, `Pin`, Tokio work-stealing scheduler, async chat server project, and Rayon/Tokio/Tower patterns
+- **Part X — Networking and communication:** Ethernet/MAC/ARP, IPv4/IPv6/CIDR/NAT, TCP/UDP sockets, framing, congestion control, DNS, TLS 1.3, HTTP/1.1–3 packet trace, Axum web servers, and observability/OpenTelemetry
+- **Part XI — Storage and file systems:** HDD vs NAND SSD FTL/wear leveling/NVMe `blk-mq`, VFS inodes/dentries, Linux Page Cache, crash-safe `rename()`/`fsync()`, `mmap`, SQLx/Diesel/SeaORM databases, and URL-shortener API project
+- **Part XII — Practical system programming with Rust:** Cargo workspaces, `rustfmt`/Clippy/CI, testing strategies, `clap` CLI project, performance profiling & flame graphs, a pure-Rust **Linux `/proc` & ELF64 systems inspector lab**, and the full-stack library capstone project
+- **Part XIII — Applied Rust ecosystem and next steps:** crate selection, Serde, WebAssembly/Tauri/GUI apps, Bevy/`no_std`/data science, and continuing paths
+- **Appendices (`A`–`E`):** Searchable glossary, Rust & Linux/ABI quick reference tables, real compiler error catalogue, translation guides from Python, JS/TS, Java/C#, Go, and C/C++, and a from-source-to-silicon end-to-end compiler/OS/CPU walkthrough (`94-under-the-hood`)
 
 ## What it deliberately does not cover
 
-"The whole Rust ecosystem" is unbounded, so this guide has a written coverage
-policy. Every ecosystem domain is handled in one of three ways:
-
-- **Taught** — at least one section with a compiled example, plus an exercise or quiz;
-- **Pointer** — an honest "what else exists" row or paragraph naming the
-  mainstream crates, how mature they are, and when to choose them;
-- **Out of scope** — declared in [chapter 54](./guide-src/chapters/53-next.md)
-  with a one-line reason and somewhere else to read.
-
-Out of scope, on purpose: blockchain and Web3 (`solana`, `anchor`), operating
-system and kernel development (`blog_os`, Rust for Linux), robotics (ROS 2
-bindings), high-frequency trading and financial infrastructure, and
-provider-specific cloud SDKs beyond one S3-compatible example. These are real
-and interesting ecosystems; they are simply not what a from-zero self-study
-guide can honestly claim to teach.
+"Everything in computing" is unbounded, so this guide maintains a clear coverage boundary declared in [Where to go from here](./guide-src/chapters/53-next.md): blockchain/Web3 (`solana`, `anchor`), writing a complete standalone bootable OS kernel from scratch (`blog_os`, Rust for Linux kernel drivers), robotics (`ROS 2`), high-frequency trading, and provider-specific cloud SDKs beyond S3-compatible patterns are pointed cleanly to dedicated follow-on references.
 
 ## Run locally
 
@@ -82,7 +61,7 @@ npm run dev       # start development server at http://localhost:3000
 For a production build and server:
 
 ```sh
-npm run verify:content   # validates all 60 sections, links & captured outputs
+npm run verify:content   # validates all 88 sections, links & captured outputs
 npm run typecheck        # TypeScript check
 npm run build            # builds all routes and static chapter pages
 npm start                # serves the production Next.js app on port 3000
@@ -106,12 +85,6 @@ Or import the repository in the Vercel dashboard (framework preset: **Next.js**;
 Node.js 22.x). The `/api/search` route runs as a serverless function; the
 chapter pages are fully prerendered static output.
 
-Canonical URLs, `sitemap.xml`, `robots.txt` and OpenGraph metadata are derived
-from the deployment origin at build time (`VERCEL_PROJECT_PRODUCTION_URL` /
-`VERCEL_URL`), so they are correct on both preview and production deploys with
-no edits. To pin them to a custom domain, set `NEXT_PUBLIC_SITE_URL` (e.g.
-`https://rust-from-zero.example.com`) in the project's environment variables.
-
 ## Verify
 
 ```sh
@@ -126,7 +99,7 @@ python3 guide-src/tools/audit.py --strict
 
 python3 guide-src/tools/audit.py outline    # the full table of contents
 python3 guide-src/tools/audit.py terms      # every glossary term
-python3 guide-src/tools/audit.py find redis # which chapters mention a word
+python3 guide-src/tools/audit.py find epoll # which chapters mention a word
 
 # Compile, run and diff every Rust example (needs the Rust toolchain).
 guide-src/tools/setup-env.sh                # installs it under /opt/rs
@@ -134,59 +107,12 @@ python3 guide-src/tools/check.py            # the whole guide
 python3 guide-src/tools/check.py serde web  # only chapters matching a substring
 python3 guide-src/tools/check.py --ext      # also cargo-check & cargo-test the crate examples
 python3 guide-src/tools/check.py --projects # rebuild & test all multi-file and Wasm/no_std projects
-
-# List or rebuild a single multi-file project from its chapter:
-python3 guide-src/tools/project.py --list
-python3 guide-src/tools/project.py 48 shortener /tmp/shortener
-(cd /tmp/shortener && cargo test)
-
-# Rebuild and test all extracted multi-file and target projects:
-python3 guide-src/tools/check-projects.py --strict-targets
 ```
 
 CI verifies the Next.js build, `verify:content`, and `audit.py --strict` on
 every push, and **compiles and tests every verified Rust example and extracted
-project** — standard library, crate examples, multi-file projects,
-WebAssembly/WASI examples, and Cortex-M3 `no_std` firmware — on every push, pull
-request, and weekly schedule (see [`.github/workflows/build.yml`](./.github/workflows/build.yml)
+project** (see [`.github/workflows/build.yml`](./.github/workflows/build.yml)
 and [`.github/workflows/guide-checks.yml`](./.github/workflows/guide-checks.yml)).
-
-## How examples are marked
-
-Every Rust fence carries a check kind, which tells `check.py` what to prove:
-
-`run` (compiles, runs, output must match) · `wrap` (same, for loose statements) ·
-`check` (must compile) · `test` (tests must pass) · `fail` (must not compile,
-optionally with a named error code) · `panic` · `warns` · `ext` (needs crates
-from crates.io, checked with `cargo`) · `nocmp` (do not compare output) ·
-`release` (optimised build).
-
-An ```` ```output auto ```` or ```` ```error auto ```` block directly after a
-Rust block is filled from the captured real output stored in
-`guide-src/captured/`. If you change an example, re-run `check.py`; the Next.js
-app picks up the updated chapter and captured output automatically.
-[`guide-src/PLAN.md`](./guide-src/PLAN.md) is the full reference for the
-chapter format.
-
-## Contributing
-
-See [`CONTRIBUTING.md`](./CONTRIBUTING.md) for full details. The short version:
-
-1. **British spelling** in prose (`serialise`, `colour`, `organise`); US spelling
-   only inside crate and API names.
-2. **Explain every term at first use**, and prefer an analogy before a definition.
-3. **Keep the chapter skeleton**: header fields (`@id`, `@part`, `@title`,
-   `@short`, `@level`, `@time`, `@learn`), then idea → analogy → example →
-   exercises with hint and solution → quiz → recap.
-4. **Every new Rust example must pass `check.py`**, with its real captured output.
-   Do not hand-write compiler messages or program output.
-5. Run `npm run verify:content`, `npm run typecheck`, `npm run build`, and
-   `python3 guide-src/tools/audit.py --strict` before opening a pull request;
-   all must pass cleanly.
-
-Ideas are welcome from anywhere; the text is written for this guide. See
-[`guide-src/RESEARCH.md`](./guide-src/RESEARCH.md) for the provenance of the
-examples and the measured inventory.
 
 ## Licence
 

@@ -1,12 +1,12 @@
 @id advanced-traits
-@part p6
+@part p3
 @title Traits in depth
 @short Traits in depth
 @level advanced
 @time 55
 @learn Use associated types and constants, and know when to prefer them to generic parameters | Overload operators such as `+` and `==` for your own types | Implement a trait for many types at once with a blanket implementation | Explain what makes a trait usable as `dyn Trait` | Recognise the marker traits `Sized`, `Send` and `Sync`
 
-[Chapter 20](#traits) covered the everyday use of traits. This chapter collects the features you meet when you read the standard library, design a library of your own, or wonder how `a + b` works for your own type. You can read it once now and come back when you need a particular tool.
+[Chapter 25](#traits) covered the everyday use of traits. This chapter collects the features you meet when you read the standard library, design a library of your own, or wonder how `a + b` works for your own type. You can read it once now and come back when you need a particular tool.
 
 :::analogy A manager with special rules
 A trait is like a job description: it says what a type must be able to do. Associated types are the extra details that each person in that role supplies, like "this team produces numbers, that team produces strings".
@@ -435,7 +435,7 @@ The form `<Type as Trait>::function(...)` is the **fully qualified syntax**. It 
 
 ## The newtype pattern and the orphan rule
 
-The orphan rule from [chapter 20](#traits) forbids implementing a foreign trait for a foreign type. The way around it is a newtype: a tuple struct of your own with one field.
+The orphan rule from [chapter 25](#traits) forbids implementing a foreign trait for a foreign type. The way around it is a newtype: a tuple struct of your own with one field.
 
 ```rust run
 use std::fmt;
@@ -524,7 +524,7 @@ fn main() {}
 
 `duplicate` returns `Self`. For a `dyn Duplicate`, nobody knows what `Self` is or how large it is. This is the reason `Clone` cannot be used as `dyn Clone`.
 
-The message mentions a **vtable** ("virtual method table"). That is the small table of function addresses that every trait object carries with it. Through it, the program finds the right method at run time. [Chapter 40](#memory-layout) shows what it looks like in memory.
+The message mentions a **vtable** ("virtual method table"). That is the small table of function addresses that every trait object carries with it. Through it, the program finds the right method at run time. [Chapter 38](#memory-layout) shows what it looks like in memory.
 
 You can keep such a method in a trait and still use the trait as an object, by telling the compiler that this one method is not available on trait objects:
 
@@ -639,7 +639,7 @@ fn main() {
 42
 ```
 
-- **`Send`** means "a value of this type can be handed to another thread". **`Sync`** means "a value of this type can be used from several threads at the same time, through shared references". The compiler works these out for every type automatically, and uses them to reject programs with data races. They are the foundation of [Part 7](#threads).
+- **`Send`** means "a value of this type can be handed to another thread". **`Sync`** means "a value of this type can be used from several threads at the same time, through shared references". The compiler works these out for every type automatically, and uses them to reject programs with data races. They are the foundation of [Part IX](#threads).
 
 ## Traits with generic methods and supertraits, together
 
@@ -939,5 +939,5 @@ fn main() {
 
 `Index` returns a reference (`&f64`). Rust adds the `*` for you when you write `m[(r, c)]`, and the same expression on the left of `=` uses `IndexMut`. The parameter pattern `(r, c): (usize, usize)` takes the tuple apart right in the signature.
 
-`Mul` is implemented for `&Matrix`, a reference, so `&a * &b` borrows both operands and leaves them usable. An implementation for `Matrix` by value would consume both matrices on every multiplication. Whether sizes fit is checked at run time here, with `assert_eq!`. With const generics ([chapter 19](#generics)), a `Matrix<const R: usize, const C: usize>` could let the compiler check it.
+`Mul` is implemented for `&Matrix`, a reference, so `&a * &b` borrows both operands and leaves them usable. An implementation for `Matrix` by value would consume both matrices on every multiplication. Whether sizes fit is checked at run time here, with `assert_eq!`. With const generics ([chapter 24](#generics)), a `Matrix<const R: usize, const C: usize>` could let the compiler check it.
 :::

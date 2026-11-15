@@ -1,5 +1,5 @@
 @id control-flow
-@part p1
+@part p3
 @title Control flow: decisions and repetition
 @short Decisions and loops
 @level beginner
@@ -97,7 +97,7 @@ fn main() {
 weekend
 ```
 
-Each line inside is called an **arm**: a pattern, then `=>`, then the result for that case. `3..=5` means "3 up to and including 5", `6 | 7` means "6 or 7", and `_` means "anything else". The compiler checks that **every possible value is covered**. Remove the `_` arm and the program does not compile. `match` is one of Rust's most loved features, and [chapter 13](#enums) shows its full power.
+Each line inside is called an **arm**: a pattern, then `=>`, then the result for that case. `3..=5` means "3 up to and including 5", `6 | 7` means "6 or 7", and `_` means "anything else". The compiler checks that **every possible value is covered**. Remove the `_` arm and the program does not compile. `match` is one of Rust's most loved features, and [chapter 18](#enums) shows its full power.
 
 ### A match arm can carry a condition
 
@@ -123,10 +123,10 @@ fn main() {
 42: large positive
 ```
 
-Guards let you describe a case that is "this shape, *and* this is also true". They become very useful once you start matching on the richer data types in Part 3.
+Guards let you describe a case that is "this shape, *and* this is also true". They become very useful once you start matching on enums and richer data types in the modelling chapters ahead.
 
 :::note Two shorthands you will meet
-Matching on a single pattern is so common that Rust has shorthands. `if let` is an `if` whose condition is "does this one pattern match?", and `while let` keeps looping while it does. Both are the same idea as a `match` with one arm, written shorter. You will see them both in [chapter 13](#enums).
+Matching on a single pattern is so common that Rust has shorthands. `if let` is an `if` whose condition is "does this one pattern match?", and `while let` keeps looping while it does. Both are the same idea as a `match` with one arm, written shorter. You will see them both in [chapter 18](#enums).
 :::
 
 ## Repeating with `loop`
@@ -257,7 +257,7 @@ I like cherry.
 2: cherry
 ```
 
-`.iter().enumerate()` hands you each item together with its position, as a tuple that the loop unpacks into `index` and `fruit`. You will learn how this works in [chapter 26](#iterators).
+`.iter().enumerate()` hands you each item together with its position, as a tuple that the loop unpacks into `index` and `fruit`. You will learn how this works in [chapter 30](#iterators).
 
 :::compare Why Rust has no C-style `for`
 C, Java and JavaScript write `for (int i = 0; i < 5; i++)`: three parts that you must get exactly right. A wrong `<` or `<=` there is the famous "off-by-one" error, and with an array it reads past the end. Rust's `for item in collection` cannot go out of range, because you never handle the index yourself.
@@ -335,7 +335,11 @@ row 2, column 2
 When in doubt, try `for` first. It is the safest and usually the clearest.
 
 :::key Rust is built from expressions
-Step back and the through-line of Part 1 is visible. In [chapter 5](#functions) you saw that an `if` can be the value on the right side of a `let`, and here that a `match` is and that a `loop` can hand a value out through `break`. Even an ordinary block in `{ }` is a value: the value of its last line. Rust is, in the small print, an *expression-first* language — most of what you write is a thing that computes a value, and the language is designed so those values can be nested, returned and reused. That habit quietly pays off for the rest of the guide.
+Step back and the through-line of these opening chapters is visible. In [chapter 10](#functions) you saw that an `if` can be the value on the right side of a `let`, and here that a `match` is and that a `loop` can hand a value out through `break`. Even an ordinary block in `{ }` is a value: the value of its last line. Rust is, in the small print, an *expression-first* language — most of what you write is a thing that computes a value, and the language is designed so those values can be nested, returned and reused. That habit quietly pays off for the rest of the guide.
+:::
+
+:::details Under the hood: comparisons, flags, and jump tables
+To the CPU, `if x > 10`, `while`, and `loop` all compile to two primitive operations: a **comparison** (`cmp` / `test`) that sets bits in the CPU's flags register (`RFLAGS` / `NZCV`), followed by a **conditional jump** (`jg`, `je`, `jmp`) moving the program counter (`RIP` / `PC`) to a different address in `.text`. Dense integer `match` arms often compile to a **jump table** in `.rodata`—a direct O(1) array lookup without testing arms one by one.
 :::
 
 :::recap
@@ -507,5 +511,5 @@ fn is_prime(n: u32) -> bool {
 
 `return false` inside the loop leaves the whole function as soon as one divisor is found. If the loop ends normally, no divisor exists, and the last expression `true` is returned. For `n = 2` the range `2..2` is empty, so the loop body never runs and 2 is correctly reported as prime.
 
-This solution combines everything from Part 1: a function, a loop, a decision, an early return, and the remainder operator.
+This solution combines everything from the opening Rust chapters: a function, a loop, a decision, an early return, and the remainder operator.
 :::

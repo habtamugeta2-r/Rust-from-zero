@@ -187,7 +187,7 @@ enum Option<T> {
 }
 ```
 
-The `<T>` means "this works for any type": `Option<i32>` is "maybe an integer", `Option<String>` is "maybe a string". ([Chapter 19](#generics) explains this notation.) `Option` is used so often that you can write `Some` and `None` without `Option::` in front.
+The `<T>` means "this works for any type": `Option<i32>` is "maybe an integer", `Option<String>` is "maybe a string". ([Chapter 24](#generics) explains this notation.) `Option` is used so often that you can write `Some` and `None` without `Option::` in front.
 
 ```rust run
 fn find_position(list: &[i32], wanted: i32) -> Option<usize> {
@@ -263,7 +263,7 @@ true true
 Some(10) None
 ```
 
-`map` applies a small function to the value inside a `Some` and leaves a `None` alone. The `|n| n * 2` is a *closure*, a function written in place. [Chapter 24](#closures) covers closures. For now read it as "take `n`, give back `n * 2`".
+`map` applies a small function to the value inside a `Some` and leaves a `None` alone. The `|n| n * 2` is a *closure*, a function written in place. [Chapter 29](#closures) covers closures. For now read it as "take `n`, give back `n * 2`".
 
 There are also two blunt tools:
 
@@ -357,7 +357,7 @@ enum Result<T, E> {
 }
 ```
 
-Everything you learned in this chapter (`match`, `if let`, `let … else`, `unwrap_or`) works for `Result` too. Error handling with `Result` gets its own chapter: [chapter 18](#errors).
+Everything you learned in this chapter (`match`, `if let`, `let … else`, `unwrap_or`) works for `Result` too. Error handling with `Result` gets its own chapter: [chapter 23](#errors).
 
 ## How an enum is stored
 
@@ -486,7 +486,7 @@ Result: 5
 Cannot divide by zero.
 ```
 
-The signature tells every caller that this operation may have no answer. Compare that with [chapter 5](#functions), where `safe_divide` returned 0 for a division by zero. That hid the problem, because 0 is also a perfectly normal result.
+The signature tells every caller that this operation may have no answer. Compare that with [chapter 10](#functions), where `safe_divide` returned 0 for a division by zero. That hid the problem, because 0 is also a perfectly normal result.
 :::
 
 :::exercise practice Describe a message

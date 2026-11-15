@@ -16,7 +16,7 @@ export const metadata: Metadata = {
     template: "%s · Rust from Zero",
   },
   description:
-    "Learn Rust from zero: 55 plain-English chapters from your first line of syntax to the bytes on the heap and the stack, then on to web APIs, async and systems code. 193 solved exercises, quizzes and 8 real projects, every example compiled and run.",
+    "Learn computer systems internals and Rust from zero: 83 chapters and orientation guides from CPU registers, compilers, ELF, and Linux syscalls to virtual memory, async runtimes, networking, and storage. 274 solved exercises, 351 quiz questions, and 9 hands-on projects.",
   alternates: {
     canonical: "/",
   },
@@ -24,7 +24,7 @@ export const metadata: Metadata = {
     type: "book",
     title: "Rust from Zero — The Complete Hands-On Guide",
     description:
-      "Learn Rust from scratch with plain language, interactive memory diagrams, 193 solved exercises, quizzes and eight hands-on projects.",
+      "Learn computer systems and Rust from scratch with plain language, architecture traces, 274 solved exercises, 351 quizzes and 9 hands-on projects.",
     url: SITE_URL,
     images: ["/og.png"],
   },
@@ -32,7 +32,7 @@ export const metadata: Metadata = {
     card: "summary",
     title: "Rust from Zero — The Complete Hands-On Guide",
     description:
-      "Learn Rust from zero: 55 chapters, 193 exercises with solutions, 243 quiz questions and 8 real projects.",
+      "Learn computer systems and Rust from zero: 83 chapters, 274 solved exercises, 351 quiz questions and 9 real projects.",
   },
 };
 

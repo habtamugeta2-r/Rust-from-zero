@@ -1,12 +1,12 @@
 @id cargo
-@part p8
+@part p12
 @title Cargo in depth
 @short Cargo in depth
 @level intermediate
 @time 50
 @learn Read and write every important section of `Cargo.toml` | Manage dependencies, versions and features | Tune builds with profiles | Organise several packages in a workspace | Document, install and publish a crate, and manage toolchains with rustup
 
-You have used Cargo since chapter 2: `cargo new`, `cargo run`, `cargo test`, `cargo add`. Cargo is Rust's build tool and package manager in one, and one of the main reasons the language is pleasant to use. This chapter covers the rest of what a working Rust programmer needs from it.
+You have used Cargo since [chapter 4](#setup): `cargo new`, `cargo run`, `cargo test`, `cargo add`. Cargo is Rust's build tool and package manager in one, and one of the main reasons the language is pleasant to use. This chapter covers the rest of what a working Rust programmer needs from it.
 
 :::analogy A project control tower
 Cargo is the system that keeps the whole airport moving: which package is in the build, which versions are allowed, which features are active, and which test command the team is running. It turns a pile of files into a repeatable build.
@@ -100,7 +100,7 @@ Three of the 2024 changes are worth recognising, because they arrive as diagnost
 
 - **Tail-expression drop order.** In an older edition, the temporary values created in the final expression of a function body were dropped *after* the local variables of that body. In 2024 they are dropped *before* them, at the end of the expression. Consider a function whose last line is `cell.borrow().len()`. Under the old order the borrow was still alive when the local `cell` was dropped, so the borrow checker refused the function. Under the new order the borrow ends first and the function compiles. Code that relied on the old order — a guard that read the local variable it outlived — now fails to compile instead of misbehaving, which is the point of the change.
 - **`unsafe_op_in_unsafe_fn`.** Every unsafe operation inside an `unsafe fn` must now sit in its own `unsafe` block. The lint that reports this is named in the error message, and it is a good habit to enable it in older editions too: the body of an `unsafe fn` was never meant to be an unsafe block.
-- **`static_mut_refs`.** Taking a reference to a `static mut` is an error in 2024, because two threads can do it at once. The fix is one of the tools from [chapter 31](#shared-state): an `AtomicU32`, a `Mutex` behind a `OnceLock`, or `&raw mut` when you really only need the address.
+- **`static_mut_refs`.** Taking a reference to a `static mut` is an error in 2024, because two threads can do it at once. The fix is one of the tools from [chapter 56](#shared-state): an `AtomicU32`, a `Mutex` behind a `OnceLock`, or `&raw mut` when you really only need the address.
 
 :::tip The Edition Guide is the authority
 The [Rust Edition Guide](https://doc.rust-lang.org/edition-guide/) lists every change in every edition, with a migration example for each one, and it is short. When an old snippet will not compile and the edition is the suspect, read the page for that edition before changing the code.
@@ -348,7 +348,7 @@ pub fn count_lines<P: AsRef<Path>>(path: P) -> std::io::Result<usize> {
 }
 ```
 
-Measure before and after each step, as with every other kind of performance work ([chapter 51](#performance)).
+Measure before and after each step, as with every other kind of performance work ([chapter 74](#performance)).
 
 ## Workspaces
 
@@ -463,7 +463,7 @@ impl Product {
 - The text is Markdown. The first sentence becomes the summary in lists.
 - Conventional sections are `# Examples`, `# Errors` (when a `Result` is returned), `# Panics` and `# Safety` (for unsafe functions).
 - A name in square brackets and backticks becomes a link to that item.
-- Code blocks are compiled and run by `cargo test`, as you saw in [chapter 22](#testing).
+- Code blocks are compiled and run by `cargo test`, as you saw in [chapter 27](#testing).
 
 Every crate published on crates.io gets its documentation built and hosted automatically at **docs.rs**. For any crate you use, `https://docs.rs/<crate name>` is the place to look.
 

@@ -1,5 +1,5 @@
 @id shared-state
-@part p7
+@part p9
 @title Shared state: `Arc`, `Mutex` and atomics
 @short Shared state
 @level advanced
@@ -72,7 +72,7 @@ fn main() {
 
 - `Mutex::new(0)` wraps the value. **The data lives inside the mutex.** There is no way to reach it without going through `lock`.
 - `lock()` waits until the mutex is free, and then returns a **guard**. The guard is a smart pointer: `*guard` is the protected value.
-- When the guard is dropped, the lock is released. This happens automatically at the end of its scope, by the `Drop` trait from [chapter 27](#smart-pointers). You cannot forget to unlock.
+- When the guard is dropped, the lock is released. This happens automatically at the end of its scope, by the `Drop` trait from [chapter 32](#smart-pointers). You cannot forget to unlock.
 
 :::compare A lock that owns its data
 In C, C++, Java and Go, a mutex is a separate object that sits *next to* the data it is meant to protect. The connection exists only in comments and in the programmers' heads: "always lock `m` before touching `balance`". Forget it once, and you have a data race that compiles without complaint. Rust's `Mutex<T>` contains the data. The only path to the data leads through the lock, and the compiler checks every access.

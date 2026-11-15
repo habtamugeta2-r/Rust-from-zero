@@ -1,5 +1,5 @@
 @id variables
-@part p1
+@part p3
 @title Variables: giving names to values
 @short Variables and mutability
 @level beginner
@@ -92,7 +92,7 @@ It can feel like the language is being difficult. It is being careful, for three
 
 1. **Fewer surprises.** When you see `let tax_rate = 15;`, you know that `tax_rate` is 15 everywhere below that line. You do not have to read 200 lines to check that nothing changed it.
 2. **`mut` is a signal.** The word tells every reader "watch this one, it changes".
-3. **It makes Rust's safety rules possible.** In [Part 2](#borrowing) you will see that data which cannot change can be shared freely, and that this is the key to safe programs that do many things at once.
+3. **It makes Rust's safety rules possible.** In [the borrowing chapter](#borrowing) you will see that data which cannot change can be shared freely, and that this is the key to safe programs that do many things at once.
 
 Most variables in real programs never need to change. In Rust you will write plain `let` far more often than `let mut`.
 
@@ -238,7 +238,7 @@ Inside the block, x is 10
 Outside the block, x is 5
 ```
 
-Scope will become very important in Part 2, because Rust frees memory at the moment a variable goes out of scope.
+Scope will become very important in [the ownership chapter](#ownership), because Rust frees memory at the moment a variable goes out of scope.
 
 ## A variable always has a value before you read it
 
@@ -253,7 +253,7 @@ fn main() {
 ```error auto
 ```
 
-Rust checks this on **every possible path** through the code, not just the line you are looking at. If a value is given in both an `if` branch and its `else`, then after the branch the variable is certainly ready. If one path forgets to give it a value, the compiler reports it. This "always in a known state" rule is one of the ideas that makes Part 2 possible: because Rust tracks, line by line, exactly when a name holds a value, it can later promise that moved and borrowed data is never read in a state it should not be.
+Rust checks this on **every possible path** through the code, not just the line you are looking at. If a value is given in both an `if` branch and its `else`, then after the branch the variable is certainly ready. If one path forgets to give it a value, the compiler reports it. This "always in a known state" rule is one of the ideas that makes Rust's ownership rules possible: because Rust tracks, line by line, exactly when a name holds a value, it can later promise that moved and borrowed data is never read in a state it should not be.
 
 :::compare Why this matters
 In C, reading a variable before giving it a value is allowed and gives you whatever happened to be in that spot of memory: a random-looking number, different on every run. Bugs like that can hide for years. In Java or JavaScript you would get a special "nothing" value (`null` or `undefined`) that often causes a crash later. Rust refuses to compile the program, so this whole kind of bug cannot happen.
@@ -288,6 +288,10 @@ Constants give a meaning to "magic numbers". `price * VAT_RATE` explains itself.
 
 :::details `const` and `static`
 You will sometimes meet a second keyword, `static`. Both `const` and `static` hold a value that lasts for the whole program, but they do it in different ways. A `const` is a fixed value that the compiler copies into every place it is used. A `static` lives in one fixed spot in memory for the program's lifetime, so it has an address of its own — a difference that only matters in the rare cases where you need a place in memory, not just a value. There is also a `static mut`, a shared value that may change. That is a deliberate exception to Rust's usual caution, and you should treat one the same way you would treat a variable that every part of the program can reach and rewrite. For almost everything in this guide, `const` is the right tool.
+:::
+
+:::details Under the hood: registers, stack slots, and `mut`
+In compiled machine code, variable names such as `score` or `price` disappear completely (aside from optional debug symbols). Each live binding becomes either a **CPU register** (like `eax` or `r12`) or a fixed byte offset inside the function's **stack frame** (like `[rsp + 16]`). Likewise, `mut` takes **zero extra bytes** and emits **zero extra machine instructions** at runtime: it is purely a compile-time permission rule inside the type and borrow checker.
 :::
 
 :::recap

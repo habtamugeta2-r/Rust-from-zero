@@ -5,7 +5,7 @@
 @short From source to silicon
 @level advanced
 
-This appendix is for readers who want the last layer of the story. [Chapter 8](#memory) introduced the stack and the heap. [Chapter 40](#memory-layout) showed how individual values are arranged byte by byte. This page takes the remaining step: what the compiler does between your source text and a running program, what the operating system does to start it, and what the processor does with each instruction once it is running.
+This appendix is for readers who want the last layer of the story. [Chapter 13](#memory) introduced the stack and the heap. [Chapter 38](#memory-layout) showed how individual values are arranged byte by byte. This page takes the remaining step: what the compiler does between your source text and a running program, what the operating system does to start it, and what the processor does with each instruction once it is running.
 
 Everything here is simplified. Real compilers are vast, and both `rustc` and LLVM change with every release. The names of the stages, the order in which they run, and the ideas they embody are stable, and this page sticks to those. Where the details depend on the version, the machine or the optimisation level, it says so.
 
@@ -92,7 +92,7 @@ Two jobs then happen here:
 1. **Name resolution.** Every identifier is matched with the item it refers to: which `x`, which `len`, which `Vec`, from which module or crate. After this stage no name is ambiguous.
 2. **Type checking and inference.** Every expression is given a type. When you write `let x = 3 + 4;` and never say what `x` is, the compiler works out `i32` from the operators. Generics are checked once, against their trait bounds, and the compiler reports problems at the definition site rather than inside some caller far away.
 
-Generic functions are also turned into ordinary ones here or immediately afterwards. As [chapter 19](#generics) explains, a call to `largest(1, 2)` with integers and another with floats become two separate, monomorphised bodies — one per concrete type — copied into the program with every generic occurrence rewritten to a concrete type. That is why generics have no run-time cost, and why a heavily generic library can grow a binary.
+Generic functions are also turned into ordinary ones here or immediately afterwards. As [chapter 24](#generics) explains, a call to `largest(1, 2)` with integers and another with floats become two separate, monomorphised bodies — one per concrete type — copied into the program with every generic occurrence rewritten to a concrete type. That is why generics have no run-time cost, and why a heavily generic library can grow a binary.
 
 ## 4. MIR: the level the borrow checker uses
 
@@ -101,7 +101,7 @@ The HIR is lowered again to the **mid-level intermediate representation** (MIR).
 Why does Rust need such a restricted form? Because it is the representation the compiler's most important analysis works on.
 
 - **The borrow checker runs on MIR.** It computes, for every point in the control-flow graph, which borrows of each value are still live, and rejects the program if a mutable borrow overlaps any other borrow of the same value, if a borrow outlives its value, or if a moved value is used. Since Rust 2018, borrows end at their last use, not at the closing brace — this is the *non-lexical lifetimes* rule, and MIR is what makes it possible: the analysis follows the flow of the graph, not the shape of the source.
-- **Drop order is decided on MIR.** While `rustc` translates MIR for code generation, it inserts the calls that run destructors — the exact point where `drop` would run for each local — so the clean-up code from [chapter 9](#ownership) is not something you wait to happen at run time; it is spelled out in the program the compiler builds.
+- **Drop order is decided on MIR.** While `rustc` translates MIR for code generation, it inserts the calls that run destructors — the exact point where `drop` would run for each local — so the clean-up code from [chapter 14](#ownership) is not something you wait to happen at run time; it is spelled out in the program the compiler builds.
 - **MIR is also where the optimiser does its early clean-up**: inlining small functions, propagating constants, removing code whose result is never used.
 
 Here is a borrow-tracking trace like the one the compiler computes, for a small function:
@@ -127,7 +127,7 @@ fn example() {
 | `let r3 = &mut data;` | r3 (exclusive) | yes — no other borrow is live |
 | `r3.push(4);` | r3 (exclusive) | yes |
 
-If the final `println!` tried to use `r1` again, the borrow checker would see a shared borrow live at the same point as the exclusive borrow `r3`, and reject the program. Nothing here happens at run time: the check is a compile-time analysis of the graph. See [chapter 10](#borrowing) and [chapter 21](#lifetimes) for how this feels from the programmer's side.
+If the final `println!` tried to use `r1` again, the borrow checker would see a shared borrow live at the same point as the exclusive borrow `r3`, and reject the program. Nothing here happens at run time: the check is a compile-time analysis of the graph. See [chapter 15](#borrowing) and [chapter 26](#lifetimes) for how this feels from the programmer's side.
 
 ## 5. LLVM IR: Rust hands over to a second compiler
 
@@ -171,7 +171,7 @@ Six bytes of machine code. The numbers and the names are different things: the p
 A few observations worth internalising:
 
 - **Registers, not memory.** The arguments and the result travel in registers — the processor's tiny, blisteringly fast storage — not in memory. Reading or writing a register costs under a nanosecond; reading main memory can cost around a hundred nanoseconds.
-- **Position within the call.** On the System V ABI used on Linux and macOS, the first integer argument goes in `RDI`, the second in `RSI`, then `RDX`, `RCX`, `R8`, `R9`, and the integer return value comes back in `RAX`. (Windows uses a different convention: `RCX`, `RDX`, `R8`, `R9`.) `EDI`, `ESI`, `EAX` are the 32-bit halves of those registers. See [chapter 39](#ffi) for why the ABI matters when Rust calls C.
+- **Position within the call.** On the System V ABI used on Linux and macOS, the first integer argument goes in `RDI`, the second in `RSI`, then `RDX`, `RCX`, `R8`, `R9`, and the integer return value comes back in `RAX`. (Windows uses a different convention: `RCX`, `RDX`, `R8`, `R9`.) `EDI`, `ESI`, `EAX` are the 32-bit halves of those registers. See [chapter 37](#ffi) and [chapter 45](#calling-conventions-execution) for why the ABI matters when Rust calls C.
 - **64-bit registers share names.** Each general-purpose register is one 64-bit cell with narrower windows onto it: `RAX` (64 bits) contains `EAX` (32) contains `AX` (16) contains `AH` and `AL` (8 bits each). Writing `EAX` zeroes the top half of `RAX`.
 
 ## 7. The linker: many pieces become one program
@@ -183,7 +183,7 @@ Compilation happens one **crate** at a time, and each crate compiles separately 
 - it lays out the sections of the file,
 - on Unix it can also leave a program unloadable until its dynamic dependencies are found.
 
-On Linux the result is an ELF file: a header, the `.text` section (your machine code), `.rodata` (string literals and other constants built into the binary), `.data` (initialised global variables), `.bss` (uninitialised globals, zeroed at load), a symbol table and optional debug information. String literals such as `"hello"` live in `.rodata` of the binary, which is why a `&str` literal can borrow from the program image itself. See [chapter 34](#cargo) for how build profiles (`dev` vs `release`) change what the optimiser is allowed to do before this stage.
+On Linux the result is an ELF file: a header, the `.text` section (your machine code), `.rodata` (string literals and other constants built into the binary), `.data` (initialised global variables), `.bss` (uninitialised globals, zeroed at load), a symbol table and optional debug information. String literals such as `"hello"` live in `.rodata` of the binary, which is why a `&str` literal can borrow from the program image itself. See [chapter 70](#cargo) for how build profiles (`dev` vs `release`) change what the optimiser is allowed to do before this stage.
 
 :::compare How other languages get to a runnable program
 - **C and C++** use essentially the same pipeline: C source → machine code → link. Rust's contribution is stations 3 and 4 — the type and borrow analysis — and LLVM, which Rust shares (Clang also targets LLVM).
@@ -206,7 +206,7 @@ Typing `cargo run` (or `./myprogram`) starts a chain of events before your first
 
 ### Virtual memory in one paragraph
 
-The addresses your program uses are **virtual**. Each process believes it has the whole 64-bit range to itself, but those numbers are indices into page tables maintained by the operating system and consulted by a hardware unit called the **memory management unit** (MMU) on every memory access. The unit of mapping is a **page**, typically 4 KB. Two processes can both use address `0x7ffe…` and mean different physical RAM, because their page tables differ. Pages can be marked read-only, can be shared between processes (code pages usually are), and can live in a swapped-out file instead of RAM. The stack overflows you met in [chapter 8](#memory) are caught precisely this way: the OS leaves an unmapped **guard page** at the end of the stack, and the first write into it triggers a page fault that kills the program.
+The addresses your program uses are **virtual**. Each process believes it has the whole 64-bit range to itself, but those numbers are indices into page tables maintained by the operating system and consulted by a hardware unit called the **memory management unit** (MMU) on every memory access. The unit of mapping is a **page**, typically 4 KB. Two processes can both use address `0x7ffe…` and mean different physical RAM, because their page tables differ. Pages can be marked read-only, can be shared between processes (code pages usually are), and can live in a swapped-out file instead of RAM. The stack overflows you met in [chapter 13](#memory) are caught precisely this way: the OS leaves an unmapped **guard page** at the end of the stack, and the first write into it triggers a page fault that kills the program.
 
 ## 9. Fetch, decode, execute: the processor's three-beat heartbeat
 
@@ -231,7 +231,7 @@ Once the program is running, the processor repeats the same cycle billions of ti
 
 Modern processors pipeline these stages and run several instructions through them at once, finish instructions out of order when dependencies allow, run 4–6 instructions per clock cycle, and **predict** the direction of every branch so the pipeline never stalls waiting for `if`s. This is invisible to your Rust code, but it is why tight loops and predictable branches are fast.
 
-Caches make all of this worthwhile: L1 (≈32–64 KB per core, about 1 ns), L2 (≈256 KB–1 MB, a few ns), L3 (shared, megabytes, ≈10–20 ns), then main memory (≈50–100 ns). Every level is smaller and faster than the next. See [chapter 40](#memory-layout) for how layout decisions (`Vec` vs linked list, struct of arrays) are really decisions about this hierarchy.
+Caches make all of this worthwhile: L1 (≈32–64 KB per core, about 1 ns), L2 (≈256 KB–1 MB, a few ns), L3 (shared, megabytes, ≈10–20 ns), then main memory (≈50–100 ns). Every level is smaller and faster than the next. See [chapter 38](#memory-layout) for how layout decisions (`Vec` vs linked list, struct of arrays) are really decisions about this hierarchy.
 
 ## 10. A complete trace: one line, all the way down
 
@@ -263,11 +263,11 @@ fn main() {
 | 11 | Runtime | `numbers` goes out of scope; the allocator is asked to free the 12 bytes |
 | 12 | OS | `main` returns; the kernel reclaims the whole address space; the exit code goes to the shell |
 
-The interesting part is not any single step but the agreement between them: the layout rules from [chapter 40](#memory-layout), the ownership rules from [chapter 9](#ownership), and the machine the OS hands to your program all match, so the compiler can insert clean-up code with no reference counting, no garbage collector and no run-time checks for ownership.
+The interesting part is not any single step but the agreement between them: the layout rules from [chapter 38](#memory-layout), the ownership rules from [chapter 14](#ownership), and the machine the OS hands to your program all match, so the compiler can insert clean-up code with no reference counting, no garbage collector and no run-time checks for ownership.
 
 ## 11. Where the time goes
 
-Reading this appendix gives you the map; [chapter 51](#performance) shows how to drive on it. The short version, from slowest to fastest:
+Reading this appendix gives you the map; [chapter 74](#performance) shows how to drive on it. The short version, from slowest to fastest:
 
 | Step | Rough cost |
 |---|---|

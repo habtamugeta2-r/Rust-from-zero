@@ -6,57 +6,53 @@
 @time 8
 @learn Find your way around the guide and its interactive parts | Follow a study routine that makes new knowledge stick | Know what to do when you get stuck
 
-Welcome. This guide teaches you Rust, a modern programming language, starting from nothing. You do not need to know any other language, any maths beyond arithmetic, or any computer science. You need a computer, a web browser, and the patience to type things out and see what happens.
+Welcome. This guide teaches you both **how computers work internally** and **the Rust programming language**, starting from nothing. You do not need to know any other language, any maths beyond arithmetic, or any computer science beforehand. You need a computer, a terminal (Linux is used for hands-on systems inspection labs), and the patience to type things out and see what happens.
 
 ## What you will be able to do
 
-Finish every chapter, exercise and project and you will be able to build real software in Rust: command-line tools, web services backed by a database, programs that do many things at once. You will also understand ideas that apply to every programming language: how memory works, how to organise a large program, how to handle errors, and how to test that your code is right.
+Finish this guide and you will understand the complete chain inside a modern computer:
 
-This guide is intentionally scoped to the core Rust language, its tooling, the most important crates and ecosystem patterns, and the practical projects in this book. It does not pretend to cover every niche branch of the ecosystem: blockchain, kernel programming, robotics and other specialised domains are outside the main path of a from-zero guide. The point is to give you a solid foundation before you choose a deeper specialism.
+`Source Code → Compilation → Machine Code → Program Loading → Memory Allocation → Execution → CPU Instructions → Operating System → Hardware Interaction → Input/Output`
 
-Learning to program is like learning to cook or to play an instrument. Reading alone does not work. **Each chapter gives you something to do, and the doing is where the learning happens.**
+Using Rust as your practical and experimental tool, you will be able to inspect compiler intermediate representations and ELF binaries, reason about virtual memory, allocators, CPU caches, calling conventions, Linux system calls, I/O multiplexing, networking protocols, and file systems—and build real command-line tools, concurrent systems services, and database-backed web APIs.
+
+Learning systems programming is like learning to cook or to play an instrument. Reading alone does not work. **Each chapter gives you concepts, traces, and experiments to run, and the doing is where the learning happens.**
 
 ## What is in this guide
 
-It is worth knowing the size of what you are starting, so that you can plan.
+Explore the full chapter-by-chapter dependency map in the **[Complete Learning Roadmap](#roadmap)**.
 
 | | |
 |---|---|
-| Chapters | 55, of which 8 are complete projects you build file by file |
-| Appendices | 5: a glossary, a reference, a catalogue of compiler errors, Rust for people who know other languages, and a from-source-to-silicon deep dive |
-| Rust examples | 916 across 1,179 code listings, with real compiled output and diagnostics |
-| Exercises | 193, each with a hint and a worked solution |
-| Quiz questions | 243, each with an explanation |
+| Structure | 13 Parts + 5 Appendices (83 tracked chapters & orientation guides + 5 appendices = 88 sections) |
+| Projects | 9 complete projects and labs built step by step, including a Linux `/proc` & ELF systems inspector |
+| Appendices | Glossary, systems & Rust reference tables, compiler error catalogue, language translation guides, and a from-source-to-silicon deep dive |
+| Rust examples | 991 Rust listings across 1,308 code blocks, paired with real compiler diagnostics and machine-level traces |
+| Exercises & Quizzes | 274 worked exercises (each with hint + solution) and 351 instant-feedback quiz questions |
 
-Nothing here is a mock-up. When the guide shows a compiler error, that is the message the compiler really printed, on the line number it really pointed at. When it shows program output, the program really produced it. This is checked automatically, for every example, on every change to the guide.
+Where the guide shows compiler diagnostics or captured output, those blocks come straight from `rustc` (Rust 2024 edition). Hardware, ELF, and Linux kernel experiments are written for `x86_64` and `ARM64` Linux environments with `rustc`, `cargo`, `objdump`, `readelf`, `nm`, `strace`, `rust-gdb`, `perf`, and `/proc`.
 
-## Choose your path: core track and goal-based routes
+## Choose your path: full systems journey or goal-based routes
 
-Working through **all** 55 chapters, 8 projects, and exercises cover-to-cover takes roughly 56–57 hours. You do **not** have to read every chapter—or every domain survey—before writing real Rust programs. Start with the **Core Rust Path**, then pick **one goal-based route** that matches what you want to build:
+Start with the **Complete Learning Roadmap** ([roadmap](#roadmap)) to see how every part depends on earlier foundations, or pick a route filter on the home page:
 
-| Route | Chapters to read | Approx. time | Best for |
-|---|---|---|---|
-| **Core Rust path** | [1](#what-is-rust)–[26](#project-report) (Parts 1–5) + [34](#cargo)–[36](#testing-strategies) (Part 8 Tooling) | ~23.5 hours | Every beginner. Everything needed to write, format, lint, and test real Rust programs |
-| **CLI tools** | Core path → [42](#crates) Crates → [43](#serde) Serde → [44](#cli) Command-line tools (`clap`) | +3.2 hours | Fast terminal utilities, automation scripts, and developer tools |
-| **Web backends & APIs** | Core path → [27](#smart-pointers) + [30](#threads)–[33](#project-chat) → [42](#crates)–[43](#serde) → [45](#async-ecosystem)–[48](#project-api) → [51](#observability) → [53](#capstone) | +21 hours | HTTP APIs (`Axum`), SQLite/Postgres (`SQLx`), telemetry, and services |
-| **Systems, FFI & performance** | Core path → [27](#smart-pointers)–[31](#shared-state) → [37](#macros)–[41](#idioms) (Part 9 Advanced) → [52](#performance) | +10.5 hours | Low-level memory control, `unsafe` invariants, C/Python FFI, profiling |
-| **Optional ecosystem surveys** | [49](#apps) Apps (Wasm, Tauri, GUI) and [50](#games-embedded) Games, embedded & data | ~3.3 hours | Browsing a specialised domain once your core skills are solid |
+| Route | Chapters to read | Best for |
+|---|---|---|
+| **Core Rust path** | [1](#what-is-rust), [4](#setup), Part III core chapters, and Part XII tooling ([Cargo](#cargo)–[Testing strategies](#testing-strategies)) | Beginners focusing first on everyday Rust syntax, ownership, traits, and testing |
+| **Systems & internals** | Parts I through XII in full order | Understanding the entire computer stack from hardware & compilation to OS, I/O, CPU, networking & storage |
+| **CLI tools** | Core path → [Crates](#crates) → [Serde](#serde) → [Command-line tools](#cli) | Terminal utilities and automation scripts |
+| **Web backends & APIs** | Core path → Part IX Concurrency → Part X Networking & [Axum](#web) → Part XI [Databases](#databases) → [Observability](#observability) → [Capstone](#capstone) | Production HTTP services, telemetry, and SQL persistence |
+| **Optional ecosystem surveys** | [Apps (Wasm, Tauri, GUI)](#apps) and [Games, embedded & data](#games-embedded) | Exploring specialised application domains |
 
-:::tip You do not have to read Part 9 or Part 10 in full to start building
-Everyday Cargo workflows, formatting (`cargo fmt`), Clippy, and testing strategies live in **Part 8**, right after concurrency and **before** macros, `unsafe`, FFI, and memory layout (**Part 9**). Treat Part 9 as a deeper layer for when you need it, and treat [chapter 49](#apps) and [chapter 50](#games-embedded) as optional ecosystem maps rather than mandatory prerequisites.
+:::tip Follow the ten-stage lens
+Every major systems and Rust internals topic in this guide connects ten layers of reality:
+**Starting Point** → **Source Code** → **Compiler Perspective** → **Compiled Representation** → **Memory Perspective** → **Execution Perspective** → **Operating System Perspective** → **Hardware Perspective** → **Practical Experiment** → **Conclusion**.
+You do not merely memorise syntax—you learn *why* the machine behaves the way it does.
 :::
 
 ## What this guide covers, and what it does not
 
-"Everything about Rust" is an endless subject, so this guide has a written rule. Each part of the Rust world is handled in one of three ways, and it says which:
-
-- **Taught.** At least one section with a compiled example, plus an exercise or a quiz question.
-- **Named with advice.** A table row or short paragraph that names the mainstream crates, says how mature they are, and says when to choose them. You are not left guessing, and you are not misled into thinking a passing name is a lesson.
-- **Out of scope, on purpose.** Declared in [chapter 53](#next) with a reason and somewhere else to read.
-
-A few areas are deliberately outside this guide: blockchain and Web3, operating-system and kernel development, robotics, high-frequency trading, and cloud-provider SDKs beyond one example. They are real and interesting ecosystems, and each has its own books. A guide that starts from zero cannot teach them honestly, so it names them and steps aside rather than pretending.
-
-Everything else in the ecosystem chapter follows the first two rules. If you find a crate that is named once and never explained, that is a mistake worth reporting.
+"Everything in computing" is vast, so this guide keeps a clean boundary. **User-space systems programming, computer architecture, compilation, memory, Linux OS mechanisms, I/O, networking, storage, and core Rust application engineering** are taught directly with working experiments. Specialised domains outside a single-book scope—such as blockchain/Web3, writing a complete standalone OS kernel from scratch, robotics control theory, and cloud-provider SDKs—are clearly separated and pointed to dedicated follow-on books in [the final chapter](#next).
 
 ## How a chapter is built
 
@@ -110,7 +106,7 @@ fn main() {
 Rust is fun!
 ```
 
-The grey box below the code shows the **output**: what appears on the screen when the program runs. Do not worry about what the code means yet. That starts in [chapter 2](#setup).
+The grey box below the code shows the **output**: what appears on the screen when the program runs. Do not worry about what the code means yet. That starts in [chapter 4](#setup).
 
 Each code box has buttons in its top-right corner:
 
@@ -172,7 +168,7 @@ Quizzes give you an answer straight away. Try this one:
 - **Do the projects.** They join the small ideas into something real.
 
 :::tip Already know another programming language?
-You can read Part 1 quickly, but do not skip it: Rust does some basic things differently. Slow down at Part 2 (ownership). It is the part that is new for everybody.
+You can skim the early syntax chapters in Part III quickly, but read **Part I**, **Part II**, and the ownership and internals chapters carefully: Rust's memory model, compiler guarantees, and zero-cost mapping to hardware are where everything clicks together. Also check [Coming from another language](#from-other-languages) for quick translation tables.
 :::
 
 ## When you get stuck

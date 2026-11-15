@@ -1,5 +1,5 @@
 @id capstone
-@part p11
+@part p12
 @kind project
 @title Project: a personal library with a web API and a CLI
 @short Capstone project
@@ -41,15 +41,15 @@ $ curl http://localhost:3000/books
 
 Both the command and the web API talk to the same database. The command-line tool is useful for bulk work; the web API is useful for a small web page or a phone app.
 
-The project brings Part 10 together:
+The project brings together the practical tools and backend stack:
 
-- **Axum** for HTTP ([chapter 46](#web))
-- **SQLx** with SQLite for storage ([chapter 47](#databases))
-- **Serde** for JSON ([chapter 43](#serde))
-- **clap** for the command line ([chapter 44](#cli))
-- **thiserror** and **anyhow** for errors ([chapter 18](#errors))
-- **tracing** for logs ([chapter 42](#crates))
-- **tokio** for the async runtime ([chapter 45](#async-ecosystem))
+- **Axum** for HTTP ([chapter 64](#web))
+- **SQLx** with SQLite for storage ([chapter 68](#databases))
+- **Serde** for JSON ([chapter 78](#serde))
+- **clap** for the command line ([chapter 73](#cli))
+- **thiserror** and **anyhow** for errors ([chapter 23](#errors))
+- **tracing** for logs ([chapter 77](#crates))
+- **tokio** for the async runtime ([chapter 60](#async-ecosystem))
 
 It also keeps the promises of the tooling chapters: format, lint, test, document, and a CI-style checklist at the end.
 
@@ -269,7 +269,7 @@ impl Rating {
 }
 ```
 
-`NewBook` is what a client may send. `Book` is what the store returns — it adds the id and the creation date that the client never chooses. This separation, first seen with notes in [chapter 46](#web), keeps the client from inventing ids.
+`NewBook` is what a client may send. `Book` is what the store returns — it adds the id and the creation date that the client never chooses. This separation, first seen with notes in [chapter 64](#web), keeps the client from inventing ids.
 
 Now the one error type for the whole program. `thiserror` writes the `Display` and `Error` implementations; `#[from]` lets `?` convert SQLx errors.
 
@@ -789,11 +789,11 @@ pub fn router() -> Router<AppState> {
 }
 ```
 
-`LibraryError::into_response` is the one place that decides status codes and bodies. Database errors are logged with their details but the client sees only a neutral message — the security rule from [chapter 46](#web).
+`LibraryError::into_response` is the one place that decides status codes and bodies. Database errors are logged with their details but the client sees only a neutral message — the security rule from [chapter 64](#web).
 
 ## Step 6: settings and `main`
 
-Settings come from environment variables, never from the source code. For multi-environment config files, `.env` loading, and `secrecy::SecretString` redaction, see [chapter 46](#web) and [the configuration section](#cli) of the CLI chapter; for separating `/health/live` and `/health/ready`, see [chapter 51](#observability). `main` wires everything together: logging, the store, the router, and the server.
+Settings come from environment variables, never from the source code. For multi-environment config files, `.env` loading, and `secrecy::SecretString` redaction, see [chapter 64](#web) and [the configuration section](#cli) of the CLI chapter; for separating `/health/live` and `/health/ready`, see [chapter 65](#observability). `main` wires everything together: logging, the store, the router, and the server.
 
 ```rust proj=library file=src/config.rs
 use std::env;
@@ -1040,7 +1040,7 @@ The web API and the CLI see the same books because they share one `Library` and 
 
 ## Step 7: test the whole API
 
-The tests hand requests straight to the router, exactly as in [chapter 46](#web). No network port is opened, so the tests run in milliseconds.
+The tests hand requests straight to the router, exactly as in [chapter 64](#web). No network port is opened, so the tests run in milliseconds.
 
 ```rust proj=library file=tests/api.rs
 use axum::body::to_bytes;
@@ -1200,9 +1200,9 @@ Test that asking for 1 book from a database with 3 returns exactly 1, and that a
 :::
 
 :::exercise challenge Protect the writes
-Add an API key. `POST /books`, `PATCH /books/{id}` and `DELETE /books/{id}` require the header `x-api-key` to match the `API_KEY` environment variable. Reading stays open. Use Axum middleware from [chapter 46](#web), and keep the key out of the source code.
+Add an API key. `POST /books`, `PATCH /books/{id}` and `DELETE /books/{id}` require the header `x-api-key` to match the `API_KEY` environment variable. Reading stays open. Use Axum middleware from [chapter 64](#web), and keep the key out of the source code.
 ::hint
-Write a `require_key` middleware function like the one in [chapter 46](#web). Put the write routes in their own router with `.route_layer(middleware::from_fn(require_key))`. Read `API_KEY` in `Config` and pass it into `AppState`.
+Write a `require_key` middleware function like the one in [chapter 64](#web). Put the write routes in their own router with `.route_layer(middleware::from_fn(require_key))`. Read `API_KEY` in `Config` and pass it into `AppState`.
 ::solution
 ```rust
 // In config.rs, `pub api_key: Option<String>` is already read from `env::var("API_KEY").ok()`.
@@ -1264,4 +1264,4 @@ ALTER TABLE books ADD COLUMN last_visited TEXT;
 
 ## What comes next
 
-You have reached the end of Part 11 and of this guide, and the last of its eight projects. You now know how to build command-line tools, web services, database-backed programs, graphical applications, observability pipelines, and embedded software in Rust. Head to [chapter 54](#next) for the books, crates, and communities where Rust developers keep learning.
+You have reached the end of Part XII and the last of the eight core application projects. You now know how to trace Rust down to hardware, OS syscalls, networking, and storage, and how to build command-line tools, web services, and database-backed software. Head to Part XIII ([Crates](#crates)–[Where to go from here](#next)) for the ecosystem surveys and next steps.

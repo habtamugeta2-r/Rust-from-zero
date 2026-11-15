@@ -1,5 +1,5 @@
 @id generics
-@part p4
+@part p3
 @title Generics: code that works for many types
 @short Generics
 @level intermediate
