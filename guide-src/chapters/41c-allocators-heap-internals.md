@@ -235,12 +235,14 @@ fn main() {
     }
     arena.reset();
     let again = arena.alloc_u32_slice(2).unwrap();
-    println!("after reset = {again:?}, cursor = {}", arena.next);
+    println!("after reset = {again:?}");
+    println!("cursor = {}", arena.next);
 }
 ```
 ```output
 slice = [10, 20, 30, 40]
-after reset = [0, 0], cursor = 8
+after reset = [0, 0]
+cursor = 8
 ```
 Notice how taking `&mut self` binds the lifetime of `nums` to `arena`, making the Rust borrow checker prevent `arena.reset()` while `nums` is still in use!
 :::
