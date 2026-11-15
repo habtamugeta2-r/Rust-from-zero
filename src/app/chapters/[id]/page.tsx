@@ -54,14 +54,14 @@ export default async function ChapterPage({
             : `Chapter ${chapter.num}`;
 
   return (
-    <div className="mx-auto flex max-w-6xl flex-col gap-0 px-5 py-8 sm:px-8 lg:py-12 xl:flex-row xl:gap-10">
+    <div className="mx-auto flex max-w-[78rem] flex-col px-5 py-8 sm:px-8 lg:py-12 xl:flex-row xl:justify-center xl:gap-10 2xl:gap-14">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
           __html: JSON.stringify(chapterJsonLd(chapter)).replace(/</g, "\\u003c"),
         }}
       />
-      <article className="min-w-0 max-w-3xl flex-1">
+      <article className="mx-auto min-w-0 w-full max-w-3xl xl:mx-0 xl:max-w-none xl:flex-[0_1_54rem]">
         {/* Breadcrumb (visible + mirrors the BreadcrumbList schema) */}
         <nav
           aria-label="Breadcrumb"

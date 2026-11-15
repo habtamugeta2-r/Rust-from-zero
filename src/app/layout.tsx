@@ -9,30 +9,37 @@ import { websiteJsonLd } from "@/lib/seo";
 import "./globals.css";
 import { SITE_URL } from "@/lib/site";
 
+/**
+ * Counts come from the chapters themselves, so adding a chapter or an exercise
+ * can never leave the meta description advertising yesterday's numbers.
+ */
+const guideStats = loadGuide().stats;
+const CHAPTERS = guideStats.trackedChapters;
+const EXERCISES = guideStats.exercises;
+const QUIZZES = guideStats.questions;
+const PROJECTS = guideStats.projects;
+
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
     default: "Rust from Zero — The Complete Hands-On Guide",
     template: "%s · Rust from Zero",
   },
-  description:
-    "Learn computer systems internals and Rust from zero: 83 chapters and orientation guides from CPU registers, compilers, ELF, and Linux syscalls to virtual memory, async runtimes, networking, and storage. 274 solved exercises, 351 quiz questions, and 9 hands-on projects.",
+  description: `Learn computer systems internals and Rust from zero: ${CHAPTERS} chapters and orientation guides from CPU registers, compilers, ELF, and Linux syscalls to virtual memory, async runtimes, networking, and storage. ${EXERCISES} solved exercises, ${QUIZZES} quiz questions, and ${PROJECTS} hands-on projects.`,
   alternates: {
     canonical: "/",
   },
   openGraph: {
     type: "book",
     title: "Rust from Zero — The Complete Hands-On Guide",
-    description:
-      "Learn computer systems and Rust from scratch with plain language, architecture traces, 274 solved exercises, 351 quizzes and 9 hands-on projects.",
+    description: `Learn computer systems and Rust from scratch with plain language, architecture traces, ${EXERCISES} solved exercises, ${QUIZZES} quizzes and ${PROJECTS} hands-on projects.`,
     url: SITE_URL,
     images: ["/og.png"],
   },
   twitter: {
     card: "summary",
     title: "Rust from Zero — The Complete Hands-On Guide",
-    description:
-      "Learn computer systems and Rust from zero: 83 chapters, 274 solved exercises, 351 quiz questions and 9 real projects.",
+    description: `Learn computer systems and Rust from zero: ${CHAPTERS} chapters, ${EXERCISES} solved exercises, ${QUIZZES} quiz questions and ${PROJECTS} real projects.`,
   },
 };
 

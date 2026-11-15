@@ -132,13 +132,17 @@ export function courseJsonLd(
   parts: PartMeta[],
   summaries: ChapterSummary[],
 ): object[] {
+  const body = summaries.filter((s) => s.kind !== "appendix");
+  // Derived from the summaries, so the structured data never drifts from the
+  // chapters actually present.
+  const projects = summaries.filter((s) => s.kind === "project").length;
   const course = {
     "@context": "https://schema.org",
     "@type": "Course",
     name: SITE_NAME,
     alternateName: "Rust tutorial",
     description: clip(
-      "A complete self-study course teaching computer systems internals and Rust from zero: hardware, compiler stages, ELF, memory, Linux OS kernel, I/O, CPU pipelines, networking, storage, and web backends. Plain explanations, 274 solved exercises, 351 quizzes, and 9 hands-on projects.",
+      `A complete self-study course teaching computer systems internals and Rust from zero: hardware, compiler stages, ELF, memory, Linux OS kernel, I/O, CPU pipelines, networking, storage, and web backends. Plain explanations, worked exercises with solutions, quizzes, and ${projects} hands-on projects.`,
       300,
     ),
     url: SITE_URL,
@@ -153,7 +157,6 @@ export function courseJsonLd(
         description: p.blurb ? clip(p.blurb, 200) : p.partTitle,
       })),
   };
-  const body = summaries.filter((s) => s.kind !== "appendix");
   const itemlist = {
     "@context": "https://schema.org",
     "@type": "ItemList",

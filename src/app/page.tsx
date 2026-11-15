@@ -65,7 +65,7 @@ export default function HomePage() {
   ];
 
   return (
-    <div className="mx-auto max-w-5xl px-5 py-10 sm:px-8 lg:py-14">
+    <div className="mx-auto max-w-6xl px-5 py-10 sm:px-8 lg:py-14 2xl:max-w-7xl">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
@@ -76,14 +76,14 @@ export default function HomePage() {
         }}
       />
       {/* Hero */}
-      <section className="grid items-center gap-10 lg:grid-cols-[1.25fr_0.95fr] lg:gap-14">
+      <section className="grid items-center gap-10 lg:grid-cols-[1.25fr_0.95fr] lg:gap-14 2xl:gap-20">
         <div>
           <p className="inline-flex items-center gap-2 rounded-full border border-[var(--g-line)] bg-[var(--g-surface)] px-3.5 py-1.5 font-sans text-xs font-semibold text-[var(--g-ink2)] shadow-card">
             <BadgeCheck className="h-3.5 w-3.5 text-[var(--g-accent)]" />
             Self-study course · Rust 2024 edition · tested on Rust 1.100
           </p>
 
-          <h1 className="mt-5 font-sans text-[40px] leading-[1.08] font-bold tracking-[-0.02em] text-[var(--g-ink)] sm:text-[52px]">
+          <h1 className="mt-5 font-sans text-[40px] leading-[1.08] font-bold tracking-[-0.02em] text-balance text-[var(--g-ink)] sm:text-[52px] 2xl:text-[58px]">
             Learn Rust from zero.
             <br />
             <span className="text-[var(--g-accent)]">Understand the whole machine.</span>

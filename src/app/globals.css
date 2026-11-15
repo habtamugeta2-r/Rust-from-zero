@@ -80,7 +80,9 @@
 
 html {
   scroll-behavior: smooth;
-  scroll-padding-top: 5rem;
+  /* The sticky header is 3.5rem; leave a little breathing room above the
+     heading a jump lands on. */
+  scroll-padding-top: 4.5rem;
 }
 
 body {
@@ -144,6 +146,17 @@ body {
   line-height: 1.75;
   font-family: var(--font-serif);
   font-optical-sizing: auto;
+}
+
+/* On a wide screen the reading column is wider than a 768px "book page", so
+   the type grows with it to hold the line length near 75-85 characters. The
+   reader's A-/A+ setting stays authoritative: --guide-fs is the base and this
+   only multiplies it. */
+@media (min-width: 1536px) {
+  .guide-prose {
+    font-size: calc(var(--guide-fs) * 1.0625);
+    line-height: 1.78;
+  }
 }
 
 .guide-prose code:not(pre code),

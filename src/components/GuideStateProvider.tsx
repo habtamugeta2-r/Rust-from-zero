@@ -338,7 +338,7 @@ export function GuideStateProvider({
         <div
           role="status"
           aria-live="polite"
-          className="no-print fixed bottom-5 right-5 z-50 max-w-md rounded-well border border-[var(--g-line2)] bg-[var(--g-ink)] px-4 py-2.5 text-sm font-medium text-[var(--g-bg)] shadow-pop"
+          className="no-print fixed inset-x-4 bottom-4 z-50 mx-auto w-fit max-w-md rounded-well border border-[var(--g-line2)] bg-[var(--g-ink)] px-4 py-2.5 text-center text-sm font-medium text-[var(--g-bg)] shadow-pop sm:inset-x-auto sm:right-5 sm:bottom-5 sm:mx-0 sm:text-left"
         >
           {toastMsg}
         </div>
