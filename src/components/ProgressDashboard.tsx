@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -9,18 +9,24 @@ import {
   Check,
   CircleDot,
   Clock,
+  Download,
   ListChecks,
   RotateCcw,
   Target,
+  Upload,
 } from "lucide-react";
 import { useGuideState } from "./GuideStateProvider";
 import {
   bookmarkedChapters,
   bucketChapters,
   buildChapterProgress,
+  hasProgress,
   nextChapter,
+  parseProgressExport,
+  serialiseProgress,
   summariseProgress,
   type ChapterMeta,
+  type ExportableProgressState,
 } from "@/lib/progress";
 
 /**
@@ -29,13 +35,52 @@ import {
  * even before storage has hydrated.
  */
 export function ProgressDashboard({ chapters }: { chapters: ChapterMeta[] }) {
-  const { state, persistent, resetAllProgress, toggleDone, toggleBookmark } =
-    useGuideState();
+  const {
+    state,
+    persistent,
+    resetAllProgress,
+    toggleDone,
+    toggleBookmark,
+    importProgress,
+    showToast,
+  } = useGuideState();
   const [confirmReset, setConfirmReset] = useState(false);
+  const [pendingImport, setPendingImport] = useState<ExportableProgressState | null>(null);
+  const [importError, setImportError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const exportProgress = () => {
+    const text = serialiseProgress(state);
+    const blob = new Blob([text], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "rust-from-zero-progress.json";
+    link.click();
+    URL.revokeObjectURL(url);
+    showToast("Progress exported as a JSON file.");
+  };
+
+  const onImportFile = async (file: File | undefined) => {
+    if (!file) return;
+    const result = parseProgressExport(await file.text());
+    if (!result.ok) {
+      setPendingImport(null);
+      setImportError(result.error);
+      return;
+    }
+    setImportError(null);
+    if (hasProgress(state)) {
+      // Local work exists: ask before anything is replaced or merged.
+      setPendingImport(result.state);
+    } else {
+      importProgress(result.state, "replace");
+    }
+  };
 
   const rows = useMemo(
     () => chapters.map((chapter) => buildChapterProgress(chapter, state)),
-    [chapters, state]
+    [chapters, state],
   );
   const totals = useMemo(() => summariseProgress(rows), [rows]);
   const upNext = useMemo(() => nextChapter(rows), [rows]);
@@ -59,9 +104,7 @@ export function ProgressDashboard({ chapters }: { chapters: ChapterMeta[] }) {
           />
           <Stat
             icon={Target}
-            value={
-              totals.accuracy === null ? "—" : `${totals.accuracy}%`
-            }
+            value={totals.accuracy === null ? "—" : `${totals.accuracy}%`}
             label={
               totals.questionsAnswered > 0
                 ? `${totals.questionsAnswered} answered`
@@ -73,11 +116,7 @@ export function ProgressDashboard({ chapters }: { chapters: ChapterMeta[] }) {
             value={`${totals.exercisesSolved}/${totals.exercisesTotal}`}
             label="exercises solved"
           />
-          <Stat
-            icon={Bookmark}
-            value={`${totals.bookmarksTotal}`}
-            label="bookmarks"
-          />
+          <Stat icon={Bookmark} value={`${totals.bookmarksTotal}`} label="bookmarks" />
         </div>
 
         <div className="mt-4 rounded-card border border-[var(--g-line)] bg-[var(--g-surface)] p-4 shadow-card">
@@ -86,8 +125,7 @@ export function ProgressDashboard({ chapters }: { chapters: ChapterMeta[] }) {
               Overall completion
             </span>
             <span className="font-sans text-xs text-[var(--g-ink3)]">
-              {totals.pct}% · {totals.minutesRead} of {totals.minutesTotal} min
-              of reading done
+              {totals.pct}% · {totals.minutesRead} of {totals.minutesTotal} min of reading done
             </span>
           </div>
           <div
@@ -104,8 +142,7 @@ export function ProgressDashboard({ chapters }: { chapters: ChapterMeta[] }) {
             />
           </div>
           <p className="mt-2.5 font-sans text-xs leading-relaxed text-[var(--g-ink3)]">
-            Chapter completion, quiz answers and solved exercises all count
-            toward this number.
+            Chapter completion, quiz answers and solved exercises all count toward this number.
           </p>
         </div>
       </section>
@@ -156,9 +193,7 @@ export function ProgressDashboard({ chapters }: { chapters: ChapterMeta[] }) {
           >
             Bookmarks
           </h2>
-          <span className="font-sans text-xs text-[var(--g-ink3)]">
-            {marks.length}
-          </span>
+          <span className="font-sans text-xs text-[var(--g-ink3)]">{marks.length}</span>
         </div>
         {marks.length === 0 ? (
           <p className="rounded-card border border-dashed border-[var(--g-line2)] px-4 py-6 text-center font-sans text-sm text-[var(--g-ink3)]">
@@ -192,11 +227,7 @@ export function ProgressDashboard({ chapters }: { chapters: ChapterMeta[] }) {
                     title="Remove bookmark"
                     className="grid h-8 w-8 shrink-0 place-items-center rounded-lg text-[var(--g-accent)] hover:bg-[var(--g-sunken)]"
                   >
-                    <Bookmark
-                      className="h-4 w-4"
-                      fill="currentColor"
-                      aria-hidden="true"
-                    />
+                    <Bookmark className="h-4 w-4" fill="currentColor" aria-hidden="true" />
                   </button>
                 </div>
               </li>
@@ -253,10 +284,7 @@ export function ProgressDashboard({ chapters }: { chapters: ChapterMeta[] }) {
         aria-labelledby="storage"
         className="rounded-card border border-[var(--g-line)] bg-[var(--g-sunken)] p-4 font-sans"
       >
-        <h2
-          id="storage"
-          className="text-[13px] font-bold text-[var(--g-ink)]"
-        >
+        <h2 id="storage" className="text-[13px] font-bold text-[var(--g-ink)]">
           {persistent ? "Saved in this browser" : "Session-only progress"}
         </h2>
         <p className="mt-1 text-xs leading-relaxed text-[var(--g-ink3)]">
@@ -264,6 +292,84 @@ export function ProgressDashboard({ chapters }: { chapters: ChapterMeta[] }) {
             ? "Progress, quiz answers, solved exercises and bookmarks are stored locally in this browser. Nothing is uploaded."
             : "This browser is blocking local storage, so progress disappears when you close the tab."}
         </p>
+        <p className="mt-2 text-xs leading-relaxed text-[var(--g-ink3)]">
+          Moving to another machine or browser? Export your progress as a JSON file and import it
+          there. The file holds your finished chapters, quiz answers, solved exercises, bookmarks,
+          theme and text size. An import is checked before it is applied, and when this browser
+          already holds progress you choose whether to replace it or merge the two.
+        </p>
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={exportProgress}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--g-line2)] bg-[var(--g-surface)] px-3 py-1.5 text-xs font-semibold text-[var(--g-ink2)] transition-colors hover:border-[var(--g-accent)] hover:text-[var(--g-accent)]"
+          >
+            <Download className="h-3.5 w-3.5" aria-hidden="true" />
+            Export progress
+          </button>
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--g-line2)] bg-[var(--g-surface)] px-3 py-1.5 text-xs font-semibold text-[var(--g-ink2)] transition-colors hover:border-[var(--g-accent)] hover:text-[var(--g-accent)]"
+          >
+            <Upload className="h-3.5 w-3.5" aria-hidden="true" />
+            Import progress
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="application/json,.json"
+            aria-label="Choose a progress export file to import"
+            className="sr-only"
+            onChange={(event) => {
+              void onImportFile(event.target.files?.[0]);
+              event.target.value = "";
+            }}
+          />
+        </div>
+        {importError && (
+          <p role="alert" className="mt-2 text-xs font-medium text-red-700">
+            Import stopped: {importError} Nothing was changed.
+          </p>
+        )}
+        {pendingImport && (
+          <div className="mt-3 rounded-xl border border-[var(--g-line2)] bg-[var(--g-surface)] p-3">
+            <p className="text-xs leading-relaxed text-[var(--g-ink2)]">
+              This browser already holds progress. Replace it with the imported file, or merge the
+              two? Merging keeps everything already here and adds anything the file has that this
+              browser lacks.
+            </p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  importProgress(pendingImport, "replace");
+                  setPendingImport(null);
+                }}
+                className="rounded-lg bg-red-700 px-3 py-1.5 text-xs font-bold text-white hover:bg-red-800"
+              >
+                Replace my progress
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  importProgress(pendingImport, "merge");
+                  setPendingImport(null);
+                }}
+                className="rounded-lg border border-[var(--g-line2)] px-3 py-1.5 text-xs font-semibold text-[var(--g-ink2)] hover:text-[var(--g-ink)]"
+              >
+                Merge the two
+              </button>
+              <button
+                type="button"
+                onClick={() => setPendingImport(null)}
+                className="rounded-lg border border-[var(--g-line2)] px-3 py-1.5 text-xs font-semibold text-[var(--g-ink2)] hover:text-[var(--g-ink)]"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
         <div className="mt-3 flex flex-wrap items-center gap-2">
           {confirmReset ? (
             <>
@@ -284,9 +390,7 @@ export function ProgressDashboard({ chapters }: { chapters: ChapterMeta[] }) {
               >
                 Cancel
               </button>
-              <span className="text-xs text-[var(--g-ink3)]">
-                Bookmarks are kept.
-              </span>
+              <span className="text-xs text-[var(--g-ink3)]">Bookmarks are kept.</span>
             </>
           ) : (
             <button
@@ -319,9 +423,7 @@ function Stat({
       <div className="mt-2 font-sans text-xl font-bold tracking-tight text-[var(--g-ink)] tabular-nums">
         {value}
       </div>
-      <div className="font-sans text-[11.5px] leading-tight text-[var(--g-ink3)]">
-        {label}
-      </div>
+      <div className="font-sans text-[11.5px] leading-tight text-[var(--g-ink3)]">{label}</div>
     </div>
   );
 }
@@ -372,13 +474,8 @@ function ChapterRow({
           <Check className="h-3.5 w-3.5" aria-hidden="true" />
         </button>
 
-        <Link
-          href={`/chapters/${row.id}`}
-          className="flex min-w-0 flex-1 items-baseline gap-2.5"
-        >
-          <span className="w-7 shrink-0 font-mono text-[11px] text-[var(--g-ink3)]">
-            {row.num}
-          </span>
+        <Link href={`/chapters/${row.id}`} className="flex min-w-0 flex-1 items-baseline gap-2.5">
+          <span className="w-7 shrink-0 font-mono text-[11px] text-[var(--g-ink3)]">{row.num}</span>
           <span className="min-w-0 flex-1 truncate font-sans text-[13.5px] font-semibold text-[var(--g-ink)]">
             {row.short}
           </span>

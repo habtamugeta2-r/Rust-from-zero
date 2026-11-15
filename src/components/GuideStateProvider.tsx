@@ -11,6 +11,7 @@ import React, {
 } from "react";
 import Link from "next/link";
 import { nextThemeMode, type ThemeMode } from "@/lib/theme";
+import { mergeProgress, type ExportableProgressState } from "@/lib/progress";
 
 const STORAGE_KEY = "rust-guide-v1";
 
@@ -52,15 +53,15 @@ interface GuideContextValue {
   toggleDone: (chapterId: string) => void;
   toggleBookmark: (chapterId: string) => void;
   setSaved: (key: string, checked: boolean) => void;
-  setQuizAnswer: (
-    quizId: string,
-    qIndex: number,
-    optIndex: number,
-    correct: boolean
-  ) => void;
+  setQuizAnswer: (quizId: string, qIndex: number, optIndex: number, correct: boolean) => void;
   resetQuiz: (quizId: string) => void;
   setLastChapter: (chapterId: string) => void;
   resetAllProgress: () => void;
+  /**
+   * Apply an imported export. `replace` takes the imported state wholesale;
+   * `merge` keeps every local entry and adds imported ones it lacks.
+   */
+  importProgress: (next: ExportableProgressState, mode: "replace" | "merge") => void;
   /** Resolved theme actually painted on screen. */
   theme: "light" | "dark";
   /** What the reader chose: light, dark, or follow the operating system. */
@@ -81,19 +82,13 @@ function emptyState(): SavedState {
   return { done: {}, saved: {}, quiz: {}, bookmarks: {} };
 }
 
-function normaliseQuiz(
-  raw: unknown
-): Record<string, Record<string, QuizAnswer>> {
+function normaliseQuiz(raw: unknown): Record<string, Record<string, QuizAnswer>> {
   if (!raw || typeof raw !== "object") return {};
   const out: Record<string, Record<string, QuizAnswer>> = {};
-  for (const [quizId, answers] of Object.entries(
-    raw as Record<string, unknown>
-  )) {
+  for (const [quizId, answers] of Object.entries(raw as Record<string, unknown>)) {
     if (!answers || typeof answers !== "object") continue;
     const clean: Record<string, QuizAnswer> = {};
-    for (const [qIndex, value] of Object.entries(
-      answers as Record<string, unknown>
-    )) {
+    for (const [qIndex, value] of Object.entries(answers as Record<string, unknown>)) {
       if (typeof value === "number") {
         // 2.0 stored the bare option index; correctness was not recorded then.
         clean[qIndex] = { picked: value };
@@ -102,8 +97,7 @@ function normaliseQuiz(
         if (typeof answer.picked === "number") {
           clean[qIndex] = {
             picked: answer.picked,
-            correct:
-              typeof answer.correct === "boolean" ? answer.correct : undefined,
+            correct: typeof answer.correct === "boolean" ? answer.correct : undefined,
           };
         }
       }
@@ -119,22 +113,15 @@ function normaliseState(raw: unknown): SavedState {
     done: s.done && typeof s.done === "object" ? s.done : {},
     saved: s.saved && typeof s.saved === "object" ? s.saved : {},
     quiz: normaliseQuiz(s.quiz),
-    bookmarks:
-      s.bookmarks && typeof s.bookmarks === "object" ? s.bookmarks : {},
+    bookmarks: s.bookmarks && typeof s.bookmarks === "object" ? s.bookmarks : {},
     last: typeof s.last === "string" ? s.last : undefined,
-    theme:
-      s.theme === "dark" || s.theme === "light" || s.theme === "system"
-        ? s.theme
-        : undefined,
+    theme: s.theme === "dark" || s.theme === "light" || s.theme === "system" ? s.theme : undefined,
     fs: typeof s.fs === "number" ? s.fs : undefined,
   };
 }
 
 function systemPrefersDark(): boolean {
-  return (
-    typeof window !== "undefined" &&
-    window.matchMedia("(prefers-color-scheme: dark)").matches
-  );
+  return typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches;
 }
 
 function resolveTheme(mode: ThemeMode): "light" | "dark" {
@@ -169,7 +156,7 @@ export function GuideStateProvider({
   // Hydrate saved state cleanly after mount
   useEffect(() => {
     let loaded = emptyState();
-    let canPersist = false;
+    let canPersist: boolean;
     try {
       window.localStorage.setItem(`${STORAGE_KEY}-test`, "1");
       window.localStorage.removeItem(`${STORAGE_KEY}-test`);
@@ -183,8 +170,7 @@ export function GuideStateProvider({
     }
 
     const resolvedMode: ThemeMode = loaded.theme ?? "system";
-    const resolvedFs =
-      loaded.fs && loaded.fs >= 15 && loaded.fs <= 24 ? loaded.fs : 18;
+    const resolvedFs = loaded.fs && loaded.fs >= 15 && loaded.fs <= 24 ? loaded.fs : 18;
 
     setPersistent(canPersist);
     setState(loaded);
@@ -208,7 +194,7 @@ export function GuideStateProvider({
         return next;
       });
     },
-    [persistent]
+    [persistent],
   );
 
   const showToast = useCallback((msg: string) => {
@@ -226,7 +212,7 @@ export function GuideStateProvider({
         return { ...prev, done };
       });
     },
-    [persistState]
+    [persistState],
   );
 
   const toggleBookmark = useCallback(
@@ -238,7 +224,7 @@ export function GuideStateProvider({
         return { ...prev, bookmarks };
       });
     },
-    [persistState]
+    [persistState],
   );
 
   const setSaved = useCallback(
@@ -250,16 +236,11 @@ export function GuideStateProvider({
         return { ...prev, saved };
       });
     },
-    [persistState]
+    [persistState],
   );
 
   const setQuizAnswer = useCallback(
-    (
-      quizId: string,
-      qIndex: number,
-      optIndex: number,
-      correct: boolean
-    ) => {
+    (quizId: string, qIndex: number, optIndex: number, correct: boolean) => {
       persistState((prev) => {
         const quiz = { ...prev.quiz };
         quiz[quizId] = {
@@ -269,7 +250,7 @@ export function GuideStateProvider({
         return { ...prev, quiz };
       });
     },
-    [persistState]
+    [persistState],
   );
 
   const resetQuiz = useCallback(
@@ -280,7 +261,7 @@ export function GuideStateProvider({
         return { ...prev, quiz };
       });
     },
-    [persistState]
+    [persistState],
   );
 
   const setLastChapter = useCallback(
@@ -290,7 +271,7 @@ export function GuideStateProvider({
         return { ...prev, last: chapterId };
       });
     },
-    [persistState]
+    [persistState],
   );
 
   const resetAllProgress = useCallback(() => {
@@ -307,13 +288,42 @@ export function GuideStateProvider({
     showToast("Progress erased. Bookmarks were kept.");
   }, [persistState, showToast]);
 
+  const importProgress = useCallback(
+    (next: ExportableProgressState, mode: "replace" | "merge") => {
+      const incoming = normaliseState(next);
+      const merged = mode === "replace" ? incoming : (mergeProgress(state, incoming) as SavedState);
+      const finalState = normaliseState(merged);
+      setState(finalState);
+      if (persistent) {
+        try {
+          window.localStorage.setItem(STORAGE_KEY, JSON.stringify(finalState));
+        } catch {
+          // ignore quota errors
+        }
+      }
+      const mode2: ThemeMode = finalState.theme ?? "system";
+      const resolvedFs =
+        finalState.fs && finalState.fs >= 15 && finalState.fs <= 24 ? finalState.fs : 18;
+      setThemeModeState(mode2);
+      setTheme(applyTheme(mode2));
+      setFontSize(resolvedFs);
+      document.documentElement.style.setProperty("--guide-fs", `${resolvedFs}px`);
+      showToast(
+        mode === "replace"
+          ? "Imported progress now replaces what was here."
+          : "Imported progress merged: nothing already here was removed.",
+      );
+    },
+    [persistent, showToast, state],
+  );
+
   const setThemeMode = useCallback(
     (mode: ThemeMode) => {
       setThemeModeState(mode);
       setTheme(applyTheme(mode));
       persistState((prev) => ({ ...prev, theme: mode }));
     },
-    [persistState]
+    [persistState],
   );
 
   const cycleTheme = useCallback(() => {
@@ -322,7 +332,7 @@ export function GuideStateProvider({
     showToast(
       next === "system"
         ? `Theme follows your system setting (${systemPrefersDark() ? "dark" : "light"}).`
-        : `Theme set to ${next}.`
+        : `Theme set to ${next}.`,
     );
   }, [setThemeMode, showToast, themeMode]);
 
@@ -340,18 +350,14 @@ export function GuideStateProvider({
     (delta: number) => {
       const next = Math.min(24, Math.max(15, fontSize + delta));
       if (next === fontSize) {
-        showToast(
-          delta > 0
-            ? "That is the largest text size."
-            : "That is the smallest text size."
-        );
+        showToast(delta > 0 ? "That is the largest text size." : "That is the smallest text size.");
         return;
       }
       setFontSize(next);
       document.documentElement.style.setProperty("--guide-fs", `${next}px`);
       persistState((prev) => ({ ...prev, fs: next }));
     },
-    [fontSize, persistState, showToast]
+    [fontSize, persistState, showToast],
   );
 
   const showGlossaryTip = useCallback(
@@ -370,7 +376,7 @@ export function GuideStateProvider({
       const y = above ? r.top - 8 : r.bottom + 8;
       setTip({ entry, x, y, above });
     },
-    [glossary]
+    [glossary],
   );
 
   const hideGlossaryTip = useCallback(() => setTip(null), []);
@@ -411,6 +417,7 @@ export function GuideStateProvider({
       resetQuiz,
       setLastChapter,
       resetAllProgress,
+      importProgress,
       theme,
       themeMode,
       setThemeMode,
@@ -433,6 +440,7 @@ export function GuideStateProvider({
       resetQuiz,
       setLastChapter,
       resetAllProgress,
+      importProgress,
       theme,
       themeMode,
       setThemeMode,
@@ -443,7 +451,7 @@ export function GuideStateProvider({
       showGlossaryTip,
       hideGlossaryTip,
       tip,
-    ]
+    ],
   );
 
   return (
@@ -462,9 +470,7 @@ export function GuideStateProvider({
           onMouseLeave={hideGlossaryTip}
         >
           <div className="mb-1 flex items-center justify-between gap-2">
-            <span className="font-semibold text-[var(--g-accent)]">
-              {tip.entry.term}
-            </span>
+            <span className="font-semibold text-[var(--g-accent)]">{tip.entry.term}</span>
             <Link
               href="/chapters/glossary"
               onClick={hideGlossaryTip}
