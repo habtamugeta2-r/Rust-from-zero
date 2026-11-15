@@ -1,5 +1,5 @@
 @id modules
-@part p4
+@part p3
 @title Organising code: packages, crates and modules
 @short Modules and crates
 @level intermediate
@@ -233,7 +233,7 @@ use std::collections::*;                   // everything public: the "glob" form
 # fn main() {}
 ```
 
-Use the glob form `*` sparingly. It hides where names come from. It is common in two places: in tests (`use super::*;`, see [chapter 22](#testing)) and for a library's **prelude**, a module that collects the names nearly every user needs.
+Use the glob form `*` sparingly. It hides where names come from. It is common in two places: in tests (`use super::*;`, see [chapter 27](#testing)) and for a library's **prelude**, a module that collects the names nearly every user needs.
 
 :::plain Why `String`, `Vec` and `Option` need no `use`
 Rust automatically brings a small set of names from the standard library into every file. It is called **the prelude**. It contains `String`, `Vec`, `Option`, `Result`, `Some`, `None`, `Ok`, `Err`, `Box`, and the most common traits. Everything else, such as `HashMap`, needs a `use` line.
@@ -271,7 +271,7 @@ Modules really pay off when each one lives in its own file. The rule is simple:
 
 > `mod list;` (with a semicolon, and no braces) tells the compiler: "the contents of the module `list` are in another file". The compiler looks for `src/list.rs`.
 
-Here is the to-do program from [chapter 16](#project-todo), split into three files:
+Here is the to-do program from [chapter 21](#project-todo), split into three files:
 
 ```text
 todo/
@@ -401,7 +401,7 @@ The modules now belong to the **library**. The program in `main.rs` is a separat
 
 Why bother?
 
-- **Tests.** Code in a library is much easier to test ([chapter 22](#testing)).
+- **Tests.** Code in a library is much easier to test ([chapter 27](#testing)).
 - **Reuse.** Another program, such as a web version of the to-do list, could use the same library.
 - **Discipline.** `main.rs` stays small: read the input, call the library, print the result.
 
@@ -416,7 +416,7 @@ You already used an external crate in the guessing game. The mechanism is the sa
 rand = "0.10"
 ```
 
-After `cargo add rand` has written that line into `Cargo.toml`, the crate's name is available as the first step of a path: `rand::random_range(1..=100)`. The standard library is also a crate, called `std`, that is always available. [Chapter 34](#cargo) covers Cargo in depth, and [chapter 42](#crates) shows how to find and judge crates.
+After `cargo add rand` has written that line into `Cargo.toml`, the crate's name is available as the first step of a path: `rand::random_range(1..=100)`. The standard library is also a crate, called `std`, that is always available. [Chapter 70](#cargo) covers Cargo in depth, and [chapter 77](#crates) shows how to find and judge crates.
 
 :::compare Module systems in other languages
 - **Python and JavaScript:** every file is automatically a module, and the files import each other. Rust is different: files become part of the crate only through `mod` declarations, which form one tree from the crate root.
@@ -612,5 +612,5 @@ fn main() {
 None
 ```
 
-This combines three ideas: the newtype pattern from [chapter 12](#structs), `Option` for a constructor that can refuse, and a private field. Together they give a guarantee: **if a `Celsius` exists, it is valid.** Every function that receives a `Celsius` can rely on that and needs no check of its own. The condition `value >= ABSOLUTE_ZERO` also rejects the special float value NaN, because every comparison with NaN is false.
+This combines three ideas: the newtype pattern from [chapter 17](#structs), `Option` for a constructor that can refuse, and a private field. Together they give a guarantee: **if a `Celsius` exists, it is valid.** Every function that receives a `Celsius` can rely on that and needs no check of its own. The condition `value >= ABSOLUTE_ZERO` also rejects the special float value NaN, because every comparison with NaN is false.
 :::

@@ -1,5 +1,5 @@
 @id ffi
-@part p9
+@part p3
 @title Working with other languages (FFI)
 @short Other languages (FFI)
 @level advanced
@@ -402,7 +402,7 @@ In practice you build and publish such modules with the tool **`maturin`**: `mat
 | C++ | `cxx` | safe bindings in both directions, with support for C++ strings, vectors and smart pointers |
 | Python | `pyo3` with `maturin` | write Python modules in Rust, or run Python inside Rust |
 | JavaScript (Node.js) | `napi-rs`, `neon` | native Node.js modules |
-| JavaScript (browser) | `wasm-bindgen` | through WebAssembly ([chapter 49](#apps)) |
+| JavaScript (browser) | `wasm-bindgen` | through WebAssembly ([chapter 79](#apps)) |
 | Java, Kotlin | `jni`, `uniffi` | `uniffi` generates bindings for Kotlin, Swift and Python from one description |
 | Swift | `uniffi`, `swift-bridge` | used for shared code in mobile apps |
 | Ruby | `magnus` | native Ruby extensions |

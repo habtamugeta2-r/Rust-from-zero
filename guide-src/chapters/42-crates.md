@@ -1,5 +1,5 @@
 @id crates
-@part p10
+@part p13
 @title The crate ecosystem: finding and using libraries
 @short Finding and using crates
 @level intermediate
@@ -303,7 +303,7 @@ MinMax(1, 3)
 [6, 15, 7]
 ```
 
-Importing the trait `Itertools` adds dozens of methods to every iterator. `counts()` is the word-count map of chapter 15 in one call, and `into_group_map_by` is the grouping loop of chapter 25.
+Importing the trait `Itertools` adds dozens of methods to every iterator. `counts()` is the word-count map of [chapter 20](#collections) in one call, and `into_group_map_by` is the grouping loop of [chapter 30](#iterators).
 
 ### `tracing`: logging
 
@@ -415,7 +415,7 @@ hides `info` and `debug`. The filter is a pattern: `mycrate=debug` shows debug m
 | Async tasks | hard to tell which task said what | spans follow the task (`#[instrument]`) |
 | Best fit | small tools, command-line programs | services, servers, async code |
 
-This chapter introduces the basics for scripts and small programs. For structured JSON logging in production, request IDs across async tasks, OpenTelemetry distributed traces, Prometheus metrics, and health probes, see [chapter 51](#observability).
+This chapter introduces the basics for scripts and small programs. For structured JSON logging in production, request IDs across async tasks, OpenTelemetry distributed traces, Prometheus metrics, and health probes, see [chapter 65](#observability).
 
 :::compare Logging, not printing
 A library logs; an application decides where the logs go. `log` and `tracing` both leave the decision to `main`. A library that calls `println!` forces its output on everybody.
@@ -608,7 +608,7 @@ fn main() {
 Sat
 ```
 
-Tuples are compared element by element, so `(month, day) < (month, day)` asks exactly "is today earlier in the year than the birthday?". The function takes `today` as a parameter and does not call `Utc::now()` itself. That is the dependency injection of [chapter 36](#testing-strategies): the function can be tested for any date. Date arithmetic by hand, with month lengths and leap years, is a classic source of bugs. The crate has them right.
+Tuples are compared element by element, so `(month, day) < (month, day)` asks exactly "is today earlier in the year than the birthday?". The function takes `today` as a parameter and does not call `Utc::now()` itself. That is the dependency injection of [chapter 72](#testing-strategies): the function can be tested for any date. Date arithmetic by hand, with month lengths and leap years, is a classic source of bugs. The crate has them right.
 :::
 
 :::exercise challenge Analyse a log

@@ -1,5 +1,5 @@
 @id cli
-@part p10
+@part p12
 @kind project
 @title Command-line tools with clap
 @short Command-line tools
@@ -9,7 +9,7 @@
 
 Command-line tools are where many people first use Rust in earnest. The language suits them well: a Rust tool starts instantly, is a single file that needs nothing else installed, and runs on Linux, macOS and Windows. Many of the popular modern terminal tools are written in Rust: `ripgrep` (search), `fd` (find files), `bat` (show files), `eza` (list files), and `uv` and `ruff` for Python.
 
-In [chapter 23](#project-search) you parsed arguments by hand. That works for two switches. Real tools have dozens of options, need help texts and error messages, and should behave the way users expect. The crate **clap** ("command line argument parser") does all of that from a description of your options.
+In [chapter 28](#project-search) you parsed arguments by hand. That works for two switches. Real tools have dozens of options, need help texts and error messages, and should behave the way users expect. The crate **clap** ("command line argument parser") does all of that from a description of your options.
 
 ## The parts of a command line
 
@@ -189,12 +189,12 @@ Options:
 - An enum with `#[derive(ValueEnum)]` becomes an option with a fixed set of values. The help lists them, and a wrong value is rejected with the list.
 - `value_parser!(u32).range(1..=10_000)` restricts a number to a range.
 - `ArgAction::Count` counts how often a flag is given: `-v`, `-vv`, `-vvv`.
-- A type that implements `FromStr` can be used directly as a field type, such as the `Minutes` of [chapter 29](#type-system).
+- A type that implements `FromStr` can be used directly as a field type, such as the `Minutes` of [chapter 34](#type-system).
 - The whole help text at the end was generated from the struct and its comments.
 
 ## The project: a to-do tool
 
-You will now rebuild the to-do list of [chapter 16](#project-todo) as a proper command-line tool. Each call does one thing and ends, and the tasks are kept in a JSON file between calls:
+You will now rebuild the to-do list of [chapter 21](#project-todo) as a proper command-line tool. Each call does one thing and ends, and the tasks are kept in a JSON file between calls:
 
 ```text
 $ todo add "buy milk"
@@ -293,7 +293,7 @@ enum Command {
 }
 ```
 
-**Subcommands are an enum.** Each variant is one subcommand, and its fields are that subcommand's arguments. It is the same `Command` enum as in chapter 16. There you wrote the function that turns text into the enum. Here clap generates it.
+**Subcommands are an enum.** Each variant is one subcommand, and its fields are that subcommand's arguments. It is the same `Command` enum as in [chapter 21](#project-todo). There you wrote the function that turns text into the enum. Here clap generates it.
 
 - `#[command(version, about)]` takes the version number from `Cargo.toml` and the description from the `///` comment.
 - `global = true` lets `--file` be written before or after the subcommand.
@@ -790,7 +790,7 @@ fn main() -> io::Result<()> {
 }
 ```
 
-Locking standard output once, as this program does, also makes the writing faster ([chapter 51](#performance)).
+Locking standard output once, as this program does, also makes the writing faster ([chapter 74](#performance)).
 
 The other early exit is the one the user asks for: **Ctrl+C**. By default it kills the program where it stands, which is fine for a tool that only prints, and wrong for one that is holding a lock file, a temporary file or a half-written download. Handle the interrupt and tidy up:
 
@@ -848,7 +848,7 @@ sorted: apple fig pear
 
 - **Three ways to start.** `output()` waits and collects everything the program printed. `status()` waits and lets the program use your terminal directly. `spawn()` returns at once with a `Child` that you can talk to and wait for later.
 - **A failing program is not an `Err`.** An `Err` means that the program could not be started at all. If it started and failed, you get `Ok` with an exit code other than 0. Check `status.success()` every time.
-- **Arguments are passed one by one**, with `arg` or `args`. No shell is involved, so a file name with spaces or with a `;` in it is passed on exactly as it is. Do not build one long command string and hand it to `sh -c`. With text from a user, that is the same mistake as building SQL from input ([chapter 47](#databases)).
+- **Arguments are passed one by one**, with `arg` or `args`. No shell is involved, so a file name with spaces or with a `;` in it is passed on exactly as it is. Do not build one long command string and hand it to `sh -c`. With text from a user, that is the same mistake as building SQL from input ([chapter 68](#databases)).
 - **Close the input when you are done.** `sort` waits for the end of its input. Dropping the handle closes the pipe.
 
 ### Configuration files and precedence
@@ -860,7 +860,7 @@ Well-behaved command-line tools combine three sources in a predictable order, wh
 3. **Environment variables** (with `clap`'s `#[arg(env = "MYAPP_FORMAT")]`).
 4. **Command-line flags** (`--format json`), which always win for a single invocation.
 
-See [chapter 46](#web) for layered configuration with `figment` and protecting secret settings with `secrecy`.
+See [chapter 64](#web) for layered configuration with `figment` and protecting secret settings with `secrecy`.
 
 ### More crates for the terminal
 
@@ -904,7 +904,7 @@ Three things are different from a program that prints:
 
 - **The terminal becomes state you borrowed.** You enter raw mode and the alternate screen, and you must leave them again — including when the program panics. A terminal left in raw mode with no cursor is a support call. `ratatui`'s examples show the restore-on-panic hook; copy it.
 - **Layout is code.** You split the screen into rectangles with constraints (`Length(3)`, `Percentage(40)`, `Min(10)`), and each widget draws into its rectangle.
-- **Test the logic, not the pixels.** Keep the application state and the key handling in plain structs with plain methods, tested as in [chapter 22](#testing). The drawing function is then the only part you cannot unit-test, and it should contain no decisions.
+- **Test the logic, not the pixels.** Keep the application state and the key handling in plain structs with plain methods, tested as in [chapter 27](#testing). The drawing function is then the only part you cannot unit-test, and it should contain no decisions.
 
 Which crate for which job, in one table:
 
@@ -1217,7 +1217,7 @@ One INFO line at start-up that shows every setting and where it came from turns 
 Environment variables are visible to anything that can read the process — a crash dump, a debugging endpoint, `/proc`, a child process. They are the conventional way to *pass* configuration, not a way to *protect* it. For real secrets use the host's secret store: Docker secrets, Kubernetes `Secret` objects, or the secret manager of your cloud. In particular, never bake a secret into a Docker image: image layers are readable for ever by anyone who can pull it, even if a later layer deletes the file. Pass secrets at run time, and rotate them.
 :::
 
-This is what the **twelve-factor app** means by "config in the environment". The name comes from [12factor.net](https://12factor.net/config), and the rule is about one idea: the same artefact, built once, runs in every environment, and only its configuration differs. [Chapter 48](#project-api) shows the same chain implemented for a web service in a few dozen lines, without a crate.
+This is what the **twelve-factor app** means by "config in the environment". The name comes from [12factor.net](https://12factor.net/config), and the rule is about one idea: the same artefact, built once, runs in every environment, and only its configuration differs. [Chapter 69](#project-api) shows the same chain implemented for a web service in a few dozen lines, without a crate.
 
 
 ## What you have learned

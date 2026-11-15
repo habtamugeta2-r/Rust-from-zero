@@ -1,5 +1,5 @@
 @id type-system
-@part p6
+@part p3
 @title The type system as a design tool
 @short Type system
 @level advanced
@@ -90,7 +90,7 @@ Ok(200) true true Ok('🦀')
 d
 ```
 
-This is the "safer conversion" promised in [chapter 4](#types). Wherever a number crosses from one integer type to another and might not fit, prefer `try_from` to `as`.
+This is the "safer conversion" promised in [chapter 9](#types). Wherever a number crosses from one integer type to another and might not fit, prefer `try_from` to `as`.
 
 Implement `TryFrom` for your own types when construction can fail. It is the conventional home for validation:
 
@@ -240,8 +240,8 @@ Look closely at the fix the compiler proposes: `transfer(bob, alice, amount)`. T
 Newtypes do three jobs:
 
 1. **Keep apart values with different meanings** (ids, units of measurement, kinds of text).
-2. **Guarantee a property**: with a private field and a checking constructor, as in the `Celsius` exercise of [chapter 17](#modules).
-3. **Allow trait implementations** for foreign types ([chapter 28](#advanced-traits)).
+2. **Guarantee a property**: with a private field and a checking constructor, as in the `Celsius` exercise of [chapter 22](#modules).
+3. **Allow trait implementations** for foreign types ([chapter 33](#advanced-traits)).
 
 :::note A famous unit mix-up
 In 1999, NASA lost the Mars Climate Orbiter, a spacecraft worth more than 300 million dollars. One piece of software produced a force in pound-seconds, and another expected newton-seconds. Both were plain numbers. With one type per unit, such a program does not compile.
@@ -769,7 +769,7 @@ Err("'soon' is not a duration")
 Err("'71582789h' is too large")
 ```
 
-Implementing `FromStr` plugs the type into the standard `.parse()` method, and into every library that builds on it. The command-line parser `clap` ([chapter 44](#cli)), for example, can accept a `Minutes` argument directly. The `if let … else if let … else` chain produces a pair, which is taken apart in the same `let`. `checked_mul` turns an out-of-range hour count into an error instead of allowing an overflow.
+Implementing `FromStr` plugs the type into the standard `.parse()` method, and into every library that builds on it. The command-line parser `clap` ([chapter 73](#cli)), for example, can accept a `Minutes` argument directly. The `if let … else if let … else` chain produces a pair, which is taken apart in the same `let`. `checked_mul` turns an out-of-range hour count into an error instead of allowing an overflow.
 :::
 
 :::exercise practice Remove the impossible states

@@ -14,7 +14,7 @@ A guest (the client) hands an order slip (the request) to the waiter. The slip s
 
 ## How the web works
 
-The previous chapter introduced HTTP from the client's side. A server sees the same exchange from the other end, so here it is in more detail.
+The [concurrency ecosystem chapter](#async-ecosystem) introduced HTTP from the client's side, and the preceding chapters in Part X traced TCP, sockets, DNS, and TLS down to kernel buffers. A web framework handles the server end cleanly.
 
 A **URL** names what the client wants:
 
@@ -165,7 +165,7 @@ async fn send(app: &Router, method: &str, path: &str, body: &str) {
 }
 ```
 
-A `Router` is a tower `Service`, and `oneshot` calls a service with one request. There is no network involved: the request is a value, and so is the response. The helper is part of every example below and is not printed again. The same technique is how Axum servers are tested, and [chapter 48](#project-api) uses it for that.
+A `Router` is a tower `Service`, and `oneshot` calls a service with one request. There is no network involved: the request is a value, and so is the response. The helper is part of every example below and is not printed again. The same technique is how Axum servers are tested, and [chapter 69](#project-api) uses it for that.
 
 ## Extractors: what a handler needs
 
@@ -298,7 +298,7 @@ Look at what you did **not** write. No code checks whether `many` is a number, w
 | `Request` | the whole request |
 | `Option<Query<T>>`, `Result<Json<T>, JsonRejection>` | the same, but you decide what a failure means |
 
-`Path(name): Path<String>` is a pattern in the parameter list: it takes the value out of the wrapper on the spot, as you learned in [chapter 14](#patterns).
+`Path(name): Path<String>` is a pattern in the parameter list: it takes the value out of the wrapper on the spot, as you learned in [chapter 19](#patterns).
 
 :::warn Two rules for handlers
 - An extractor that reads the **body** (`Json`, `Form`, `String`, `Bytes`, `Request`) must be the **last** parameter, since the body can be read only once.
@@ -568,7 +568,7 @@ GET /notes -> 200 OK  [{"id":2,"text":"call Sara at five"}]
 What to take from this program:
 
 - **Routes.** `get(list_notes).post(create_note)` puts two methods on one path. The five handlers are the five rows of the REST table above.
-- **State.** `.with_state(AppState::default())` gives the state to the router. `AppState` is `Clone` and holds an `Arc<Mutex<Store>>`, the sharing tool from [chapter 31](#shared-state). In the next chapters, a database pool takes the place of the `Mutex`.
+- **State.** `.with_state(AppState::default())` gives the state to the router. `AppState` is `Clone` and holds an `Arc<Mutex<Store>>`, the sharing tool from [chapter 56](#shared-state). In the next chapters, a database pool takes the place of the `Mutex`.
 - **Separate input and output types.** `NoteInput` is what a client may send. `Note` is what the server stores and returns. The client cannot choose an id, because `NoteInput` has no such field.
 - **One error type.** `ApiError` lists what can go wrong, and its `IntoResponse` implementation is the one place that decides status codes and messages. Handlers return `Result<…, ApiError>` and use `?` and `ok_or` as in any Rust code. Errors are JSON, like everything else in the API.
 - **A function `app()`** that builds the router, apart from `main`. Tests can call it too.
@@ -579,7 +579,7 @@ A `std::sync::Mutex` guard must be released before the handler awaits anything. 
 
 ## Middleware and limits
 
-Because a `Router` is a tower service, the layers of the last chapter can be put around it. Axum adds a simple way to write your own: `middleware::from_fn` turns an async function into a layer.
+Because a `Router` is a tower service, the layers from [the async ecosystem chapter](#async-ecosystem) can be put around it. Axum adds a simple way to write your own: `middleware::from_fn` turns an async function into a layer.
 
 ```rust ext run
 use std::time::Duration;
@@ -675,7 +675,7 @@ with key -> 200 OK
 
 ### Limits every public server needs
 
-A server on the internet receives requests that are slow, huge, or far too many, by accident or on purpose. Without limits, a single client can use up its memory or its connections. The chat server of [chapter 33](#project-chat) left this open. Here are the tools:
+A server on the internet receives requests that are slow, huge, or far too many, by accident or on purpose. Without limits, a single client can use up its memory or its connections. The chat server of [chapter 59](#project-chat) left this open. Here are the tools:
 
 | Risk | Limit | Tool |
 |---|---|---|
@@ -891,13 +891,13 @@ async fn handle_socket(mut socket: WebSocket) {
 }
 ```
 
-Notice `.into()` on `format!("echo: {text}")`: Axum 0.8 stores text frames in `Utf8Bytes`, converted cheaply from `String` or `&'static str`. The room server of [chapter 33](#project-chat) maps onto this with almost no changes: the `Arc<Mutex<Rooms>>` and the `broadcast::Sender<String>` become the application state, and each socket task subscribes to the broadcast channel and forwards what it receives.
+Notice `.into()` on `format!("echo: {text}")`: Axum 0.8 stores text frames in `Utf8Bytes`, converted cheaply from `String` or `&'static str`. The room server of [chapter 59](#project-chat) maps onto this with almost no changes: the `Arc<Mutex<Rooms>>` and the `broadcast::Sender<String>` become the application state, and each socket task subscribes to the broadcast channel and forwards what it receives.
 
 Three practical rules:
 
 - **Send a heartbeat.** A ping every thirty seconds keeps idle connections alive through load balancers, which cut connections they consider dead after a minute or two of silence.
 - **Bound the input.** `Message::Text` has a maximum size, set on the upgrade, and you should also cap the length of a chat line.
-- **Decide where the state lives.** In-memory rooms mean two server instances do not see each other's messages. Either keep one instance, use sticky sessions, or move the fan-out to Redis pub/sub or NATS ([chapter 45](#async-ecosystem)).
+- **Decide where the state lives.** In-memory rooms mean two server instances do not see each other's messages. Either keep one instance, use sticky sessions, or move the fan-out to Redis pub/sub or NATS ([chapter 60](#async-ecosystem)).
 
 ### Server-sent events
 
@@ -1272,8 +1272,8 @@ async fn register(Json(body): Json<RegisterRequest>) -> Result<StatusCode, (Stat
 Four details that decide whether validation works in practice:
 
 - **Normalise before you validate.** Trim whitespace and lower-case e-mail addresses before validating and storing.
-- **Reject unknown fields** with `#[serde(deny_unknown_fields)]` on request types ([chapter 43](#serde)).
-- **Keep the database constraints.** `NOT NULL`, `UNIQUE`, and `CHECK` constraints catch races ([chapter 47](#databases)).
+- **Reject unknown fields** with `#[serde(deny_unknown_fields)]` on request types ([chapter 78](#serde)).
+- **Keep the database constraints.** `NOT NULL`, `UNIQUE`, and `CHECK` constraints catch races ([chapter 68](#databases)).
 - **Return 422 Unprocessable Content with field messages**, never raw SQL errors.
 
 ### Security headers
@@ -1416,13 +1416,13 @@ Whichever mechanism you choose, the shape is the same:
 **More rules:**
 
 - **Keep secrets out of the code.** Load keys and database URLs from environment variables or a secret manager.
-- **Never build SQL from strings.** [Chapter 47](#databases) shows parameterised queries.
+- **Never build SQL from strings.** [Chapter 68](#databases) shows parameterised queries.
 - **Do not show internals.** Log details with `tracing` on the server; return a neutral message to clients.
 - **Keep dependencies current**, and run `cargo audit` and `cargo deny`.
 
 ## Configuration and secrets
 
-Reading `std::env::var` one field at a time works for three variables. Once a service has database timeouts, cookie domains, OTLP endpoints, and feature flags, **layered configuration** gives one clear precedence order ([chapter 41](#cli) covers the same pattern for CLIs):
+Reading `std::env::var` one field at a time works for three variables. Once a service has database timeouts, cookie domains, OTLP endpoints, and feature flags, **layered configuration** gives one clear precedence order ([chapter 73](#cli) covers the same pattern for CLIs):
 
 **CLI flags > environment variables (`APP_*`) > environment file (`config/prod.toml`) > base defaults (`config/default.toml`)**
 
@@ -1462,7 +1462,7 @@ fn load_settings() -> Result<Settings, figment::Error> {
 | Style | Transport / format | Best for | Main Rust crate |
 |---|---|---|---|
 | **REST** | HTTP + JSON | Public APIs, CRUD services, web & mobile clients | `axum` |
-| **gRPC** | HTTP/2 + Protobuf | Low-latency service-to-service RPCs and streaming ([chapter 45](#async-ecosystem)) | `tonic` |
+| **gRPC** | HTTP/2 + Protobuf | Low-latency service-to-service RPCs and streaming ([chapter 60](#async-ecosystem)) | `tonic` |
 | **GraphQL** | Single HTTP `POST /graphql` + schema | Complex nested UI views where clients choose fields without over-fetching | `async-graphql` |
 
 GraphQL shines when a dashboard needs user profile + recent orders + billing status in one round trip without adding bespoke REST endpoints. **`async-graphql`** (paired with `async-graphql-axum`) derives the GraphQL schema directly from Rust structs and methods:
@@ -1489,7 +1489,7 @@ async fn graphql_handler(State(schema): State<AppSchema>, req: GraphQLRequest) -
 }
 ```
 
-If you adopt GraphQL on relational tables, pair resolvers with `async_graphql::dataloader::DataLoader` to batch ID lookups—otherwise nested GraphQL lists trigger the same N+1 SQL query problem described in [chapter 47](#databases).
+If you adopt GraphQL on relational tables, pair resolvers with `async_graphql::dataloader::DataLoader` to batch ID lookups—otherwise nested GraphQL lists trigger the same N+1 SQL query problem described in [chapter 68](#databases).
 
 ## Other frameworks
 
@@ -1584,7 +1584,7 @@ The ideas are the same in all three: routes, typed extractors as function parame
 | **Poem**, **Salvo** | similar to Axum, with built-in generation of OpenAPI descriptions |
 | **Warp** | routes composed from small "filters". An older, functional style |
 | **Loco** | "Rails for Rust": a full framework on top of Axum with generators, an ORM, background jobs and mailers |
-| **Leptos**, **Dioxus** | full-stack frameworks: server and browser code in one Rust project ([chapter 49](#apps)) |
+| **Leptos**, **Dioxus** | full-stack frameworks: server and browser code in one Rust project ([chapter 79](#apps)) |
 
 ## From your machine to the world
 
@@ -1621,7 +1621,7 @@ CMD ["/usr/local/bin/myserver"]
 An `ENV API_KEY=…` line, or a credentials file copied into the build stage, stays in the image for ever: anyone who can pull the image can read it, and deleting the file in a later layer does not help, because the earlier layer is still there. Pass secrets at run time — Docker secrets, Kubernetes `Secret` objects, or the secret manager of the host — and let the program read them from the environment when it starts. If a secret has ever been committed by mistake, rotate it; a rewrite of the history does not reach the copies that were already fetched. The [configuration section](#cli) of the CLI chapter covers where values should come from.
 :::
 
-**Cross-compilation.** The server does not have to run on the same kind of machine it is built on. `rustup target add x86_64-unknown-linux-musl` followed by `cargo build --release --target x86_64-unknown-linux-musl` produces a statically linked Linux binary ([chapter 34](#cargo)). A container built from that binary needs almost nothing inside it, which keeps images small and startup fast.
+**Cross-compilation.** The server does not have to run on the same kind of machine it is built on. `rustup target add x86_64-unknown-linux-musl` followed by `cargo build --release --target x86_64-unknown-linux-musl` produces a statically linked Linux binary ([chapter 70](#cargo)). A container built from that binary needs almost nothing inside it, which keeps images small and startup fast.
 
 **Nix.** Teams that want every build to be byte-identical use Nix: it pins the Rust version, the system libraries and the crate versions, and builds in a sandbox. Tools such as `crane`, `naersk` or `fenix` turn a `Cargo.lock` into a Nix derivation, and `nix develop` gives every contributor the same toolchain. The price is learning Nix itself; for a single service, the Dockerfile above is simpler.
 

@@ -68,7 +68,7 @@ So for a long time programmers had to choose:
 | Java, Python, JavaScript, Go | Less. The garbage collector costs time and memory | Yes |
 | **Rust** | **Yes** | **Yes** |
 
-Rust gets both by using a new idea called **ownership**. The Rust compiler follows a small set of rules about who is responsible for each piece of data. With those rules it can prove, *before the program ever runs*, that the memory will be used correctly. No garbage collector is needed, so the program stays fast. You will learn ownership in [Part 2](#ownership). It is the heart of Rust.
+Rust gets both by using a new idea called **ownership**. The Rust compiler follows a small set of rules about who is responsible for each piece of data. With those rules it can prove, *before the program ever runs*, that the memory will be used correctly. No garbage collector is needed, so the program stays fast. You will learn ownership in [Part III](#ownership). It is the heart of Rust.
 
 :::key Rust's promise
 Rust moves whole families of mistakes from "found by your users at run time" to "found by the compiler on your own computer". If a Rust program compiles, a large class of bugs simply cannot be in it.
@@ -80,7 +80,7 @@ The promise above is worth making precise, because it is easy to over- or under-
 
 - **No memory is read that the program was never given.** There are no reads from memory that has already been freed, no reads past the end of a list, and no pointers to data that no longer exists. The whole family of "use after free" and "out of bounds" bugs is excluded.
 - **Memory is never freed twice, and never freed while still in use.** There is one owner, and the owner decides the moment the data dies.
-- **Data races are impossible in safe code.** Two parts of the program cannot change the same data at the same time and read a half-written value. [Chapter 10](#borrowing) shows exactly why.
+- **Data races are impossible in safe code.** Two parts of the program cannot change the same data at the same time and read a half-written value. [Chapter 15](#borrowing) shows exactly why.
 - **A variable always holds a value before it is read.** There is no "maybe nothing here" that quietly turns into a crash three lines later.
 
 Now notice what is *not* on the list. Compiling does not prove that your program does what you meant. If a function is supposed to sort a list but the logic is wrong, the compiler will build it happily. Rust removes *whole classes* of bugs from your program; it does not check your reasoning. This is what people mean when they say Rust is "safe": safe from a clearly defined set of low-level machine mistakes, not safe from every possible mistake. Knowing the difference keeps you from being surprised later.
@@ -106,7 +106,19 @@ Rust is developed in the open by volunteers and paid engineers from many organis
 ## What people build with Rust
 
 - **Command-line tools:** small, fast programs you run by typing a command. You will build several.
-- **Web servers and services:** the programs behind websites and apps. See [Part 10](#web).
+- **Web servers and services:** the programs behind websites and apps. See [Part X](#web).
+- **System software:** kernels, drivers, embedded firmware, databases, and low-level Linux tools.
+
+## The ten-layer journey from text to hardware
+
+Every time you write a line of Rust and run it, your program crosses ten layers of engineering:
+
+```text
+Source Code (.rs) → Compilation → Machine Code → Program Loading → Memory Allocation
+      → Execution → CPU Instructions → Operating System → Hardware Interaction → Input/Output
+```
+
+This guide does not treat Rust as abstract magic. Across the chapters ahead you will trace **both** how Rust works as a language and how each step behaves inside the compiler, memory, processor, operating system, and storage or network hardware.
 - **Programs that run inside a web page**, through a technology called WebAssembly.
 - **Desktop and mobile apps**, and **games**.
 - **Embedded software:** the code inside small devices such as sensors, watches and robots.
@@ -164,7 +176,7 @@ Yes, with the right guide. Rust asks you to learn a few ideas early that other l
 - It asks the programmer to be very careful
 - It checks memory while the program runs and pauses when needed
 + The compiler enforces ownership rules that prove memory is used correctly before the program runs
-= Ownership rules are checked at compile time, so the finished program needs no helper to watch its memory. You will learn these rules in Part 2.
+= Ownership rules are checked at compile time, so the finished program needs no helper to watch its memory. You will learn these rules in Part III.
 
 ? Which statement about Rust is true?
 - Rust programs are usually slower than Python programs
@@ -195,7 +207,7 @@ One possible answer:
 You have just used the three building blocks of every program, in any language:
 
 - **Sequence:** steps that run in order.
-- **Decision:** "check whether … if …" picks between paths. You will write these with `if` in [chapter 6](#control-flow).
+- **Decision:** "check whether … if …" picks between paths. You will write these with `if` in [chapter 11](#control-flow).
 - **Repetition:** "wait until" and "pour until" repeat something until a condition is met. These are loops.
 
 You also thought about what could go wrong (no tea bag). That is error handling, and Rust takes it very seriously.

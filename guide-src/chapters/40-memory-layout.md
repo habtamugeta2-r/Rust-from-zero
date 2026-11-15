@@ -1,12 +1,12 @@
 @id memory-layout
-@part p9
+@part p3
 @title How data sits in memory
 @short Memory layout
 @level advanced
 @time 45
 @learn Find the size and alignment of any type | Explain padding and why field order matters | Control layout with `repr` attributes | Describe how enums, `Option`, references and trait objects are stored | Reason about the cost of allocations, indirection and cache misses
 
-[Chapter 8](#memory) introduced the stack and the heap. This chapter goes one level deeper and looks at how individual values are stored, byte by byte. You need this knowledge to exchange data with other languages, to read and write binary file formats, and to understand why one data structure is fast and another is slow.
+[Chapter 13](#memory) introduced the stack and the heap. This chapter goes one level deeper and looks at how individual values are stored, byte by byte. You need this knowledge to exchange data with other languages, to read and write binary file formats, and to understand why one data structure is fast and another is slow.
 
 All the numbers in this chapter are for a 64-bit computer, which is what almost everyone uses today.
 
@@ -426,7 +426,7 @@ fn main() {
 8080
 ```
 
-Do not copy a struct's memory straight into a file or onto the network. The padding bytes, the field order and the byte order all depend on the compiler and the machine. Convert each field explicitly, or use a serialisation crate ([chapter 43](#serde)).
+Do not copy a struct's memory straight into a file or onto the network. The padding bytes, the field order and the byte order all depend on the compiler and the machine. Convert each field explicitly, or use a serialisation crate ([chapter 78](#serde)).
 
 ## Leaks are safe
 
@@ -447,7 +447,7 @@ fn main() {
 [1, 2, 3, 4]
 ```
 
-`Box::leak` is sometimes useful: it turns a heap value into a `'static` reference for data that should live until the program ends. `mem::forget` discards a value without running its destructor. A cycle of `Rc` pointers leaks too, as you saw in [chapter 27](#smart-pointers). A leak wastes memory, but it cannot corrupt anything, which is why Rust counts it as safe.
+`Box::leak` is sometimes useful: it turns a heap value into a `'static` reference for data that should live until the program ends. `mem::forget` discards a value without running its destructor. A cycle of `Rc` pointers leaks too, as you saw in [chapter 32](#smart-pointers). A leak wastes memory, but it cannot corrupt anything, which is why Rust counts it as safe.
 
 :::compare Layout in other languages
 - **C and C++** give you the same control and the same costs. C never reorders fields, so C programmers sort them by hand.

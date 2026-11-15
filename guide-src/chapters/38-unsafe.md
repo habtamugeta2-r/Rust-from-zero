@@ -1,5 +1,5 @@
 @id unsafe
-@part p9
+@part p3
 @title Unsafe Rust: taking over responsibility
 @short Unsafe Rust
 @level advanced
@@ -269,12 +269,12 @@ Every hazard of manual memory management appears in these lines, each one answer
 
 The fields are private. That matters: if outside code could change `length`, all the safety arguments would collapse. **The privacy boundary of the module is the safety boundary.** All code that can touch the private parts must be reviewed together.
 
-A `Layout` describes how many bytes are needed and how they must be aligned ([chapter 40](#memory-layout)). In real code you would simply use `vec![0; 4]`. The point is to see that there is no magic underneath.
+A `Layout` describes how many bytes are needed and how they must be aligned ([chapter 38](#memory-layout)). In real code you would simply use `vec![0; 4]`. The point is to see that there is no magic underneath.
 
 
 ### A lock built by hand: `UnsafeCell`
 
-[Chapter 27](#smart-pointers) and [chapter 31](#shared-state) showed types that change their content through a shared reference: `Cell`, `RefCell`, `Mutex`, the atomics. All of them are built on one type, **`UnsafeCell<T>`**. It is the only legal way in Rust to change data behind a `&`. Its method `get` returns a raw pointer to the content, and from there on the responsibility is yours.
+[Chapter 32](#smart-pointers) and [chapter 56](#shared-state) showed types that change their content through a shared reference: `Cell`, `RefCell`, `Mutex`, the atomics. All of them are built on one type, **`UnsafeCell<T>`**. It is the only legal way in Rust to change data behind a `&`. Its method `get` returns a raw pointer to the content, and from there on the responsibility is yours.
 
 To see how the pieces of the last chapters fit together, here is a complete lock. It waits by trying again and again, which is called a **spin lock**:
 
@@ -444,7 +444,7 @@ fn main() {
 2
 ```
 
-Even inside `unsafe`, Rust refuses to create a *reference* to a `static mut` (`println!("{}", COUNTER)` would, and is an error), because such a reference could be made invalid from anywhere. In new code there is almost never a reason to use `static mut`. An atomic, a `Mutex` or a `OnceLock` in a plain `static` does the same job safely, as shown in [chapter 31](#shared-state).
+Even inside `unsafe`, Rust refuses to create a *reference* to a `static mut` (`println!("{}", COUNTER)` would, and is an error), because such a reference could be made invalid from anywhere. In new code there is almost never a reason to use `static mut`. An atomic, a `Mutex` or a `OnceLock` in a plain `static` does the same job safely, as shown in [chapter 56](#shared-state).
 
 ### Unsafe traits
 
@@ -556,7 +556,7 @@ Unsafe code cannot be verified by the compiler, but you are not without help.
 
   Run it on every piece of unsafe code you write. It is slow, and it can only find problems on the paths your tests exercise, so write tests that cover the unusual cases.
 - **Sanitizers** (AddressSanitizer, ThreadSanitizer) are checks compiled into the program. They are faster than Miri and also cover code from other languages that is linked into your program.
-- **Clippy** ([chapter 35](#quality-tools)) has lints for unsafe code. `clippy::undocumented_unsafe_blocks` demands a `SAFETY` comment on every block.
+- **Clippy** ([chapter 71](#quality-tools)) has lints for unsafe code. `clippy::undocumented_unsafe_blocks` demands a `SAFETY` comment on every block.
 - **`#![forbid(unsafe_code)]`** at the top of a crate makes any `unsafe` a compile error. Use it to state, and enforce, that a crate is entirely safe.
 - **`cargo geiger`** counts the unsafe code in your dependencies.
 
@@ -564,7 +564,7 @@ Unsafe code cannot be verified by the compiler, but you are not without help.
 
 Good reasons:
 
-- **Talking to other languages and to the operating system.** There is no other way ([chapter 39](#ffi)).
+- **Talking to other languages and to the operating system.** There is no other way ([chapter 37](#ffi)).
 - **Talking to hardware**, in embedded systems and drivers, where memory addresses are device registers.
 - **Building basic data structures and synchronisation tools** that the borrow checker cannot express: a doubly linked list, a lock-free queue, a memory arena.
 - **Performance**, in a place that measurements have shown to matter, where a check cannot be removed in any safe way.

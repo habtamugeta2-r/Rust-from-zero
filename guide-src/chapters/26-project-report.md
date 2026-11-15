@@ -1,5 +1,5 @@
 @id project-report
-@part p5
+@part p3
 @kind project
 @title Project: a sales report from raw data
 @short Project: sales report
@@ -44,7 +44,7 @@ raw text  →  lines  →  Sale values  →  summaries  →  printed report
 Each arrow is one small function. Three decisions before writing code:
 
 1. **Bad rows must not stop the program.** Real data is never clean. One broken line among ten thousand should be reported, and the rest should still be processed.
-2. **Money is stored as whole cents**, not as a floating-point number. You saw in [chapter 4](#types) that `0.1 + 0.2` is not exactly `0.3` in floating point. Small errors like that add up over thousands of sales, and in money they are unacceptable. An integer number of cents is always exact.
+2. **Money is stored as whole cents**, not as a floating-point number. You saw in [chapter 9](#types) that `0.1 + 0.2` is not exactly `0.3` in floating point. Small errors like that add up over thousands of sales, and in money they are unacceptable. An integer number of cents is always exact.
 3. **Functions that calculate do not print.** Then they can be tested.
 
 Create the project with `cargo new report`. Everything goes into `src/main.rs` this time, so that the finished program can also run in the online playground.
@@ -88,7 +88,7 @@ impl Sale {
 - The backslash right after the opening quote makes the string start on the next line without a blank first line.
 - The first line of the data is a **header**: it names the columns and is not a record.
 - `revenue` is the amount of money a sale brought in: quantity times price.
-- `month` returns the first seven characters of the date, such as `2026-01`. It returns a slice of the sale's own `date`, with no copy. The elision rules from [chapter 21](#lifetimes) tie the result to `&self`.
+- `month` returns the first seven characters of the date, such as `2026-01`. It returns a slice of the sale's own `date`, with no copy. The elision rules from [chapter 26](#lifetimes) tie the result to `&self`.
 
 ## Step 2: read a price
 
@@ -170,7 +170,7 @@ The first two statements do a lot:
 Each conversion that can fail gets its own message. `map_err` replaces the standard error of `parse` with a sentence that includes the offending text. `ok_or` turns the `Option` from `parse_price` into a `Result`. In both cases `?` ends the function early if something is wrong.
 
 :::warn Real CSV is harder
-Splitting at commas is enough for this data. Real CSV files may contain commas inside quoted fields (`"Smith, John"`), quotes inside quotes, and line breaks inside fields. For real work, use the `csv` crate together with `serde` ([chapter 43](#serde)). It handles all of that and fills your structs directly.
+Splitting at commas is enough for this data. Real CSV files may contain commas inside quoted fields (`"Smith, John"`), quotes inside quotes, and line breaks inside fields. For real work, use the `csv` crate together with `serde` ([chapter 78](#serde)). It handles all of that and fills your structs directly.
 :::
 
 ## Step 4: read everything, and keep track of problems
@@ -262,11 +262,11 @@ let by_product = revenue_by(&sales, |s| &s.product);
 
 Three reports from one function, and a fourth (by date, by first letter, anything) costs one more line.
 
-The signature combines what you learned in Part 4 and Part 5:
+The signature combines traits, lifetimes, closures, and iterators:
 
 - `F: Fn(&'a Sale) -> &'a str` says that `key` is a closure that takes a reference to a sale and returns a string slice **borrowed from that sale**.
 - The result, `Vec<(&'a str, u64)>`, contains those same borrowed names. The lifetime `'a` ties them to the `sales` slice. No name is copied, however many sales there are.
-- Inside, the map counts with the `entry` pattern from [chapter 15](#collections). Then the pairs are moved into a vector, which is sorted with a closure that compares the amounts in reverse (`b` before `a`), so the largest comes first.
+- Inside, the map counts with the `entry` pattern from [chapter 20](#collections). Then the pairs are moved into a vector, which is sorted with a closure that compares the amounts in reverse (`b` before `a`), so the largest comes first.
 
 A `BTreeMap` is used so that groups with equal revenue come out in alphabetical order, always the same. With a `HashMap`, their order could change from run to run.
 
@@ -300,7 +300,7 @@ fn print_table(title: &str, rows: &[(&str, u64)], total: u64) {
 ```
 
 - `money` splits the cents into whole units and the remainder. It walks over the digits of the whole part and puts a comma wherever the number of digits still to come is a multiple of three. `{:02}` prints the cents with two digits, so 5 cents show as `05`.
-- In `print_table`, the format specifiers from [chapter 11](#slices-strings) create the columns: `{name:<16}` is left-aligned in 16 characters, `{:>14}` is right-aligned in 14, and `{share:>12.1}` is right-aligned with one decimal place.
+- In `print_table`, the format specifiers from [chapter 16](#slices-strings) create the columns: `{name:<16}` is left-aligned in 16 characters, `{:>14}` is right-aligned in 14, and `{share:>12.1}` is right-aligned with one decimal place.
 - The share in percent is only for display, so a float is fine there.
 
 ## The complete program
@@ -748,4 +748,4 @@ The selection itself is one line: a sale is kept if `all` filters say yes. With 
 - I added a summary of my own (for example: revenue per weekday, or the best month per category).
 :::
 
-You have finished Part 5. Closures and iterators are now part of your everyday toolbox. Part 6 looks under the surface again: smart pointers, the deeper features of traits, and the finer points of Rust's type system.
+Closures and iterators are now part of your everyday toolbox. Next we look deeper under the surface: smart pointers, advanced traits, and the finer points of Rust's type system.

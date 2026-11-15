@@ -1,5 +1,5 @@
 @id errors
-@part p4
+@part p3
 @title Error handling
 @short Error handling
 @level intermediate
@@ -306,7 +306,7 @@ fn main() -> Result<(), io::Error> {
 
 - `File::create` and `File::open` give a `File`. It is closed automatically when the variable goes out of scope. This is ownership at work again: you cannot forget to close a file.
 - `BufReader` wraps a file and reads it in large chunks, which is much faster than asking the operating system for every small piece. "Buf" is short for *buffer*, a temporary storage area.
-- `use std::io::Write` and `use std::io::BufRead` bring in the methods `writeln!` relies on and the `.lines()` method. They are *traits*, the topic of [chapter 20](#traits).
+- `use std::io::Write` and `use std::io::BufRead` bring in the methods `writeln!` relies on and the `.lines()` method. They are *traits*, the topic of [chapter 25](#traits).
 
 ## Your own error type
 
@@ -457,7 +457,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 volume is 55
 ```
 
-Read `Box<dyn Error>` as "some error, I do not say which". `?` converts every error type into it, and even a plain text becomes an error with `.into()`. ([Chapter 27](#smart-pointers) explains `Box` and `dyn`.) The price is that the caller can no longer easily `match` on the kind of error.
+Read `Box<dyn Error>` as "some error, I do not say which". `?` converts every error type into it, and even a plain text becomes an error with `.into()`. ([Chapter 32](#smart-pointers) explains `Box` and `dyn`.) The price is that the caller can no longer easily `match` on the kind of error.
 
 The crate **`anyhow`** is a more comfortable version of the same idea, and is what most applications use. It adds `context`, which attaches a description of *what the program was trying to do*:
 
@@ -767,7 +767,7 @@ The `?` ends the loop and the function at the first part that is not a number. T
 :::
 
 :::exercise practice A withdrawal that explains itself
-In [chapter 12](#structs), `withdraw` returned a `bool`. Improve it. Define an enum `WithdrawError` with two variants: `ZeroAmount` and `InsufficientFunds { missing: u64 }`. Change `withdraw` to return `Result<u64, WithdrawError>`, where the `Ok` value is the new balance. In `main`, print a suitable sentence for each case.
+In [chapter 17](#structs), `withdraw` returned a `bool`. Improve it. Define an enum `WithdrawError` with two variants: `ZeroAmount` and `InsufficientFunds { missing: u64 }`. Change `withdraw` to return `Result<u64, WithdrawError>`, where the `Ok` value is the new balance. In `main`, print a suitable sentence for each case.
 ::hint
 Check `amount == 0` first, then `amount > self.balance`. The missing sum is `amount - self.balance`. In `main`, use a `match` with three arms: `Ok(balance)`, `Err(WithdrawError::ZeroAmount)` and `Err(WithdrawError::InsufficientFunds { missing })`.
 ::solution
@@ -818,7 +818,7 @@ A `bool` could only say "no". The error enum says why, and carries data (how muc
 :::
 
 :::exercise challenge Save and load the to-do list
-Write two functions for the to-do list of [chapter 16](#project-todo):
+Write two functions for the to-do list of [chapter 21](#project-todo):
 
 - `save(path: &str, tasks: &[Task]) -> Result<(), io::Error>` writes one task per line in the form `1|buy milk` (1 for done, 0 for open, then the title).
 - `load(path: &str) -> Result<Vec<Task>, Box<dyn Error>>` reads such a file. A line without `|`, or with something other than 0 or 1 in front, is an error.
@@ -888,5 +888,5 @@ error: unknown state '2'
 
 `save` ends with `fs::write(path, text)` without `?` or `Ok`: the call already returns exactly the `Result<(), io::Error>` that the function must return. In `load`, three different kinds of problem (an I/O error, a missing separator, a bad flag) all travel through the same `Box<dyn Error>`. `ok_or` is the bridge from `Option` to `Result` that lets `?` work on the result of `split_once`.
 
-The format breaks if a title contains a line break. Real programs use a standard format such as JSON for this, with the `serde` crate ([chapter 43](#serde)).
+The format breaks if a title contains a line break. Real programs use a standard format such as JSON for this, with the `serde` crate ([chapter 78](#serde)).
 :::

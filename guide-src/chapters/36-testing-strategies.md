@@ -1,12 +1,12 @@
 @id testing-strategies
-@part p8
+@part p12
 @title Testing strategies for real projects
 @short Testing strategies
 @level advanced
 @time 50
 @learn Decide what to test at which level | Make code testable by passing in its dependencies | Write table-driven, property-based and snapshot tests | Measure speed with benchmarks and completeness with coverage | Know the tools for fuzzing, mocking and faster test runs
 
-[Chapter 22](#testing) taught the mechanics: `#[test]`, the assertion macros, unit and integration tests. This chapter is about using them well in a growing project, and about the more powerful techniques and tools.
+[Chapter 27](#testing) taught the mechanics: `#[test]`, the assertion macros, unit and integration tests. This chapter is about using them well in a growing project, and about the more powerful techniques and tools.
 
 ## What to test where
 
@@ -326,8 +326,8 @@ Snapshots are comfortable, and that is their danger: it is easy to accept a chan
 ## Testing the outside of a program
 
 - **Command-line programs**: the crate **`assert_cmd`** starts your compiled program with arguments and checks its output and exit code. This is an end-to-end test that Cargo runs like any other.
-- **Async code**: `#[tokio::test]` runs an async test function, as in the chat project of [chapter 33](#project-chat). Put a timeout around everything that waits.
-- **Web services**: a server can be tested without opening a network port, by handing requests directly to its router. [Chapter 48](#project-api) shows it.
+- **Async code**: `#[tokio::test]` runs an async test function, as in the chat project of [chapter 59](#project-chat). Put a timeout around everything that waits.
+- **Web services**: a server can be tested without opening a network port, by handing requests directly to its router. [Chapter 69](#project-api) shows it.
 - **Documentation**: every example in a `///` comment is a test.
 
 ## Fuzzing
@@ -382,7 +382,7 @@ encode 11 kB            time:   [129.70 µs 134.32 µs 139.62 µs]
 
 The three numbers are the lower bound, the best estimate and the upper bound of the time for one call. On the next run, criterion also reports whether the code got faster or slower, and whether the change is larger than the noise of the measurement.
 
-`black_box` hides a value from the optimiser, so that the compiler cannot compute the answer in advance or throw the work away. Benchmarks always run in release mode. [Chapter 51](#performance) is about what to do with the numbers.
+`black_box` hides a value from the optimiser, so that the compiler cannot compute the answer in advance or throw the work away. Benchmarks always run in release mode. [Chapter 74](#performance) is about what to do with the numbers.
 
 ## How much is tested?
 
@@ -400,7 +400,7 @@ Use coverage to find code that no test touches at all. Do not chase a percentage
 | Tool | Purpose |
 |---|---|
 | `cargo nextest` | a faster test runner: each test in its own process, clearer output, retries for flaky tests |
-| `cargo miri test` | run the tests in an interpreter that detects undefined behaviour ([chapter 38](#unsafe)) |
+| `cargo miri test` | run the tests in an interpreter that detects undefined behaviour ([chapter 36](#unsafe)) |
 | `rstest`, `test-case` | parameterised tests and fixtures through attributes |
 | `mockall` | generated mock objects for traits |
 | `wiremock`, `httpmock` | a fake HTTP server for testing code that calls web services |
@@ -418,7 +418,7 @@ Use coverage to find code that no test touches at all. Do not chase a percentage
 - **Fix or delete flaky tests.** A test that fails now and then teaches everyone to ignore failures. The usual causes are shared state, real time, real network, and dependence on the order of a `HashMap`.
 - **Keep tests fast.** A suite that takes ten minutes is not run.
 - **Name tests as statements** about behaviour: `large_orders_ship_free`.
-- **Run everything in CI**, on every change ([chapter 35](#quality-tools)).
+- **Run everything in CI**, on every change ([chapter 71](#quality-tools)).
 
 :::compare Testing tools in other languages
 Property-based testing comes from Haskell's QuickCheck and exists in most languages now: Hypothesis for Python, fast-check for JavaScript, jqwik for Java. Snapshot testing became popular through Jest in JavaScript. Fuzzing grew up around C and C++ with AFL and libFuzzer, which `cargo fuzz` uses underneath. Rust adds two things of its own: the type system removes whole categories of tests that dynamic languages need ("what if this is null?", "what if this is the wrong type?"), and a fuzzer that finds a panic in safe Rust has found a bug, and not a security hole.

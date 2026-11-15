@@ -1,5 +1,5 @@
 @id testing
-@part p4
+@part p3
 @title Testing your code
 @short Testing
 @level intermediate
@@ -305,7 +305,7 @@ fn works_together() {
 }
 ```
 
-No `#[cfg(test)]` and no `mod tests` are needed here, because Cargo only compiles this folder when testing. Integration tests need a library crate. That is one more reason to keep the logic of a program in `src/lib.rs` and only a thin `main.rs` on top, as described in [chapter 17](#modules).
+No `#[cfg(test)]` and no `mod tests` are needed here, because Cargo only compiles this folder when testing. Integration tests need a library crate. That is one more reason to keep the logic of a program in `src/lib.rs` and only a thin `main.rs` on top, as described in [chapter 22](#modules).
 
 ### 3. Documentation tests: examples that cannot rot
 
@@ -469,7 +469,7 @@ In most languages you choose and install a test framework first: JUnit for Java,
 :::
 
 :::tip More tools for later
-[Chapter 36](#testing-strategies) goes further: tests that generate hundreds of random inputs (property testing), snapshot tests, measuring speed (benchmarks), replacing parts of a system with stand-ins (mocking), and running tests automatically on every change (continuous integration).
+[Chapter 72](#testing-strategies) goes further: tests that generate hundreds of random inputs (property testing), snapshot tests, measuring speed (benchmarks), replacing parts of a system with stand-ins (mocking), and running tests automatically on every change (continuous integration).
 :::
 
 :::recap

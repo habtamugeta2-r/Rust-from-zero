@@ -1,5 +1,5 @@
 @id project-search
-@part p4
+@part p3
 @kind project
 @title Project: a file search tool
 @short Project: search tool
@@ -21,7 +21,7 @@ poem.txt:3:It is not a rusty tool.
 todo.txt:2:learn Rust
 ```
 
-The project uses everything from Part 4: modules and a library crate, error handling with `Result` and `?`, a struct with a lifetime, traits through `derive`, and tests.
+The project brings together modules and a library crate, error handling with `Result` and `?`, a struct with a lifetime, traits through `derive`, and tests.
 
 ## Step 0: plan
 
@@ -119,7 +119,7 @@ impl Config {
 
 How it works:
 
-- The loop sorts every argument into one of three groups: a known switch, an unknown switch (an error), or an ordinary word. The `match` uses alternatives (`|`), a guard (`if flag.starts_with('-')`) and a catch-all name, all from [chapter 14](#patterns). `arg.as_str()` turns the `&String` into a `&str`, so that it can be compared with string literals.
+- The loop sorts every argument into one of three groups: a known switch, an unknown switch (an error), or an ordinary word. The `match` uses alternatives (`|`), a guard (`if flag.starts_with('-')`) and a catch-all name, all from [chapter 19](#patterns). `arg.as_str()` turns the `&String` into a `&str`, so that it can be compared with string literals.
 - Switches may appear anywhere, before or after the other words, as users expect from command-line tools.
 - After the loop, the first word is the pattern and all the others are file names. `words.into_iter()` gives the words one at a time, with ownership. `.next()` takes the first, and `let … else` handles the case that there is none. `.collect()` gathers the rest into a new vector.
 - The error type is a plain `String`. Whoever calls the function only wants to show the message.
@@ -128,7 +128,7 @@ Both the struct and its fields are `pub`, because `main.rs` is a different crate
 
 ## Step 3: the search, test first
 
-The core function takes a pattern and a text, and returns the lines that match. Before writing it, decide what a result looks like, and write a test that describes the behaviour. This is the "red" step of test-driven development from [chapter 22](#testing).
+The core function takes a pattern and a text, and returns the lines that match. Before writing it, decide what a result looks like, and write a test that describes the behaviour. This is the "red" step of test-driven development from [chapter 27](#testing).
 
 ```rust check
 /// One line that contains the search text.
@@ -207,7 +207,7 @@ The signature is worth reading closely:
 pub fn search<'a>(pattern: &str, text: &'a str, ignore_case: bool) -> Vec<Match<'a>>
 ```
 
-The function takes two references and returns data that contains references, so the compiler cannot guess the relationship, and you must annotate it ([chapter 21](#lifetimes)). The annotation says that the matches borrow from `text`, and **not** from `pattern`. A caller may throw the pattern away and keep the matches.
+The function takes two references and returns data that contains references, so the compiler cannot guess the relationship, and you must annotate it ([chapter 26](#lifetimes)). The annotation says that the matches borrow from `text`, and **not** from `pattern`. A caller may throw the pattern away and keep the matches.
 
 Other details:
 
@@ -647,4 +647,4 @@ In `run`, call `collect_files` for each path from the command line, then loop ov
 - I installed the tool with `cargo install --path .` and used it outside the project folder.
 :::
 
-You have finished Part 4. You can now organise a program into modules, handle errors, write generic code, define shared behaviour with traits, reason about lifetimes, and test your work. These are the tools of everyday Rust programming. Part 5 shows a style that Rust programmers use all the time: working with closures and iterators.
+You can now organise a program into modules, handle errors, write generic code, define shared behaviour with traits, reason about lifetimes, and test your work. These are the tools of everyday Rust programming. Next come closures and iterators.

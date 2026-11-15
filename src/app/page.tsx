@@ -57,8 +57,8 @@ export default function HomePage() {
       body: (
         <>
           Projects at every milestone: a game, a to-do app, a search tool, a
-          chat server, a command-line tool, a web API with a database, and a
-          capstone.
+          report generator, a chat server, a command-line tool, a web API with a
+          database, a Linux systems inspector, and a capstone.
         </>
       ),
     },
@@ -86,23 +86,22 @@ export default function HomePage() {
           <h1 className="mt-5 font-sans text-[40px] leading-[1.08] font-bold tracking-[-0.02em] text-[var(--g-ink)] sm:text-[52px]">
             Learn Rust from zero.
             <br />
-            <span className="text-[var(--g-accent)]">Build real things.</span>
+            <span className="text-[var(--g-accent)]">Understand the whole machine.</span>
           </h1>
 
           <p className="mt-5 max-w-xl font-sans text-[17px] leading-relaxed text-[var(--g-ink2)]">
-            A complete guide for people who have never written a line of code.
-            Plain language, everyday analogies and hundreds of exercises take
-            you from “what is a program?” and your first line of syntax,
-            through the bytes on the heap and the stack, all the way to web
-            servers, databases, games and beyond. Every Rust example is
-            compiled and run, with its real output, and the{" "}
+            A complete guide to computer systems, Rust internals, and real-world
+            software—starting from absolute zero. Follow the full journey from
+            transistors, binary, and CPU registers through compilation, memory
+            organisation, operating systems, I/O, networking, and storage up to
+            concurrent services and Linux systems tools. Explore the{" "}
             <Link
-              href="/chapters/next"
+              href="/chapters/roadmap"
               className="font-medium text-[var(--g-accent)] underline decoration-[var(--g-accent)]/40 underline-offset-4"
             >
-              last chapter
+              Complete Learning Roadmap
             </Link>{" "}
-            says plainly what the guide does not cover.
+            or jump straight into Chapter 1.
           </p>
 
           <HomeContinueButton chapters={summaries} />

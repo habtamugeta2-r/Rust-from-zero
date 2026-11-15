@@ -1,5 +1,5 @@
 @id traits
-@part p4
+@part p3
 @title Traits: shared behaviour
 @short Traits
 @level intermediate
@@ -184,7 +184,7 @@ fn main() {
 0 2 4 6 8
 ```
 
-The real type returned here is long and awkward to write. The caller only needs to know that it can be iterated. You will use this form a lot with iterators and closures in Part 5.
+The real type returned here is long and awkward to write. The caller only needs to know that it can be iterated. You will use this form a lot with [iterators](#iterators) and [closures](#closures).
 
 ### What the returned type is allowed to borrow: `use<…>`
 
@@ -223,7 +223,7 @@ Two rules of thumb:
 
 ## The standard traits you meet every day
 
-The standard library defines traits for the common abilities. Many can be derived, as you saw in [chapter 12](#structs).
+The standard library defines traits for the common abilities. Many can be derived, as you saw in [chapter 17](#structs).
 
 | Trait | Ability | How you get it |
 |---|---|---|
@@ -363,7 +363,7 @@ fn main() {
 7 hello
 ```
 
-When you implement `From<A> for B`, you get `Into<B> for A` automatically, so `a.into()` works wherever the target type is clear. `From` is also what the `?` operator uses to convert errors, as you saw in [chapter 18](#errors). For conversions that can fail, there are `TryFrom` and `TryInto`, which return a `Result`:
+When you implement `From<A> for B`, you get `Into<B> for A` automatically, so `a.into()` works wherever the target type is clear. `From` is also what the `?` operator uses to convert errors, as you saw in [chapter 23](#errors). For conversions that can fail, there are `TryFrom` and `TryInto`, which return a `Result`:
 
 ```rust run
 fn main() {
@@ -467,7 +467,7 @@ total area 9.93
 ```
 
 - **`dyn Shape`** means "a value of some type that implements `Shape`, and which type is only known while the program runs". Such a value is called a **trait object**.
-- Different shapes have different sizes, so they cannot sit directly in a vector. **`Box::new(value)`** puts each value on the heap and keeps a pointer to it. All the pointers have the same size. [Chapter 27](#smart-pointers) covers `Box` in detail.
+- Different shapes have different sizes, so they cannot sit directly in a vector. **`Box::new(value)`** puts each value on the heap and keeps a pointer to it. All the pointers have the same size. [Chapter 32](#smart-pointers) covers `Box` in detail.
 - When `shape.area()` is called, the program looks up at run time which `area` belongs to this value. This is called **dynamic dispatch**. Generic code decides at compile time (**static dispatch**).
 
 | | Generics (`impl Trait`, `<T: Trait>`) | Trait objects (`dyn Trait`) |
@@ -479,8 +479,12 @@ total area 9.93
 
 Use generics by default, and `dyn Trait` when you need to mix types in one place.
 
+:::details Under the hood: fat pointers `(data_ptr, vtable_ptr)`
+A `&dyn Shape` or `Box<dyn Shape>` is two machine words wide (16 bytes on 64-bit targets): a **data pointer** to the concrete struct on the stack or heap, plus a **vtable pointer** to a read-only table generated in `.rodata` containing that concrete type's `drop_in_place`, size, alignment, and function pointers for `Shape::area` and `Shape::name`. Calling `shape.area()` loads the function pointer from the vtable and performs an indirect jump—fast, yet preventing LLVM from inlining across the dynamic call boundary.
+:::
+
 :::tip Enum or trait object?
-In [chapter 13](#enums) you put different shapes into one `Vec` with an **enum**. When should you use which?
+In [chapter 18](#enums) you put different shapes into one `Vec` with an **enum**. When should you use which?
 
 - An **enum**, when you know all the variants and the list is closed. Adding a new *operation* is easy: write one more function with a `match`.
 - A **trait**, when others should be able to add new *types* later, without changing your code.

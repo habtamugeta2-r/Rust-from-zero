@@ -1,12 +1,12 @@
 @id lifetimes
-@part p4
+@part p3
 @title Lifetimes: how long references stay valid
 @short Lifetimes
 @level intermediate
 @time 45
 @learn Explain what a lifetime is and why the compiler tracks it | Read and write lifetime annotations such as `'a` | Know when annotations are needed and when the compiler fills them in | Put references into structs | Recognise `'static` and avoid misusing it
 
-In [chapter 10](#borrowing) you learned the rule that a reference must never outlive the value it points to. The compiler checks this rule by working out, for every reference, the stretch of code in which it is valid. That stretch is the reference's **lifetime**.
+In [chapter 15](#borrowing) you learned the rule that a reference must never outlive the value it points to. The compiler checks this rule by working out, for every reference, the stretch of code in which it is valid. That stretch is the reference's **lifetime**.
 
 Most of the time you never see lifetimes: the compiler works them out silently. Occasionally a function or struct is ambiguous, and the compiler asks you to describe how the references relate to each other. That description is a **lifetime annotation**. It is the part of Rust with the most unfamiliar syntax, but the idea behind it is simple.
 
@@ -145,7 +145,7 @@ A function can return a reference only if it points to something that **came in 
 
 ## Why you rarely write annotations: elision
 
-`fn first_word(text: &str) -> &str` from [chapter 11](#slices-strings) returns a reference and needed no annotation. The compiler applies three simple rules to fill in lifetimes by itself. This is called **lifetime elision** ("elision" means leaving something out).
+`fn first_word(text: &str) -> &str` from [chapter 16](#slices-strings) returns a reference and needed no annotation. The compiler applies three simple rules to fill in lifetimes by itself. This is called **lifetime elision** ("elision" means leaving something out).
 
 1. Every reference parameter gets its own lifetime.
 2. If there is **exactly one** reference parameter, its lifetime is given to all references in the return type.
@@ -222,7 +222,7 @@ fn main() {
 yes hello
 ```
 
-You will also see `'static` as a bound on a type: `T: 'static`. It means "`T` contains no borrowed data that could expire", which is true for all owned types such as `String`, `Vec<u8>` and `i32`. A new thread, for instance, requires that of the data you give to it, because the thread might run longer than the function that started it ([chapter 30](#threads)).
+You will also see `'static` as a bound on a type: `T: 'static`. It means "`T` contains no borrowed data that could expire", which is true for all owned types such as `String`, `Vec<u8>` and `i32`. A new thread, for instance, requires that of the data you give to it, because the thread might run longer than the function that started it ([chapter 55](#threads)).
 
 :::warn `'static` is rarely the fix
 When a lifetime error appears, the compiler sometimes mentions `'static`, and it is tempting to write it everywhere until the errors stop. This almost never solves the real problem. It demands that the data lives for ever, which you usually cannot provide. Ask instead: who should own this data, and how long does it need to live?
@@ -331,12 +331,16 @@ A short guide for lifetime errors, from the simplest remedy to the more involved
 3. **Own the data in structs**: `String` in place of `&str`.
 4. **Clone** when the data is small or the code runs rarely. A clone that removes a difficult lifetime problem is a good trade. You can optimise later, when measurements show that it matters.
 5. **Store an index or a key, not a reference**, when one part of a data structure must refer to another part. For example, keep the position of an element in a `Vec`, and look it up when needed.
-6. **Shared ownership** with `Rc` or `Arc` when several parts of the program truly need to own the same value ([chapter 27](#smart-pointers)).
+6. **Shared ownership** with `Rc` or `Arc` when several parts of the program truly need to own the same value ([chapter 32](#smart-pointers)).
 
 :::compare Lifetimes in other languages
 - **C and C++** have the same problem and leave the checking to the programmer. Returning a pointer to a local variable compiles (perhaps with a warning), and using it is undefined behaviour. A large share of the security holes in C and C++ programs are exactly these "use after free" bugs.
 - **Garbage-collected languages** (Java, Python, Go, JavaScript, C#) keep every value alive for as long as anything refers to it. The problem cannot occur, at the price of a garbage collector that runs alongside the program.
 - **Rust** is the first mainstream language to check lifetimes at compile time. The annotations are the small amount of extra information the compiler needs in the cases it cannot decide alone.
+:::
+
+:::details Under the hood: MIR Non-Lexical Lifetimes and zero runtime footprint
+Lifetimes such as `'a` exist **solely inside the compiler** and take **zero bytes** at runtime. Since Rust 2018, the MIR borrow checker tracks **Non-Lexical Lifetimes (NLL)**: a borrow's region ends at the **last line where the reference is actually used** in the control-flow graph rather than stretching rigidly to the closing `}` brace of the block.
 :::
 
 :::recap
@@ -532,5 +536,5 @@ Some("the")
 
 The key is the return type `Option<&'a str>`. It says that each word borrows from the **original text**, which lives for `'a`, and not from the `Words` value. That is why `first` can be used after `words` has been dropped, and why `next_word` can be called again while earlier words are still held. With the elided form `Option<&str>`, each word would be tied to the `&mut self` borrow. The compiler would then reject a second call of `next_word` while `first` is still in use, and it would reject the use of `first` after `words` is gone.
 
-You have just written a small *iterator* by hand. [Chapter 25](#iterators) shows the standard way to do this with the `Iterator` trait.
+You have just written a small *iterator* by hand. [Chapter 30](#iterators) shows the standard way to do this with the `Iterator` trait.
 :::

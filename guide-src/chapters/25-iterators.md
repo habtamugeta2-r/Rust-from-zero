@@ -1,5 +1,5 @@
 @id iterators
-@part p5
+@part p3
 @title Iterators: processing data step by step
 @short Iterators
 @level intermediate
@@ -552,7 +552,7 @@ always rising: true
 | combine into one value | `fold`, `reduce` |
 | look at the next item without taking it | `peekable()` and then `peek()` |
 
-The crate **`itertools`** adds many more, such as `sorted`, `group_by`, `join`, `unique` and `tuple_windows`. You will meet it in [chapter 42](#crates).
+The crate **`itertools`** adds many more, such as `sorted`, `group_by`, `join`, `unique` and `tuple_windows`. You will meet it in [chapter 77](#crates).
 
 :::compare Iterators in other languages
 - **Python** has the same idea in generators and comprehensions: `sum(n*n for n in numbers if n % 2 == 0)`. They are lazy too, but each step costs interpreter time.
@@ -646,7 +646,7 @@ Each step of the chain does one thing, and the order matters: trimming must come
 :::
 
 :::exercise practice Statistics in three lines
-Rewrite the `stats` function from [chapter 15](#collections) with iterators. It takes `&[i32]` and returns `Option<(i32, i32, f64)>`: the smallest value, the largest value and the average, or `None` for an empty slice.
+Rewrite the `stats` function from [chapter 20](#collections) with iterators. It takes `&[i32]` and returns `Option<(i32, i32, f64)>`: the smallest value, the largest value and the average, or `None` for an empty slice.
 ::hint
 `numbers.iter().min()` returns `Option<&i32>`. Use `?` to leave the function with `None` when the slice is empty, and `*` to get the number. The sum needs a type: `numbers.iter().sum::<i32>()`.
 ::solution

@@ -1,5 +1,5 @@
 @id functions
-@part p1
+@part p3
 @title Functions: naming a piece of work
 @short Functions
 @level beginner
@@ -178,7 +178,7 @@ In add_ten: 15
 In main: 5
 ```
 
-`add_ten` received a *copy* of the number 5 in its own variable `n`. Changing `n` does not touch `number` in `main`. Notice that its parameter is declared `mut n`: a parameter is just an ordinary variable that happens to start out with the value you passed in, so if the body is going to change it, the parameter needs the `mut` keyword, exactly like any other variable from [chapter 3](#variables). Parameters and all variables declared inside a function are **local**: they exist only while that function runs. This keeps functions independent of each other. For simple values such as numbers, passing means copying. For bigger data the story is more interesting, and it is the subject of [Part 2](#ownership).
+`add_ten` received a *copy* of the number 5 in its own variable `n`. Changing `n` does not touch `number` in `main`. Notice that its parameter is declared `mut n`: a parameter is just an ordinary variable that happens to start out with the value you passed in, so if the body is going to change it, the parameter needs the `mut` keyword, exactly like any other variable from [chapter 8](#variables). Parameters and all variables declared inside a function are **local**: they exist only while that function runs. This keeps functions independent of each other. For simple values such as numbers, passing means copying. For bigger data the story is more interesting, and it is the subject of [the ownership chapter](#ownership).
 
 ## Documenting a function
 
@@ -209,8 +209,12 @@ fn main() {
 :::compare What Rust functions do not have
 Two things that other languages allow will surprise you, and they are missing on purpose.
 
-- **No default arguments.** You cannot write `fn greet(name: &str = "friend")`. If a value is sometimes optional, take it as an `Option` — a value that may or may not be there, from [chapter 13](#enums) — or write two small functions. The point is that every call is fully explicit: reading a call tells you exactly what went in, with nothing filled in behind the scenes.
+- **No default arguments.** You cannot write `fn greet(name: &str = "friend")`. If a value is sometimes optional, take it as an `Option` — a value that may or may not be there, from [chapter 18](#enums) — or write two small functions. The point is that every call is fully explicit: reading a call tells you exactly what went in, with nothing filled in behind the scenes.
 - **No overloading.** You cannot define two functions with the same name but different parameters in the same place. There is no `area` that takes two numbers and another `area` that takes three. If you want several related versions, give them different names (`area_of_two`, `area_of_three`) or let them take a type that says what you mean. Rust prefers one name to mean one thing.
+:::
+
+:::details Under the hood: `call`, `ret`, and inlining
+When one function calls another without optimisation, the CPU executes a **`call`** instruction that pushes the return address onto the stack and jumps to the target function's bytes in `.text`; **`ret`** pops that address back into the instruction pointer (`RIP`). Small parameters travel directly in CPU registers (`edi`, `esi`, ... on x86-64; `w0`, `w1`, ... on ARM64), and small return values return in `eax` (`w0`). In release builds, LLVM frequently **inlines** short functions right into their caller, removing the call overhead altogether (examined closely in Part V).
 :::
 
 :::recap

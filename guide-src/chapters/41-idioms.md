@@ -1,5 +1,5 @@
 @id idioms
-@part p9
+@part p3
 @title Idiomatic Rust: patterns and habits
 @short Idioms and patterns
 @level advanced
@@ -320,7 +320,7 @@ true 3
 
 ### Return owned values, or borrow from the input
 
-A function returns either a new owned value, or a reference into one of its arguments. It cannot return a reference to something it created. When both cases occur, `Cow` covers them ([chapter 27](#smart-pointers)). For sequences, returning `impl Iterator<Item = T>` lets the caller decide whether to collect:
+A function returns either a new owned value, or a reference into one of its arguments. It cannot return a reference to something it created. When both cases occur, `Cow` covers them ([chapter 32](#smart-pointers)). For sequences, returning `impl Iterator<Item = T>` lets the caller decide whether to collect:
 
 ```rust run
 fn even_squares(limit: u32) -> impl Iterator<Item = u32> {
@@ -380,7 +380,7 @@ tea=120 milk=80 bread=95
 
 ## Errors
 
-A short summary of the habits from [chapter 18](#errors):
+A short summary of the habits from [chapter 23](#errors):
 
 - Return `Result` for anything that can fail for outside reasons. Reserve `panic!` for bugs.
 - In a **library**, define an error enum (with `thiserror`). In an **application**, use `anyhow` and add context to errors as they travel up.
@@ -422,13 +422,13 @@ These patterns were introduced in earlier chapters. They are the centre of idiom
 
 | Pattern | In one sentence | Chapter |
 |---|---|---|
-| Newtype | wrap a value in a struct to give it a meaning and rules of its own | [12](#structs), [29](#type-system) |
-| Parse, don't validate | turn unchecked input into a type that proves it was checked | [29](#type-system) |
-| Enum for alternatives | one variant per case, each with exactly its data. No flags and no "unused" fields | [13](#enums), [29](#type-system) |
-| Typestate | one type per state, so that wrong sequences of calls do not compile | [29](#type-system) |
-| RAII guard | a value whose `Drop` undoes something: unlock, close, deregister | [27](#smart-pointers), [33](#project-chat) |
-| Extension trait | add methods to a foreign type through your own trait | [20](#traits) |
-| Composition | build big types out of small ones, and share behaviour through traits | [20](#traits) |
+| Newtype | wrap a value in a struct to give it a meaning and rules of its own | [17](#structs), [34](#type-system) |
+| Parse, don't validate | turn unchecked input into a type that proves it was checked | [34](#type-system) |
+| Enum for alternatives | one variant per case, each with exactly its data. No flags and no "unused" fields | [18](#enums), [34](#type-system) |
+| Typestate | one type per state, so that wrong sequences of calls do not compile | [34](#type-system) |
+| RAII guard | a value whose `Drop` undoes something: unlock, close, deregister | [32](#smart-pointers), [59](#project-chat) |
+| Extension trait | add methods to a foreign type through your own trait | [25](#traits) |
+| Composition | build big types out of small ones, and share behaviour through traits | [25](#traits) |
 
 ### An RAII guard of your own
 
@@ -636,7 +636,7 @@ false
 
 **Indexing where an iterator would do**, and **collecting where it is not needed**. `v.iter().map(f).collect::<Vec<_>>().iter().sum()` builds a list only to throw it away. Chain the adapters and consume once.
 
-**`unsafe` or clever tricks for speed, without a measurement.** Write the clear version first. Measure. Optimise the part that the measurement points at ([chapter 51](#performance)).
+**`unsafe` or clever tricks for speed, without a measurement.** Write the clear version first. Measure. Optimise the part that the measurement points at ([chapter 74](#performance)).
 
 **Fighting the language.** If a design needs many lifetimes, many `RefCell`s, or parent pointers everywhere, it is probably a translation of a design from another language. Step back and ask who should own the data.
 
@@ -655,7 +655,7 @@ When you publish a type for others to use, go through this list. It is condensed
 - It is `Send` and `Sync` where possible.
 - Enums and structs that may grow are marked `#[non_exhaustive]`.
 
-Two tools enforce most idioms automatically. **`rustfmt`** formats code in the standard style, and **Clippy** knows several hundred idioms and suggests the better form with an explanation. You already met both in [chapter 35](#quality-tools). Running Clippy on your own code is one of the fastest ways to learn idiomatic Rust.
+Two tools enforce most idioms automatically. **`rustfmt`** formats code in the standard style, and **Clippy** knows several hundred idioms and suggests the better form with an explanation. You already met both in [chapter 71](#quality-tools). Running Clippy on your own code is one of the fastest ways to learn idiomatic Rust.
 
 :::compare Design patterns from other languages
 Many classic object-oriented design patterns exist to work around a missing language feature, and shrink in Rust:

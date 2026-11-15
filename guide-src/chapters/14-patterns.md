@@ -100,7 +100,7 @@ fn main() {
 top
 ```
 
-`|` means "or". `4..=9` is a range that includes both ends, and `10..` means "10 and above". Ranges work for numbers and characters. The four arms together cover every `u32`, so no `_` arm is needed, and the compiler has checked that. (`&'static str` is the type of a string literal that lives for the whole program. The `'static` part is explained in [chapter 21](#lifetimes).)
+`|` means "or". `4..=9` is a range that includes both ends, and `10..` means "10 and above". Ranges work for numbers and characters. The four arms together cover every `u32`, so no `_` arm is needed, and the compiler has checked that. (`&'static str` is the type of a string literal that lives for the whole program. The `'static` part is explained in [chapter 26](#lifetimes).)
 
 ### Names, `_` and `..`
 

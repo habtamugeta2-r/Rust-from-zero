@@ -1,5 +1,5 @@
 @id project-api
-@part p10
+@part p11
 @kind project
 @title Project: a link shortener with a web API and a database
 @short Project: web API
@@ -9,7 +9,7 @@
 
 In this project you build a complete web service: a **link shortener**. It turns a long web address into a short one. When somebody opens the short address, the service sends the browser on to the long one and counts the visit. Services such as bit.ly work this way.
 
-This is the finished program at work. `curl` is the command-line HTTP client from [chapter 46](#web). `-X POST` chooses the method, `-H` adds a header, `-d` supplies the body, and `-i` also shows the status line and the headers of the response.
+This is the finished program at work. `curl` is the command-line HTTP client from [chapter 64](#web). `-X POST` chooses the method, `-H` adds a header, `-d` supplies the body, and `-i` also shows the status line and the headers of the response.
 
 ```text
 $ curl -X POST http://localhost:3000/links -H 'content-type: application/json' -d '{"url": "https://doc.rust-lang.org/book/", "code": "book"}'
@@ -27,7 +27,7 @@ $ curl http://localhost:3000/links/book
 
 The first request stores a link under the code `book`. The second one follows it: the answer `307 Temporary Redirect` with a `location` header tells a browser where to go next. The third one shows the facts about the link, with one visit counted.
 
-The project brings Part 10 together: Axum for HTTP ([chapter 46](#web)), SQLx with SQLite for storage ([chapter 47](#databases)), Serde for JSON ([chapter 43](#serde)), and `thiserror`, `anyhow`, `tracing` and `rand` from [chapter 42](#crates). It also keeps a promise of [chapter 36](#testing-strategies): the tests exercise the whole API without a network.
+The project brings together Axum for HTTP ([chapter 64](#web)), SQLx with SQLite for storage ([chapter 68](#databases)), Serde for JSON ([chapter 78](#serde)), and `thiserror`, `anyhow`, `tracing` and `rand` from [chapter 77](#crates). It also keeps a promise of [chapter 72](#testing-strategies): the tests exercise the whole API without a network.
 
 :::analogy A cloakroom for web addresses
 A link shortener works like the cloakroom of a theatre. You hand over a bulky coat (a long address) and get a small ticket (a short code). Whoever shows the ticket is led to the coat.
@@ -108,7 +108,7 @@ main.rs     connects the parts and starts the server
 Why bother with layers in a small program? Because each layer can then be understood, tested and replaced alone:
 
 - The rules are plain functions. They are tested in microseconds, with no database and no HTTP.
-- The store is the only place that contains SQL. This is the **repository** idea from the end of [chapter 47](#databases).
+- The store is the only place that contains SQL. This is the **repository** idea from the end of [chapter 68](#databases).
 - The routes translate between HTTP and the two layers below. They contain no SQL and few decisions.
 
 ### The files
@@ -131,7 +131,7 @@ shortener/
     └── api.rs                tests for the whole API
 ```
 
-The package contains a library (`lib.rs`) and a program (`main.rs`), as in [chapter 23](#project-search). Nearly all code lives in the library. That is what makes the tests in `tests/` possible, because an integration test can only use a library.
+The package contains a library (`lib.rs`) and a program (`main.rs`), as in [chapter 28](#project-search). Nearly all code lives in the library. That is what makes the tests in `tests/` possible, because an integration test can only use a library.
 
 Every file is printed in full in this chapter. A file that is printed in several blocks continues where the block before stopped.
 
@@ -188,7 +188,7 @@ tower = { version = "0.5.3", features = ["util"] }
 
 ### The table
 
-The table is created by a **migration** ([chapter 47](#databases)): a numbered SQL file that is applied once to every database. Create the folder `migrations` and in it this file:
+The table is created by a **migration** ([chapter 68](#databases)): a numbered SQL file that is applied once to every database. Create the folder `migrations` and in it this file:
 
 ```sql proj=shortener file=migrations/20261114120000_create_links.sql
 CREATE TABLE links (
@@ -205,7 +205,7 @@ CREATE TABLE links (
 
 The number in front of the file name is a timestamp. It decides the order in which migrations run. If you installed `sqlx-cli`, the command `sqlx migrate add create_links` creates such a file for you.
 
-The program will apply its migrations itself when it starts, with the macro `sqlx::migrate!()`. The macro reads the folder *while the program is compiled* and stores the files inside the executable. That has a catch: when you add a migration later and change no Rust file, Cargo sees no reason to compile again, and the new migration is silently missing. A two-line build script ([chapter 39](#ffi)) closes the gap. Create it next to `Cargo.toml`:
+The program will apply its migrations itself when it starts, with the macro `sqlx::migrate!()`. The macro reads the folder *while the program is compiled* and stores the files inside the executable. That has a catch: when you add a migration later and change no Rust file, Cargo sees no reason to compile again, and the new migration is silently missing. A two-line build script ([chapter 37](#ffi)) closes the gap. Create it next to `Cargo.toml`:
 
 ```rust proj=shortener file=build.rs
 fn main() {
@@ -224,7 +224,7 @@ Replace nothing in `src/main.rs` yet. Create `src/lib.rs` with one line of docum
 
 ## Step 2: one error type
 
-Before any feature, decide how failures travel. Every function of the service that can fail returns the same error type. And that type knows how to become an HTTP response, as in [chapter 46](#web).
+Before any feature, decide how failures travel. Every function of the service that can fail returns the same error type. And that type knows how to become an HTTP response, as in [chapter 64](#web).
 
 Create `src/error.rs`:
 
@@ -389,7 +389,7 @@ Add `pub mod validate;` to `src/lib.rs`.
 
 **`check_url`** reads from top to bottom like the rules it enforces:
 
-- The address must start with `http://` or `https://`. `strip_prefix` returns the rest of the text after the prefix, or `None`. `or_else` tries the second prefix if the first one did not fit, and `ok_or_else` turns a final `None` into our error ([chapter 18](#errors)).
+- The address must start with `http://` or `https://`. `strip_prefix` returns the rest of the text after the prefix, or `None`. `or_else` tries the second prefix if the first one did not fit, and `ok_or_else` turns a final `None` into our error ([chapter 23](#errors)).
 - Something must follow the prefix, and it must contain no spaces or control characters.
 - The function returns the trimmed address as a `&str` that borrows from the parameter. Nothing is copied.
 
@@ -663,9 +663,9 @@ mod tests {
 }
 ```
 
-Run `cargo test`: seven tests pass. The new ones are async, so they are marked with `#[tokio::test]` ([chapter 32](#async)). Each creates its own database, so they cannot disturb each other, and they run in parallel.
+Run `cargo test`: seven tests pass. The new ones are async, so they are marked with `#[tokio::test]` ([chapter 57](#async)). Each creates its own database, so they cannot disturb each other, and they run in parallel.
 
-`matches!(second, Err(ApiError::CodeTaken(code)) if code == "docs")` checks the variant and its content in one expression ([chapter 14](#patterns)). `ApiError` cannot be compared with `==`, because `sqlx::Error` does not implement `PartialEq`.
+`matches!(second, Err(ApiError::CodeTaken(code)) if code == "docs")` checks the variant and its content in one expression ([chapter 19](#patterns)). `ApiError` cannot be compared with `==`, because `sqlx::Error` does not implement `PartialEq`.
 
 ## Step 5: the routes
 
@@ -737,7 +737,7 @@ struct Paging {
 }
 ```
 
-- **`AppState`** is what every handler can reach: the store, the secret key, and the address under which the service is reachable from outside (needed to print complete short links). Axum clones the state for every request. The store clones cheaply, because a pool is a handle to shared data. The two texts are `Arc<str>`: shared, read-only strings. Cloning one copies a pointer and adds one to a counter, where cloning a `String` would copy the text ([chapter 31](#shared-state)).
+- **`AppState`** is what every handler can reach: the store, the secret key, and the address under which the service is reachable from outside (needed to print complete short links). Axum clones the state for every request. The store clones cheaply, because a pool is a handle to shared data. The two texts are `Arc<str>`: shared, read-only strings. Cloning one copies a pointer and adds one to a counter, where cloning a `String` would copy the text ([chapter 56](#shared-state)).
 - **`NewLink`** is what a client sends. `code` is an `Option`, so the field may be missing.
 - **`LinkView`** is what a client receives. It is not the same as `Link`: it has an extra field, `short_url`, which is computed and not stored.
 
@@ -780,7 +780,7 @@ pub fn app(state: AppState) -> Router {
 ```
 
 - **Two groups of routes.** The `admin` router holds what only the owner may do. `route_layer` wraps exactly these routes in the middleware `require_key`. A route that is added to this group later is protected without anybody having to remember it.
-- **`from_fn_with_state`** is the sibling of `from_fn` from chapter 46, for middleware that needs the state. Here it needs the key to compare with.
+- **`from_fn_with_state`** is the sibling of `from_fn` from [chapter 64](#web), for middleware that needs the state. Here it needs the key to compare with.
 - **`/links` and `/{code}` do not collide.** For the path `/links`, both patterns fit. Axum prefers the fixed text over the placeholder. That is the reason for the reserved words in step 3.
 - **`fallback`** answers every request that no route matches, so that even an unknown path gets our JSON error.
 - **The limits.** A body may have at most 16 KB, and a request may take at most 10 seconds. Both are far more than an honest client needs.
@@ -906,7 +906,7 @@ async fn require_key(
 `require_key` runs before the handlers of the `admin` group. With the right key in the header, it passes the request on with `next.run(request)`. Otherwise it returns an error, and the handler never runs.
 
 :::warn Production upgrade: constant-time key comparison
-Notice `given == Some(&*state.api_key)` uses ordinary string equality (`==`), which stops at the first mismatching byte. In a production service, hash both keys with SHA-256 and compare the fixed-length digests with `subtle::ConstantTimeEq` as shown in [chapter 46](#web), so response timing never leaks how many leading bytes matched.
+Notice `given == Some(&*state.api_key)` uses ordinary string equality (`==`), which stops at the first mismatching byte. In a production service, hash both keys with SHA-256 and compare the fixed-length digests with `subtle::ConstantTimeEq` as shown in [chapter 64](#web), so response timing never leaks how many leading bytes matched.
 :::
 
 Finally, complete `src/lib.rs`. It lists all modules, and re-exports the two names that `main` and the tests need most:
@@ -982,9 +982,9 @@ impl Config {
 }
 ```
 
-This file uses `anyhow`, not `ApiError`. The division follows [chapter 18](#errors): an error that some code must *tell apart and react to* gets its own type. An error that is only *reported to a human* is a job for `anyhow`. A wrong setting is reported once, to the person who starts the program, and the program ends.
+This file uses `anyhow`, not `ApiError`. The division follows [chapter 23](#errors): an error that some code must *tell apart and react to* gets its own type. An error that is only *reported to a human* is a job for `anyhow`. A wrong setting is reported once, to the person who starts the program, and the program ends.
 
-There is no default for `API_KEY`, on purpose. A service that starts with a well-known default secret is open to everybody who has read its source code. For larger services that combine TOML files, `.env` files, environment overrides, and redacted `SecretString` fields, see the layered `figment` + `secrecy` pattern in [chapter 46](#web).
+There is no default for `API_KEY`, on purpose. A service that starts with a well-known default secret is open to everybody who has read its source code. For larger services that combine TOML files, `.env` files, environment overrides, and redacted `SecretString` fields, see the layered `figment` + `secrecy` pattern in [chapter 64](#web).
 
 Now replace the content of `src/main.rs`:
 
@@ -1151,7 +1151,7 @@ Error: API_KEY must have at least 16 characters
 
 Trying things by hand with `curl` is fine once. It is no way to make sure that everything still works after every change. The service needs automatic tests that cover the same ground.
 
-The obvious method would be to start the server on a port and send real HTTP requests, as the tests of the chat server did in [chapter 33](#project-chat). Axum offers something better. A `Router` is a tower `Service` ([chapter 45](#async-ecosystem)): a value that turns a request into a response. So a test can build a `Request` value, hand it to the router, and inspect the `Response` value. No port is opened and nothing is sent over a network, yet the request passes through all of our code: routing, middleware, extractors, handlers, rules, store and database.
+The obvious method would be to start the server on a port and send real HTTP requests, as the tests of the chat server did in [chapter 59](#project-chat). Axum offers something better. A `Router` is a tower `Service` ([chapter 60](#async-ecosystem)): a value that turns a request into a response. So a test can build a `Request` value, hand it to the router, and inspect the `Response` value. No port is opened and nothing is sent over a network, yet the request passes through all of our code: routing, middleware, extractors, handlers, rules, store and database.
 
 Create the folder `tests` and in it `api.rs`. The file starts with a few helpers:
 
@@ -1468,7 +1468,7 @@ Seventeen tests on three levels:
 | store (`store.rs`) | 3 | that the SQL does what the method names say |
 | API (`tests/api.rs`) | 10 | that everything works together, through HTTP |
 
-This is the test pyramid of [chapter 36](#testing-strategies) in small. The ten API tests together take about two hundredths of a second, each with a database of its own. Tests this fast get run after every change.
+This is the test pyramid of [chapter 72](#testing-strategies) in small. The ten API tests together take about two hundredths of a second, each with a database of its own. Tests this fast get run after every change.
 
 What the API tests pin down is the *behaviour that clients rely on*: status codes, the shape of the JSON, who may do what. They do not mention SQL or the names of handlers. You could replace SQLite with PostgreSQL, or rewrite every handler, and these tests would tell you whether clients would notice.
 
@@ -1482,21 +1482,21 @@ cargo build --release
 
 The result is one file, `target/release/shortener`. On the machine used for this guide it has about 7 MB, with SQLite and all migrations inside, and the running service occupies about 6 MB of memory. To run it on a server, copy the file there and set the four variables. Nothing else needs to be installed.
 
-Before real users arrive, go through the list of [chapter 46](#web):
+Before real users arrive, go through the list of [chapter 64](#web):
 
 1. **HTTPS.** Put a reverse proxy in front that handles the certificates, and set `BASE_URL` to the public address, such as `https://sho.rt`.
 2. **The key.** Generate a long random `API_KEY`, and keep it in the settings of your host, not in a file of the project.
 3. **The data.** Put the database file on a disk that survives restarts, for example with `DATABASE_URL=sqlite:///data/links.db` (three slashes: an absolute path). Copy it regularly to another place.
 4. **The health check.** Tell your host to call `GET /health`.
 
-In a container, the `Dockerfile` of chapter 46 fits after you change the name of the executable. The `migrations` folder does not need to be copied into the final image, because its content is inside the program.
+In a container, the `Dockerfile` of [chapter 64](#web) fits after you change the name of the executable. The `migrations` folder does not need to be copied into the final image, because its content is inside the program.
 
 ## What makes this service solid, and what is missing
 
 Worth noticing in the design:
 
 - **Every value from a client is checked before it is used**, in one place, by an allow list.
-- **Every value reaches SQL as a bound parameter.** No SQL text is ever built from input, so SQL injection is impossible ([chapter 47](#databases)).
+- **Every value reaches SQL as a bound parameter.** No SQL text is ever built from input, so SQL injection is impossible ([chapter 68](#databases)).
 - **Uniqueness and counting are left to the database**, in single statements. There is no moment between a check and an action in which another request could interfere.
 - **Errors are data.** Each failure is a variant of one enum, each variant has one status code, and internal details never reach a client.
 - **Resources are bounded**: the size of a body, the duration of a request, the length of a list, the number of database connections.
@@ -1506,8 +1506,8 @@ A public shortener needs more than this:
 
 - **Rate limiting.** Anybody can create links as fast as they can send requests. A layer that limits requests per client address belongs in front (the crate `tower_governor` provides one).
 - **Protection against abuse.** Shorteners hide where a link leads, which makes them attractive for fraud. Real services check addresses against block lists and offer a preview page.
-- **Observability.** The service logs, but it counts nothing. A request counter and a duration histogram, exposed on `GET /metrics`, are what turn "it feels slow" into "p99 rose at 14:20" ([chapter 45](#async-ecosystem)). The `GET /health` route is a start; a separate readiness check that also asks the database is the other half.
-- **A real login.** One key for one owner works for a machine client, not for people. Sessions for a browser, signed tokens for an app, and the difference between authentication and authorisation are in [chapter 46](#web).
+- **Observability.** The service logs, but it counts nothing. A request counter and a duration histogram, exposed on `GET /metrics`, are what turn "it feels slow" into "p99 rose at 14:20" ([chapter 60](#async-ecosystem)). The `GET /health` route is a start; a separate readiness check that also asks the database is the other half.
+- **A real login.** One key for one owner works for a machine client, not for people. Sessions for a browser, signed tokens for an app, and the difference between authentication and authorisation are in [chapter 64](#web).
 - **Accounts.** One key for one owner is the simplest possible scheme. With several users, each gets a key of their own, stored as a hash like a password. Keys should also be compared in constant time (the crate `subtle` does that), so that the duration of a comparison reveals nothing about the key.
 - **A real URL parser.** `check_url` covers the basics. The crate `url` implements the complete standard.
 - **More than one machine.** SQLite is a file on one disk. To run several copies of the service, switch to PostgreSQL. Thanks to the store, only `store.rs` and the migration change.
@@ -1705,7 +1705,7 @@ $ curl http://localhost:3000/links/book
 
 Three observations:
 
-- The struct and the queries must agree with the table. If you forget the column in one of the lists, `FromRow` fails when that query runs, with an error that names the missing column. The tests catch it, which is one more reason to have a test for every route. The checked macros of [chapter 47](#databases) (`query_as!`) would catch it at compile time.
+- The struct and the queries must agree with the table. If you forget the column in one of the lists, `FromRow` fails when that query runs, with an error that names the missing column. The tests catch it, which is one more reason to have a test for every route. The checked macros of [chapter 68](#databases) (`query_as!`) would catch it at compile time.
 - An `Option<String>` field is written as `null` in JSON when it is `None`.
 - Migrations only go forward. If you start the *old* program on the migrated database, SQLx refuses to continue, because the database has seen a migration that this program does not know. That protects the data from a program that does not understand its shape.
 :::
@@ -1718,7 +1718,7 @@ The interesting part is the test. A test must not wait 60 seconds to see a link 
 ::hint
 Store the moment of expiry in a new column `expires_at INTEGER`, as seconds since 1970 (Unix time). `NULL` means "never".
 
-For the clock, add a field to `AppState`: `pub clock: Clock`, with `pub type Clock = Arc<dyn Fn() -> i64 + Send + Sync>;`. That is a shared closure which returns the current time in seconds ([chapter 24](#closures), [chapter 31](#shared-state)). The real program passes a closure that reads `SystemTime::now()`. A test passes a closure that reads an `AtomicI64`, which the test can set to any moment.
+For the clock, add a field to `AppState`: `pub clock: Clock`, with `pub type Clock = Arc<dyn Fn() -> i64 + Send + Sync>;`. That is a shared closure which returns the current time in seconds ([chapter 29](#closures), [chapter 56](#shared-state)). The real program passes a closure that reads `SystemTime::now()`. A test passes a closure that reads an `AtomicI64`, which the test can set to any moment.
 
 Let the database decide about the expiry in the same statement that counts: `… WHERE code = ? AND (expires_at IS NULL OR expires_at > ?)`. If no row was changed, a second query finds out whether the link is unknown or expired. An enum with three variants is a good return type for `visit`.
 

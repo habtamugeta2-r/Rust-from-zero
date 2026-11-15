@@ -1144,7 +1144,7 @@ export function loadGuide(forceReload = false): LoadedGuide {
       ch.num = "ABCDEFGHIJ"[letter] ?? String(letter + 1);
       letter += 1;
     } else if (ch.part === "welcome") {
-      ch.num = "0";
+      ch.num = ch.id === "roadmap" ? "Map" : "0";
     } else {
       num += 1;
       ch.num = String(num).padStart(2, "0");

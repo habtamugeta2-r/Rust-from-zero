@@ -1,5 +1,5 @@
 @id async
-@part p7
+@part p9
 @title Async Rust: thousands of tasks at once
 @short Async and await
 @level advanced
@@ -499,7 +499,7 @@ The structure of nearly every async server is in these lines:
 - `into_split()` divides the connection into a reading half and a writing half, so that the two can be used independently.
 - `?` works in async functions exactly as elsewhere.
 
-In the next chapter this skeleton grows into a chat server.
+In [the chat server project](#project-chat), this skeleton grows into a chat server.
 
 ## What happens underneath
 
@@ -658,7 +658,7 @@ missing: None
 One limit remains: a trait with async methods cannot be used directly as `dyn Trait`. Where trait objects are needed, the crate `async-trait` is the usual answer.
 
 
-**An async function that calls itself** needs a box. The future of such a function would have to contain a future of the same function, which contains another one, without end. It is the problem of the list that contains a list from [chapter 27](#smart-pointers), and the remedy is the same:
+**An async function that calls itself** needs a box. The future of such a function would have to contain a future of the same function, which contains another one, without end. It is the problem of the list that contains a list from [chapter 32](#smart-pointers), and the remedy is the same:
 
 ```rust ext run
 async fn depth(n: u32) -> u32 {
@@ -686,14 +686,14 @@ async fn main() {
 | All of a fixed handful to finish | `join!` | Different types are fine; returns a tuple |
 | All to finish, or the first error | `try_join!` | Errors must share a type; the rest are cancelled |
 | The first to finish, ignore the rest | `select!` | Also the tool for timeout races |
-| Many at once, from a list | `buffer_unordered(n)` | Maps a stream to futures, at most `n` in flight ([chapter 45](#async-ecosystem)) |
+| Many at once, from a list | `buffer_unordered(n)` | Maps a stream to futures, at most `n` in flight ([chapter 60](#async-ecosystem)) |
 | Many independent tasks | `JoinSet` | Tasks may be cancelled, and `tokio-console` sees them |
 
 **A set of futures that grows and shrinks.** `FuturesUnordered` from the `futures` crate holds futures of one output type, lets you push new ones while it is being polled, and yields results in the order they finish. That is exactly what a worker needs when a finished job may add another job. It is also the honest answer to "how is this different from the other three?": `buffer_unordered` needs an iterator of items up front and applies a map function, `JoinSet` turns each future into an independent spawned task (so it needs `'static`, and gains cancellation and visibility), and `FuturesUnordered` polls them all inside the task that owns it, so the futures may borrow from that task's data.
 
 **Projecting a pin, when the compiler asks.** A hand-written `Future` eventually has to turn `Pin<&mut Self>` into `Pin<&mut Field>`, and that operation is only sound if the field is never moved afterwards — which is why it cannot be written in safe Rust. Two escapes: put the self-referential part behind `Box::pin`, as the recursive `async fn` above does, or let `pin-project-lite` generate the projection and its `unsafe` for you. Libraries that implement `Stream`, `Future` or an async trait by hand use the second. Application code almost never needs either, and it is fine to recognise the pattern rather than write it.
 
-**Streams** are the async relatives of iterators: a sequence of values that arrive over time, such as lines from a connection. They come from the crates `futures` and `tokio-stream`, and you will see them in [chapter 45](#async-ecosystem).
+**Streams** are the async relatives of iterators: a sequence of values that arrive over time, such as lines from a connection. They come from the crates `futures` and `tokio-stream`, and you will see them in [chapter 60](#async-ecosystem).
 
 **Other runtimes.** Tokio is the default choice for servers and network tools. `smol` is a small alternative, and `embassy` brings async to microcontrollers that have no operating system. Libraries are often written for one runtime, so pick one per program. This guide uses Tokio throughout.
 

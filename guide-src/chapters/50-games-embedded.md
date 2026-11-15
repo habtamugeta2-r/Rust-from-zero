@@ -1,5 +1,5 @@
 @id games-embedded
-@part p10
+@part p13
 @title Games, small devices and data
 @short Games, devices, data
 @level intermediate
@@ -199,12 +199,12 @@ bird   at ( 8.5,  5.0)
 
 - A component is an ordinary struct with `#[derive(Component)]`.
 - `commands.spawn(…)` creates an entity from a tuple of components.
-- A system is an ordinary function. Its parameters say what it needs, and Bevy passes it in. You saw the same trick with the extractors of Axum in [chapter 46](#web).
+- A system is an ordinary function. Its parameters say what it needs, and Bevy passes it in. You saw the same trick with the extractors of Axum in [chapter 64](#web).
 - `Query<(&mut Position, &Velocity)>` means: every entity that has both components, with the position writable. The tree has no `Velocity`, so `movement` never sees it. `report` asks only for a label and a position, and gets all three.
 - `add_systems(Startup, …)` registers systems that run once. Those under `Update` run every frame. `.chain()` fixes their order: first move, then report.
 - The tree is printed first although it was created last. Bevy stores entities with the same set of components together, and a query walks through these groups. Never rely on the order.
 
-Two things make this design more than a matter of taste. It **composes**: to make the tree fall over, you add a `Velocity` to it, and the existing system moves it. No class has to be rewritten. And it is **fast**: the components of one kind lie side by side in memory, as in the "struct of arrays" layout of [chapter 40](#memory-layout). Bevy also reads from the parameters which systems touch the same data. Systems that do not get in each other's way run on several cores at the same time. These are the borrowing rules, applied to whole functions: many readers or one writer.
+Two things make this design more than a matter of taste. It **composes**: to make the tree fall over, you add a `Velocity` to it, and the existing system moves it. No class has to be rewritten. And it is **fast**: the components of one kind lie side by side in memory, as in the "struct of arrays" layout of [chapter 38](#memory-layout). Bevy also reads from the parameters which systems touch the same data. Systems that do not get in each other's way run on several cores at the same time. These are the borrowing rules, applied to whole functions: many readers or one writer.
 
 ### A window and the keyboard
 
@@ -498,13 +498,13 @@ fn main() {
 the pin was switched: [true, false, true]
 ```
 
-On a device, `FanControl::new` would receive a real pin from the HAL. In the test it receives `FakePin`, and the logic can be checked in milliseconds, without a soldering iron. This is the dependency injection of [chapter 48](#project-api), with a pin in the role of the clock.
+On a device, `FanControl::new` would receive a real pin from the HAL. In the test it receives `FakePin`, and the logic can be checked in milliseconds, without a soldering iron. This is the dependency injection of [chapter 69](#project-api), with a pin in the role of the clock.
 
-In a HAL, every pin is a *value*, and you can only get it once. Two parts of a program cannot drive the same pin by accident, because one of them does not own it. The type of a pin also records whether it is set up as an input or an output, so reading an output pin is a compile error. Ownership and the typestate pattern of [chapter 29](#type-system) turn wiring mistakes into compiler messages.
+In a HAL, every pin is a *value*, and you can only get it once. Two parts of a program cannot drive the same pin by accident, because one of them does not own it. The type of a pin also records whether it is set up as an input or an output, so reading an output pin is a compile error. Ownership and the typestate pattern of [chapter 34](#type-system) turn wiring mistakes into compiler messages.
 
 ### Async on a chip: Embassy
 
-A device often does several things at once: blink a light, watch a button, read a sensor every second. Without an operating system there are no threads. The classic answer is a hand-written state machine driven by interrupts. Rust has a better one. `async` functions *are* state machines that the compiler writes ([chapter 32](#async)), and they need no heap. **Embassy** is an async runtime for microcontrollers, with HALs for many chip families. This program for the Raspberry Pi Pico blinks two lights at different speeds:
+A device often does several things at once: blink a light, watch a button, read a sensor every second. Without an operating system there are no threads. The classic answer is a hand-written state machine driven by interrupts. Rust has a better one. `async` functions *are* state machines that the compiler writes ([chapter 57](#async)), and they need no heap. **Embassy** is an async runtime for microcontrollers, with HALs for many chip families. This program for the Raspberry Pi Pico blinks two lights at different speeds:
 
 ```toml file=Cargo.toml
 [dependencies]
@@ -587,7 +587,7 @@ T=23 H=61 (9 of 16 bytes used)
 writing more: Err(Error)
 ```
 
-**`postcard`** is a Serde format ([chapter 43](#serde)) for small devices. It works without a heap and produces very few bytes, which matters when a message travels over a slow radio link:
+**`postcard`** is a Serde format ([chapter 78](#serde)) for small devices. It works without a heap and produces very few bytes, which matters when a message travels over a slow radio link:
 
 ```rust ext run
 use serde::{Deserialize, Serialize};
@@ -691,7 +691,7 @@ For small vectors and matrices of fixed size, as games, robots and graphics need
 
 ### Tables of records: Polars
 
-Business data looks different: rows of records with named columns of mixed types. A table of this kind is called a **data frame**. **Polars** is a data frame library written in Rust. It is best known through its Python version, and it is used from Rust in the same way. The next program computes the first table of the sales report from [chapter 26](#project-report), from a file `sales.csv` with the valid rows of that chapter:
+Business data looks different: rows of records with named columns of mixed types. A table of this kind is called a **data frame**. **Polars** is a data frame library written in Rust. It is best known through its Python version, and it is used from Rust in the same way. The next program computes the first table of the sales report from [chapter 31](#project-report), from a file `sales.csv` with the valid rows of that chapter:
 
 ```toml file=Cargo.toml
 [dependencies]
@@ -735,11 +735,11 @@ shape: (3, 4)
 └─────────────┴─────────┴───────┴───────┘
 ```
 
-- The program first *describes* the work: read, add a column, group, summarise, sort. Nothing happens until `collect()`. Polars then plans the whole job, reads only the columns that are needed, and uses all processor cores. This is the laziness of iterators ([chapter 25](#iterators)) on a larger scale.
+- The program first *describes* the work: read, add a column, group, summarise, sort. Nothing happens until `collect()`. Polars then plans the whole job, reads only the columns that are needed, and uses all processor cores. This is the laziness of iterators ([chapter 30](#iterators)) on a larger scale.
 - `col("quantity") * col("unit_price")` is not a multiplication of two numbers. It builds a description of a calculation for whole columns.
 - The types of the columns are found by looking at the file.
 
-In chapter 26 this table took a struct, a parser and a `HashMap`. That was the right exercise. For real data work, a data frame library is the right tool: it handles millions of rows, missing values, joins between tables and many file formats. Be prepared for the cost: Polars is one of the largest crates there is, and its first build takes a long time.
+In [chapter 31](#project-report) this table took a struct, a parser and a `HashMap`. That was the right exercise. For real data work, a data frame library is the right tool: it handles millions of rows, missing values, joins between tables and many file formats. Be prepared for the cost: Polars is one of the largest crates there is, and its first build takes a long time.
 
 ### How a program learns
 
@@ -815,7 +815,7 @@ Choosing between them, in three lines each:
 - **`arrow` and `parquet`** — Arrow is the in-memory column format that Polars, DataFusion, pandas and Spark all speak; Parquet is its compressed form on disk. Together they are why a Rust data pipeline can hand its output to a Python notebook without a conversion step.
 
 :::compare Rust and Python in data science
-Python is the language in which data scientists think and try things out, and that will not change soon. But much of what makes Python fast today is Rust underneath: Polars, the `tokenizers` library, the validation core of Pydantic, the tools `ruff` and `uv`. They are Python modules built with PyO3, like the one in [chapter 39](#ffi) that was 27 times faster than its Python version. Reach for Rust when a data job must run fast and reliably day after day, when a trained model has to answer requests with little memory, when it has to run in a browser or on a device, or when a Python library needs a fast core.
+Python is the language in which data scientists think and try things out, and that will not change soon. But much of what makes Python fast today is Rust underneath: Polars, the `tokenizers` library, the validation core of Pydantic, the tools `ruff` and `uv`. They are Python modules built with PyO3, like the one in [chapter 37](#ffi) that was 27 times faster than its Python version. Reach for Rust when a data job must run fast and reliably day after day, when a trained model has to answer requests with little memory, when it has to run in a browser or on a device, or when a Python library needs a fast core.
 :::
 
 :::recap

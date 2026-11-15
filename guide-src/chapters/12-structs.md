@@ -118,7 +118,7 @@ Tomas sara@example.com 18 true
 
 The `User` struct holds `String` fields, not `&str`. That is a choice: each `User` **owns** its name and email. When the user is dropped, its strings are dropped with it. A user can be moved around or returned from a function freely, because it depends on nothing outside itself.
 
-A struct can also hold references, but then the compiler must be sure that the borrowed data lives at least as long as the struct. That needs *lifetimes*, the subject of [chapter 21](#lifetimes). Until then, let your structs own their data.
+A struct can also hold references, but then the compiler must be sure that the borrowed data lives at least as long as the struct. That needs *lifetimes*, the subject of [chapter 26](#lifetimes). Until then, let your structs own their data.
 
 
 ### Fields are borrowed and moved one at a time
@@ -165,7 +165,7 @@ fn main() {
 ```error auto
 ```
 
-If you need the struct afterwards, borrow the field (`&player.name`) or clone it. If you want to take the struct apart for good, say so with a pattern, `let Player { name, score } = player;`, which [chapter 14](#patterns) explains.
+If you need the struct afterwards, borrow the field (`&player.name`) or clone it. If you want to take the struct apart for good, say so with a pattern, `let Player { name, score } = player;`, which [chapter 19](#patterns) explains.
 
 ## Printing a struct
 
@@ -202,7 +202,7 @@ When you run small examples like this one, the compiler may warn that the fields
 :::
 
 :::plain Attribute and derive
-A line such as `#[derive(Debug)]` is an **attribute**: extra information for the compiler about the item that follows it. `derive` asks the compiler to write some standard code for your type automatically. `Debug` is the ability to be printed with `{:?}`. You will meet more of these abilities below. They are called *traits*, and [chapter 20](#traits) explains them.
+A line such as `#[derive(Debug)]` is an **attribute**: extra information for the compiler about the item that follows it. `derive` asks the compiler to write some standard code for your type automatically. `Debug` is the ability to be printed with `{:?}`. You will meet more of these abilities below. They are called *traits*, and [chapter 25](#traits) explains them.
 :::
 
 ## Methods: giving a struct behaviour
@@ -390,7 +390,7 @@ Inside an `impl` block, **`Self`** (with a capital S) is another name for the ty
 If you know Java, Python, C# or C++, a struct with an `impl` block looks like a *class*. There are important differences:
 
 - **Data and behaviour are written separately**: fields in `struct`, methods in `impl`.
-- **No inheritance.** A struct cannot extend another struct. Rust shares behaviour between types through *traits* ([chapter 20](#traits)) and builds bigger things by putting structs inside structs.
+- **No inheritance.** A struct cannot extend another struct. Rust shares behaviour between types through *traits* ([chapter 25](#traits)) and builds bigger things by putting structs inside structs.
 - **No special constructors.** `new` is an ordinary function with a conventional name. A struct can have several such functions with descriptive names.
 - **No half-built objects and no `null`.** Every field must be given a value when the instance is created.
 - **`self` is explicit**, and its form (`&self`, `&mut self`, `self`) tells you whether the method reads, changes or consumes the instance. In most languages you must read the method body to find that out.
@@ -615,7 +615,7 @@ Write a struct `Account` with an `owner` (`String`) and a `balance` in cents (`u
 
 Test it: deposit 5000, withdraw 2000 (works), then withdraw 9999 (fails). The balance at the end is 3000.
 ::hint
-In `withdraw`, check `amount > self.balance` first and return `false` early. Remember from [chapter 4](#types) that subtracting below zero would overflow a `u64`.
+In `withdraw`, check `amount > self.balance` first and return `false` early. Remember from [chapter 9](#types) that subtracting below zero would overflow a `u64`.
 ::solution
 ```rust run
 struct Account {
@@ -655,5 +655,5 @@ false
 Sara has 3000 cents.
 ```
 
-The check before the subtraction keeps the account in a valid state: the balance can never go below zero. Because code outside the type must go through `withdraw`, the rule is enforced in one place. In [chapter 17](#modules) you will learn to make fields private, so that nothing can change `balance` directly. And in [chapter 18](#errors) you will replace the `bool` with a result that also says *why* a withdrawal failed.
+The check before the subtraction keeps the account in a valid state: the balance can never go below zero. Because code outside the type must go through `withdraw`, the rule is enforced in one place. In [chapter 22](#modules) you will learn to make fields private, so that nothing can change `balance` directly. And in [chapter 23](#errors) you will replace the `bool` with a result that also says *why* a withdrawal failed.
 :::

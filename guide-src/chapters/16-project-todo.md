@@ -7,7 +7,7 @@
 @time 90
 @learn Design the data of a program with structs and enums before writing logic | Keep a list of structs in a `Vec` and change it through methods | Turn a line of text into a command with `match` | Separate "understanding the input" from "doing the work"
 
-In this project you build a to-do list that runs in the terminal. You type commands, and the program keeps a list of tasks in memory. It uses everything from Part 3: a struct for a task, a `Vec` for the list, an enum for the commands, and pattern matching to connect them.
+In this project you build a to-do list that runs in the terminal. You type commands, and the program keeps a list of tasks in memory. It uses structs for tasks, a `Vec` for the list, an enum for the commands, and pattern matching to connect them.
 
 A session will look like this:
 
@@ -222,7 +222,7 @@ Go through it slowly:
 3. For `done` and `remove`, the rest must be a number. `text.parse()` returns a `Result`, and an inner `match` turns it into a command or an error message. Rust works out that the number must be a `u32`, because it goes into `Command::Done(u32)`.
 4. The last arm catches every other word and puts it into the error message.
 
-Notice what the function does **not** do. It does not print anything, and it does not touch the list. It only translates. That makes it easy to understand and, as you will see in [chapter 22](#testing), easy to test.
+Notice what the function does **not** do. It does not print anything, and it does not touch the list. It only translates. That makes it easy to understand and, as you will see in [chapter 27](#testing), easy to test.
 
 ## Step 5: the main loop
 
@@ -455,7 +455,7 @@ The program has three clearly separated layers, and each could be changed withou
 | Translation | `Command`, `parse` | the command language. Nothing about how tasks are stored |
 | Conversation | `main`, `print_help` | reading lines and printing answers |
 
-The tasks disappear when the program ends. Saving them to a file is the natural next step, and you will be able to do it after [chapter 18](#errors), which covers files and errors.
+The tasks disappear when the program ends. Saving them to a file is the natural next step, and you will be able to do it after [chapter 23](#errors), which covers files and errors.
 
 ## Make it better
 
@@ -540,7 +540,7 @@ impl TodoList {
 # fn main() { let l = TodoList { tasks: vec![Task { done: true }] }; l.print_summary(); }
 ```
 
-A separate `count_done` method keeps `print` short and can be reused. The check `total > 0` avoids announcing "All done!" for an empty list. With iterators ([chapter 25](#iterators)) the counting becomes one line: `self.tasks.iter().filter(|t| t.done).count()`.
+A separate `count_done` method keeps `print` short and can be reused. The check `total > 0` avoids announcing "All done!" for an empty list. With iterators ([chapter 30](#iterators)) the counting becomes one line: `self.tasks.iter().filter(|t| t.done).count()`.
 :::
 
 :::exercise challenge Priorities
@@ -624,4 +624,4 @@ For the command, `parse` has to split the rest of the line once more: `rest.spli
 - I changed something of my own (a `clear` command, a different display, a priority).
 :::
 
-You have finished Part 3. You can now model real things with your own types and store them in collections. Part 4 is about growing programs: splitting code into modules, handling errors properly, writing code that works for many types, and testing it.
+You have finished the data-modelling section. You can now model real things with your own types and store them in collections. Next up: growing programs cleanly by splitting code into modules, handling errors properly, writing generic and trait-based code, and testing it.

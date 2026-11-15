@@ -1,5 +1,5 @@
 @id next
-@part p11
+@part p13
 @kind orientation
 @title Where to go from here
 @short Where to go from here
@@ -7,9 +7,9 @@
 @time 25
 @learn Choose what to study next, by goal and by level | Find the best book or course for each topic | Practise with small tasks and with real projects | Stay up to date and take part in the Rust community
 
-You have worked through the whole language, the tools around it, and eight projects. This chapter is a map of what lies beyond: the books and courses that go deeper than this guide, places to practise, and ways to stay in touch with a language that gets a new version every six weeks.
+You have worked through the whole language, its computer-systems foundations, the tools around it, and nine projects. This chapter is a map of what lies beyond: the books and courses that go deeper than this guide, places to practise, and ways to stay in touch with a language that gets a new version every six weeks.
 
-You do not need to cover every topic to move forward. Keep the core path from [chapter 1](#what-is-rust) through [chapter 26](#project-report), then choose the route closest to what you want to build:
+You do not need to cover every topic to move forward. Keep the core path from [chapter 1](#what-is-rust) through [chapter 31](#project-report), then choose the route closest to what you want to build:
 
 | Goal | A focused next route |
 |---|---|
@@ -60,28 +60,28 @@ This guide owes ideas to all of the following. None of them is a replacement for
 
 | Topic | Where to continue | Chapters here |
 |---|---|---|
-| Ownership, by building data structures | [Learn Rust With Entirely Too Many Linked Lists](https://rust-unofficial.github.io/too-many-lists/) | [9](#ownership) to [11](#slices-strings), [27](#smart-pointers) |
-| Threads, atomics and locks | [Rust Atomics and Locks](https://marabos.nl/atomics/) by Mara Bos, free to read online | [30](#threads), [31](#shared-state) |
-| Async | [Asynchronous Programming in Rust](https://rust-lang.github.io/async-book/) and the [Tokio tutorial](https://tokio.rs/tokio/tutorial) | [32](#async), [45](#async-ecosystem) |
-| Unsafe code | [The Rustonomicon](https://doc.rust-lang.org/nomicon/) | [38](#unsafe) to [40](#memory-layout) |
-| Macros | [The Little Book of Rust Macros](https://veykril.github.io/tlborm/) | [37](#macros) |
-| Performance | [The Rust Performance Book](https://nnethercote.github.io/perf-book/) | [51](#performance) |
-| Command-line tools | [Command Line Applications in Rust](https://rust-cli.github.io/book/) | [44](#cli) |
-| Web services | *Zero To Production in Rust* by Luca Palmieri: one service, taken all the way to a server | [46](#web) to [48](#project-api), [51](#observability) |
-| Small devices | [The Embedded Rust Book](https://docs.rust-embedded.org/book/) and the documentation of Embassy | [50](#games-embedded) |
-| Recipes for everyday tasks | [Rust Cookbook](https://rust-lang-nursery.github.io/rust-cookbook/) | [42](#crates) |
-| Language design in depth | *Rust for Rustaceans* by Jon Gjengset, and his long video series "Crust of Rust" | [28](#advanced-traits), [29](#type-system) |
+| Ownership, by building data structures | [Learn Rust With Entirely Too Many Linked Lists](https://rust-unofficial.github.io/too-many-lists/) | [14](#ownership) to [16](#slices-strings), [32](#smart-pointers) |
+| Threads, atomics and locks | [Rust Atomics and Locks](https://marabos.nl/atomics/) by Mara Bos, free to read online | [55](#threads), [56](#shared-state) |
+| Async | [Asynchronous Programming in Rust](https://rust-lang.github.io/async-book/) and the [Tokio tutorial](https://tokio.rs/tokio/tutorial) | [57](#async), [60](#async-ecosystem) |
+| Unsafe code | [The Rustonomicon](https://doc.rust-lang.org/nomicon/) | [36](#unsafe) to [38](#memory-layout) |
+| Macros | [The Little Book of Rust Macros](https://veykril.github.io/tlborm/) | [35](#macros) |
+| Performance | [The Rust Performance Book](https://nnethercote.github.io/perf-book/) | [74](#performance) |
+| Command-line tools | [Command Line Applications in Rust](https://rust-cli.github.io/book/) | [73](#cli) |
+| Web services | *Zero To Production in Rust* by Luca Palmieri: one service, taken all the way to a server | [64](#web) to [69](#project-api), [65](#observability) |
+| Small devices | [The Embedded Rust Book](https://docs.rust-embedded.org/book/) and the documentation of Embassy | [80](#games-embedded) |
+| Recipes for everyday tasks | [Rust Cookbook](https://rust-lang-nursery.github.io/rust-cookbook/) | [77](#crates) |
+| Language design in depth | *Rust for Rustaceans* by Jon Gjengset, and his long video series "Crust of Rust" | [33](#advanced-traits), [34](#type-system) |
 | A second complete book, more detailed | *Programming Rust* by Blandy, Orendorff and Tindall | all |
-| Logs, metrics and traces in production | [OpenTelemetry for Rust](https://opentelemetry.io/docs/languages/rust/), plus the docs of [`tracing`](https://docs.rs/tracing) and [`metrics`](https://docs.rs/metrics) | [42](#crates), [45](#async-ecosystem) |
-| Passwords, sessions, tokens and permissions | the [OWASP Authentication Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html) and OWASP's [Authorization](https://cheatsheetseries.owasp.org/cheatsheets/Authorization_Cheat_Sheet.html) sheet | [46](#web), [48](#project-api) |
-| Typed calls between services (gRPC) | [`tonic`](https://docs.rs/tonic) and the [Protocol Buffers language guide](https://protobuf.dev/programming-guides/proto3/) | [45](#async-ecosystem) |
-| GraphQL | [The `async-graphql` book](https://async-graphql.github.io/async-graphql/en/index.html) | [46](#web) |
-| Services that talk by message | [NATS](https://docs.nats.io) or [Kafka](https://kafka.apache.org/documentation/) for the broker, and *Designing Data-Intensive Applications* by Martin Kleppmann for the ideas | [45](#async-ecosystem) |
-| Many services instead of one | *Designing Data-Intensive Applications*, and the [Raft paper](https://raft.github.io) for how replicas agree | [33](#project-chat), [45](#async-ecosystem) |
-| Dates, times and time zones | the [`jiff` docs](https://docs.rs/jiff), and RFC 3339 for the format on the wire | [42](#crates) |
-| Server-side WebAssembly and plug-ins | [`wasmtime`](https://docs.rs/wasmtime) and [`extism`](https://docs.rs/extism) | [49](#apps) |
-| Books and long-form docs for your own crate | [mdBook](https://rust-lang.github.io/mdBook/) for books, docs.rs for API reference | [34](#cargo) |
-| Releasing, versioning and changelogs | [release-plz](https://release-plz.dev) for automation, [Keep a Changelog](https://keepachangelog.com) for the habit | [34](#cargo), [35](#quality-tools) |
+| Logs, metrics and traces in production | [OpenTelemetry for Rust](https://opentelemetry.io/docs/languages/rust/), plus the docs of [`tracing`](https://docs.rs/tracing) and [`metrics`](https://docs.rs/metrics) | [77](#crates), [60](#async-ecosystem) |
+| Passwords, sessions, tokens and permissions | the [OWASP Authentication Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html) and OWASP's [Authorization](https://cheatsheetseries.owasp.org/cheatsheets/Authorization_Cheat_Sheet.html) sheet | [64](#web), [69](#project-api) |
+| Typed calls between services (gRPC) | [`tonic`](https://docs.rs/tonic) and the [Protocol Buffers language guide](https://protobuf.dev/programming-guides/proto3/) | [60](#async-ecosystem) |
+| GraphQL | [The `async-graphql` book](https://async-graphql.github.io/async-graphql/en/index.html) | [64](#web) |
+| Services that talk by message | [NATS](https://docs.nats.io) or [Kafka](https://kafka.apache.org/documentation/) for the broker, and *Designing Data-Intensive Applications* by Martin Kleppmann for the ideas | [60](#async-ecosystem) |
+| Many services instead of one | *Designing Data-Intensive Applications*, and the [Raft paper](https://raft.github.io) for how replicas agree | [59](#project-chat), [60](#async-ecosystem) |
+| Dates, times and time zones | the [`jiff` docs](https://docs.rs/jiff), and RFC 3339 for the format on the wire | [77](#crates) |
+| Server-side WebAssembly and plug-ins | [`wasmtime`](https://docs.rs/wasmtime) and [`extism`](https://docs.rs/extism) | [79](#apps) |
+| Books and long-form docs for your own crate | [mdBook](https://rust-lang.github.io/mdBook/) for books, docs.rs for API reference | [70](#cargo) |
+| Releasing, versioning and changelogs | [release-plz](https://release-plz.dev) for automation, [Keep a Changelog](https://keepachangelog.com) for the habit | [70](#cargo), [71](#quality-tools) |
 
 :::tip One at a time
 Do not open ten of these at once. Choose the one topic that your current project needs, read that, and return to the project.
@@ -94,13 +94,13 @@ Every ecosystem has corners that a guide starting from zero cannot teach honestl
 | Area | Why it is out of scope | Where to go |
 |---|---|---|
 | Blockchain and Web3 (`solana`, `anchor`) | Domain-specific, fast-moving, and needs a blockchain mental model before Rust helps | the [Solana developer docs](https://solana.com/developers) |
-| Operating systems and kernels (`blog_os`, Rust for Linux) | Needs low-level hardware knowledge that comes before this guide, not after it | [Writing an OS in Rust](https://os.phil-opp.com) |
+| Writing a full custom OS kernel from scratch (`blog_os`, Rust for Linux) | This guide teaches hardware, virtual memory, syscalls, and OS internals from user space; writing an entire bootable kernel requires a dedicated book | [Writing an OS in Rust](https://os.phil-opp.com) and *Operating Systems: Three Easy Pieces* |
 | Robotics (ROS 2 bindings) | The hard part is robotics, not Rust | [`r2r`](https://docs.rs/r2r) and the ROS 2 tutorials |
-| High-frequency trading and market data | Latency engineering at that level is its own discipline, and much of it is closed-source | measure first: [chapter 51](#performance) |
+| High-frequency trading and market data | Latency engineering at that level is its own discipline, and much of it is closed-source | measure first: [chapter 74](#performance) |
 | Cloud-provider SDKs (`aws-sdk-*`, `azure_*`, `google-cloud-*`) | Each vendor ships its own generated SDK and its own documentation; the pattern is the same for all of them | the vendor's Rust SDK docs, and [`object_store`](https://docs.rs/object_store) for a vendor-neutral API |
-| GraphQL and full-screen terminal UIs (`async-graphql`, `ratatui`) | Real subjects with their own books. This guide names them, says when they are the right choice, and stops there rather than half-teaching them | the crate books linked in the table above and in [chapter 44](#cli) |
+| GraphQL and full-screen terminal UIs (`async-graphql`, `ratatui`) | Real subjects with their own books. This guide names them, says when they are the right choice, and stops there rather than half-teaching them | the crate books linked in the table above and in [chapter 73](#cli) |
 
-Everything else you meet in [chapter 42](#crates) is either taught in a chapter or described with advice about when to choose it. If you find a crate that is only a name in a table, that is a gap worth reporting.
+Everything else you meet in [chapter 77](#crates) is either taught in a chapter or described with advice about when to choose it. If you find a crate that is only a name in a table, that is a gap worth reporting.
 
 ## Practice
 
@@ -140,7 +140,7 @@ Code to learn from, once your own projects raise questions:
 
 - A new stable version of Rust appears **every six weeks**. Run `rustup update` now and then. The [Rust blog](https://blog.rust-lang.org) explains what each version brings.
 - **[This Week in Rust](https://this-week-in-rust.org)** is a weekly newsletter: articles, new crates, events, jobs.
-- A new **edition** arrives about every three years. `cargo fix --edition` does most of the moving ([chapter 34](#cargo)).
+- A new **edition** arrives about every three years. `cargo fix --edition` does most of the moving ([chapter 70](#cargo)).
 - Talks from conferences such as RustConf, EuroRust and RustNation are published as videos.
 
 This guide was tested with Rust 1.100. Rust keeps old code working, so the examples will compile with later versions. Crates outside the standard library move faster. When an example with a crate no longer compiles, look at the changelog of that crate first.
@@ -208,7 +208,7 @@ This exercise trains the habit of making your confusion precise. The goal is not
 
 ## Giving back
 
-Open-source projects need more than code. Good first contributions are a fix in the documentation of a crate after it confused you, a missing example, a test for a reported bug, or a clear bug report with a small program that shows the problem. Many projects mark suitable tasks with a label such as "good first issue". And when you have written a tool that others could use, publish it ([chapter 34](#cargo)).
+Open-source projects need more than code. Good first contributions are a fix in the documentation of a crate after it confused you, a missing example, a test for a reported bug, or a clear bug report with a small program that shows the problem. Many projects mark suitable tasks with a label such as "good first issue". And when you have written a tool that others could use, publish it ([chapter 70](#cargo)).
 
 :::exercise guided Plan the next thirty days
 Pick the project you wrote down in [chapter 1](#what-is-rust), or a new one. Write three steps, each small enough to finish in one evening, and put a date next to each. The first step should be something you already know how to do — creating the project and printing one line is allowed.
@@ -297,7 +297,7 @@ Do this once and you are a contributor to the Rust ecosystem, which is a differe
 - The topic is only for experts
 + The topic is named with a reason and a direction, and this guide deliberately does not pretend to teach it
 - The topic is covered in a later edition of the guide
-= The coverage policy is written down in [chapter 1](#start) and applied here: taught, named with advice, or declared out of scope. A declared gap is honest; a silent one is a trap for the reader.
+= The coverage policy is written down in [chapter 0](#start) and applied here: taught, named with advice, or declared out of scope. A declared gap is honest; a silent one is a trap for the reader.
 :::
 
 :::recap
@@ -314,5 +314,5 @@ Do this once and you are a contributor to the Rust ecosystem, which is a differe
 - I have picked one topic from the table and the resource for it.
 - I have run `rustup update`.
 - I have looked at the users forum or another community place.
-- I have finished the capstone project of [chapter 53](#capstone), or planned when to do it.
+- I have finished [the capstone project](#capstone), or planned when to do it.
 :::

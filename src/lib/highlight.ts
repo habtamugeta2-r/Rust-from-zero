@@ -21,6 +21,9 @@ const SHIKI_LANG_MAP: Record<string, string> = {
   css: "css",
   protobuf: "proto",
   proto: "proto",
+  asm: "asm",
+  llvm: "llvm",
+  diff: "diff",
 };
 
 const LOADED_LANGS = [
@@ -40,6 +43,9 @@ const LOADED_LANGS = [
   "dockerfile",
   "css",
   "proto",
+  "asm",
+  "llvm",
+  "diff",
 ];
 
 const globalForShiki = globalThis as unknown as {
