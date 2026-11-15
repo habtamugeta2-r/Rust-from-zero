@@ -54,6 +54,8 @@ Stage 10 Device & Terminal Kernel writes PTY/pipe -> terminal emulator draws Uni
 ```
 :::
 
+![Diagram of the end-to-end journey: write, compile, load, execute, ask the kernel, see output](/images/end-to-end-trace.svg "The ten stages compressed into six landmarks. The walk below restores every detail.")
+
 Let's walk through Stages 1–10 one by one with zero hand-waving.
 
 ## Stages 1–3: Source -> Macro Expansion -> MIR -> LLVM IR

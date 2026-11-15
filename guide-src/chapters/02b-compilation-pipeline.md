@@ -37,6 +37,8 @@ Languages cross this gap through three main execution strategies:
 
 Here is the actual pipeline inside `rustc` from `.rs` source text to an executable binary:
 
+![Diagram of the rustc pipeline: source, tokens, AST, HIR, MIR, LLVM IR, machine code, ELF](/images/compilation-pipeline.svg "The rustc pipeline at a glance. The sections below open each stage in turn.")
+
 ```text
   src/main.rs (UTF-8 text)
        │

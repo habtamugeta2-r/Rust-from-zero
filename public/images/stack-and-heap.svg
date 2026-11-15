@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 520" role="img" aria-labelledby="t d">
+  <title id="t">Stack and heap working together</title>
+  <desc id="d">A stack frame holds a String's pointer, length and capacity; those three words point at characters stored on the heap.</desc>
+  <rect width="1200" height="520" rx="24" fill="#FCFBF8"/>
+  <rect x="1" y="1" width="1198" height="518" rx="23" fill="none" stroke="#E5E0D5" stroke-width="2"/>
+  <text x="48" y="58" font-family="system-ui, sans-serif" font-size="24" font-weight="700" fill="#1C1915">One String, two homes</text>
+  <text x="48" y="86" font-family="system-ui, sans-serif" font-size="15" fill="#6F6659">The handle lives on the stack. The text it owns lives on the heap.</text>
+  <defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#BC4114"/></marker></defs>
+  <g font-family="system-ui, sans-serif">
+    <text x="70" y="140" font-size="14" font-weight="700" letter-spacing="2" fill="#BC4114">STACK · main() frame</text>
+    <rect x="48" y="158" width="470" height="252" rx="16" fill="#F7E8DE" stroke="#BC4114" stroke-width="2"/>
+    <g font-size="16">
+      <rect x="76" y="182" width="414" height="58" rx="10" fill="#FFFFFF" stroke="#D2CABB"/>
+      <text x="96" y="218" font-family="ui-monospace, monospace" fill="#1C1915">greeting.ptr →</text>
+      <rect x="76" y="254" width="414" height="58" rx="10" fill="#FFFFFF" stroke="#D2CABB"/>
+      <text x="96" y="290" font-family="ui-monospace, monospace" fill="#1C1915">greeting.len = 5 bytes</text>
+      <rect x="76" y="326" width="414" height="58" rx="10" fill="#FFFFFF" stroke="#D2CABB"/>
+      <text x="96" y="362" font-family="ui-monospace, monospace" fill="#1C1915">greeting.cap = 5 bytes</text>
+    </g>
+    <text x="70" y="452" font-size="14" fill="#6F6659">Fixed size, known at compile time: 24 bytes on a 64-bit machine.</text>
+
+    <text x="682" y="140" font-size="14" font-weight="700" letter-spacing="2" fill="#0F766E">HEAP · owned text</text>
+    <rect x="660" y="158" width="492" height="252" rx="16" fill="#E6F2F0" stroke="#0F766E" stroke-width="2"/>
+    <g font-family="ui-monospace, monospace" font-size="26" font-weight="700" text-anchor="middle">
+      <rect x="688" y="206" width="76" height="84" rx="10" fill="#FFFFFF" stroke="#0F766E" stroke-width="2"/><text x="726" y="260" fill="#1C1915">h</text>
+      <rect x="776" y="206" width="76" height="84" rx="10" fill="#FFFFFF" stroke="#0F766E" stroke-width="2"/><text x="814" y="260" fill="#1C1915">e</text>
+      <rect x="864" y="206" width="76" height="84" rx="10" fill="#FFFFFF" stroke="#0F766E" stroke-width="2"/><text x="902" y="260" fill="#1C1915">l</text>
+      <rect x="952" y="206" width="76" height="84" rx="10" fill="#FFFFFF" stroke="#0F766E" stroke-width="2"/><text x="990" y="260" fill="#1C1915">l</text>
+      <rect x="1040" y="206" width="76" height="84" rx="10" fill="#FFFFFF" stroke="#0F766E" stroke-width="2"/><text x="1078" y="260" fill="#1C1915">o</text>
+    </g>
+    <text x="688" y="340" font-size="15" fill="#45403A">Can grow: push_str asks the allocator for more room.</text>
+    <text x="688" y="368" font-size="15" fill="#45403A">Freed automatically when greeting is dropped.</text>
+  </g>
+  <path d="M494 211 C 570 211, 600 240, 680 248" fill="none" stroke="#BC4114" stroke-width="3" marker-end="url(#ar)"/>
+</svg>

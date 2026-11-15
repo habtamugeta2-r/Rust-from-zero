@@ -4,6 +4,51 @@ All notable changes to the guide are recorded here. The version number tracks
 the web application in `package.json`; the chapters themselves are content, and
 they change continuously.
 
+## 3.1.0 — the visual edition
+
+3.0.0 made the guide's numbers and rules trustworthy; 3.1.0 makes the guide
+*look* like what it already was. Until now the chapters carried no pictures
+at all — every diagram was ASCII art in a code block, a stepper, or a flame
+graph — and the eight callout kinds were eight hand-picked Tailwind palette
+pairs scattered through one component, free to drift apart.
+
+### Added — pictures in the guide
+
+- **A figure system for chapters.** A standalone Markdown image line
+  (`![alt](/images/name.svg "Caption")`) is now a first-class `figure`
+  block: the parser checks the alt text and that the file exists under
+  `public/` (a renamed image fails the build instead of 404ing), the
+  renderer gives it a captioned plate, and the caption joins the search
+  index. Parser tests cover the block and the missing-file warning path.
+- **Four hand-drawn SVG diagrams** in `public/images/`, drawn in the
+  guide's own palette so they sit naturally on the page in either theme:
+  the `rustc` pipeline (compilation chapter), a `String` across stack and
+  heap (memory chapter), a move transferring ownership (ownership
+  chapter), and the end-to-end journey (the trace chapter, reused on the
+  home page). SVG keeps them crisp at any width and tiny on the wire —
+  the four together weigh less than the old social card did.
+- **A new social card.** `public/og.png` is redrawn at the correct
+  1200×630 from a checked-in source (`public/og.svg`): the guide's gear
+  mark, the rust-to-teal gradient headline, and the six-stage journey.
+  It carries no counts, so it cannot drift from the measured statistics.
+
+### Changed — one design-token system
+
+- **Callout colours are tokens now.** Each kind defines one `--callout`
+  colour in `globals.css` and the tint is mixed from it, replacing the
+  eight light/dark palette pairs in `ChapterBody.tsx`. Adding a kind is
+  one line of CSS; the two themes can no longer disagree about a kind.
+- **A secondary teal accent** (`--g-accent-2`, “the machine underneath”)
+  joins the rust accent: gradient headlines and section rules, figure
+  labels, and the recap callout read teal; actions stay rust.
+- **Reading polish:** a drop cap opens each chapter, H2 sections carry a
+  short rust-to-teal rule, code blocks lift on hover, long tables zebra
+  and keep their header while scrolling, and the page carries a faint
+  ambient wash behind the chrome (never behind prose). Card radii grow
+  slightly (14px → 16px) to match the new figure plates.
+- No Rust example changed, so rule one — every printed output is real
+  captured output — is untouched, exactly as in 3.0.0.
+
 ## 3.0.0 — the measured release
 
 This is a major version not because the guide looks different, but because the

@@ -103,7 +103,7 @@ export function CodeBlock(props: CodeBlockProps) {
 
   return (
     <figure
-      className={`group/code my-6 overflow-hidden rounded-well border ${borderTone} ${bgTone} ${
+      className={`group/code my-6 overflow-hidden rounded-well border shadow-card transition-shadow duration-200 hover:shadow-pop ${borderTone} ${bgTone} ${
         props.isSoft ? "code-soft" : ""
       }`}
     >

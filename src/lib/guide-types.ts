@@ -109,6 +109,7 @@ export type BlockNode =
       isPanicOutput: boolean;
     }
   | { type: "flame"; caption: InlineNode[]; roots: FlameNode[] }
+  | { type: "figure"; src: string; alt: string; caption: InlineNode[] }
   | { type: "callout"; kind: CalloutKind; title?: InlineNode[]; blocks: BlockNode[] }
   | { type: "details"; title: InlineNode[]; blocks: BlockNode[] }
   | { type: "quiz"; quizId: string; title: InlineNode[]; questions: QuizQuestion[] }

@@ -39,11 +39,21 @@
   --g-accent: #bc4114;
   --g-accent-hover: #9c360f;
   --g-accent-soft: #f7e8de;
+  /* Secondary accent (teal) — diagrams, progress, “correct”, systems topics.
+     Orange says “Rust / act here”; teal says “the machine underneath”. */
+  --g-accent-2: #0f766e;
+  --g-accent-2-soft: #e6f2f0;
+  --g-link: #a83a12;
   --g-code-bg: #f3f0e9;
   --g-code-head: #eae6dc;
+  /* Ambient page wash: a whisper of rust at the top, never behind prose. */
+  --g-wash:
+    radial-gradient(60rem 22rem at 85% -6rem, rgb(188 65 20 / 0.07), transparent 65%),
+    radial-gradient(46rem 20rem at -10% 4rem, rgb(15 118 110 / 0.05), transparent 60%);
 
   --g-shadow-card: 0 1px 2px rgb(28 25 21 / 0.05), 0 1px 1px rgb(28 25 21 / 0.03);
   --g-shadow-pop: 0 1px 2px rgb(28 25 21 / 0.06), 0 8px 24px rgb(28 25 21 / 0.08);
+  --g-shadow-lift: 0 2px 4px rgb(28 25 21 / 0.05), 0 16px 40px -12px rgb(28 25 21 / 0.18);
   --g-shadow-drawer: 0 0 0 1px rgb(28 25 21 / 0.04), 0 16px 48px rgb(28 25 21 / 0.18);
 }
 
@@ -61,11 +71,18 @@
   --g-accent: #e9743e;
   --g-accent-hover: #f5854f;
   --g-accent-soft: #39231a;
+  --g-accent-2: #2dd4bf;
+  --g-accent-2-soft: #12322e;
+  --g-link: #f0855a;
   --g-code-bg: #191815;
   --g-code-head: #232019;
+  --g-wash:
+    radial-gradient(60rem 22rem at 85% -6rem, rgb(233 116 62 / 0.08), transparent 65%),
+    radial-gradient(46rem 20rem at -10% 4rem, rgb(45 212 191 / 0.05), transparent 60%);
 
   --g-shadow-card: 0 1px 2px rgb(0 0 0 / 0.3);
   --g-shadow-pop: 0 1px 2px rgb(0 0 0 / 0.4), 0 8px 24px rgb(0 0 0 / 0.35);
+  --g-shadow-lift: 0 2px 4px rgb(0 0 0 / 0.35), 0 16px 40px -12px rgb(0 0 0 / 0.55);
   --g-shadow-drawer: 0 16px 48px rgb(0 0 0 / 0.55);
 }
 
@@ -73,18 +90,21 @@
    font-sans / font-serif / font-mono, rounded-card / rounded-well,
    shadow-card / shadow-pop / shadow-drawer. */
 @theme {
-  --font-sans: "Space Grotesk Variable", "Space Grotesk", ui-sans-serif,
-    system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-serif: "Source Serif 4 Variable", "Source Serif 4", "Iowan Old Style",
-    Georgia, Cambria, serif;
-  --font-mono: "JetBrains Mono Variable", "JetBrains Mono", ui-monospace,
-    "SFMono-Regular", Menlo, Consolas, monospace;
+  --font-sans:
+    "Space Grotesk Variable", "Space Grotesk", ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+    sans-serif;
+  --font-serif:
+    "Source Serif 4 Variable", "Source Serif 4", "Iowan Old Style", Georgia, Cambria, serif;
+  --font-mono:
+    "JetBrains Mono Variable", "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas,
+    monospace;
 
-  --radius-card: 14px;
-  --radius-well: 10px;
+  --radius-card: 16px;
+  --radius-well: 12px;
 
   --shadow-card: var(--g-shadow-card);
   --shadow-pop: var(--g-shadow-pop);
+  --shadow-lift: var(--g-shadow-lift);
   --shadow-drawer: var(--g-shadow-drawer);
 }
 
@@ -105,11 +125,15 @@ html {
 body {
   min-height: 100dvh;
   background-color: var(--g-bg);
+  background-image: var(--g-wash);
+  background-attachment: fixed;
   color: var(--g-ink);
   font-family: var(--font-sans);
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
-  transition: background-color 0.25s ease, color 0.25s ease;
+  transition:
+    background-color 0.25s ease,
+    color 0.25s ease;
 }
 
 /* Long words (URLs, identifiers) must never blow out a column. */
@@ -248,9 +272,7 @@ body {
     column-gap: var(--rail-gap);
   }
 
-  .app-shell[data-sidebar="closed"]
-    .chapter-layout[data-rail="on"]
-    .chapter-aside {
+  .app-shell[data-sidebar="closed"] .chapter-layout[data-rail="on"] .chapter-aside {
     display: block;
     position: sticky;
     top: calc(var(--shell-header) + 1.75rem);
@@ -326,6 +348,23 @@ body {
   text-wrap: balance;
 }
 
+/* H2 carries a short rust tick so a long chapter scans as sections at a
+   glance; H3 stays quiet. The tick is decorative and print-safe. */
+.guide-prose h2 {
+  position: relative;
+}
+
+.guide-prose h2::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -1px;
+  width: 3.5rem;
+  height: 3px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--g-accent), var(--g-accent-2));
+}
+
 /* Section anchors: hidden until the heading is hovered or focused, so the
    prose stays quiet but every section is still directly linkable. */
 .heading-anchor {
@@ -336,7 +375,9 @@ body {
   color: var(--g-ink3);
   opacity: 0;
   text-decoration: none;
-  transition: opacity 0.15s ease, color 0.15s ease;
+  transition:
+    opacity 0.15s ease,
+    color 0.15s ease;
 }
 
 :is(h2, h3, h4):hover > .heading-anchor,
@@ -354,6 +395,68 @@ body {
   }
 }
 
+/* Drop cap on the first paragraph of a chapter article: a book signal that
+   says “reading starts here”. Only the article's first prose paragraph —
+   never after a heading, callout or code block — and never in print. */
+.chapter-article .guide-prose > p:first-of-type::first-letter {
+  float: left;
+  padding: 0.08em 0.14em 0 0;
+  font-family: var(--font-sans);
+  font-size: 3.1em;
+  font-weight: 700;
+  line-height: 0.78;
+  color: var(--g-accent);
+}
+
+/* Chapter figures: self-contained diagram plates with a quiet caption.
+   The plate keeps its paper background in both themes, like a printed
+   figure pasted into the page — that contrast is deliberate. */
+.guide-figure {
+  margin: 1.75rem 0;
+  overflow: hidden;
+  border: 1px solid var(--g-line);
+  border-radius: var(--radius-card);
+  background: var(--g-surface);
+  box-shadow: var(--g-shadow-card);
+}
+
+.guide-figure img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.guide-figure figcaption {
+  display: flex;
+  gap: 0.6rem;
+  align-items: baseline;
+  padding: 0.7rem 1rem 0.85rem;
+  border-top: 1px solid var(--g-line);
+  font-family: var(--font-sans);
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: var(--g-ink2);
+}
+
+.guide-figure-label {
+  flex: none;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--g-accent-2);
+}
+
+/* Section rule: a short rust tick fading into the hairline. */
+.guide-prose hr {
+  height: 2px;
+  border: 0;
+  background:
+    linear-gradient(90deg, var(--g-accent) 0 3.5rem, transparent 3.5rem),
+    linear-gradient(90deg, var(--g-line), var(--g-line));
+  opacity: 0.9;
+}
+
 /* Wide tables scroll in their own pane instead of squeezing cells. */
 .table-pane {
   overflow-x: auto;
@@ -364,6 +467,79 @@ body {
 
 .table-pane table {
   min-width: 100%;
+}
+
+/* Zebra + sticky header so long reference tables stay readable while
+   their pane scrolls. Colours come from tokens, so both themes agree. */
+.table-pane thead th {
+  position: sticky;
+  top: 0;
+  background: var(--g-sunken);
+}
+
+.table-pane tbody tr:nth-child(even) {
+  background: color-mix(in srgb, var(--g-sunken) 45%, transparent);
+}
+
+/* Callouts: one shape, one token per kind. The tint is mixed from the
+   kind colour at low strength, so light and dark stay in the same family
+   instead of eight hand-picked Tailwind palette pairs drifting apart. */
+.guide-callout {
+  --callout: var(--g-ink3);
+  margin: 1.5rem 0;
+  border: 1px solid var(--g-line);
+  border-left: 4px solid var(--callout);
+  border-radius: var(--radius-well);
+  padding: 1rem 1.25rem;
+  background: color-mix(in srgb, var(--callout) 6%, var(--g-surface));
+}
+
+.guide-callout[data-kind="analogy"] {
+  --callout: #b45309;
+}
+.guide-callout[data-kind="plain"] {
+  --callout: #0369a1;
+}
+.guide-callout[data-kind="compare"] {
+  --callout: #7c3aed;
+}
+.guide-callout[data-kind="warn"] {
+  --callout: #dc2626;
+}
+.guide-callout[data-kind="tip"] {
+  --callout: #059669;
+}
+.guide-callout[data-kind="note"] {
+  --callout: var(--g-ink3);
+}
+.guide-callout[data-kind="key"] {
+  --callout: var(--g-accent);
+}
+.guide-callout[data-kind="recap"] {
+  --callout: var(--g-accent-2);
+}
+
+.dark .guide-callout[data-kind="analogy"] {
+  --callout: #fbbf24;
+}
+.dark .guide-callout[data-kind="plain"] {
+  --callout: #38bdf8;
+}
+.dark .guide-callout[data-kind="compare"] {
+  --callout: #a78bfa;
+}
+.dark .guide-callout[data-kind="warn"] {
+  --callout: #f87171;
+}
+.dark .guide-callout[data-kind="tip"] {
+  --callout: #34d399;
+}
+.dark .guide-callout[data-kind="recap"] {
+  --callout: #2dd4bf;
+}
+
+.guide-callout-label {
+  color: var(--callout);
 }
 
 /* Shell & compiler-error highlight tokens (hand-tinted blocks) */
@@ -412,7 +588,7 @@ body {
 
 .code-scroll pre {
   margin: 0;
-  padding: 0.9rem 1.1rem;
+  padding: 1rem 1.15rem;
   overflow-x: auto;
   background: transparent !important;
   font-size: 13px;

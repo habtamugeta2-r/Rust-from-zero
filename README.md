@@ -26,11 +26,11 @@ table disagrees with that measurement.
 | Exercises | 274 |
 | Quiz questions | 379 |
 | Captured outputs | 104 |
-| Search entries | 14,410 |
+| Search entries | 14,414 |
 | Glossary terms | 253 |
 | Glossary terms linked from prose | 207 |
 | Cross-links (inbound edges) | 1,132 |
-| Words of prose | 224,061 |
+| Words of prose | 224,110 |
 | Declared reading time (minutes) | 4,558 |
 
 Exercises carry a hint and a worked solution; quiz questions carry an
@@ -133,6 +133,8 @@ component changes.
 | Chapter index | `/chapters` | Every chapter grouped by part, with kind, level, reading time and your completion state |
 | Progress page | `/progress` | Chapters, quizzes, exercises and bookmarks in one dashboard, plus progress export/import as JSON |
 | Theme | `data-theme` on `<html>` | Light, dark, or *system*; the choice is applied before first paint |
+| Figures | `figure` block (`public/images/*.svg`) | A standalone `![alt](/images/name.svg "Caption")` line in a chapter; the parser fails the build if the file is missing or the alt text is empty, and the caption joins the search index |
+| Callout colours | `--callout` per `data-kind` in `globals.css` | One token per kind, tint mixed from it — the eight kinds cannot drift between themes |
 
 Geometry lives in CSS custom properties in
 [`src/app/globals.css`](./src/app/globals.css): `--shell-header`,

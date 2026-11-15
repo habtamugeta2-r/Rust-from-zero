@@ -91,6 +91,8 @@ fn main() {}
 1 | [main] a = 5 !new | - | The program starts.
 :::
 
+![A fixture diagram](/images/fixture.svg "The fixture figure")
+
 \`\`\`flame A caption
 main | 100 | main
   child | 40 | child
@@ -128,6 +130,13 @@ borrowing :: Using a value through a reference.
   );
 
   fs.writeFileSync(path.join(capturedDir, `${RUST_HASH}.txt`), "hi\n");
+
+  const imagesDir = path.join(root, "public", "images");
+  fs.mkdirSync(imagesDir, { recursive: true });
+  fs.writeFileSync(
+    path.join(imagesDir, "fixture.svg"),
+    '<svg xmlns="http://www.w3.org/2000/svg"/>\n',
+  );
   return root;
 }
 
@@ -167,6 +176,7 @@ test("parser: a fixture chapter yields every block type", () => {
     "checklist",
     "stepper",
     "flame",
+    "figure",
   ]) {
     assert.ok(types.has(expected), `missing block type ${expected}`);
   }
@@ -181,6 +191,30 @@ test("parser: an `auto` block is filled from its capture", () => {
   const output = codes.find((block) => block.type === "code" && block.isOutput);
   assert.ok(output && output.type === "code");
   assert.equal(output.code, "hi");
+});
+
+test("parser: a figure keeps its src, alt text and caption", () => {
+  const guide = loadGuide(true, fixtureRoot());
+  const fixture = guide.chapterMap["fixture"];
+  const figure = fixture.blocks.find((block) => block.type === "figure");
+  assert.ok(figure && figure.type === "figure");
+  assert.equal(figure.src, "/images/fixture.svg");
+  assert.equal(figure.alt, "A fixture diagram");
+  assert.ok(
+    !guide.warnings.some((warning) => warning.includes("figure image not found")),
+    `an existing image must not warn, got: ${guide.warnings.join("; ")}`,
+  );
+});
+
+test("parser: a figure whose image is missing is a warning", () => {
+  const root = fixtureRoot();
+  const second = path.join(root, "guide-src", "chapters", "02-second.md");
+  fs.appendFileSync(second, "\n![A missing diagram](/images/nope.svg)\n");
+  const guide = loadGuide(true, root);
+  assert.ok(
+    guide.warnings.some((warning) => warning.includes("figure image not found")),
+    `expected a missing-figure warning, got: ${guide.warnings.join("; ")}`,
+  );
 });
 
 test("parser: an unknown glossary term is a warning, a known one is not", () => {

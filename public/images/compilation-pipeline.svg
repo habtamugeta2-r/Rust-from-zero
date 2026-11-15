@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 430" role="img" aria-labelledby="t d">
+  <title id="t">The rustc compilation pipeline</title>
+  <desc id="d">Source code flows through tokens, AST, HIR, MIR with the borrow checker, LLVM IR, machine code and finally an ELF executable.</desc>
+  <rect width="1200" height="430" rx="24" fill="#FCFBF8"/>
+  <rect x="1" y="1" width="1198" height="428" rx="23" fill="none" stroke="#E5E0D5" stroke-width="2"/>
+  <text x="48" y="58" font-family="system-ui, sans-serif" font-size="24" font-weight="700" fill="#1C1915">From source text to a running program</text>
+  <text x="48" y="86" font-family="system-ui, sans-serif" font-size="15" fill="#6F6659">Each stage lowers the program one level — and each stage can reject it.</text>
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#BC4114"/></marker>
+  </defs>
+  <g font-family="system-ui, sans-serif" text-anchor="middle">
+    <g>
+      <rect x="48" y="150" width="140" height="92" rx="14" fill="#F7E8DE" stroke="#BC4114" stroke-width="2"/>
+      <text x="118" y="190" font-size="17" font-weight="700" fill="#1C1915">main.rs</text>
+      <text x="118" y="214" font-size="13" fill="#6F6659">source text</text>
+    </g>
+    <g>
+      <rect x="228" y="150" width="140" height="92" rx="14" fill="#FFFFFF" stroke="#D2CABB" stroke-width="2"/>
+      <text x="298" y="190" font-size="17" font-weight="700" fill="#1C1915">Tokens</text>
+      <text x="298" y="214" font-size="13" fill="#6F6659">lexer</text>
+    </g>
+    <g>
+      <rect x="408" y="150" width="140" height="92" rx="14" fill="#FFFFFF" stroke="#D2CABB" stroke-width="2"/>
+      <text x="478" y="190" font-size="17" font-weight="700" fill="#1C1915">AST</text>
+      <text x="478" y="214" font-size="13" fill="#6F6659">parser</text>
+    </g>
+    <g>
+      <rect x="588" y="150" width="140" height="92" rx="14" fill="#FFFFFF" stroke="#D2CABB" stroke-width="2"/>
+      <text x="658" y="190" font-size="17" font-weight="700" fill="#1C1915">HIR</text>
+      <text x="658" y="214" font-size="13" fill="#6F6659">names &amp; types</text>
+    </g>
+    <g>
+      <rect x="768" y="150" width="164" height="92" rx="14" fill="#E6F2F0" stroke="#0F766E" stroke-width="2"/>
+      <text x="850" y="190" font-size="17" font-weight="700" fill="#1C1915">MIR</text>
+      <text x="850" y="214" font-size="13" fill="#0F766E">borrow checker ✓</text>
+    </g>
+    <g>
+      <rect x="972" y="150" width="180" height="92" rx="14" fill="#EAF1F8" stroke="#0369A1" stroke-width="2"/>
+      <text x="1062" y="190" font-size="17" font-weight="700" fill="#1C1915">LLVM IR</text>
+      <text x="1062" y="214" font-size="13" fill="#0369A1">optimiser</text>
+    </g>
+  </g>
+  <g stroke="#BC4114" stroke-width="2.5">
+    <line x1="192" y1="196" x2="222" y2="196" marker-end="url(#ar)"/>
+    <line x1="372" y1="196" x2="402" y2="196" marker-end="url(#ar)"/>
+    <line x1="552" y1="196" x2="582" y2="196" marker-end="url(#ar)"/>
+    <line x1="732" y1="196" x2="762" y2="196" marker-end="url(#ar)"/>
+    <line x1="936" y1="196" x2="966" y2="196" marker-end="url(#ar)"/>
+  </g>
+  <path d="M1062 246 L1062 300 L882 300" fill="none" stroke="#BC4114" stroke-width="2.5" marker-end="url(#ar)"/>
+  <g font-family="system-ui, sans-serif" text-anchor="middle">
+    <rect x="700" y="262" width="176" height="76" rx="14" fill="#FFFFFF" stroke="#D2CABB" stroke-width="2"/>
+    <text x="788" y="295" font-size="16" font-weight="700" fill="#1C1915">Machine code</text>
+    <text x="788" y="318" font-size="13" fill="#6F6659">per-CPU instructions</text>
+    <rect x="480" y="262" width="176" height="76" rx="14" fill="#1C1915"/>
+    <text x="568" y="295" font-size="16" font-weight="700" fill="#FCFBF8">ELF executable</text>
+    <text x="568" y="318" font-size="13" fill="#C2BBAF">ready for the kernel</text>
+  </g>
+  <path d="M694 300 L662 300" stroke="#BC4114" stroke-width="2.5" marker-end="url(#ar)"/>
+  <text x="600" y="392" font-family="system-ui, sans-serif" font-size="14" font-style="italic" text-anchor="middle" fill="#6F6659">Cargo drives rustc; LLVM turns IR into code for your exact processor.</text>
+</svg>

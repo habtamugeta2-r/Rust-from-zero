@@ -81,6 +81,8 @@ fn main() {
 5 | - | #1 = "hello" !freed | `main` ends. `s2` owns the text, so the heap memory is freed, exactly once. `s1` owns nothing, so nothing happens for it.
 :::
 
+![Diagram of a move: a is invalidated, b becomes the one owner of the same heap text](/images/ownership-move.svg "After `let b = a;` the data has not moved. Ownership has.")
+
 Why does Rust do this, instead of letting both variables use the text? Think about the end of `main`. If `s1` and `s2` were both owners, both would try to free the same heap memory. That is the **double free** bug from the last chapter. Rust could also copy the heap data on every assignment, but for a large text that would be slow, and you would not see it in the code.
 
 So Rust picks the cheap and safe option: an assignment **moves** ownership. The old variable becomes unusable, and the compiler enforces that.
