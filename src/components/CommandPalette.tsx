@@ -15,12 +15,14 @@ import {
   CornerDownLeft,
   Gauge,
   ListTree,
+  Monitor,
   Moon,
   Search,
   Sun,
   X,
 } from "lucide-react";
 import type { SearchHit } from "@/lib/guide-types";
+import { themeHint, themeLabel, type ThemeMode } from "@/lib/theme";
 import { useGuideState } from "./GuideStateProvider";
 import { useGuideSearch } from "./use-guide-search";
 
@@ -53,7 +55,7 @@ export function CommandPalette({
   onClose: () => void;
 }) {
   const router = useRouter();
-  const { theme, cycleTheme, state } = useGuideState();
+  const { themeMode, cycleTheme, state } = useGuideState();
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(0);
   const { hits: fetched, resolved, pending } = useGuideSearch(query, open);
@@ -112,15 +114,15 @@ export function CommandPalette({
       {
         kind: "action",
         id: "theme",
-        label: `Switch to ${theme === "dark" ? "light" : "dark"} theme`,
-        hint: "or follow the system setting",
-        icon: theme === "dark" ? Sun : Moon,
+        label: `Theme: ${themeLabel(themeMode)}`,
+        hint: themeHint(themeMode),
+        icon: themeIcon(themeMode),
         run: () => {
           cycleTheme();
         },
       },
     ],
-    [go, lastChapter, state.last, theme, cycleTheme]
+    [go, lastChapter, state.last, themeMode, cycleTheme]
   );
 
   const items = useMemo<Item[]>(() => {
@@ -439,6 +441,11 @@ export function CommandPalette({
       </div>
     </div>
   );
+}
+
+function themeIcon(mode: ThemeMode) {
+  if (mode === "system") return Monitor;
+  return mode === "dark" ? Moon : Sun;
 }
 
 function Kbd({ children }: { children: React.ReactNode }) {

@@ -10,10 +10,11 @@ import React, {
   useState,
 } from "react";
 import Link from "next/link";
+import { nextThemeMode, type ThemeMode } from "@/lib/theme";
 
 const STORAGE_KEY = "rust-guide-v1";
 
-export type ThemeMode = "light" | "dark" | "system";
+export type { ThemeMode };
 
 export interface GlossaryTipItem {
   key: string;
@@ -316,12 +317,7 @@ export function GuideStateProvider({
   );
 
   const cycleTheme = useCallback(() => {
-    const next: ThemeMode =
-      themeMode === "light"
-        ? "dark"
-        : themeMode === "dark"
-          ? "system"
-          : "light";
+    const next = nextThemeMode(themeMode);
     setThemeMode(next);
     showToast(
       next === "system"

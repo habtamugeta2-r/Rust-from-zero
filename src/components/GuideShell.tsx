@@ -22,6 +22,7 @@ import {
   X,
 } from "lucide-react";
 import type { ChapterSummary, PartMeta, SearchHit } from "@/lib/guide-types";
+import { themeHint, themeLabel } from "@/lib/theme";
 import { CommandPalette } from "./CommandPalette";
 import { useGuideState } from "./GuideStateProvider";
 
@@ -817,17 +818,6 @@ export function GuideShell({
   );
 }
 
-function themeLabel(mode: "light" | "dark" | "system"): string {
-  return mode === "system" ? "follows your system" : `${mode} mode`;
-}
-
-function themeHint(mode: "light" | "dark" | "system"): string {
-  return mode === "light"
-    ? "Switch to dark"
-    : mode === "dark"
-      ? "Follow the system setting"
-      : "Switch to light";
-}
 
 /** The gear-and-tick mark, drawn inline so it needs no network request. */
 function RustMark() {

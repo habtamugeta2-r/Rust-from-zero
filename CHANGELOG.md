@@ -63,6 +63,9 @@ operating system instead of overruling it.
 
 - `/api/search` accepts a validated `limit` (1–60) and always answers
   `{ query, hits }`.
+- The theme cycle, its wording and its type live in `src/lib/theme.ts`, shared
+  by the header button and the palette, so neither can describe a different
+  next step from the one the provider takes.
 - Print stylesheet drops the palette, the toasts and the new controls.
 - Version 2.1.0.
 
