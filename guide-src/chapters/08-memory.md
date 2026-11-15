@@ -16,6 +16,10 @@ While a program runs, it keeps its data in the computer's **memory** (also calle
 Picture a street with billions of small letterboxes in a row. Each box holds one byte, and each has a house number. That number is called its **address**. To store a value, the program puts it in some boxes and remembers the address. To read it back, it goes to that address.
 :::
 
+:::note The numbers are logical, not physical
+A modern computer does not hand a program the real hardware memory directly. The operating system gives each program its own private view of a very large range of numbers, called **virtual** memory, and quietly translates them to the real boxes behind the scenes. When this guide talks about an "address", it means one of those logical numbers, from the program's own point of view. That is why one program's address 100 and another program's address 100 are different places entirely, and why the picture of a single long street of letterboxes is a helpful simplification of something the operating system manages for you.
+:::
+
 A program uses its memory in two different ways, in two different areas: the **stack** and the **heap**.
 
 :::compare Memory management in other languages
@@ -55,7 +59,7 @@ fn double(n: i32) -> i32 {
 5 | - | - | `main` ends. Its frame is removed too, and the program is finished.
 :::
 
-The stack has two great strengths. It is **fast**, because storing a value is just "put it on top". And it is **automatic**: nobody has to remember to clean up, because the frame disappears when the function ends.
+The stack has two great strengths. It is **fast**, because storing a value is just "put it on top". Part of that speed comes from *where* the data sits: the values of one function lie next to each other on the stack, and a computer keeps a tiny, extremely fast **cache** of the memory locations it has just used. Neighbouring values are therefore likely to already be sitting in the cache, so reaching them is quick. And the stack is **automatic**: nobody has to remember to clean up, because the frame disappears when the function ends.
 
 It also has two limits:
 
@@ -102,7 +106,7 @@ The heap is that warehouse:
 - It gets back the address of a free area. A value that holds an address is called a **pointer**, because it points to where the data is.
 - When the data is no longer needed, the memory must be given back. This is called **freeing** or *deallocating* it.
 
-The heap can hold data of any size, the size may be decided while the program runs, and the data stays alive until it is freed, no matter which functions start or end in the meantime. The price: allocating is slower than using the stack, reaching the data takes an extra step (follow the pointer), and **someone has to free the memory at the right time**.
+The heap can hold data of any size, the size may be decided while the program runs, and the data stays alive until it is freed, no matter which functions start or end in the meantime. The price is threefold. **Allocating is slower than using the stack**: before the data can be used, the system has to find a free stretch of memory big enough and mark it as taken, and the operating system may have to hand over brand-new pages of real memory that were not in use yet. Reaching the data also takes an extra step: follow the pointer to where the data really is. And **someone has to free the memory at the right time**.
 
 ## How the stack and the heap work together
 

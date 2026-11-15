@@ -57,7 +57,7 @@ fn count_letters(text: &String) -> usize {
 :::
 
 :::plain Reference
-A **reference** is a pointer that Rust guarantees to be valid: it always points to a living value of the right type. You create one with `&`. In the last chapter you read that a pointer is an address. A reference is an address plus a promise checked by the compiler.
+A **reference** is a pointer that Rust guarantees to be valid: it always points to a living value of the right type. You create one with `&`. In the last chapter you read that a pointer is an address. A reference is an address plus a promise checked by the compiler. And like any other value, a reference has a size — the size of a pointer. Passing a reference to a function copies that small value; the data it points at is never copied. That is why borrowing is cheap even when the data behind it is large.
 :::
 
 ## A shared reference cannot change the value
@@ -190,6 +190,8 @@ fn main() {
 hello
 hello world
 ```
+
+This "the borrow lives until its last *use*, not until the end of the scope" behaviour is what makes the rules practical instead of tedious. Rust measures a reference's life by where it is actually used, not by the shape of the code that surrounds it; that idea is sometimes called *non-lexical lifetimes*.
 
 ## Why the rules exist: a real bug they prevent
 

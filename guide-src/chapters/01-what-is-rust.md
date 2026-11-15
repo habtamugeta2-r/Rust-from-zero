@@ -74,6 +74,25 @@ Rust gets both by using a new idea called **ownership**. The Rust compiler follo
 Rust moves whole families of mistakes from "found by your users at run time" to "found by the compiler on your own computer". If a Rust program compiles, a large class of bugs simply cannot be in it.
 :::
 
+## What a compiling Rust program guarantees
+
+The promise above is worth making precise, because it is easy to over- or under-state it. When a Rust program compiles, the compiler has *proved* a specific list of things about the machine's memory. That list is short, and it is the reason people trust the language:
+
+- **No memory is read that the program was never given.** There are no reads from memory that has already been freed, no reads past the end of a list, and no pointers to data that no longer exists. The whole family of "use after free" and "out of bounds" bugs is excluded.
+- **Memory is never freed twice, and never freed while still in use.** There is one owner, and the owner decides the moment the data dies.
+- **Data races are impossible in safe code.** Two parts of the program cannot change the same data at the same time and read a half-written value. [Chapter 10](#borrowing) shows exactly why.
+- **A variable always holds a value before it is read.** There is no "maybe nothing here" that quietly turns into a crash three lines later.
+
+Now notice what is *not* on the list. Compiling does not prove that your program does what you meant. If a function is supposed to sort a list but the logic is wrong, the compiler will build it happily. Rust removes *whole classes* of bugs from your program; it does not check your reasoning. This is what people mean when they say Rust is "safe": safe from a clearly defined set of low-level machine mistakes, not safe from every possible mistake. Knowing the difference keeps you from being surprised later.
+
+:::compare "Safe" and "unsafe" Rust
+Nearly everything you will write is in **safe** Rust, and every guarantee above is true of it. There is also **unsafe Rust**: a small set of extra tools for working at the very bottom of the machine — reading raw memory, talking to hardware, or using a library written in C. Unsafe does not mean "broken" or "dangerous to use"; it means *you, the programmer, make the safety argument that the compiler would otherwise make*. You are allowed to use those tools only where you can show the code you write is sound. The great majority of Rust programs — and all of this guide — stay entirely in safe Rust.
+:::
+
+:::plain Zero-cost abstraction
+Rust is built around a design principle called **zero-cost abstraction**. You can write a program with clean, high-level tools — a loop over a list, a small function, an object with methods — without paying any extra cost in speed or memory once the program is compiled. The compiler removes the "extra" scaffolding during compilation. The goal is that a readable Rust program can run as fast as the rawest, most manual code for the same job. You will see this principle quietly at work throughout the guide: the safe way to do a thing is also the fast way.
+:::
+
 ## A short history of Rust
 
 - **2006:** Graydon Hoare, a programmer at Mozilla (the makers of the Firefox browser), starts Rust as a personal project. He wanted a language that made software more reliable.

@@ -18,6 +18,8 @@ Text is everywhere in programs: names, messages, file contents. It looks simple,
 | What it is made of | Pointer, length, capacity | Pointer, length |
 | Typical use | Text you build, keep or return | Text you only read, and function parameters |
 
+Because a `&str` carries a length as well as an address, programmers sometimes call it a **fat pointer**: a pointer that also tells you how much there is. A plain C string pointer knows only an address and has to guess its length from a marker byte at the end; Rust's `&str` never has to guess.
+
 :::analogy A notebook and a highlighted passage
 A `String` is your own notebook. You can add pages, cross things out, or throw it away. A `&str` is a passage you marked with a highlighter in someone else's book: you can read exactly that passage, but the book is not yours, and the passage is only there as long as the book is.
 :::
@@ -65,6 +67,10 @@ tic-tac
 - **`push_str`** adds a `&str`, and **`push`** adds one `char`.
 - **`format!`** works like `println!` but returns the result as a new `String`. It is the most readable way to combine values into text, and it does not move any of them.
 - **`+`** glues text onto a `String`. The left side must be a `String` and is *moved* into the result. Everything added must be a `&str`, so a `String` on the right needs a `&`. After this line `first` cannot be used any more, but `second` can. When this feels confusing, use `format!`.
+
+:::note Growing a `String` can move its characters
+The characters of a `String` live on the heap, in a buffer of a certain size (the *capacity* from the table above). When a `push_str` needs more room than is left, the `String` asks for a bigger buffer, moves all the characters into it, and frees the old one. This is exactly the move a `Vec` can make in [chapter 10](#borrowing), and it is the reason the compiler will not let you keep a borrow of part of a `String` while the `String` might grow: the part you borrowed could be sent to a new place in memory. You will not feel this while learning — the compiler keeps it correct for you — but it is the same idea underneath.
+:::
 
 ## Slices: borrowing a part
 

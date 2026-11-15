@@ -262,12 +262,20 @@ The memory is already free.
 ```
 :::
 
+:::details Values are dropped in reverse order
+At the end of a block, the compiler drops the values that block created, starting with the most recently created and working back to the first. The order can matter when one value depends on another: the thing built last — which may rely on the others — is cleaned up first. You rarely have to think about it, but if a program's clean-up ever seems to happen "backwards", this is why.
+:::
+
 ## Why this is worth the trouble
 
 - **No garbage collector.** The compiler knows exactly where each value's life ends, and puts the clean-up there. The program does not pause, and it uses no extra memory for bookkeeping.
 - **No double free and no use after free.** There is one owner, so memory is freed once. A moved-out variable cannot be used, so freed data cannot be touched.
 - **No hidden costs.** Moves are always cheap. An expensive copy is always written as `.clone()`.
 - **Not only memory.** The same rules close files, release network connections and unlock locks at the right moment. Anything that needs cleaning up can be tied to an owner.
+
+:::details How a value cleans itself up: the `Drop` trait
+You never wrote the code that freed `greeting`'s characters in this chapter; the compiler inserted it. It does so by calling a special method that a type may provide, called `drop`. A type opts in to doing something at the moment its last owner goes out of scope by implementing a marker called the **`Drop` trait**, and the compiler arranges for that `drop` to run at exactly the right place. The standard library does this for `String` and `Vec` to free their heap memory, and for file handles and other resources to close them. That is why one set of ownership rules can free a piece of text and close a file at the same time: in both cases the machine is just "run this value's `drop` when it dies".
+:::
 
 :::recap
 - Every value has one owner. When the owner goes out of scope, the value is dropped and its memory freed.

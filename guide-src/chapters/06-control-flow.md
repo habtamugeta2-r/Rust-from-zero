@@ -99,6 +99,36 @@ weekend
 
 Each line inside is called an **arm**: a pattern, then `=>`, then the result for that case. `3..=5` means "3 up to and including 5", `6 | 7` means "6 or 7", and `_` means "anything else". The compiler checks that **every possible value is covered**. Remove the `_` arm and the program does not compile. `match` is one of Rust's most loved features, and [chapter 13](#enums) shows its full power.
 
+### A match arm can carry a condition
+
+Each arm is tested in order, and an arm can have an extra condition after it, called a **guard**. The arm's code runs only if its pattern matches *and* the guard is true. The pattern here is a plain binding — a name that holds the value — and the guard tests that value.
+
+```rust run
+fn main() {
+    for n in [-5, 0, 3, 42] {
+        let kind = match n {
+            x if x < 0 => "negative",
+            0 => "zero",
+            x if x <= 10 => "small positive",
+            _ => "large positive",
+        };
+        println!("{n}: {kind}");
+    }
+}
+```
+```output
+-5: negative
+0: zero
+3: small positive
+42: large positive
+```
+
+Guards let you describe a case that is "this shape, *and* this is also true". They become very useful once you start matching on the richer data types in Part 3.
+
+:::note Two shorthands you will meet
+Matching on a single pattern is so common that Rust has shorthands. `if let` is an `if` whose condition is "does this one pattern match?", and `while let` keeps looping while it does. Both are the same idea as a `match` with one arm, written shorter. You will see them both in [chapter 13](#enums).
+:::
+
 ## Repeating with `loop`
 
 `loop` repeats its block forever, until the code says `break`.
@@ -303,6 +333,10 @@ row 2, column 2
 | "Keep going until something inside decides to stop" | `loop` with `break` |
 
 When in doubt, try `for` first. It is the safest and usually the clearest.
+
+:::key Rust is built from expressions
+Step back and the through-line of Part 1 is visible. In [chapter 5](#functions) you saw that an `if` can be the value on the right side of a `let`, and here that a `match` is and that a `loop` can hand a value out through `break`. Even an ordinary block in `{ }` is a value: the value of its last line. Rust is, in the small print, an *expression-first* language — most of what you write is a thing that computes a value, and the language is designed so those values can be nested, returned and reused. That habit quietly pays off for the rest of the guide.
+:::
 
 :::recap
 - `if condition { } else if other { } else { }` chooses a path. Conditions must be `bool`.
