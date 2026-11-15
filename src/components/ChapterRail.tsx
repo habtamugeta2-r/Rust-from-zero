@@ -118,7 +118,7 @@ export function ChapterRail({ headings }: { headings: HeadingItem[] }) {
       </details>
 
       {/* Wide screens: sticky rail with progress and a jump-to-top control. */}
-      <div className="no-print sticky top-20 hidden max-h-[calc(100vh-6rem)] w-56 shrink-0 2xl:w-60 self-start xl:flex xl:flex-col">
+      <div className="no-print sticky top-20 hidden max-h-[calc(100vh-6rem)] w-56 shrink-0 2xl:w-60 self-start xl:order-2 xl:flex xl:flex-col">
         <p className="mb-3 font-sans text-[11px] font-bold tracking-[0.08em] uppercase text-[var(--g-ink3)]">
           In this chapter
         </p>

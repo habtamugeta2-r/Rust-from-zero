@@ -61,7 +61,7 @@ export default async function ChapterPage({
           __html: JSON.stringify(chapterJsonLd(chapter)).replace(/</g, "\\u003c"),
         }}
       />
-      <article className="mx-auto min-w-0 w-full max-w-3xl xl:mx-0 xl:max-w-none xl:flex-[0_1_54rem]">
+      <article className="mx-auto min-w-0 w-full max-w-3xl xl:max-w-6xl">
         {/* Breadcrumb (visible + mirrors the BreadcrumbList schema) */}
         <nav
           aria-label="Breadcrumb"
@@ -123,12 +123,14 @@ export default async function ChapterPage({
           )}
         </header>
 
-        {/* Table of contents: a collapsed panel below xl, a sticky rail above it */}
-        <ChapterRail headings={chapter.headings} />
+        {/* Table of contents + Body: collapsed panel above prose below xl, sticky right rail at xl+ */}
+        <div className="xl:flex xl:items-start xl:gap-10">
+          <ChapterRail headings={chapter.headings} />
 
-        {/* Body */}
-        <div className="guide-prose">
-          <BlockList blocks={chapter.blocks} />
+          {/* Body */}
+          <div className="guide-prose min-w-0 flex-1 xl:order-1">
+            <BlockList blocks={chapter.blocks} />
+          </div>
         </div>
 
         {/* Completion action */}
