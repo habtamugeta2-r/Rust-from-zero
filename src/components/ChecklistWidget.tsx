@@ -11,7 +11,7 @@ export function ChecklistWidget({
   const { state, setSaved } = useGuideState();
 
   return (
-    <ul className="my-5 space-y-2.5 rounded-2xl border border-[var(--g-line)] bg-[var(--g-surface)] p-4">
+    <ul className="my-5 space-y-2.5 rounded-card border border-[var(--g-line)] bg-[var(--g-surface)] p-5 shadow-card">
       {items.map((item) => {
         const checked = Boolean(state.saved[item.id]);
         return (

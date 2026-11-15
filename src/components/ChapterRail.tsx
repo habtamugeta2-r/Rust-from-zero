@@ -32,22 +32,23 @@ export function ChapterRail({ headings }: { headings: HeadingItem[] }) {
   return (
     <nav
       aria-label="In this chapter"
-      className="no-print sticky top-20 hidden max-h-[calc(100vh-6rem)] w-52 shrink-0 overflow-y-auto self-start xl:block"
+      className="no-print sticky top-20 hidden max-h-[calc(100vh-6rem)] w-56 shrink-0 overflow-y-auto self-start xl:block"
     >
-      <p className="mb-3 font-sans text-xs font-bold uppercase tracking-wider text-[var(--g-ink3)]">
+      <p className="mb-3 font-sans text-[11px] font-bold tracking-[0.08em] uppercase text-[var(--g-ink3)]">
         In this chapter
       </p>
-      <ul className="space-y-1.5 border-l border-[var(--g-line)] pl-3 font-sans text-[13px]">
+      <ul className="space-y-1 font-sans text-[13px]">
         {h2Headings.map((h) => {
           const isOn = h.id === activeId;
           return (
             <li key={h.id}>
               <a
                 href={`#${h.id}`}
-                className={`block py-0.5 leading-snug transition-colors ${
+                aria-current={isOn ? "true" : undefined}
+                className={`block rounded-md px-3 py-1.5 leading-snug transition-colors ${
                   isOn
-                    ? "font-semibold text-[var(--g-accent)]"
-                    : "text-[var(--g-ink3)] hover:text-[var(--g-ink)]"
+                    ? "bg-[var(--g-accent-soft)] font-semibold text-[var(--g-accent)]"
+                    : "text-[var(--g-ink3)] hover:bg-[var(--g-sunken)] hover:text-[var(--g-ink)]"
                 }`}
               >
                 {h.text}

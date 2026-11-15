@@ -46,11 +46,11 @@ export function HomeRoutesSection({
   const pathParts = parts.filter((p) => p.key !== "welcome");
 
   return (
-    <section className="mt-12">
-      <h2 className="font-sans text-2xl font-bold tracking-tight text-[var(--g-ink)]">
+    <section className="mt-20">
+      <h2 className="font-sans text-[26px] font-bold tracking-tight text-[var(--g-ink)]">
         Your learning path
       </h2>
-      <p className="mt-2 max-w-2xl text-[var(--g-ink2)]">
+      <p className="mt-2 max-w-2xl font-sans text-[15px] leading-relaxed text-[var(--g-ink2)]">
         Work through the core parts in order, or highlight a goal-based route
         below so you only tackle what matches what you want to build. Tick
         chapters off as you go and your progress is saved in this browser.
@@ -59,7 +59,7 @@ export function HomeRoutesSection({
       <div
         role="group"
         aria-label="Learning route filter"
-        className="mt-5 flex flex-wrap gap-2 font-sans"
+        className="mt-6 flex flex-wrap gap-2 font-sans"
       >
         {routes.map((rt) => {
           const isOn = rt.id === activeRoute.id;
@@ -69,10 +69,10 @@ export function HomeRoutesSection({
               type="button"
               aria-pressed={isOn}
               onClick={() => setActiveRouteId(rt.id)}
-              className={`rounded-full border px-3.5 py-1.5 text-[13px] font-semibold transition-colors ${
+              className={`rounded-full border px-4 py-1.5 text-[13px] font-semibold transition-colors ${
                 isOn
-                  ? "border-[var(--g-accent)] bg-[var(--g-accent)] text-white"
-                  : "border-[var(--g-line2)] bg-[var(--g-surface)] text-[var(--g-ink2)] hover:border-[var(--g-accent)] hover:text-[var(--g-ink)]"
+                  ? "border-[var(--g-accent)] bg-[var(--g-accent)] text-white shadow-card"
+                  : "border-[var(--g-line2)] bg-[var(--g-surface)] text-[var(--g-ink2)] shadow-card hover:border-[var(--g-accent)] hover:text-[var(--g-ink)]"
               }`}
             >
               {rt.label}
@@ -83,10 +83,12 @@ export function HomeRoutesSection({
 
       <p
         aria-live="polite"
-        className="mt-2.5 mb-6 font-sans text-sm text-[var(--g-ink2)]"
+        className="mt-3 mb-6 font-sans text-sm leading-relaxed text-[var(--g-ink3)]"
       >
-        {activeRoute.summary} ({routeMetrics.count} chapters, ~{routeMetrics.hrs}{" "}
-        hours)
+        <span className="font-medium text-[var(--g-ink2)]">
+          {activeRoute.summary}
+        </span>{" "}
+        ({routeMetrics.count} chapters, ~{routeMetrics.hrs} hours)
       </p>
 
       <ol className="space-y-4">
@@ -107,14 +109,14 @@ export function HomeRoutesSection({
           return (
             <li
               key={part.key}
-              className={`flex gap-4 rounded-2xl border bg-[var(--g-surface)] p-5 transition-opacity ${
+              className={`flex gap-4 rounded-card border bg-[var(--g-surface)] p-5 shadow-card transition-opacity ${
                 allDone
                   ? "border-emerald-400/70 dark:border-emerald-800/70"
                   : "border-[var(--g-line)]"
               } ${partDimmed ? "opacity-40" : ""}`}
             >
               <div
-                className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full font-sans text-sm font-bold ${
+                className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg font-sans text-[15px] font-bold tabular-nums ${
                   allDone
                     ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-300"
                     : "bg-[var(--g-accent-soft)] text-[var(--g-accent)]"
@@ -124,29 +126,29 @@ export function HomeRoutesSection({
               </div>
 
               <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-center gap-2 font-sans">
-                  <h3 className="text-lg font-bold text-[var(--g-ink)]">
+                <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 font-sans">
+                  <h3 className="text-[17px] font-bold tracking-tight text-[var(--g-ink)]">
                     {part.title}
                   </h3>
                   {part.level && (
-                    <span className="rounded-full bg-[var(--g-sunken)] px-2.5 py-0.5 text-[11.5px] font-semibold text-[var(--g-ink2)]">
+                    <span className="rounded-full border border-[var(--g-line)] bg-[var(--g-sunken)] px-2.5 py-0.5 text-[11px] font-semibold text-[var(--g-ink3)]">
                       {part.level}
                     </span>
                   )}
                   {part.key !== "app" && (
-                    <span className="ml-auto text-xs font-medium text-[var(--g-ink3)]">
+                    <span className="ml-auto text-xs font-medium tabular-nums text-[var(--g-ink3)]">
                       {doneCount}/{partChapters.length} done
                     </span>
                   )}
                 </div>
 
                 {part.blurb && (
-                  <p className="mt-1 text-sm text-[var(--g-ink2)]">
+                  <p className="mt-1.5 font-sans text-sm leading-relaxed text-[var(--g-ink2)]">
                     {part.blurb}
                   </p>
                 )}
 
-                <div className="mt-3 flex flex-wrap gap-2 font-sans">
+                <div className="mt-3.5 flex flex-wrap gap-2 font-sans">
                   {partChapters.map((c) => {
                     const isDone = Boolean(state.done[c.id]);
                     const isOff = Boolean(allowSet && !allowSet.has(c.id));
@@ -154,7 +156,7 @@ export function HomeRoutesSection({
                       <Link
                         key={c.id}
                         href={`/chapters/${c.id}`}
-                        className={`inline-flex items-center gap-1.5 rounded-xl border px-2.5 py-1.5 text-[13px] font-medium transition-colors ${
+                        className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[13px] font-medium transition-colors ${
                           isDone
                             ? "border-emerald-400/70 bg-emerald-50/70 text-emerald-900 dark:border-emerald-800/70 dark:bg-emerald-950/35 dark:text-emerald-200"
                             : c.kind === "project"

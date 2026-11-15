@@ -86,7 +86,7 @@ export function MemoryStepper({
   const isLast = stepIdx === steps.length - 1;
 
   return (
-    <div className="my-7 overflow-hidden rounded-2xl border border-[var(--g-line2)] bg-[var(--g-surface)] shadow-sm">
+    <div className="my-7 overflow-hidden rounded-card border border-[var(--g-line)] bg-[var(--g-surface)] shadow-card">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--g-line)] bg-[var(--g-sunken)] px-4 py-3 font-sans">
         <div className="flex items-center gap-2 font-bold text-[var(--g-ink)]">
           <Layers className="h-4 w-4 text-[var(--g-accent)]" aria-hidden="true" />
@@ -195,7 +195,7 @@ export function MemoryStepper({
                                 className={`rounded-full px-2 py-0.5 font-sans text-[10.5px] font-bold ${
                                   tag.good
                                     ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-300"
-                                    : "bg-zinc-200 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
+                                    : "bg-[var(--g-sunken)] text-[var(--g-ink2)] ring-1 ring-[var(--g-line)]"
                                 }`}
                               >
                                 {tag.label}

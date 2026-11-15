@@ -37,12 +37,12 @@ export function QuizWidget({
 
   return (
     <section
-      className="my-8 overflow-hidden rounded-2xl border border-[var(--g-line2)] bg-[var(--g-surface)] shadow-sm"
+      className="my-8 overflow-hidden rounded-card border border-[var(--g-line)] bg-[var(--g-surface)] shadow-card"
       aria-label="Quiz"
     >
       <div className="flex flex-wrap items-center gap-2.5 border-b border-[var(--g-line)] bg-[var(--g-sunken)] px-5 py-3.5 font-sans">
         <HelpCircle className="h-5 w-5 text-[var(--g-accent)]" aria-hidden="true" />
-        <span className="font-bold text-[var(--g-ink)]">{title}</span>
+        <span className="text-[15px] font-bold tracking-tight text-[var(--g-ink)]">{title}</span>
         {answeredCount > 0 && (
           <span
             aria-live="polite"
@@ -103,7 +103,7 @@ export function QuizWidget({
                       type="button"
                       disabled={isAnswered}
                       onClick={() => setQuizAnswer(quizId, q.index, oi)}
-                      className={`flex w-full items-start gap-3 rounded-xl border px-3.5 py-2.5 text-left font-sans text-[15px] transition-colors ${cls} disabled:cursor-default`}
+                      className={`flex w-full items-start gap-3 rounded-lg border px-3.5 py-2.5 text-left font-sans text-[15px] leading-relaxed transition-colors ${cls} disabled:cursor-default`}
                     >
                       <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded bg-[var(--g-surface)] text-xs font-bold text-[var(--g-ink2)] ring-1 ring-[var(--g-line2)]">
                         {opt.label}

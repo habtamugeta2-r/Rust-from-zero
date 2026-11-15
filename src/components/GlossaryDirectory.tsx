@@ -39,7 +39,7 @@ export function GlossaryDirectory({
           placeholder="Filter the glossary…"
           aria-label="Filter the glossary"
           autoComplete="off"
-          className="w-full rounded-xl border border-[var(--g-line2)] bg-[var(--g-surface)] py-2.5 pr-4 pl-10 text-sm text-[var(--g-ink)] placeholder:text-[var(--g-ink3)] focus:border-[var(--g-accent)] focus:outline-none"
+          className="h-11 w-full rounded-lg border border-[var(--g-line)] bg-[var(--g-surface)] pr-4 pl-10 text-sm text-[var(--g-ink)] shadow-card placeholder:text-[var(--g-ink3)] focus:border-[var(--g-accent)] focus:outline-none"
         />
       </label>
 
@@ -48,7 +48,7 @@ export function GlossaryDirectory({
           No matching term. Try a shorter word.
         </p>
       ) : (
-        <dl className="divide-y divide-[var(--g-line)] rounded-2xl border border-[var(--g-line)] bg-[var(--g-surface)]">
+        <dl className="divide-y divide-[var(--g-line)] rounded-card border border-[var(--g-line)] bg-[var(--g-surface)]">
           {filtered.map((entry, idx) => (
             <div
               key={idx}

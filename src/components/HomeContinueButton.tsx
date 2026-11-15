@@ -31,10 +31,10 @@ export function HomeContinueButton({
   const last = state.last ? chapters.find((c) => c.id === state.last) : null;
 
   return (
-    <div className="mt-7 flex flex-wrap gap-3 font-sans">
+    <div className="mt-8 flex flex-wrap items-center gap-3 font-sans">
       <Link
         href="/chapters/start"
-        className="inline-flex items-center gap-2 rounded-xl bg-[var(--g-accent)] px-5 py-3 text-sm font-bold text-white shadow-sm transition-colors hover:bg-[var(--g-accent-hover)]"
+        className="inline-flex items-center gap-2 rounded-well bg-[var(--g-accent)] px-5 py-3 text-sm font-bold text-white shadow-card transition-colors hover:bg-[var(--g-accent-hover)]"
       >
         <span>Start from the beginning</span>
         <ArrowRight className="h-4 w-4" aria-hidden="true" />
@@ -43,7 +43,7 @@ export function HomeContinueButton({
       {last && (
         <Link
           href={`/chapters/${last.id}`}
-          className="inline-flex items-center gap-2 rounded-xl border border-[var(--g-line2)] bg-[var(--g-surface)] px-5 py-3 text-sm font-semibold text-[var(--g-ink)] transition-colors hover:border-[var(--g-accent)]"
+          className="inline-flex items-center gap-2 rounded-well border border-[var(--g-line2)] bg-[var(--g-surface)] px-5 py-3 text-sm font-semibold text-[var(--g-ink)] shadow-card transition-colors hover:border-[var(--g-accent)]"
         >
           <span>Continue: {last.title}</span>
         </Link>

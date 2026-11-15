@@ -310,7 +310,7 @@ export function GuideStateProvider({
             top: `${tip.y}px`,
             transform: tip.above ? "translate(-50%, -100%)" : "translate(-50%, 0)",
           }}
-          className="no-print fixed z-50 w-80 max-w-[calc(100vw-2rem)] rounded-xl border border-[var(--g-line2)] bg-[var(--g-surface)] p-3.5 text-sm shadow-xl"
+          className="no-print fixed z-50 w-80 max-w-[calc(100vw-2rem)] rounded-well border border-[var(--g-line2)] bg-[var(--g-surface)] p-3.5 text-sm shadow-pop"
           onMouseEnter={() => {
             /* keep visible while hovering tooltip */
           }}
@@ -338,7 +338,7 @@ export function GuideStateProvider({
         <div
           role="status"
           aria-live="polite"
-          className="no-print fixed bottom-5 right-5 z-50 max-w-md rounded-xl border border-[var(--g-line2)] bg-[var(--g-ink)] px-4 py-2.5 text-sm font-medium text-[var(--g-bg)] shadow-lg"
+          className="no-print fixed bottom-5 right-5 z-50 max-w-md rounded-well border border-[var(--g-line2)] bg-[var(--g-ink)] px-4 py-2.5 text-sm font-medium text-[var(--g-bg)] shadow-pop"
         >
           {toastMsg}
         </div>

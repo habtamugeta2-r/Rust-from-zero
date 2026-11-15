@@ -13,6 +13,9 @@
     "verify:content": "tsx src/lib/verify-content.ts"
   },
   "dependencies": {
+    "@fontsource-variable/jetbrains-mono": "^5.3.0",
+    "@fontsource-variable/source-serif-4": "^5.3.1",
+    "@fontsource-variable/space-grotesk": "^5.3.0",
     "lucide-react": "^1.73.0",
     "next": "^16.4.6",
     "react": "^19.0.0",
