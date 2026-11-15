@@ -58,7 +58,6 @@ export function GuideShell({
   const [hits, setHits] = useState<SearchHit[] | null>(null);
   const [searching, setSearching] = useState(false);
   const [activeHit, setActiveHit] = useState(-1);
-  const [scrollPct, setScrollPct] = useState(0);
   const [confirmReset, setConfirmReset] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
 
@@ -172,32 +171,6 @@ export function GuideShell({
     setHits(null);
     setActiveHit(-1);
   }, [pathname]);
-
-  /* ---------------- reading progress (rAF-throttled) ---------------- */
-
-  useEffect(() => {
-    if (!activeChapter) {
-      setScrollPct(0);
-      return;
-    }
-    let frame = 0;
-    const measure = () => {
-      frame = 0;
-      const max = document.documentElement.scrollHeight - window.innerHeight;
-      setScrollPct(max > 0 ? Math.min(100, (100 * window.scrollY) / max) : 0);
-    };
-    const onScroll = () => {
-      if (!frame) frame = requestAnimationFrame(measure);
-    };
-    measure();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", onScroll, { passive: true });
-    return () => {
-      if (frame) cancelAnimationFrame(frame);
-      window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("resize", onScroll);
-    };
-  }, [activeChapter, pathname]);
 
   /* ---------------- keyboard shortcuts ---------------- */
 
@@ -791,21 +764,6 @@ export function GuideShell({
             </button>
           </div>
 
-          <div
-            role="progressbar"
-            aria-label="Reading progress"
-            aria-valuemin={0}
-            aria-valuemax={100}
-            aria-valuenow={Math.round(scrollPct)}
-            className={`absolute inset-x-0 bottom-0 h-0.5 bg-transparent transition-opacity ${
-              activeChapter ? "opacity-100" : "opacity-0"
-            }`}
-          >
-            <div
-              className="h-full rounded-r-full bg-[var(--g-accent)] transition-[width] duration-75"
-              style={{ width: `${scrollPct}%` }}
-            />
-          </div>
         </header>
 
         <main id="main" className="app-main">

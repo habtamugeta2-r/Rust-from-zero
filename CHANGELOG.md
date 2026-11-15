@@ -39,6 +39,16 @@ guard-rail missing; this release adds the guard-rail.
   `behaviour` (×2), `initialisation` (×2 — plus the C++ RAII quotation, which is
   deliberately kept), `uninitialised` (×5), `optimisation` (×1), `licence` (×1).
 
+### Removed
+
+- **The duplicate progress bar.** A chapter page drew two accent bars: the
+  labelled “N of 83 complete” bar in the navigation, and an unlabelled thin line
+  along the bottom edge of the header that tracked scroll position. The line is
+  gone — the rail already shows reading position as a ring and a percentage, so
+  the header one was the only thing measuring scroll without saying so. The
+  header also stops running a scroll listener; one bar, one meaning, and 60
+  fewer renders a second on a long chapter.
+
 ### Changed
 
 - Version 2.2.0.
