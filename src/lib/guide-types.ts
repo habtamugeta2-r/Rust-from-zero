@@ -43,6 +43,8 @@ export type InlineNode =
   | { type: "em"; children: InlineNode[] }
   | { type: "term"; text: string; key: string }
   | { type: "internalLink"; chapterId: string; anchor?: string; children: InlineNode[] }
+  /** A link to one of the app's own routes, e.g. `/progress`. */
+  | { type: "routeLink"; href: string; children: InlineNode[] }
   | { type: "externalLink"; href: string; children: InlineNode[] };
 
 export interface FlameNode {

@@ -11,6 +11,7 @@ than no change.
 ```sh
 npm install                       # installs Next.js, Shiki, Tailwind & TypeScript
 npm run verify:content            # checks every chapter, link & captured output
+npm run verify:deploy             # no Node pin; lockfile version in sync
 npm run typecheck && npm run build
 python3 guide-src/tools/audit.py --strict   # must report "0 structural remark(s)"
 ```
@@ -74,9 +75,58 @@ captured-output mechanism.
 4. If the example needs a crate, add the crate and version to
    `guide-src/tools/ext-main-Cargo.toml`, and check it with `--ext`.
 
+## Interface changes
+
+The reading layout is deliberately boring and explicit. If you touch `src/`
+components, keep these rules or the layout will regress the way it did in 1.x:
+
+1. **Layout in CSS, not in utility soup.** Page geometry lives in
+   `src/app/globals.css` (`.app-shell`, `.chapter-page`, `.chapter-layout`,
+   `.chapter-article`, `.chapter-aside`). Add a column by editing the grid
+   template there, not by reordering flex children with `order-*`.
+2. **Never put a second scroll container between a sticky element and the
+   page.** The chapter rail sticks because nothing in its ancestor chain sets
+   `overflow`; keep it that way.
+3. **One breakpoint per decision.** The outline is a grid column from `1240px`,
+   and from `1024px` when `data-sidebar="closed"` frees up the navigation's
+   width. Those two media blocks in `globals.css`, plus the `.toc-trigger`
+   rules and the `data-rail` computation, are the only places that decide it —
+   change them together.
+4. **Derive offsets from tokens.** `--shell-header`, `--rail-w`, `--measure`
+   and friends already encode the geometry; hard-coded `top-20` style offsets
+   are what made anchor jumps land in the wrong place.
+5. **Test at 375, 768, 1024, 1240 and 1440 px wide**, in both themes, with the
+   sidebar open and closed, and with `Tab` only.
+6. **Search has one implementation.** Ranking, snippets and highlighting live in
+   `src/lib/search.ts`; `/api/search`, the palette and `/search` all call it.
+   Change the algorithm there, never in a component.
+7. **Anything stateful renders its server markup first.** Saved progress is read
+   after mount, so a component may *enrich* its output once storage is available
+   but must not swap its text or size on hydration — that is what made the home
+   hero jump in 2.0.0. Reserve space for anything that appears later.
+8. **Keep the palette and the drawer honest.** Both are dialogs: focus moves in
+   on open, `Esc` closes, focus returns to the trigger, and the page behind is
+   scroll-locked. Add a control to `no-print` if it is chrome rather than prose.
+
+### Links and the content lint
+
+Cross-reference in one of three ways: `[label](#chapter-id)` for a chapter, `[label](#home)` for
+the landing page, `[label](/progress)` or `[label](/search)` for an app route. A label that reads
+“chapter 23” is renumbered automatically, so write the id in the target and let the number follow.
+
+`npm run verify:content` runs the parser *and* `src/lib/content-lint.ts`, which fails on: American
+spelling, a `TODO`/`FIXME`/`TBD` in visible text, a tracked chapter without three objectives, a
+recap, a quiz or exercises, a declared `@time` below 60% of the chapter's own reading time,
+duplicate titles or ids, a chapter no other chapter links to, and a link to a chapter id or route
+that does not exist. It prints the glossary-link coverage, the number of cross-links and the long
+sentences without failing on them.
+
 ## Before you open a pull request
 
-- [ ] `npm run verify:content`, `npm run typecheck`, and `npm run build` pass cleanly.
+- [ ] `npm run verify:content` (parser **and** content lint), `npm run verify:deploy`, `npm run typecheck`, and `npm run build` pass cleanly.
+- [ ] The layout still behaves at 375, 768, 1024, 1240 and 1440 px (see “Interface changes”).
+- [ ] `/`, `⌘K`, the palette and `/search?q=` all return the same hits, and `/progress`
+      updates when a chapter, quiz or bookmark changes.
 - [ ] `python3 guide-src/tools/audit.py --strict` reports **0 structural remarks**.
 - [ ] `python3 guide-src/tools/check.py` passes for every chapter you touched
       (and `--ext` if you touched a crate example).

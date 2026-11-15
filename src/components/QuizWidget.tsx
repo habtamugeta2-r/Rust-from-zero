@@ -31,8 +31,8 @@ export function QuizWidget({
     (q) => saved[String(q.index)] !== undefined
   ).length;
   const correctCount = questions.filter((q) => {
-    const picked = saved[String(q.index)];
-    return picked !== undefined && q.options[picked]?.correct;
+    const answer = saved[String(q.index)];
+    return answer !== undefined && q.options[answer.picked]?.correct;
   }).length;
 
   return (
@@ -40,24 +40,29 @@ export function QuizWidget({
       className="my-8 overflow-hidden rounded-card border border-[var(--g-line)] bg-[var(--g-surface)] shadow-card"
       aria-label="Quiz"
     >
-      <div className="flex flex-wrap items-center gap-2.5 border-b border-[var(--g-line)] bg-[var(--g-sunken)] px-5 py-3.5 font-sans">
-        <HelpCircle className="h-5 w-5 text-[var(--g-accent)]" aria-hidden="true" />
-        <span className="text-[15px] font-bold tracking-tight text-[var(--g-ink)]">{title}</span>
-        {answeredCount > 0 && (
-          <span
-            aria-live="polite"
-            className="ml-auto rounded-full bg-[var(--g-surface)] px-3 py-0.5 text-xs font-semibold text-[var(--g-ink2)] ring-1 ring-[var(--g-line2)]"
-          >
-            {correctCount} of {questions.length} correct
-          </span>
-        )}
+      <div className="flex flex-wrap items-center gap-2.5 border-b border-[var(--g-line)] bg-[var(--g-sunken)] px-4 py-3.5 font-sans sm:px-5">
+        <HelpCircle
+          className="h-5 w-5 shrink-0 text-[var(--g-accent)]"
+          aria-hidden="true"
+        />
+        <span className="text-[15px] font-bold tracking-tight text-[var(--g-ink)]">
+          {title}
+        </span>
+        <span
+          aria-live="polite"
+          className="ml-auto rounded-full bg-[var(--g-surface)] px-3 py-0.5 text-xs font-semibold text-[var(--g-ink2)] ring-1 ring-[var(--g-line2)]"
+        >
+          {answeredCount === 0
+            ? `${questions.length} ${questions.length === 1 ? "question" : "questions"}`
+            : `${correctCount} of ${questions.length} correct`}
+        </span>
         {answeredCount > 0 && (
           <button
             type="button"
             onClick={() => resetQuiz(quizId)}
             className="no-print inline-flex items-center gap-1 rounded-lg border border-[var(--g-line2)] bg-[var(--g-surface)] px-2.5 py-1 text-xs font-semibold text-[var(--g-ink2)] transition-colors hover:border-[var(--g-accent)] hover:text-[var(--g-accent)]"
           >
-            <RotateCcw className="h-3.5 w-3.5" />
+            <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
             Try again
           </button>
         )}
@@ -65,22 +70,34 @@ export function QuizWidget({
 
       <div className="divide-y divide-[var(--g-line)]">
         {questions.map((q) => {
-          const picked = saved[String(q.index)];
-          const isAnswered = picked !== undefined;
-          const isOk = isAnswered && q.options[picked]?.correct;
+          const answer = saved[String(q.index)];
+          const picked = answer?.picked;
+          const isAnswered = answer !== undefined;
+          const isOk = isAnswered && q.options[answer.picked]?.correct;
+          const promptId = `${quizId}-q${q.index}-prompt`;
 
           return (
-            <div key={q.index} className="p-5">
+            <fieldset key={q.index} className="min-w-0 border-0 p-4 sm:p-5">
+              <legend className="sr-only">
+                Question {q.index + 1} of {questions.length}
+              </legend>
+
               <div className="mb-3.5 flex items-start gap-3">
-                <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[var(--g-accent-soft)] font-sans text-xs font-bold text-[var(--g-accent)]">
+                <span
+                  aria-hidden="true"
+                  className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[var(--g-accent-soft)] font-sans text-xs font-bold text-[var(--g-accent)]"
+                >
                   {q.index + 1}
                 </span>
-                <div className="min-w-0 flex-1 [&>p:first-child]:mt-0 [&>p:last-child]:mb-0">
+                <div
+                  id={promptId}
+                  className="min-w-0 flex-1 [&>p:first-child]:mt-0 [&>p:last-child]:mb-0"
+                >
                   {q.promptNode}
                 </div>
               </div>
 
-              <div className="space-y-2 pl-9">
+              <div className="space-y-2 sm:pl-9">
                 {q.options.map((opt, oi) => {
                   const isPicked = picked === oi;
                   let cls =
@@ -102,13 +119,26 @@ export function QuizWidget({
                       key={oi}
                       type="button"
                       disabled={isAnswered}
-                      onClick={() => setQuizAnswer(quizId, q.index, oi)}
+                      aria-describedby={isAnswered ? promptId : undefined}
+                      onClick={() => setQuizAnswer(quizId, q.index, oi, opt.correct)}
                       className={`flex w-full items-start gap-3 rounded-lg border px-3.5 py-2.5 text-left font-sans text-[15px] leading-relaxed transition-colors ${cls} disabled:cursor-default`}
                     >
-                      <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded bg-[var(--g-surface)] text-xs font-bold text-[var(--g-ink2)] ring-1 ring-[var(--g-line2)]">
+                      <span
+                        aria-hidden="true"
+                        className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded bg-[var(--g-surface)] text-xs font-bold text-[var(--g-ink2)] ring-1 ring-[var(--g-line2)]"
+                      >
                         {opt.label}
                       </span>
                       <span className="flex-1 leading-snug">{opt.content}</span>
+                      {isAnswered && (
+                        <span className="sr-only">
+                          {opt.correct
+                            ? "— correct answer"
+                            : isPicked
+                              ? "— your answer, incorrect"
+                              : "— incorrect answer"}
+                        </span>
+                      )}
                     </button>
                   );
                 })}
@@ -116,7 +146,8 @@ export function QuizWidget({
 
               {isAnswered && (
                 <div
-                  className={`mt-3.5 ml-9 rounded-xl border px-4 py-3 font-sans text-sm leading-relaxed ${
+                  role="status"
+                  className={`mt-3.5 rounded-xl border px-4 py-3 font-sans text-sm leading-relaxed sm:ml-9 ${
                     isOk
                       ? "border-emerald-300 bg-emerald-50/60 text-emerald-950 dark:border-emerald-800/70 dark:bg-emerald-950/25 dark:text-emerald-100"
                       : "border-amber-300 bg-amber-50/60 text-amber-950 dark:border-amber-800/70 dark:bg-amber-950/25 dark:text-amber-100"
@@ -130,7 +161,7 @@ export function QuizWidget({
                   </div>
                 </div>
               )}
-            </div>
+            </fieldset>
           );
         })}
       </div>

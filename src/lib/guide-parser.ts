@@ -187,6 +187,18 @@ function splitMarkdownInline(text: string, ctx: ParseCtx): InlineNode[] {
         true
       );
     }
+    // A single leading slash is one of our own routes: `/progress`, `/search`.
+    // (A double slash is protocol-relative and stays external.)
+    if (target.startsWith("/") && !target.startsWith("//")) {
+      return keep(
+        {
+          type: "routeLink",
+          href: target,
+          children: expandPlaceholders(typo(label), stash),
+        },
+        true
+      );
+    }
     return keep(
       {
         type: "externalLink",

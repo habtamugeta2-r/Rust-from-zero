@@ -117,7 +117,7 @@ On Linux/macOS System V AMD64, user-space leaf functions can even use the **128 
 
 Nothing in Rust is magic once lowered past MIR into LLVM IR and machine code:
 
-- **Returning `Result<T, E>` or `Option<T>` (`?`):** Rust passes small enums in two registers (`RAX` for discriminant `0=Ok/None` or `1=Err/Some`, `RDX` for payload—or even **one** register with niche optimization, like `Option<NonNull<u8>>` where `RAX == 0` is `None`!). The `?` operator compiles down to a single `test rax, rax` + conditional jump `je` to the early-return cleanup path—no heap exception objects, no stack unwinding!
+- **Returning `Result<T, E>` or `Option<T>` (`?`):** Rust passes small enums in two registers (`RAX` for discriminant `0=Ok/None` or `1=Err/Some`, `RDX` for payload—or even **one** register with niche optimisation, like `Option<NonNull<u8>>` where `RAX == 0` is `None`!). The `?` operator compiles down to a single `test rax, rax` + conditional jump `je` to the early-return cleanup path—no heap exception objects, no stack unwinding!
 - **Passing `&[T]` or `&str`:** Occupies **two registers** (`RDI = ptr`, `RSI = len`). Passing `String` by value moves three 8-byte words (`ptr`, `cap`, `len`)—in registers or on the stack—while the character buffer stays put on the heap.
 - **Closures (`Fn` / `FnMut` / `FnOnce`):** Compile to an anonymous struct holding captured variables + an ordinary direct function call (monomorphised away—zero virtual dispatch!).
 - **Large structs (`> 16 bytes`) passed or returned by value:** Passed via hidden caller-allocated stack buffer pointer (`sret` in `RDI` for returns on System V AMD64), meaning returning a large `Struct` writes **directly into the caller's destination slot** in place without extra `memcpy` copies!

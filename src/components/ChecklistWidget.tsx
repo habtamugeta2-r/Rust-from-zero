@@ -9,9 +9,14 @@ export function ChecklistWidget({
   items: { id: string; content: React.ReactNode }[];
 }) {
   const { state, setSaved } = useGuideState();
+  const doneCount = items.filter((item) => Boolean(state.saved[item.id])).length;
 
   return (
-    <ul className="my-5 space-y-2.5 rounded-card border border-[var(--g-line)] bg-[var(--g-surface)] p-5 shadow-card">
+    <ul
+      role="group"
+      aria-label={`Checklist, ${doneCount} of ${items.length} complete`}
+      className="my-5 space-y-2.5 rounded-card border border-[var(--g-line)] bg-[var(--g-surface)] p-4 shadow-card sm:p-5"
+    >
       {items.map((item) => {
         const checked = Boolean(state.saved[item.id]);
         return (

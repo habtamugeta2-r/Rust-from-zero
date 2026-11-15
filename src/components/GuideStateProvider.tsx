@@ -10,8 +10,11 @@ import React, {
   useState,
 } from "react";
 import Link from "next/link";
+import { nextThemeMode, type ThemeMode } from "@/lib/theme";
 
 const STORAGE_KEY = "rust-guide-v1";
+
+export type { ThemeMode };
 
 export interface GlossaryTipItem {
   key: string;
@@ -19,12 +22,19 @@ export interface GlossaryTipItem {
   definitionPlain: string;
 }
 
+export interface QuizAnswer {
+  picked: number;
+  correct?: boolean;
+}
+
 export interface SavedState {
   done: Record<string, number>;
   saved: Record<string, number>;
-  quiz: Record<string, Record<string, number>>;
+  quiz: Record<string, Record<string, QuizAnswer>>;
+  /** Chapters the reader pinned for later. Curated, not progress. */
+  bookmarks: Record<string, number>;
   last?: string;
-  theme?: "light" | "dark";
+  theme?: ThemeMode;
   fs?: number;
 }
 
@@ -40,13 +50,23 @@ interface GuideContextValue {
   persistent: boolean;
   glossary: Record<string, GlossaryTipItem>;
   toggleDone: (chapterId: string) => void;
+  toggleBookmark: (chapterId: string) => void;
   setSaved: (key: string, checked: boolean) => void;
-  setQuizAnswer: (quizId: string, qIndex: number, optIndex: number) => void;
+  setQuizAnswer: (
+    quizId: string,
+    qIndex: number,
+    optIndex: number,
+    correct: boolean
+  ) => void;
   resetQuiz: (quizId: string) => void;
   setLastChapter: (chapterId: string) => void;
   resetAllProgress: () => void;
-  toggleTheme: () => void;
+  /** Resolved theme actually painted on screen. */
   theme: "light" | "dark";
+  /** What the reader chose: light, dark, or follow the operating system. */
+  themeMode: ThemeMode;
+  setThemeMode: (mode: ThemeMode) => void;
+  cycleTheme: () => void;
   fontSize: number;
   stepFontSize: (delta: number) => void;
   showToast: (msg: string) => void;
@@ -58,7 +78,39 @@ interface GuideContextValue {
 const GuideStateContext = createContext<GuideContextValue | null>(null);
 
 function emptyState(): SavedState {
-  return { done: {}, saved: {}, quiz: {} };
+  return { done: {}, saved: {}, quiz: {}, bookmarks: {} };
+}
+
+function normaliseQuiz(
+  raw: unknown
+): Record<string, Record<string, QuizAnswer>> {
+  if (!raw || typeof raw !== "object") return {};
+  const out: Record<string, Record<string, QuizAnswer>> = {};
+  for (const [quizId, answers] of Object.entries(
+    raw as Record<string, unknown>
+  )) {
+    if (!answers || typeof answers !== "object") continue;
+    const clean: Record<string, QuizAnswer> = {};
+    for (const [qIndex, value] of Object.entries(
+      answers as Record<string, unknown>
+    )) {
+      if (typeof value === "number") {
+        // 2.0 stored the bare option index; correctness was not recorded then.
+        clean[qIndex] = { picked: value };
+      } else if (value && typeof value === "object") {
+        const answer = value as Partial<QuizAnswer>;
+        if (typeof answer.picked === "number") {
+          clean[qIndex] = {
+            picked: answer.picked,
+            correct:
+              typeof answer.correct === "boolean" ? answer.correct : undefined,
+          };
+        }
+      }
+    }
+    if (Object.keys(clean).length > 0) out[quizId] = clean;
+  }
+  return out;
 }
 
 function normaliseState(raw: unknown): SavedState {
@@ -66,11 +118,36 @@ function normaliseState(raw: unknown): SavedState {
   return {
     done: s.done && typeof s.done === "object" ? s.done : {},
     saved: s.saved && typeof s.saved === "object" ? s.saved : {},
-    quiz: s.quiz && typeof s.quiz === "object" ? s.quiz : {},
+    quiz: normaliseQuiz(s.quiz),
+    bookmarks:
+      s.bookmarks && typeof s.bookmarks === "object" ? s.bookmarks : {},
     last: typeof s.last === "string" ? s.last : undefined,
-    theme: s.theme === "dark" || s.theme === "light" ? s.theme : undefined,
+    theme:
+      s.theme === "dark" || s.theme === "light" || s.theme === "system"
+        ? s.theme
+        : undefined,
     fs: typeof s.fs === "number" ? s.fs : undefined,
   };
+}
+
+function systemPrefersDark(): boolean {
+  return (
+    typeof window !== "undefined" &&
+    window.matchMedia("(prefers-color-scheme: dark)").matches
+  );
+}
+
+function resolveTheme(mode: ThemeMode): "light" | "dark" {
+  return mode === "system" ? (systemPrefersDark() ? "dark" : "light") : mode;
+}
+
+/** Paint the chosen theme onto <html>. Shared with the pre-paint script. */
+function applyTheme(mode: ThemeMode) {
+  const resolved = resolveTheme(mode);
+  document.documentElement.classList.toggle("dark", resolved === "dark");
+  document.documentElement.setAttribute("data-theme", resolved);
+  document.documentElement.setAttribute("data-theme-mode", mode);
+  return resolved;
 }
 
 export function GuideStateProvider({
@@ -82,6 +159,7 @@ export function GuideStateProvider({
 }) {
   const [state, setState] = useState<SavedState>(emptyState);
   const [persistent, setPersistent] = useState(true);
+  const [themeMode, setThemeModeState] = useState<ThemeMode>("system");
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [fontSize, setFontSize] = useState<number>(18);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
@@ -104,19 +182,15 @@ export function GuideStateProvider({
       canPersist = false;
     }
 
-    const prefersDark =
-      typeof window !== "undefined" &&
-      window.matchMedia("(prefers-color-scheme: dark)").matches;
-    const resolvedTheme = loaded.theme ?? (prefersDark ? "dark" : "light");
+    const resolvedMode: ThemeMode = loaded.theme ?? "system";
     const resolvedFs =
       loaded.fs && loaded.fs >= 15 && loaded.fs <= 24 ? loaded.fs : 18;
 
     setPersistent(canPersist);
     setState(loaded);
-    setTheme(resolvedTheme);
+    setThemeModeState(resolvedMode);
+    setTheme(applyTheme(resolvedMode));
     setFontSize(resolvedFs);
-    document.documentElement.classList.toggle("dark", resolvedTheme === "dark");
-    document.documentElement.setAttribute("data-theme", resolvedTheme);
     document.documentElement.style.setProperty("--guide-fs", `${resolvedFs}px`);
   }, []);
 
@@ -155,6 +229,18 @@ export function GuideStateProvider({
     [persistState]
   );
 
+  const toggleBookmark = useCallback(
+    (chapterId: string) => {
+      persistState((prev) => {
+        const bookmarks = { ...prev.bookmarks };
+        if (bookmarks[chapterId]) delete bookmarks[chapterId];
+        else bookmarks[chapterId] = 1;
+        return { ...prev, bookmarks };
+      });
+    },
+    [persistState]
+  );
+
   const setSaved = useCallback(
     (key: string, checked: boolean) => {
       persistState((prev) => {
@@ -168,10 +254,18 @@ export function GuideStateProvider({
   );
 
   const setQuizAnswer = useCallback(
-    (quizId: string, qIndex: number, optIndex: number) => {
+    (
+      quizId: string,
+      qIndex: number,
+      optIndex: number,
+      correct: boolean
+    ) => {
       persistState((prev) => {
         const quiz = { ...prev.quiz };
-        quiz[quizId] = { ...(quiz[quizId] ?? {}), [String(qIndex)]: optIndex };
+        quiz[quizId] = {
+          ...(quiz[quizId] ?? {}),
+          [String(qIndex)]: { picked: optIndex, correct },
+        };
         return { ...prev, quiz };
       });
     },
@@ -204,28 +298,60 @@ export function GuideStateProvider({
       done: {},
       saved: {},
       quiz: {},
+      // Bookmarks are a reading list, not progress: they survive a reset.
+      bookmarks: prev.bookmarks ?? {},
       theme: prev.theme,
       fs: prev.fs,
+      last: undefined,
     }));
-    showToast("Progress erased.");
+    showToast("Progress erased. Bookmarks were kept.");
   }, [persistState, showToast]);
 
-  const toggleTheme = useCallback(() => {
-    const nextTheme = theme === "dark" ? "light" : "dark";
-    setTheme(nextTheme);
-    document.documentElement.classList.toggle("dark", nextTheme === "dark");
-    document.documentElement.setAttribute("data-theme", nextTheme);
-    persistState((prev) => ({ ...prev, theme: nextTheme }));
-  }, [theme, persistState]);
+  const setThemeMode = useCallback(
+    (mode: ThemeMode) => {
+      setThemeModeState(mode);
+      setTheme(applyTheme(mode));
+      persistState((prev) => ({ ...prev, theme: mode }));
+    },
+    [persistState]
+  );
+
+  const cycleTheme = useCallback(() => {
+    const next = nextThemeMode(themeMode);
+    setThemeMode(next);
+    showToast(
+      next === "system"
+        ? `Theme follows your system setting (${systemPrefersDark() ? "dark" : "light"}).`
+        : `Theme set to ${next}.`
+    );
+  }, [setThemeMode, showToast, themeMode]);
+
+  // Follow the operating system while the reader is on "system".
+  useEffect(() => {
+    if (themeMode !== "system") return;
+    const mq = window.matchMedia("(prefers-color-scheme: dark)");
+    const apply = () => setTheme(applyTheme("system"));
+    apply();
+    mq.addEventListener("change", apply);
+    return () => mq.removeEventListener("change", apply);
+  }, [themeMode]);
 
   const stepFontSize = useCallback(
     (delta: number) => {
       const next = Math.min(24, Math.max(15, fontSize + delta));
+      if (next === fontSize) {
+        showToast(
+          delta > 0
+            ? "That is the largest text size."
+            : "That is the smallest text size."
+        );
+        return;
+      }
       setFontSize(next);
       document.documentElement.style.setProperty("--guide-fs", `${next}px`);
       persistState((prev) => ({ ...prev, fs: next }));
     },
-    [fontSize, persistState]
+    [fontSize, persistState, showToast]
   );
 
   const showGlossaryTip = useCallback(
@@ -234,8 +360,13 @@ export function GuideStateProvider({
       if (!entry) return;
       const r = target.getBoundingClientRect();
       const vw = document.documentElement.clientWidth;
-      const x = Math.min(Math.max(16, r.left + r.width / 2), vw - 16);
-      const above = r.bottom + 140 > window.innerHeight && r.top > 150;
+      // The tooltip is 20rem wide but never wider than the viewport; clamp by
+      // its real half-width so long definitions cannot hang off the edge.
+      const width = Math.min(320, vw - 32);
+      const half = width / 2;
+      const centre = r.left + r.width / 2;
+      const x = Math.min(Math.max(16 + half, centre), vw - 16 - half);
+      const above = r.bottom + 180 > window.innerHeight && r.top > 180;
       const y = above ? r.top - 8 : r.bottom + 8;
       setTip({ entry, x, y, above });
     },
@@ -245,17 +376,28 @@ export function GuideStateProvider({
   const hideGlossaryTip = useCallback(() => setTip(null), []);
 
   useEffect(() => {
+    if (!tip) return;
     const onScroll = () => setTip(null);
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") setTip(null);
     };
+    // Tapping anywhere outside the definition should dismiss it, which is what
+    // people expect on a touch screen where there is no mouseleave.
+    const onPointerDown = (e: PointerEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (target?.closest('[role="tooltip"]')) return;
+      if (target?.closest("[data-glossary-term]")) return;
+      setTip(null);
+    };
     window.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("keydown", onKey);
+    document.addEventListener("pointerdown", onPointerDown);
     return () => {
       window.removeEventListener("scroll", onScroll);
       window.removeEventListener("keydown", onKey);
+      document.removeEventListener("pointerdown", onPointerDown);
     };
-  }, []);
+  }, [tip]);
 
   const value = useMemo<GuideContextValue>(
     () => ({
@@ -263,13 +405,16 @@ export function GuideStateProvider({
       persistent,
       glossary,
       toggleDone,
+      toggleBookmark,
       setSaved,
       setQuizAnswer,
       resetQuiz,
       setLastChapter,
       resetAllProgress,
-      toggleTheme,
       theme,
+      themeMode,
+      setThemeMode,
+      cycleTheme,
       fontSize,
       stepFontSize,
       showToast,
@@ -282,13 +427,16 @@ export function GuideStateProvider({
       persistent,
       glossary,
       toggleDone,
+      toggleBookmark,
       setSaved,
       setQuizAnswer,
       resetQuiz,
       setLastChapter,
       resetAllProgress,
-      toggleTheme,
       theme,
+      themeMode,
+      setThemeMode,
+      cycleTheme,
       fontSize,
       stepFontSize,
       showToast,
@@ -311,9 +459,6 @@ export function GuideStateProvider({
             transform: tip.above ? "translate(-50%, -100%)" : "translate(-50%, 0)",
           }}
           className="no-print fixed z-50 w-80 max-w-[calc(100vw-2rem)] rounded-well border border-[var(--g-line2)] bg-[var(--g-surface)] p-3.5 text-sm shadow-pop"
-          onMouseEnter={() => {
-            /* keep visible while hovering tooltip */
-          }}
           onMouseLeave={hideGlossaryTip}
         >
           <div className="mb-1 flex items-center justify-between gap-2">
@@ -338,7 +483,7 @@ export function GuideStateProvider({
         <div
           role="status"
           aria-live="polite"
-          className="no-print fixed inset-x-4 bottom-4 z-50 mx-auto w-fit max-w-md rounded-well border border-[var(--g-line2)] bg-[var(--g-ink)] px-4 py-2.5 text-center text-sm font-medium text-[var(--g-bg)] shadow-pop sm:inset-x-auto sm:right-5 sm:bottom-5 sm:mx-0 sm:text-left"
+          className="no-print fixed inset-x-4 bottom-4 z-[70] mx-auto w-fit max-w-md rounded-well border border-[var(--g-line2)] bg-[var(--g-ink)] px-4 py-2.5 text-center text-sm font-medium text-[var(--g-bg)] shadow-pop sm:inset-x-auto sm:right-5 sm:bottom-5 sm:mx-0 sm:text-left"
         >
           {toastMsg}
         </div>

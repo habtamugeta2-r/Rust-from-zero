@@ -29,7 +29,7 @@ Running Process in Virtual Memory (Part IV)
 ```
 
 :::key Using this roadmap
-Read the parts in numerical order if you want the complete computer-systems story from transistors to TCP/IP and Linux systems tooling. If you want a focused route instead, check the route filters on the [home page](#home) or [chapter 0](#start).
+Read the parts in numerical order if you want the complete computer-systems story from transistors to TCP/IP and Linux systems tooling. If you want a focused route instead, check the route filters on the [home page](#home) or [chapter 0](#start). Tick chapters off as you finish them and [your progress](/progress) will keep the count, your quiz accuracy and your next chapter; to jump straight to a topic instead of reading in order, use [search](/search).
 :::
 
 ---

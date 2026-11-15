@@ -21,7 +21,7 @@ Reading from main DRAM takes around **60–100 nanoseconds**—an eternity to a 
 | **Use-after-free (UAF)** | Pointer still holds freed heap address; allocator reuses chunk for new data or attacker payload | Ownership moves/drops value; borrow checker verifies lifetimes end before `Drop` |
 | **Double free** | `free(p)` called twice corrupts allocator free-list into cycle or crash | Single owner guarantees `drop` executes exactly once |
 | **Buffer overflow / out-of-bounds** | `arr[i]` reads/writes past slab into adjacent locals or saved return address | Slice bounds checks (`len` stored in fat pointer) panic cleanly before out-of-bounds access |
-| **Uninitialized read** | Reading garbage stack leftovers (or old secret keys) from `sub rsp` frame | Definite initialization analysis forbids reading uninitialized bindings; `MaybeUninit` isolates raw uninit |
+| **Uninitialised read** | Reading garbage stack leftovers (or old secret keys) from `sub rsp` frame | Definite initialisation analysis forbids reading uninitialised bindings; `MaybeUninit` isolates raw uninit |
 | **Data race** | Two cores mutate non-atomic address concurrently -> torn/lost writes | `Send`/`Sync` + `XOR` mutability (`&mut T` exclusive, `&T` shared) rejects unsynchronised sharing |
 :::
 
@@ -35,7 +35,7 @@ At the CPU level, `&T`, `&mut T`, `*const T`, and `*mut T` all hold the exact sa
 Consider how a dangling pointer arises when ownership rules aren't enforced. In C, returning `&local` returns a stack address that gets overwritten on the very next function call. In safe Rust, the borrow checker catches it at compile time; if you deliberately force it with raw pointers inside `unsafe`, you step directly into **Undefined Behaviour** (UB), where LLVM's optimiser assumes dangling/out-of-bounds/aliased writes never happen and aggressively deletes or reorders code around them.
 
 :::warn Undefined behaviour is an optimiser contract, not "whatever the CPU does"
-Beginners often think UB means "the CPU reads whatever random byte happens to sit there." Wrong! LLVM treats UB as **impossible**. If a branch exhibits UB (such as reading uninitialized memory or dereferencing a null pointer), LLVM may delete the entire surrounding `if` check, skip null guards written *before* the line, or miscompile loops completely.
+Beginners often think UB means "the CPU reads whatever random byte happens to sit there." Wrong! LLVM treats UB as **impossible**. If a branch exhibits UB (such as reading uninitialised memory or dereferencing a null pointer), LLVM may delete the entire surrounding `if` check, skip null guards written *before* the line, or miscompile loops completely.
 :::
 
 ## The CPU memory hierarchy and 64-byte cache lines
@@ -279,7 +279,7 @@ Four `HotUser` structs fit cleanly inside a single 64-byte cache line (`4 * 16 =
 :::
 
 :::recap
-- Raw addresses behave identically in hardware, while Rust's references encode static non-null, alignment, lifetime, and `noalias` aliasing guarantees that outlaw UAF, double-free, buffer overflows, uninitialized reads, and data races.
+- Raw addresses behave identically in hardware, while Rust's references encode static non-null, alignment, lifetime, and `noalias` aliasing guarantees that outlaw UAF, double-free, buffer overflows, uninitialised reads, and data races.
 - CPUs pull memory in **64-byte cache lines** through L1 (~1 ns), L2 (~4 ns), L3 (~20 ns), and DRAM (~80 ns).
 - Sequential arrays (`Vec<T>`, **SoA** layouts, row-major scans) thrive on spatial locality and prefetching; pointer-chasing linked structures stall on DRAM latency.
 - **`#[repr(align(64))]`** prevents **false sharing** when distinct threads mutate adjacent atomics on separate CPU cores.

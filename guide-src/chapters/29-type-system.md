@@ -69,7 +69,7 @@ fn main() {
 42 7 233 hello hello [1, 2, 3] 42
 ```
 
-There is no `i32::from(some_i64)` and no `f32::from(some_f64)`. For a narrowing integer conversion, use `TryFrom` to check the range; for a float conversion, use an explicit cast only when its behavior is acceptable. The standard library avoids providing potentially lossy conversions through `From`.
+There is no `i32::from(some_i64)` and no `f32::from(some_f64)`. For a narrowing integer conversion, use `TryFrom` to check the range; for a float conversion, use an explicit cast only when its behaviour is acceptable. The standard library avoids providing potentially lossy conversions through `From`.
 
 ### `TryFrom` and `TryInto`: conversions that may fail
 

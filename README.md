@@ -51,7 +51,7 @@ Explore the full dependency graph in the **[Complete Learning Roadmap](./guide-s
 
 ## Run locally
 
-Requires Node.js 22+ and npm. From the repository root:
+Requires Node.js 22.12 or newer and npm. From the repository root:
 
 ```sh
 npm install
@@ -81,15 +81,78 @@ npx vercel        # preview deployment
 npx vercel --prod # production deployment
 ```
 
-Or import the repository in the Vercel dashboard (framework preset: **Next.js**;
-Node.js 22.x). The `/api/search` route runs as a serverless function; the
-chapter pages are fully prerendered static output.
+Or import the repository in the Vercel dashboard (framework preset: **Next.js**).
+The `/api/search` route runs as a serverless function; the chapter pages are
+fully prerendered static output.
+
+**Node.js version.** The build's Node version comes from the Vercel project
+setting, so `package.json` deliberately declares **no** `engines.node` pin. An
+`engines` pin overrides the project setting and makes Vercel print
+`Warning: Due to "engines": { "node": "22.x" } ... Node.js Version "26.x" will
+not apply`. Note that `npm install` copies the root `engines` block into
+`package-lock.json`, so a lockfile written while a pin existed keeps the warning
+alive after `package.json` is fixed — run `npm install --package-lock-only`
+after removing a pin. `npm run verify:deploy` (also part of CI) fails if either
+file pins a Node major or if the two versions drift apart. Locally, `npm install`
+works on any Node from 22.12 up.
+
+## The interface
+
+The reading experience is built from a small, explicit layout system rather than
+per-page utility soup, so every screen lines up and nothing can drift when a
+component changes.
+
+| Piece | Where | Behaviour |
+|---|---|---|
+| App shell | `.app-shell` (grid at `≥1024px`) | 18rem navigation column + content column; the column collapses when the sidebar is hidden |
+| Chapter page | `.chapter-page` / `.chapter-layout` | One column by default; from `1240px` (or from `1024px` once the navigation is collapsed) a second `15rem` column holds the table of contents, sticky under the header |
+| Reading measure | `.chapter-article` (`--measure`) | Prose is capped at 46rem (~72 characters) no matter how wide the window is |
+| Section sheet | `.toc-trigger` | Below `1240px` the outline opens as a dialog from the chapter header instead of being stacked on top of the article |
+| Type scale | `--guide-fs` | The A− / A+ control in the header (and in the drawer on phones) scales the prose only |
+| Command palette | `CommandPalette` | `/`, `⌘K` or `Ctrl-K` opens one dialog that searches every heading and paragraph *and* offers continue / progress / roadmap / theme |
+| Results page | `/search?q=` | Server-rendered, grouped by chapter, matched words highlighted, `noindex` |
+| Progress page | `/progress` | Chapters, quizzes, exercises and bookmarks in one dashboard |
+| Theme | `data-theme` on `<html>` | Light, dark, or *system*; the choice is applied before first paint |
+
+Geometry lives in CSS custom properties in
+[`src/app/globals.css`](./src/app/globals.css): `--shell-header`,
+`--shell-sidebar`, `--rail-w`, `--rail-gap`, `--page-max`, `--measure`. Sticky
+offsets, anchor jumps (`scroll-padding-top`) and the rail all read from those
+variables, which is why a jump never hides a heading behind the header.
+
+### Finding things and keeping your place
+
+Search is one implementation, not three. `src/lib/search.ts` ranks hits and cuts
+snippets from the same index for the API route, the palette and the results
+page, so they cannot disagree. Around it sit the four things a reader needs to
+stay oriented:
+
+- **Command palette** (`src/components/CommandPalette.tsx`) — the single search
+  surface, reachable from the header, the home page, or `/` and `⌘K`. Arrow keys
+  move, `Enter` opens, `Esc` closes and returns focus to the trigger.
+- **`/search`** — the same hits, but as a linkable page: grouped by chapter, with
+  suggested topics when the query is empty.
+- **`/progress`** — chapters done, overall completion, quiz accuracy, exercises
+  solved, bookmarks, what to read next, and what is still untouched.
+- **Bookmarks** — a chapter can be pinned from its header or its completion card;
+  bookmarks are a reading list and survive "Reset progress".
+
+Progress, quiz answers, solved exercises, bookmarks, text size and the theme
+choice live in `localStorage` under one key and are read after mount; the chapter
+paint itself never waits for them.
+
+Accessibility is part of the layout contract: one visible focus ring, a skip
+link, `aria-current` on the active chapter and section, a focus-trapped drawer,
+outline sheet and palette, keyboard scrolling for wide code and tables, `inert`
+instead of `aria-hidden` for the off-screen drawer, reduced-motion support, and a
+print stylesheet that drops every piece of chrome.
 
 ## Verify
 
 ```sh
 # Content & Next.js checks:
-npm run verify:content
+npm run verify:content # parser + content lint (style, structure, links, reading times)
+npm run verify:deploy   # no Node pin, lockfile version in sync
 npm run typecheck
 npm run build
 
@@ -108,6 +171,15 @@ python3 guide-src/tools/check.py serde web  # only chapters matching a substring
 python3 guide-src/tools/check.py --ext      # also cargo-check & cargo-test the crate examples
 python3 guide-src/tools/check.py --projects # rebuild & test all multi-file and Wasm/no_std projects
 ```
+
+`verify:content` is two gates: the parser refuses malformed chapters (unknown
+glossary term, exercise without a solution, link to a chapter that does not
+exist), and `src/lib/content-lint.ts` enforces the house style and teaching
+structure — British spelling, no `TODO`/`FIXME` in visible text, objectives +
+recap + quiz + exercises on every tracked chapter, declared reading times that
+agree with the prose, unique titles, an entry for every chapter in the link
+graph, and only the routes the app actually serves. It reports glossary-link
+coverage, cross-link count and long sentences without failing on them.
 
 CI verifies the Next.js build, `verify:content`, and `audit.py --strict` on
 every push, and **compiles and tests every verified Rust example and extracted

@@ -7,7 +7,7 @@
 @time 35
 @learn Trace execve() from shell fork() into the Linux kernel ELF loader | Understand ld-linux, PT_INTERP, GOT/PLT lazy symbol resolution, and ASLR | Inspect argc, argv, envp, and auxv placed on the initial stack | Follow Rust's crt0 / std::rt::lang_start_internal execution before your fn main() runs
 
-You type `./hello` in a terminal and press Enter. Less than a millisecond later, `"Hello, world!"` prints. Yet your `fn main()` is nowhere near the first code that ran! Between pressing Enter and entering `main()`, your shell, the Linux kernel, the dynamic linker `ld-linux-x86-64.so.2`, C runtime initialization (`crt0`), and Rust's standard runtime (`std::rt::lang_start`) execute hundreds of carefully ordered steps.
+You type `./hello` in a terminal and press Enter. Less than a millisecond later, `"Hello, world!"` prints. Yet your `fn main()` is nowhere near the first code that ran! Between pressing Enter and entering `main()`, your shell, the Linux kernel, the dynamic linker `ld-linux-x86-64.so.2`, C runtime initialisation (`crt0`), and Rust's standard runtime (`std::rt::lang_start`) execute hundreds of carefully ordered steps.
 
 :::analogy Opening night at a theatre
 A play does not begin when the lead actor speaks line one. First the stage manager unlocks the theatre (`execve`), turns on the stage lights and props (`mmap` of `.text`, `.rodata`, `.data`), hires external musicians (`ld-linux` loading `libc.so.6`), checks safety alarms (`stack canary` and `guard pages`), and cues the stagehand (`lang_start`)—only *then* does `fn main()` walk onto the stage.
@@ -125,10 +125,10 @@ Put these six startup events into exact chronological order from shell command t
 ::hint
 Start in the parent shell, enter the kernel, enter the dynamic linker, enter libc init, enter Rust std init, and finish in user code.
 ::solution
-`F` (Shell `fork()`) -> `B` (Kernel `execve` maps ELF & builds `auxv` stack) -> `C` (`ld-linux` loads shared libs & resolves GOT) -> `E` (`__libc_start_main` initializes libc & `.init_array`) -> `A` (`std::rt::lang_start_internal`) -> `D` (`fn main()`).
+`F` (Shell `fork()`) -> `B` (Kernel `execve` maps ELF & builds `auxv` stack) -> `C` (`ld-linux` loads shared libs & resolves GOT) -> `E` (`__libc_start_main` initialises libc & `.init_array`) -> `A` (`std::rt::lang_start_internal`) -> `D` (`fn main()`).
 :::
 
-:::exercise practice Inspecting `SIGPIPE` and `Termination` behavior
+:::exercise practice Inspecting `SIGPIPE` and `Termination` behaviour
 Write a Rust program whose `main()` returns `Result<(), &'static str>` and verify how `Termination` handles both `Ok(())` and `Err(...)`, without calling `std::process::exit` manually.
 ::hint
 Remember `fn main() -> Result<(), Box<dyn std::error::Error>>` uses `std::process::Termination` inside `std::rt::lang_start` to map `Ok(())` -> `ExitCode::SUCCESS` (`0`) and `Err` -> `ExitCode::FAILURE` (`1`).
@@ -186,7 +186,7 @@ Explain step by step how **GOT** (Global Offset Table) and **PLT** (Procedure Li
 
 ? What does the `AT_RANDOM` entry in the kernel's `auxv` vector supply at process startup?
 - The ASLR offset of `.text`
-+ 16 cryptographically random bytes from the kernel used to initialize stack canaries and `HashMap` seed hashes
++ 16 cryptographically random bytes from the kernel used to initialise stack canaries and `HashMap` seed hashes
 - The PID of the shell parent
 - The total RAM size in pages
 = `AT_RANDOM` avoids an extra startup syscall by handing 16 fresh random bytes right on the initial stack.

@@ -50,6 +50,8 @@ export function InlineRenderer({ nodes }: { nodes: InlineNode[] }) {
               <button
                 key={i}
                 type="button"
+                data-glossary-term={node.key}
+                title={`Glossary: ${node.text}`}
                 onMouseEnter={(e) => showGlossaryTip(node.key, e.currentTarget)}
                 onMouseLeave={hideGlossaryTip}
                 onFocus={(e) => showGlossaryTip(node.key, e.currentTarget)}
@@ -82,6 +84,16 @@ export function InlineRenderer({ nodes }: { nodes: InlineNode[] }) {
               </Link>
             );
           }
+          case "routeLink":
+            return (
+              <Link
+                key={i}
+                href={node.href}
+                className="font-medium text-[var(--g-accent)] underline decoration-[var(--g-accent)]/40 underline-offset-[3px] transition-colors hover:text-[var(--g-accent-hover)] hover:decoration-[var(--g-accent)]"
+              >
+                <InlineRenderer nodes={node.children} />
+              </Link>
+            );
           case "externalLink":
             return (
               <a
