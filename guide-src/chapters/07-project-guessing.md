@@ -79,6 +79,10 @@ Run it with `cargo run`, type something, and press {{Enter}}. Several things her
 
 The call is written over three lines only to keep it readable. `io::stdin().read_line(&mut input).expect("...")` is one instruction, ending in one semicolon.
 
+:::plain Modules and the path separator
+The double colon `::` is a path separator, like the `/` in a file name. Rust organises code into **modules**, and the standard library is a tree of them. `std::io` means "the `io` module inside `std`", and `std::cmp::Ordering` (you will meet it in Step 4) means "the type `Ordering` inside the `cmp` module inside `std`". A `use` line at the top of a file brings one of those names into your file so you can write it short: `use std::io;` lets you write `io::stdin()` instead of `std::io::stdin()`. Your own project is a module too — everything in `src/main.rs` lives in a module called `main` — and later you will split a program across several files, one module per file, in [chapter 17](#modules).
+:::
+
 ## Step 2: pick a secret number
 
 Rust's standard library is kept small on purpose. It has no random number generator. For that you use a **crate**: a package of Rust code that someone has published for others to use. Crates are shared on the website [crates.io](https://crates.io), and Cargo downloads them for you. A crate that your project uses is called a **dependency**.
@@ -155,6 +159,8 @@ The result of `parse` is one of two things: `Ok` with the number inside, or `Err
 :::key Errors are ordinary values
 In many languages a failed conversion "throws an exception" that flies through the program until something catches it, or crashes the program if nothing does. In Rust, a function that can fail returns a value that says "it worked, here is the result" or "it failed, here is why". The compiler makes sure you look at it. You cannot forget to handle the failure.
 :::
+
+You have now met one of Rust's two "maybe" types: **`Result`**, which means "it worked, here is the value" or "it failed, here is why". Its sibling is **`Option`**, which means "there is a value" or "there is none at all". Both are ordinary values that you handle with `match`, and [chapter 13](#enums) shows them in full.
 
 ## Step 4: compare the guess with the secret
 

@@ -103,6 +103,22 @@ You now have these tools:
 In many languages you must choose and combine separate tools: one to build, one to download libraries, one to run tests, one to format code. Rust ships a single official tool, Cargo, that does all of it, and almost every Rust project uses it in the same way. Once you know how one Rust project works, you know how they all work.
 :::
 
+### Three channels of Rust
+
+`rustup` can keep more than one version of Rust, called a **toolchain**. New Rust comes out on three channels:
+
+- **stable** — the version this guide targets. It is tested, and code that compiles on it keeps compiling on every future stable version. Start here.
+- **beta** — the next stable version, frozen and being tested. Useful for checking that your code will work on it before it becomes official.
+- **nightly** — a fresh build made every single day. New language features land here first, but it can change and break without warning.
+
+You can inspect and switch channels with `rustup`:
+
+- `rustup toolchain list` — the versions you have installed.
+- `rustup default stable` — make a channel the default for your work.
+- `rustup run nightly cargo build` — run one command under a different channel.
+
+You will rarely touch these. They matter mainly when you read a crate that says "requires nightly" — a promise to avoid for anything you want to share, since most people work on stable.
+
 ## A code editor
 
 You write code in a **code editor**: a text editor that understands programming. A word processor such as Microsoft Word will not work, because it stores hidden formatting in the file.
@@ -139,10 +155,14 @@ edition = "2024"
 [dependencies]
 ```
 
-The `name` and `version` are your project's name and version number. The `edition` says which set of language rules to use: `2024` is the newest. Under `[dependencies]` you will later list code from other people that your project uses. It is empty for now.
+The `name` and `version` are your project's name and version number. The `edition` says which set of language rules to use: `2024` is the newest. The idea of an edition is to let the language grow without breaking old code: a project pinned to edition `2021` still compiles under a newer compiler, while a project that opts into `2024` gets the newest rules. This is one of the ways Rust keeps its promise of stability, from [chapter 1](#what-is-rust). Under `[dependencies]` you will later list code from other people that your project uses. It is empty for now.
 
 :::analogy `Cargo.toml` is a project recipe card
 Imagine handing a friend a kit to assemble a shelf. You do not hand them a sack of random screws and hope for the best: you include a card saying *which* board, *which* screws, and *which* instructions to follow. `Cargo.toml` is that card for your program. Anyone with Cargo and that file can reproduce the exact same build on Windows, macOS or Linux.
+:::
+
+:::details A binary and a library
+A Rust project has two flavours. A **binary** is a program that runs: it has a `main` function, its code lives in `src/main.rs`, and building it gives you a file you can execute. A **library** is a set of functions and types that other projects call: it has no `main`, its code lives in `src/lib.rs`, and other programs use it by name from their own `Cargo.toml`. When a library is published, people call it a **crate**. `cargo new` gives you a binary by default; `cargo new mylib --lib` asks for a library instead, and a project can hold both at once — a binary that uses the library beside it. Almost everything useful in Rust is written as a library that some binary calls.
 :::
 
 Rust source files end in `.rs`. Cargo already wrote a small program into `src/main.rs`:
@@ -164,6 +184,10 @@ Hello, world!
 ```
 
 Cargo did three things, and reported each one: it **compiled** your code into a program, it **finished** without errors, and it **ran** the program, which printed `Hello, world!`. You are now a programmer.
+
+:::note Why the first run is slow and the next ones are fast
+If you look in the project folder now, there is a new `target/` directory full of compiled pieces. Cargo keeps everything it builds in there — your code and every library it downloaded. The first `cargo run` does all of that work, so it is the slow one. The next time, only the parts that changed are rebuilt and the rest comes back from the cache, which is why later runs finish in a fraction of a second. You never have to delete `target/` by hand; it is safe to remove and Cargo will rebuild it. It is exactly the kind of folder to keep out of your Git repository, and `cargo new` already adds it to the project's ignore list for that reason.
+:::
 
 ## What every part of the program means
 

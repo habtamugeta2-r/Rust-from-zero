@@ -178,7 +178,7 @@ In add_ten: 15
 In main: 5
 ```
 
-`add_ten` received a *copy* of the number 5 in its own variable `n`. Changing `n` does not touch `number` in `main`. Parameters and all variables declared inside a function are **local**: they exist only while that function runs. This keeps functions independent of each other. For simple values such as numbers, passing means copying. For bigger data the story is more interesting, and it is the subject of [Part 2](#ownership).
+`add_ten` received a *copy* of the number 5 in its own variable `n`. Changing `n` does not touch `number` in `main`. Notice that its parameter is declared `mut n`: a parameter is just an ordinary variable that happens to start out with the value you passed in, so if the body is going to change it, the parameter needs the `mut` keyword, exactly like any other variable from [chapter 3](#variables). Parameters and all variables declared inside a function are **local**: they exist only while that function runs. This keeps functions independent of each other. For simple values such as numbers, passing means copying. For bigger data the story is more interesting, and it is the subject of [Part 2](#ownership).
 
 ## Documenting a function
 
@@ -205,6 +205,13 @@ fn main() {
 - **It does one thing**, and its name says what: `calculate_tax`, `print_report`, `is_valid`. Function names use snake_case, like variables.
 - **It is short.** If you cannot see all of it on the screen, think about splitting it.
 - **It prefers returning a value over printing.** A function that returns its result can be reused anywhere. One that prints can only print.
+
+:::compare What Rust functions do not have
+Two things that other languages allow will surprise you, and they are missing on purpose.
+
+- **No default arguments.** You cannot write `fn greet(name: &str = "friend")`. If a value is sometimes optional, take it as an `Option` — a value that may or may not be there, from [chapter 13](#enums) — or write two small functions. The point is that every call is fully explicit: reading a call tells you exactly what went in, with nothing filled in behind the scenes.
+- **No overloading.** You cannot define two functions with the same name but different parameters in the same place. There is no `area` that takes two numbers and another `area` that takes three. If you want several related versions, give them different names (`area_of_two`, `area_of_three`) or let them take a type that says what you mean. Rust prefers one name to mean one thing.
+:::
 
 :::recap
 - `fn name(parameter: Type) -> ReturnType { body }` defines a function. `name(argument)` calls it.

@@ -121,6 +121,10 @@ fn main() {
 
 Take warnings seriously. A good habit is to keep your program free of them.
 
+:::details The special name `_`
+`_` is a name that means "I am not interested in this value". Write `let _ = something;` and Rust works out `something` and then throws the result away, without warning you. You will also see it in loops: `for _ in 1..4` runs its body four times and keeps no number at all. This is the deliberate opposite of a forgotten variable. A variable you named but never used earns a warning, because you probably meant to look at it; `_` says "no — leaving this out was on purpose".
+:::
+
 ## A first look at types
 
 Every value in Rust has a **type**: what kind of value it is. `3` is a whole number, `"red"` is text. The compiler works out the type by itself from the value you write. This is called **type inference**. You can also write the type yourself after a colon:
@@ -249,6 +253,8 @@ fn main() {
 ```error auto
 ```
 
+Rust checks this on **every possible path** through the code, not just the line you are looking at. If a value is given in both an `if` branch and its `else`, then after the branch the variable is certainly ready. If one path forgets to give it a value, the compiler reports it. This "always in a known state" rule is one of the ideas that makes Part 2 possible: because Rust tracks, line by line, exactly when a name holds a value, it can later promise that moved and borrowed data is never read in a state it should not be.
+
 :::compare Why this matters
 In C, reading a variable before giving it a value is allowed and gives you whatever happened to be in that spot of memory: a random-looking number, different on every run. Bugs like that can hide for years. In Java or JavaScript you would get a special "nothing" value (`null` or `undefined`) that often causes a crash later. Rust refuses to compile the program, so this whole kind of bug cannot happen.
 :::
@@ -279,6 +285,10 @@ An hour has 3600 seconds.
 | Name style | `snake_case` | `SCREAMING_SNAKE_CASE` |
 
 Constants give a meaning to "magic numbers". `price * VAT_RATE` explains itself. `price * 15` does not.
+
+:::details `const` and `static`
+You will sometimes meet a second keyword, `static`. Both `const` and `static` hold a value that lasts for the whole program, but they do it in different ways. A `const` is a fixed value that the compiler copies into every place it is used. A `static` lives in one fixed spot in memory for the program's lifetime, so it has an address of its own — a difference that only matters in the rare cases where you need a place in memory, not just a value. There is also a `static mut`, a shared value that may change. That is a deliberate exception to Rust's usual caution, and you should treat one the same way you would treat a variable that every part of the program can reach and rewrite. For almost everything in this guide, `const` is the right tool.
+:::
 
 :::recap
 - `let name = value;` creates a variable. It is immutable: it cannot change.

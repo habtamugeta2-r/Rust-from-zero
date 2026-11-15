@@ -44,6 +44,10 @@ A whole number is called an **integer**. Rust has several integer types. The nam
 | `i128`, `u128` | astronomically small | astronomically large |
 | `isize`, `usize` | as big as your computer's "natural" size: 64 bits on most machines today | |
 
+:::details Why −128 to 127, and not −127 to 127
+A signed type has the same number of bits as an unsigned one, but one of those bits is used to mark the sign. Rust stores signed numbers in a scheme called **two's complement**: to get the negative of a number, flip every bit and add one. The price of marking the sign that way is that there are exactly one more negative values than positive ones, which is why an `i8` reaches down to −128 but only up to 127. That "extra" −128 is where the asymmetry in the table comes from, and it is the reason the most-negative number has no positive twin of the same size. You never have to do any of this by hand — it just explains where the range comes from.
+:::
+
 You do not have to remember the limits. The program can tell you:
 
 ```rust run
@@ -110,6 +114,42 @@ Each person gets 3 apples.
 :::warn Dividing integers throws away the decimals
 `7 / 2` is `3`, not `3.5`. When both numbers are integers, the result is an integer, and anything after the decimal point is cut off. This is not rounding: `99 / 100` is `0`. The remainder operator `%` gives you the part that was left over. Together they are very useful, as you will see in the exercises.
 :::
+
+### Bitwise operators
+
+Sometimes you need to work with the bits of a number directly — for example when you read a piece of hardware, or when you pack several small yes-or-no flags into one number. Rust has operators that combine the bits of two numbers, column by column.
+
+| Operator | Name | What it does, for each pair of bits |
+|---|---|---|
+| `&` | **and** | 1 only if *both* bits are 1 |
+| `\|` | **or** | 1 if *at least one* bit is 1 |
+| `^` | **xor** (exclusive or) | 1 if the two bits are *different* |
+| `!` | **not** | flips every bit of one number |
+| `<< n` | **shift left** by n | moves every bit n places left (the same as multiplying by 2 to the power n) |
+| `>> n` | **shift right** by n | moves every bit n places right (the same as dividing by 2 to the power n) |
+
+```rust run
+fn main() {
+    let a = 12;   // 1100 in binary
+    let b = 10;   // 1010 in binary
+    println!("{} & {} = {}", a, b, a & b);
+    println!("{} | {} = {}", a, b, a | b);
+    println!("{} ^ {} = {}", a, b, a ^ b);
+    println!("{} << 2 = {}", a, a << 2);
+    println!("{} >> 2 = {}", b, b >> 2);
+    println!("{:b}  {:b}", a, b);
+}
+```
+```output
+12 & 10 = 8
+12 | 10 = 14
+12 ^ 10 = 6
+12 << 2 = 48
+10 >> 2 = 2
+1100  1010
+```
+
+You will not reach for these every day, but recognising them matters. A line of code full of `&`, `|` and `<<` is usually doing something with flags or with the raw bits of a number, and the table above lets you read what it means instead of guessing.
 
 ### When a number gets too big: overflow
 
@@ -189,6 +229,10 @@ Look at the last line: 0.1 + 0.2 is not exactly 0.3. A float stores a number in 
 
 - Never test floats for exact equality. Check that the difference is very small instead.
 - Do not use floats for money. Store the amount in the smallest unit (cents) as an integer.
+:::
+
+:::details Where the extra digits come from
+A `f64` keeps its number in three parts: a sign bit, a small set of bits that choose the *size* of the number (the exponent), and the remaining bits that store its *digits* (the fraction). There are not enough digit-bits to write most decimal fractions exactly, so the number is stored as the closest value that *can* be written. That stored value is a hair away from 0.1, and when you add a second value that is a hair away from 0.2, the result is a hair away from 0.3 — which is why the printed answer ends with all those digits. The scheme is called **IEEE-754**, and every mainstream language uses it, so this behaviour is not a Rust quirk and it will not go away.
 :::
 
 ## Rust never converts numbers behind your back
@@ -286,7 +330,7 @@ true
 r
 ```
 
-Single quotes mean one character (`'a'`, a `char`). Double quotes mean text of any length (`"a"`, a *string*). They are different types. Strings get their own chapter ([chapter 11](#slices-strings)), because text is more complicated than it looks.
+Single quotes mean one character (`'a'`, a `char`). Double quotes mean text of any length (`"a"`, a *string*). They are different types. A `char` always takes four bytes, which is exactly enough for any single **Unicode scalar value**. There are a few things that a person sees as one character — some emoji, a letter with a separate accent mark — that are actually built from several of these units, and those do not fit in one `char`. You will meet that subtlety properly in [chapter 11](#slices-strings), because text is more complicated than it looks.
 
 ## Groups of values: tuples
 
