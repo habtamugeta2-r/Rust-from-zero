@@ -11,6 +11,7 @@ than no change.
 ```sh
 npm install                       # installs Next.js, Shiki, Tailwind & TypeScript
 npm run verify:content            # checks every chapter, link & captured output
+npm run verify:deploy             # no Node pin; lockfile version in sync
 npm run typecheck && npm run build
 python3 guide-src/tools/audit.py --strict   # must report "0 structural remark(s)"
 ```
@@ -74,9 +75,33 @@ captured-output mechanism.
 4. If the example needs a crate, add the crate and version to
    `guide-src/tools/ext-main-Cargo.toml`, and check it with `--ext`.
 
+## Interface changes
+
+The reading layout is deliberately boring and explicit. If you touch `src/`
+components, keep these rules or the layout will regress the way it did in 1.x:
+
+1. **Layout in CSS, not in utility soup.** Page geometry lives in
+   `src/app/globals.css` (`.app-shell`, `.chapter-page`, `.chapter-layout`,
+   `.chapter-article`, `.chapter-aside`). Add a column by editing the grid
+   template there, not by reordering flex children with `order-*`.
+2. **Never put a second scroll container between a sticky element and the
+   page.** The chapter rail sticks because nothing in its ancestor chain sets
+   `overflow`; keep it that way.
+3. **One breakpoint per decision.** The outline is a grid column from `1240px`,
+   and from `1024px` when `data-sidebar="closed"` frees up the navigation's
+   width. Those two media blocks in `globals.css`, plus the `.toc-trigger`
+   rules and the `data-rail` computation, are the only places that decide it —
+   change them together.
+4. **Derive offsets from tokens.** `--shell-header`, `--rail-w`, `--measure`
+   and friends already encode the geometry; hard-coded `top-20` style offsets
+   are what made anchor jumps land in the wrong place.
+5. **Test at 375, 768, 1024, 1240 and 1440 px wide**, in both themes, with the
+   sidebar open and closed, and with `Tab` only.
+
 ## Before you open a pull request
 
-- [ ] `npm run verify:content`, `npm run typecheck`, and `npm run build` pass cleanly.
+- [ ] `npm run verify:content`, `npm run verify:deploy`, `npm run typecheck`, and `npm run build` pass cleanly.
+- [ ] The layout still behaves at 375, 768, 1024, 1240 and 1440 px (see “Interface changes”).
 - [ ] `python3 guide-src/tools/audit.py --strict` reports **0 structural remarks**.
 - [ ] `python3 guide-src/tools/check.py` passes for every chapter you touched
       (and `--ext` if you touched a crate example).

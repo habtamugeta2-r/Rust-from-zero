@@ -221,11 +221,17 @@ export function GuideStateProvider({
   const stepFontSize = useCallback(
     (delta: number) => {
       const next = Math.min(24, Math.max(15, fontSize + delta));
+      if (next === fontSize) {
+        showToast(
+          delta > 0 ? "That is the largest text size." : "That is the smallest text size."
+        );
+        return;
+      }
       setFontSize(next);
       document.documentElement.style.setProperty("--guide-fs", `${next}px`);
       persistState((prev) => ({ ...prev, fs: next }));
     },
-    [fontSize, persistState]
+    [fontSize, persistState, showToast]
   );
 
   const showGlossaryTip = useCallback(
@@ -234,8 +240,13 @@ export function GuideStateProvider({
       if (!entry) return;
       const r = target.getBoundingClientRect();
       const vw = document.documentElement.clientWidth;
-      const x = Math.min(Math.max(16, r.left + r.width / 2), vw - 16);
-      const above = r.bottom + 140 > window.innerHeight && r.top > 150;
+      // The tooltip is 20rem wide but never wider than the viewport; clamp by
+      // its real half-width so long definitions cannot hang off the edge.
+      const width = Math.min(320, vw - 32);
+      const half = width / 2;
+      const centre = r.left + r.width / 2;
+      const x = Math.min(Math.max(16 + half, centre), vw - 16 - half);
+      const above = r.bottom + 180 > window.innerHeight && r.top > 180;
       const y = above ? r.top - 8 : r.bottom + 8;
       setTip({ entry, x, y, above });
     },
@@ -245,17 +256,28 @@ export function GuideStateProvider({
   const hideGlossaryTip = useCallback(() => setTip(null), []);
 
   useEffect(() => {
+    if (!tip) return;
     const onScroll = () => setTip(null);
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") setTip(null);
     };
+    // Tapping anywhere outside the definition should dismiss it, which is what
+    // people expect on a touch screen where there is no mouseleave.
+    const onPointerDown = (e: PointerEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (target?.closest('[role="tooltip"]')) return;
+      if (target?.closest("[data-glossary-term]")) return;
+      setTip(null);
+    };
     window.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("keydown", onKey);
+    document.addEventListener("pointerdown", onPointerDown);
     return () => {
       window.removeEventListener("scroll", onScroll);
       window.removeEventListener("keydown", onKey);
+      document.removeEventListener("pointerdown", onPointerDown);
     };
-  }, []);
+  }, [tip]);
 
   const value = useMemo<GuideContextValue>(
     () => ({
@@ -311,9 +333,6 @@ export function GuideStateProvider({
             transform: tip.above ? "translate(-50%, -100%)" : "translate(-50%, 0)",
           }}
           className="no-print fixed z-50 w-80 max-w-[calc(100vw-2rem)] rounded-well border border-[var(--g-line2)] bg-[var(--g-surface)] p-3.5 text-sm shadow-pop"
-          onMouseEnter={() => {
-            /* keep visible while hovering tooltip */
-          }}
           onMouseLeave={hideGlossaryTip}
         >
           <div className="mb-1 flex items-center justify-between gap-2">

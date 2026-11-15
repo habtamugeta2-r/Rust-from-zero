@@ -51,7 +51,7 @@ Explore the full dependency graph in the **[Complete Learning Roadmap](./guide-s
 
 ## Run locally
 
-Requires Node.js 22+ and npm. From the repository root:
+Requires Node.js 22.12 or newer and npm. From the repository root:
 
 ```sh
 npm install
@@ -81,15 +81,53 @@ npx vercel        # preview deployment
 npx vercel --prod # production deployment
 ```
 
-Or import the repository in the Vercel dashboard (framework preset: **Next.js**;
-Node.js 22.x). The `/api/search` route runs as a serverless function; the
-chapter pages are fully prerendered static output.
+Or import the repository in the Vercel dashboard (framework preset: **Next.js**).
+The `/api/search` route runs as a serverless function; the chapter pages are
+fully prerendered static output.
+
+**Node.js version.** The build's Node version comes from the Vercel project
+setting, so `package.json` deliberately declares **no** `engines.node` pin. An
+`engines` pin overrides the project setting and makes Vercel print
+`Warning: Due to "engines": { "node": "22.x" } ... Node.js Version "26.x" will
+not apply`. Note that `npm install` copies the root `engines` block into
+`package-lock.json`, so a lockfile written while a pin existed keeps the warning
+alive after `package.json` is fixed — run `npm install --package-lock-only`
+after removing a pin. `npm run verify:deploy` (also part of CI) fails if either
+file pins a Node major or if the two versions drift apart. Locally, `npm install`
+works on any Node from 22.12 up.
+
+## The interface
+
+The reading experience is built from a small, explicit layout system rather than
+per-page utility soup, so every screen lines up and nothing can drift when a
+component changes.
+
+| Piece | Where | Behaviour |
+|---|---|---|
+| App shell | `.app-shell` (grid at `≥1024px`) | 18rem navigation column + content column; the column collapses when the sidebar is hidden |
+| Chapter page | `.chapter-page` / `.chapter-layout` | One column by default; from `1240px` (or from `1024px` once the navigation is collapsed) a second `15rem` column holds the table of contents, sticky under the header |
+| Reading measure | `.chapter-article` (`--measure`) | Prose is capped at 46rem (~72 characters) no matter how wide the window is |
+| Section sheet | `.toc-trigger` | Below `1240px` the outline opens as a dialog from the chapter header instead of being stacked on top of the article |
+| Type scale | `--guide-fs` | The A− / A+ control in the header (and in the drawer on phones) scales the prose only |
+
+Geometry lives in CSS custom properties in
+[`src/app/globals.css`](./src/app/globals.css): `--shell-header`,
+`--shell-sidebar`, `--rail-w`, `--rail-gap`, `--page-max`, `--measure`. Sticky
+offsets, anchor jumps (`scroll-padding-top`) and the rail all read from those
+variables, which is why a jump never hides a heading behind the header.
+
+Accessibility is part of the layout contract: one visible focus ring, a skip
+link, `aria-current` on the active chapter and section, a focus-trapped drawer
+and outline sheet, keyboard scrolling for wide code and tables, `inert` instead
+of `aria-hidden` for the off-screen drawer, reduced-motion support, and a print
+stylesheet that drops every piece of chrome.
 
 ## Verify
 
 ```sh
 # Content & Next.js checks:
 npm run verify:content
+npm run verify:deploy   # no Node pin, lockfile version in sync
 npm run typecheck
 npm run build
 

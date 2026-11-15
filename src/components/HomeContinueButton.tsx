@@ -3,7 +3,7 @@
 import React, { useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, RotateCcw } from "lucide-react";
 import type { ChapterSummary } from "@/lib/guide-types";
 import { useGuideState } from "./GuideStateProvider";
 
@@ -43,9 +43,10 @@ export function HomeContinueButton({
       {last && (
         <Link
           href={`/chapters/${last.id}`}
-          className="inline-flex items-center gap-2 rounded-well border border-[var(--g-line2)] bg-[var(--g-surface)] px-5 py-3 text-sm font-semibold text-[var(--g-ink)] shadow-card transition-colors hover:border-[var(--g-accent)]"
+          className="inline-flex max-w-full items-center gap-2 rounded-well border border-[var(--g-line2)] bg-[var(--g-surface)] px-5 py-3 text-sm font-semibold text-[var(--g-ink)] shadow-card transition-colors hover:border-[var(--g-accent)]"
         >
-          <span>Continue: {last.title}</span>
+          <RotateCcw className="h-4 w-4 shrink-0 text-[var(--g-accent)]" aria-hidden="true" />
+          <span className="truncate">Continue: {last.title}</span>
         </Link>
       )}
     </div>

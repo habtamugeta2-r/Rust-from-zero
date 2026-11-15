@@ -1,6 +1,7 @@
 import React from "react";
 import Link from "next/link";
 import { BadgeCheck } from "lucide-react";
+import { GuideSearchButton } from "@/components/GuideSearchButton";
 import { HomeContinueButton } from "@/components/HomeContinueButton";
 import { HomeRoutesSection } from "@/components/HomeRoutesSection";
 import { loadGuide } from "@/lib/guide-parser";
@@ -65,7 +66,7 @@ export default function HomePage() {
   ];
 
   return (
-    <div className="mx-auto max-w-6xl px-5 py-10 sm:px-8 lg:py-14 2xl:max-w-7xl">
+    <div className="mx-auto w-full max-w-[var(--page-max)] px-5 py-10 sm:px-8 lg:py-14">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
@@ -78,10 +79,13 @@ export default function HomePage() {
       {/* Hero */}
       <section className="grid items-center gap-10 lg:grid-cols-[1.25fr_0.95fr] lg:gap-14 2xl:gap-20">
         <div>
-          <p className="inline-flex items-center gap-2 rounded-full border border-[var(--g-line)] bg-[var(--g-surface)] px-3.5 py-1.5 font-sans text-xs font-semibold text-[var(--g-ink2)] shadow-card">
-            <BadgeCheck className="h-3.5 w-3.5 text-[var(--g-accent)]" />
-            Self-study course · Rust 2024 edition · tested on Rust 1.100
-          </p>
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="inline-flex items-center gap-2 rounded-full border border-[var(--g-line)] bg-[var(--g-surface)] px-3.5 py-1.5 font-sans text-xs font-semibold text-[var(--g-ink2)] shadow-card">
+              <BadgeCheck className="h-3.5 w-3.5 text-[var(--g-accent)]" />
+              Self-study course · Rust 2024 edition · tested on Rust 1.100
+            </p>
+            <GuideSearchButton chapters={stats.trackedChapters} />
+          </div>
 
           <h1 className="mt-5 font-sans text-[40px] leading-[1.08] font-bold tracking-[-0.02em] text-balance text-[var(--g-ink)] sm:text-[52px] 2xl:text-[58px]">
             Learn Rust from zero.
@@ -89,7 +93,7 @@ export default function HomePage() {
             <span className="text-[var(--g-accent)]">Understand the whole machine.</span>
           </h1>
 
-          <p className="mt-5 max-w-xl font-sans text-[17px] leading-relaxed text-[var(--g-ink2)]">
+          <p className="mt-5 max-w-xl font-sans text-[16.5px] leading-relaxed text-pretty text-[var(--g-ink2)] sm:text-[17px]">
             A complete guide to computer systems, Rust internals, and real-world
             software—starting from absolute zero. Follow the full journey from
             transistors, binary, and CPU registers through compilation, memory
@@ -186,12 +190,12 @@ export default function HomePage() {
 
       {/* How this guide works */}
       <section className="mt-20">
-        <h2 className="font-sans text-[26px] font-bold tracking-tight text-[var(--g-ink)]">
+        <h2 className="font-sans text-[24px] font-bold tracking-tight text-balance text-[var(--g-ink)] sm:text-[26px]">
           How this guide works
         </h2>
         <div className="mt-7 grid gap-x-6 gap-y-8 sm:grid-cols-2 lg:grid-cols-4">
           {steps.map((s) => (
-            <div key={s.n} className="border-t-2 border-[var(--g-line)] pt-4">
+            <div key={s.n} className="group border-t-2 border-[var(--g-line)] pt-4">
               <div className="flex items-baseline justify-between font-sans">
                 <span className="text-[13px] font-bold tabular-nums text-[var(--g-accent)]">
                   {s.n}

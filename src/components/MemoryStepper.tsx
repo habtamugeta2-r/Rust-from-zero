@@ -98,18 +98,23 @@ export function MemoryStepper({
             type="button"
             disabled={stepIdx === 0}
             onClick={() => setStepIdx((i) => Math.max(0, i - 1))}
-            className="inline-flex items-center gap-1 rounded-lg border border-[var(--g-line2)] bg-[var(--g-surface)] px-2.5 py-1 text-xs font-semibold text-[var(--g-ink2)] transition-colors hover:border-[var(--g-accent)] disabled:opacity-40"
+            aria-label="Previous step"
+            className="inline-flex min-h-9 items-center gap-1 rounded-lg border border-[var(--g-line2)] bg-[var(--g-surface)] px-2.5 py-1 text-xs font-semibold text-[var(--g-ink2)] transition-colors hover:border-[var(--g-accent)] disabled:opacity-40"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
             Back
           </button>
-          <span className="min-w-[5.5rem] text-center text-xs font-medium text-[var(--g-ink3)]">
+          <span
+            aria-live="polite"
+            className="min-w-[5.5rem] text-center text-xs font-medium text-[var(--g-ink3)]"
+          >
             Step {stepIdx + 1} of {steps.length}
           </span>
           <button
             type="button"
             onClick={() => setStepIdx(isLast ? 0 : stepIdx + 1)}
-            className="inline-flex items-center gap-1 rounded-lg bg-[var(--g-accent)] px-3 py-1 text-xs font-semibold text-white transition-colors hover:bg-[var(--g-accent-hover)]"
+            aria-label={isLast ? "Start over from step 1" : "Next step"}
+            className="inline-flex min-h-9 items-center gap-1 rounded-lg bg-[var(--g-accent)] px-3 py-1 text-xs font-semibold text-white transition-colors hover:bg-[var(--g-accent-hover)]"
           >
             {isLast ? (
               <>
@@ -126,7 +131,12 @@ export function MemoryStepper({
         </div>
       </div>
 
-      <ol className="divide-y divide-[var(--g-line)]/40 overflow-x-auto bg-[var(--g-code-bg)] py-2 font-mono text-[13.5px] leading-relaxed">
+      <ol
+        className="divide-y divide-[var(--g-line)]/40 overflow-x-auto bg-[var(--g-code-bg)] py-2 font-mono text-[13.5px] leading-relaxed"
+        data-scroll-pane
+        tabIndex={0}
+        aria-label="Source code with the current line highlighted"
+      >
         {highlightedLines.map((htmlLine, idx) => {
           const lineNum = idx + 1;
           const active = current.lines.includes(lineNum);

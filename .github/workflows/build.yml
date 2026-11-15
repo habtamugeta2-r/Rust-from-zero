@@ -27,6 +27,12 @@ jobs:
       - name: Install Node dependencies
         run: npm ci
 
+      # Vercel takes the build's Node.js version from the project setting; a
+      # pin in package.json *or* in the lockfile's root entry overrides it and
+      # produces a build warning. This also checks the two versions agree.
+      - name: Deployment configuration
+        run: npm run verify:deploy
+
       - name: Verify guide chapters and captured outputs
         run: npm run verify:content
 

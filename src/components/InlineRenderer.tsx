@@ -50,6 +50,8 @@ export function InlineRenderer({ nodes }: { nodes: InlineNode[] }) {
               <button
                 key={i}
                 type="button"
+                data-glossary-term={node.key}
+                title={`Glossary: ${node.text}`}
                 onMouseEnter={(e) => showGlossaryTip(node.key, e.currentTarget)}
                 onMouseLeave={hideGlossaryTip}
                 onFocus={(e) => showGlossaryTip(node.key, e.currentTarget)}

@@ -47,10 +47,10 @@ export function HomeRoutesSection({
 
   return (
     <section className="mt-20">
-      <h2 className="font-sans text-[26px] font-bold tracking-tight text-[var(--g-ink)]">
+      <h2 className="font-sans text-[24px] font-bold tracking-tight text-balance text-[var(--g-ink)] sm:text-[26px]">
         Your learning path
       </h2>
-      <p className="mt-2 max-w-2xl font-sans text-[15px] leading-relaxed text-[var(--g-ink2)]">
+      <p className="mt-2 max-w-2xl font-sans text-[15px] leading-relaxed text-pretty text-[var(--g-ink2)]">
         Work through the core parts in order, or highlight a goal-based route
         below so you only tackle what matches what you want to build. Tick
         chapters off as you go and your progress is saved in this browser.
@@ -136,11 +136,25 @@ export function HomeRoutesSection({
                     </span>
                   )}
                   {part.key !== "app" && (
-                    <span className="ml-auto text-xs font-medium tabular-nums text-[var(--g-ink3)]">
+                    <span className="ml-auto text-xs font-medium text-[var(--g-ink3)] tabular-nums">
                       {doneCount}/{partChapters.length} done
                     </span>
                   )}
                 </div>
+
+                {part.key !== "app" && (
+                  <div
+                    aria-hidden="true"
+                    className="mt-2 h-1 overflow-hidden rounded-full bg-[var(--g-line)]"
+                  >
+                    <div
+                      className="h-full rounded-full bg-[var(--g-accent)] transition-[width] duration-300"
+                      style={{
+                        width: `${Math.round((100 * doneCount) / partChapters.length)}%`,
+                      }}
+                    />
+                  </div>
+                )}
 
                 {part.blurb && (
                   <p className="mt-1.5 font-sans text-sm leading-relaxed text-[var(--g-ink2)]">

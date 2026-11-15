@@ -13,6 +13,7 @@ import {
 import { CALLOUT_LABELS } from "@/lib/guide-config";
 import type { BlockNode, CalloutKind } from "@/lib/guide-types";
 import { highlightCode, highlightRustLines } from "@/lib/highlight";
+import { inlinePlainText } from "@/lib/guide-parser";
 import { ChecklistWidget } from "./ChecklistWidget";
 import { CodeBlock } from "./CodeBlock";
 import { ExerciseCard } from "./ExerciseCard";
@@ -94,13 +95,20 @@ async function renderBlock(
       // instead of staying fixed while the prose grows around them.
       const cls =
         block.level === 2
-          ? "mt-12 mb-4 scroll-mt-20 border-b border-[var(--g-line)] pb-2.5 font-sans text-[1.45em] leading-tight font-bold tracking-[-0.015em] text-[var(--g-ink)]"
+          ? "group mt-12 mb-4 border-b border-[var(--g-line)] pb-2.5 font-sans text-[1.45em] leading-tight font-bold tracking-[-0.015em] text-[var(--g-ink)]"
           : block.level === 3
-            ? "mt-8 mb-3 scroll-mt-20 font-sans text-[1.14em] leading-snug font-bold tracking-tight text-[var(--g-ink)]"
-            : "mt-6 mb-2 scroll-mt-20 font-sans text-[1em] font-bold text-[var(--g-ink)]";
+            ? "group mt-8 mb-3 font-sans text-[1.14em] leading-snug font-bold tracking-tight text-[var(--g-ink)]"
+            : "group mt-6 mb-2 font-sans text-[1em] font-bold text-[var(--g-ink)]";
       return (
         <HeadingTag key={key} id={block.id} className={cls}>
           <InlineRenderer nodes={block.children} />
+          <a
+            href={`#${block.id}`}
+            className="heading-anchor"
+            aria-label={`Link to “${inlinePlainText(block.children)}”`}
+          >
+            #
+          </a>
         </HeadingTag>
       );
     }
@@ -119,7 +127,7 @@ async function renderBlock(
       return (
         <blockquote
           key={key}
-          className="my-5 border-l-4 border-[var(--g-line2)] pl-4 italic text-[var(--g-ink2)]"
+          className="my-5 border-l-4 border-[var(--g-line2)] pl-5 text-[var(--g-ink2)] italic"
         >
           <BlockList blocks={block.blocks} />
         </blockquote>
@@ -150,7 +158,11 @@ async function renderBlock(
       return (
         <div
           key={key}
-          className="my-6 overflow-x-auto rounded-xl border border-[var(--g-line)] bg-[var(--g-surface)]"
+          className="table-pane my-6"
+          role="group"
+          aria-label="Table"
+          data-scroll-pane
+          tabIndex={0}
         >
           <table className="w-full border-collapse text-left font-sans text-[14.5px]">
             <thead>
@@ -158,9 +170,14 @@ async function renderBlock(
                 {block.headers.map((h, hi) => (
                   <th
                     key={hi}
+                    scope="col"
                     className="px-4 py-2.5 font-bold text-[var(--g-ink)]"
                   >
-                    <InlineRenderer nodes={h} />
+                    {inlinePlainText(h).trim() === "" ? (
+                      <span className="sr-only">Column {hi + 1}</span>
+                    ) : (
+                      <InlineRenderer nodes={h} />
+                    )}
                   </th>
                 ))}
               </tr>
@@ -228,6 +245,7 @@ async function renderBlock(
       return (
         <aside
           key={key}
+          role="note"
           className={`my-6 rounded-well border px-5 py-4 ${style.border} ${style.bg}`}
         >
           <div
@@ -252,10 +270,13 @@ async function renderBlock(
       return (
         <details
           key={key}
-          className="my-5 rounded-card border border-[var(--g-line)] bg-[var(--g-surface)] px-5 py-3.5"
+          className="group my-5 rounded-card border border-[var(--g-line)] bg-[var(--g-surface)] px-5 py-3.5"
         >
           <summary className="flex cursor-pointer list-none items-center gap-2 font-sans text-[15.5px] font-semibold text-[var(--g-ink)] hover:text-[var(--g-accent)]">
-            <ChevronRight className="h-4 w-4 text-[var(--g-ink3)]" aria-hidden="true" />
+            <ChevronRight
+              className="h-4 w-4 text-[var(--g-ink3)] transition-transform group-open:rotate-90"
+              aria-hidden="true"
+            />
             <InlineRenderer nodes={block.title} />
           </summary>
           <div className="mt-3 border-t border-[var(--g-line)] pt-3 [&>*:first-child]:mt-0 [&>*:last-child]:mb-0">

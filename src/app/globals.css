@@ -8,24 +8,36 @@
 
 /* ------------------------------------------------------------------ */
 /* Design tokens                                                       */
-/* Light: warm paper. Dark: warm charcoal — same temperature in both. */
+/* Light: warm paper. Dark: warm charcoal — same temperature in both.  */
 /* ------------------------------------------------------------------ */
 
 :root {
+  color-scheme: light;
+
   --guide-fs: 18px;
   --shiki-light-bg: transparent;
   --shiki-dark-bg: transparent;
+
+  /* Shell geometry. Every sticky offset in the app is derived from these,
+     so the header, the chapter rail and anchor jumps can never drift apart. */
+  --shell-header: 3.5rem; /* sticky app header */
+  --shell-sidebar: 18rem; /* 288px navigation column */
+  --rail-w: 15rem; /* "On this page" column */
+  --rail-gap: 2.5rem;
+  --page-max: 80rem; /* outer page container */
+  --measure: 46rem; /* reading measure, ~72 characters */
 
   --g-bg: #f7f5f1;
   --g-surface: #fcfbf8;
   --g-sunken: #efece5;
   --g-ink: #1c1915;
   --g-ink2: #45403a;
-  --g-ink3: #7f766a;
+  /* 5.3:1 on --g-bg, so 11px labels still pass WCAG AA. */
+  --g-ink3: #6f6659;
   --g-line: #e5e0d5;
   --g-line2: #d2cabb;
-  --g-accent: #c14515;
-  --g-accent-hover: #a03a11;
+  --g-accent: #bc4114;
+  --g-accent-hover: #9c360f;
   --g-accent-soft: #f7e8de;
   --g-code-bg: #f3f0e9;
   --g-code-head: #eae6dc;
@@ -36,12 +48,14 @@
 }
 
 .dark {
+  color-scheme: dark;
+
   --g-bg: #141311;
   --g-surface: #1c1a17;
   --g-sunken: #171613;
   --g-ink: #ece7dd;
   --g-ink2: #c2bbaf;
-  --g-ink3: #9a9280;
+  --g-ink3: #a49b88;
   --g-line: #2d2a24;
   --g-line2: #3e3930;
   --g-accent: #e9743e;
@@ -80,18 +94,27 @@
 
 html {
   scroll-behavior: smooth;
-  /* The sticky header is 3.5rem; leave a little breathing room above the
-     heading a jump lands on. */
-  scroll-padding-top: 4.5rem;
+  /* One source of truth for anchor offsets: the sticky header plus a
+     little air. Headings no longer need their own scroll-margin. */
+  scroll-padding-top: calc(var(--shell-header) + 1.75rem);
+  /* Keep the page from shifting sideways when a drawer locks the scroll. */
+  scrollbar-gutter: stable;
+  -webkit-tap-highlight-color: transparent;
 }
 
 body {
+  min-height: 100dvh;
   background-color: var(--g-bg);
   color: var(--g-ink);
   font-family: var(--font-sans);
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+/* Long words (URLs, identifiers) must never blow out a column. */
+body {
+  overflow-wrap: break-word;
 }
 
 ::selection {
@@ -123,6 +146,136 @@ body {
   outline-offset: 2px;
 }
 
+/* Scrollable panes (code, tables, ToC) are focusable so keyboard users can
+   scroll them; the ring should hug the pane, not the inner text. */
+[data-scroll-pane]:focus-visible {
+  outline-offset: 0;
+}
+
+/* ------------------------------------------------------------------ */
+/* Application shell                                                   */
+/* ------------------------------------------------------------------ */
+
+.app-shell {
+  display: flex;
+  min-height: 100dvh;
+  flex-direction: column;
+  background: var(--g-bg);
+  color: var(--g-ink);
+}
+
+.app-body {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+}
+
+.app-main {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+@media (min-width: 1024px) {
+  .app-shell {
+    display: grid;
+    grid-template-columns: var(--shell-sidebar) minmax(0, 1fr);
+  }
+  .app-shell[data-sidebar="closed"] {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Chapter page: reading column + "On this page" rail                  */
+/* ------------------------------------------------------------------ */
+
+.chapter-page {
+  width: 100%;
+  max-width: var(--page-max);
+  margin-inline: auto;
+  padding: 1.75rem 1.25rem 3rem;
+}
+
+@media (min-width: 640px) {
+  .chapter-page {
+    padding: 2rem 2rem 4rem;
+  }
+}
+
+/* Source order is article → aside, so even with no CSS at all the table of
+   contents can never land on top of the article. The grid only ever adds the
+   right-hand column at a width where it actually fits. */
+.chapter-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+}
+
+.chapter-article {
+  min-width: 0;
+  width: 100%;
+  max-width: var(--measure);
+  margin-inline: auto;
+}
+
+.chapter-aside {
+  display: none;
+}
+
+/* The rail's job is to have room next to a readable line, so it is enabled
+   when the content column is wide enough: always from 1240px, and from 1024px
+   as soon as the reader collapses the navigation and gives the page its 18rem
+   back. Both rules below are the only places that decide this. */
+@media (min-width: 1240px) {
+  .chapter-layout[data-rail="on"] {
+    grid-template-columns: minmax(0, 1fr) var(--rail-w);
+    column-gap: var(--rail-gap);
+  }
+
+  .chapter-layout[data-rail="on"] .chapter-aside {
+    display: block;
+    position: sticky;
+    top: calc(var(--shell-header) + 1.75rem);
+    align-self: start;
+    max-height: calc(100dvh - var(--shell-header) - 3.5rem);
+  }
+}
+
+@media (min-width: 1024px) and (max-width: 1239.98px) {
+  .app-shell[data-sidebar="closed"] .chapter-layout[data-rail="on"] {
+    grid-template-columns: minmax(0, 1fr) var(--rail-w);
+    column-gap: var(--rail-gap);
+  }
+
+  .app-shell[data-sidebar="closed"]
+    .chapter-layout[data-rail="on"]
+    .chapter-aside {
+    display: block;
+    position: sticky;
+    top: calc(var(--shell-header) + 1.75rem);
+    align-self: start;
+    max-height: calc(100dvh - var(--shell-header) - 3.5rem);
+  }
+}
+
+/* The compact "On this page" trigger only exists where the rail does not. */
+.toc-trigger {
+  display: inline-flex;
+}
+
+@media (min-width: 1024px) and (max-width: 1239.98px) {
+  .app-shell[data-sidebar="closed"] .toc-trigger {
+    display: none;
+  }
+}
+
+@media (min-width: 1240px) {
+  .toc-trigger {
+    display: none;
+  }
+}
+
 /* ------------------------------------------------------------------ */
 /* Dual-theme Shiki: colors switch via CSS variables                   */
 /* ------------------------------------------------------------------ */
@@ -146,12 +299,12 @@ body {
   line-height: 1.75;
   font-family: var(--font-serif);
   font-optical-sizing: auto;
+  text-wrap: pretty;
 }
 
-/* On a wide screen the reading column is wider than a 768px "book page", so
-   the type grows with it to hold the line length near 75-85 characters. The
-   reader's A-/A+ setting stays authoritative: --guide-fs is the base and this
-   only multiplies it. */
+/* On a very wide screen the reading column grows a little with it, holding
+   the line length near 72 characters. The reader's A-/A+ setting stays
+   authoritative: --guide-fs is the base and this only multiplies it. */
 @media (min-width: 1536px) {
   .guide-prose {
     font-size: calc(var(--guide-fs) * 1.0625);
@@ -164,6 +317,53 @@ body {
 .guide-prose table,
 .guide-prose pre {
   font-family: var(--font-mono);
+}
+
+/* Headings should never be separated from the text they introduce. Anchor
+   offsets come from `scroll-padding-top` on <html> alone, so a jump lands in
+   one predictable place instead of stacking two offsets. */
+.guide-prose :is(h2, h3, h4) {
+  text-wrap: balance;
+}
+
+/* Section anchors: hidden until the heading is hovered or focused, so the
+   prose stays quiet but every section is still directly linkable. */
+.heading-anchor {
+  margin-left: 0.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.62em;
+  font-weight: 500;
+  color: var(--g-ink3);
+  opacity: 0;
+  text-decoration: none;
+  transition: opacity 0.15s ease, color 0.15s ease;
+}
+
+:is(h2, h3, h4):hover > .heading-anchor,
+.heading-anchor:focus-visible {
+  opacity: 1;
+}
+
+.heading-anchor:hover {
+  color: var(--g-accent);
+}
+
+@media (hover: none) {
+  .heading-anchor {
+    opacity: 0.55;
+  }
+}
+
+/* Wide tables scroll in their own pane instead of squeezing cells. */
+.table-pane {
+  overflow-x: auto;
+  border-radius: 12px;
+  border: 1px solid var(--g-line);
+  background: var(--g-surface);
+}
+
+.table-pane table {
+  min-width: 100%;
 }
 
 /* Shell & compiler-error highlight tokens (hand-tinted blocks) */
@@ -206,6 +406,10 @@ body {
 }
 
 /* Shiki / plain <pre> sizing inside code blocks */
+.code-scroll {
+  overflow-x: auto;
+}
+
 .code-scroll pre {
   margin: 0;
   padding: 0.9rem 1.1rem;
@@ -220,20 +424,110 @@ body {
   word-break: break-word;
 }
 
+/* ------------------------------------------------------------------ */
+/* Motion, contrast and print                                          */
+/* ------------------------------------------------------------------ */
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
   }
-  * {
+  *,
+  *::before,
+  *::after {
     transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
+
+@media (prefers-contrast: more) {
+  :root {
+    --g-ink3: #4c4438;
+    --g-line: #b9b0a0;
+  }
+  .dark {
+    --g-ink3: #cfc6b4;
+    --g-line: #4b453a;
   }
 }
 
 @media print {
-  .no-print {
+  :root {
+    --g-bg: #ffffff;
+    --g-surface: #ffffff;
+    --g-sunken: #f4f2ed;
+    --g-ink: #000000;
+    --g-ink2: #23201b;
+    --g-ink3: #4a443c;
+    --g-line: #cfc8bb;
+  }
+
+  .no-print,
+  .app-header,
+  .app-sidebar,
+  .chapter-aside,
+  .app-scrim {
     display: none !important;
   }
+
+  html {
+    scroll-padding-top: 0;
+  }
+
+  .app-shell,
+  .app-body {
+    display: block !important;
+    min-height: 0;
+  }
+
+  .chapter-page,
+  .chapter-layout {
+    display: block !important;
+    max-width: none;
+    padding: 0;
+  }
+
+  .chapter-article {
+    max-width: none;
+  }
+
+  .guide-prose {
+    font-size: 11.5pt;
+    line-height: 1.55;
+  }
+
+  .guide-prose a {
+    text-decoration: underline;
+  }
+
+  /* Everything a reader printed should be readable on paper. */
+  details > summary ~ *,
   details:not([open]) > summary ~ * {
     display: block !important;
+  }
+
+  details > summary {
+    list-style: none;
+  }
+
+  :is(h1, h2, h3, h4) {
+    break-after: avoid-page;
+  }
+
+  figure,
+  table,
+  pre,
+  aside,
+  blockquote,
+  li {
+    break-inside: avoid;
+  }
+
+  .code-scroll,
+  .code-scroll pre,
+  .table-pane {
+    overflow: visible !important;
+    white-space: pre-wrap;
+    word-break: break-word;
   }
 }

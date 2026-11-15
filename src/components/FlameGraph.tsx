@@ -35,6 +35,9 @@ function FlameNodeBox({
       <button
         type="button"
         title={`${node.long}: ${pctLabel} of the running time`}
+        aria-label={`${node.long}, ${pctLabel} of the running time. ${
+          isTopRoot ? "Reset zoom" : "Zoom in"
+        }`}
         onClick={() => onZoom(isTopRoot ? null : node.id)}
         style={{
           backgroundColor: `hsl(${node.hue} 85% 62%)`,
@@ -72,7 +75,7 @@ export function FlameGraph({
 
   return (
     <figure className="my-6 overflow-hidden rounded-card border border-[var(--g-line)] bg-[var(--g-surface)] p-4 shadow-card">
-      <div className="overflow-x-auto pb-1">
+      <div className="overflow-x-auto pb-1" data-scroll-pane tabIndex={0}>
         <div className="flex min-w-[560px] items-end">
           {roots.map((root) => (
             <FlameNodeBox

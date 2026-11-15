@@ -1,8 +1,14 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   Check,
   ChevronDown,
@@ -17,6 +23,8 @@ import {
 import type { ChapterSummary, PartMeta, SearchHit } from "@/lib/guide-types";
 import { useGuideState } from "./GuideStateProvider";
 
+const SIDEBAR_KEY = "rust-guide-sidebar";
+
 export function GuideShell({
   parts,
   chapters,
@@ -27,26 +35,27 @@ export function GuideShell({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  const {
-    state,
-    persistent,
-    resetAllProgress,
-    toggleTheme,
-    theme,
-    stepFontSize,
-  } = useGuideState();
+  const router = useRouter();
+  const { state, persistent, resetAllProgress, toggleTheme, theme, stepFontSize } =
+    useGuideState();
 
-  const [desktopSidebarOpen, setDesktopSidebarOpen] = useState(true);
-  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(true);
   const [collapsedParts, setCollapsedParts] = useState<Record<string, boolean>>(
     {}
   );
   const [query, setQuery] = useState("");
   const [hits, setHits] = useState<SearchHit[] | null>(null);
   const [searching, setSearching] = useState(false);
+  const [activeHit, setActiveHit] = useState(-1);
   const [scrollPct, setScrollPct] = useState(0);
+  const [confirmReset, setConfirmReset] = useState(false);
 
   const searchRef = useRef<HTMLInputElement>(null);
+  const drawerRef = useRef<HTMLElement>(null);
+  const wantsSearchFocus = useRef(false);
+
   const activeChapterId = pathname.startsWith("/chapters/")
     ? pathname.slice("/chapters/".length)
     : null;
@@ -66,154 +75,295 @@ export function GuideShell({
     ? Math.round((100 * doneCount) / tracked.length)
     : 0;
 
-  // Close mobile drawer on route navigation
+  /* ---------------- environment + persisted chrome state ---------------- */
+
   useEffect(() => {
-    setMobileDrawerOpen(false);
+    const mq = window.matchMedia("(min-width: 1024px)");
+    const apply = () => setIsDesktop(mq.matches);
+    apply();
+    mq.addEventListener("change", apply);
+    return () => mq.removeEventListener("change", apply);
+  }, []);
+
+  useEffect(() => {
+    try {
+      const stored = window.localStorage.getItem(SIDEBAR_KEY);
+      if (stored === "closed") setSidebarOpen(false);
+    } catch {
+      /* private mode: keep the default */
+    }
+  }, []);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(SIDEBAR_KEY, sidebarOpen ? "open" : "closed");
+    } catch {
+      /* ignore */
+    }
+  }, [sidebarOpen]);
+
+  /* ---------------- mobile drawer: scroll lock, focus trap ---------------- */
+
+  useEffect(() => {
+    if (!drawerOpen) return;
+
+    const body = document.body;
+    const prevOverflow = body.style.overflow;
+    // `scrollbar-gutter: stable` on <html> keeps the scrollbar's space
+    // reserved, so locking the page cannot make the layout jump.
+    body.style.overflow = "hidden";
+
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+    const node = drawerRef.current;
+
+    const focusables = () =>
+      Array.from(
+        node?.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), input:not([disabled]), summary, [tabindex]:not([tabindex="-1"])'
+        ) ?? []
+      ).filter((el) => el.offsetParent !== null);
+
+    // Opening from the search button should land in the search field; opening
+    // from the menu button should not summon the on-screen keyboard, so focus
+    // the first link instead.
+    if (wantsSearchFocus.current && searchRef.current) {
+      searchRef.current.focus();
+      wantsSearchFocus.current = false;
+    } else {
+      focusables()[0]?.focus();
+    }
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Tab") return;
+      const list = focusables();
+      if (list.length === 0) return;
+      const first = list[0];
+      const last = list[list.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      body.style.overflow = prevOverflow;
+      previouslyFocused?.focus({ preventScroll: true });
+    };
+  }, [drawerOpen]);
+
+  // Close the drawer when the viewport becomes a desktop layout.
+  useEffect(() => {
+    if (isDesktop) setDrawerOpen(false);
+  }, [isDesktop]);
+
+  // Route change: close the drawer and drop any transient search state.
+  useEffect(() => {
+    setDrawerOpen(false);
+    setQuery("");
+    setHits(null);
+    setActiveHit(-1);
   }, [pathname]);
 
-  // Lock the page behind the mobile drawer: without this a touch drag on the
-  // scrim scrolls the article under the menu, which reads as a glitch.
+  // Focus the search input once it is actually on screen.
   useEffect(() => {
-    if (!mobileDrawerOpen) return;
-    const { overflow } = document.body.style;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = overflow;
-    };
-  }, [mobileDrawerOpen]);
+    if (!wantsSearchFocus.current) return;
+    if (isDesktop && !sidebarOpen) return;
+    if (!isDesktop && !drawerOpen) return;
+    const id = window.setTimeout(() => {
+      searchRef.current?.focus();
+      searchRef.current?.select();
+      wantsSearchFocus.current = false;
+    }, 40);
+    return () => window.clearTimeout(id);
+  }, [sidebarOpen, drawerOpen, isDesktop]);
 
-  // Reading progress bar
+  /* ---------------- reading progress (rAF-throttled) ---------------- */
+
   useEffect(() => {
-    const onScroll = () => {
-      if (!activeChapter) {
-        setScrollPct(0);
-        return;
-      }
-      const max =
-        document.documentElement.scrollHeight - window.innerHeight;
+    if (!activeChapter) {
+      setScrollPct(0);
+      return;
+    }
+    let frame = 0;
+    const measure = () => {
+      frame = 0;
+      const max = document.documentElement.scrollHeight - window.innerHeight;
       setScrollPct(max > 0 ? Math.min(100, (100 * window.scrollY) / max) : 0);
     };
-    onScroll();
+    const onScroll = () => {
+      if (!frame) frame = requestAnimationFrame(measure);
+    };
+    measure();
     window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
+    window.addEventListener("resize", onScroll, { passive: true });
+    return () => {
+      if (frame) cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+    };
   }, [activeChapter, pathname]);
 
-  // `/` focuses search; `Escape` closes drawer / clears search
+  /* ---------------- keyboard shortcuts ---------------- */
+
+  const openSearch = useCallback(() => {
+    wantsSearchFocus.current = true;
+    if (isDesktop) {
+      setSidebarOpen(true);
+    } else {
+      setDrawerOpen(true);
+    }
+    // Already open: no state change will trigger the focus effect.
+    window.setTimeout(() => {
+      if (wantsSearchFocus.current) {
+        searchRef.current?.focus();
+        searchRef.current?.select();
+        wantsSearchFocus.current = false;
+      }
+    }, 60);
+  }, [isDesktop]);
+
+  // Any page can ask for the search field (the home page has a Search button).
   useEffect(() => {
-    const onKeyDown = (e: KeyboardEvent) => {
-      const tag = (e.target as HTMLElement | null)?.tagName ?? "";
-      if (e.key === "Escape") {
-        setMobileDrawerOpen(false);
-        if (query) {
+    const onRequest = () => openSearch();
+    window.addEventListener("rust-guide:search", onRequest);
+    return () => window.removeEventListener("rust-guide:search", onRequest);
+  }, [openSearch]);
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      const tag = target?.tagName ?? "";
+      const typing =
+        tag === "INPUT" || tag === "TEXTAREA" || target?.isContentEditable;
+
+      if (event.key === "Escape") {
+        setDrawerOpen(false);
+        if (query || hits) {
           setQuery("");
           setHits(null);
+          setActiveHit(-1);
         }
         return;
       }
-      if (
-        e.key === "/" &&
-        tag !== "INPUT" &&
-        tag !== "TEXTAREA" &&
-        !e.ctrlKey &&
-        !e.metaKey
-      ) {
-        e.preventDefault();
-        if (window.innerWidth < 1024) setMobileDrawerOpen(true);
-        setTimeout(() => searchRef.current?.focus(), 20);
+
+      if (typing) return;
+
+      const isSlash = event.key === "/";
+      const isCmdK =
+        event.key.toLowerCase() === "k" && (event.metaKey || event.ctrlKey);
+      if (isSlash || isCmdK) {
+        event.preventDefault();
+        openSearch();
       }
     };
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
-  }, [query]);
+  }, [query, hits, openSearch]);
 
-  // Debounced search fetch from /api/search
+  /* ---------------- search ---------------- */
+
   useEffect(() => {
     const q = query.trim();
     if (!q) {
       setHits(null);
       setSearching(false);
+      setActiveHit(-1);
       return;
     }
     setSearching(true);
-    const timer = setTimeout(async () => {
+    const controller = new AbortController();
+    const timer = window.setTimeout(async () => {
       try {
-        const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
+        const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`, {
+          signal: controller.signal,
+        });
+        if (!res.ok) throw new Error(`search failed: ${res.status}`);
         const data = (await res.json()) as { hits: SearchHit[] };
         setHits(data.hits);
-      } catch {
+        setActiveHit(-1);
+      } catch (error) {
+        if ((error as Error).name === "AbortError") return;
         setHits([]);
       } finally {
         setSearching(false);
       }
-    }, 150);
-    return () => clearTimeout(timer);
+    }, 160);
+    return () => {
+      controller.abort();
+      window.clearTimeout(timer);
+    };
   }, [query]);
+
+  const onSearchKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!hits || hits.length === 0) return;
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      setActiveHit((i) => (i + 1) % hits.length);
+    } else if (event.key === "ArrowUp") {
+      event.preventDefault();
+      setActiveHit((i) => (i <= 0 ? hits.length - 1 : i - 1));
+    } else if (event.key === "Enter" && activeHit >= 0) {
+      event.preventDefault();
+      const hit = hits[activeHit];
+      router.push(
+        `/chapters/${hit.chapterId}${hit.anchor ? `#${hit.anchor}` : ""}`
+      );
+    }
+  };
 
   const togglePart = (key: string) => {
     setCollapsedParts((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
+  const toggleNavigation = () => {
+    if (isDesktop) setSidebarOpen((open) => !open);
+    else setDrawerOpen((open) => !open);
+  };
+
+  const navExpanded = isDesktop ? sidebarOpen : drawerOpen;
+
   return (
     <div
-      className={`min-h-screen bg-[var(--g-bg)] text-[var(--g-ink)] lg:grid ${
-        desktopSidebarOpen
-          ? "lg:grid-cols-[300px_minmax(0,1fr)]"
-          : "lg:grid-cols-[minmax(0,1fr)]"
-      }`}
+      className="app-shell"
+      data-sidebar={sidebarOpen ? "open" : "closed"}
     >
       {/* Mobile scrim */}
-      {mobileDrawerOpen && (
+      {drawerOpen && (
         <div
           aria-hidden="true"
-          onClick={() => setMobileDrawerOpen(false)}
-          className="no-print fixed inset-0 z-40 bg-black/40 backdrop-blur-sm lg:hidden"
+          onClick={() => setDrawerOpen(false)}
+          className="app-scrim no-print fixed inset-0 z-40 bg-black/45 backdrop-blur-sm lg:hidden"
         />
       )}
 
-      {/* Sidebar */}
+      {/*
+        Sidebar / mobile drawer.
+        When it is off-screen on a phone, `inert` keeps it out of the tab order
+        without hiding focusable content the way `aria-hidden` would; when it is
+        open it becomes a modal dialog with a trapped focus ring.
+      */}
       <aside
+        ref={drawerRef}
         id="sidebar"
         aria-label="Guide navigation"
-        className={`no-print fixed inset-y-0 left-0 z-50 flex w-[min(88vw,310px)] flex-col border-r border-[var(--g-line)] bg-[var(--g-sunken)] font-sans transition-transform duration-200 lg:sticky lg:top-0 lg:h-screen lg:w-auto lg:translate-x-0 ${
-          mobileDrawerOpen ? "translate-x-0 shadow-drawer" : "-translate-x-full"
-        } ${desktopSidebarOpen ? "" : "lg:hidden"}`}
+        inert={!isDesktop && !drawerOpen ? true : undefined}
+        role={!isDesktop && drawerOpen ? "dialog" : undefined}
+        aria-modal={!isDesktop && drawerOpen ? true : undefined}
+        className={`app-sidebar no-print fixed inset-y-0 left-0 z-50 flex w-[min(88vw,19rem)] flex-col border-r border-[var(--g-line)] bg-[var(--g-sunken)] font-sans transition-transform duration-200 lg:sticky lg:top-0 lg:z-20 lg:h-dvh lg:w-auto lg:translate-x-0 lg:shadow-none ${
+          drawerOpen ? "translate-x-0 shadow-drawer" : "-translate-x-full"
+        } ${sidebarOpen ? "" : "lg:hidden"}`}
       >
-        <div className="relative flex items-center gap-3 px-4 pt-4 pb-3.5">
+        <div className="flex items-center gap-3 px-4 pt-4 pb-3.5">
           <Link
             href="/"
             className="flex min-w-0 flex-1 items-center gap-2.5 text-[var(--g-ink)]"
           >
-            <svg
-              className="h-8 w-8 shrink-0 text-[var(--g-accent)]"
-              viewBox="0 0 32 32"
-              aria-hidden="true"
-            >
-              <circle
-                cx="16"
-                cy="16"
-                r="11"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="5"
-                strokeDasharray="4.32 4.32"
-              />
-              <circle
-                cx="16"
-                cy="16"
-                r="8.4"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.6"
-              />
-              <path
-                d="M11.5 16.2l3.2 3.2 5.8-6.4"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.4"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
+            <RustMark />
             <span className="truncate">
               <strong className="block text-[15px] font-bold tracking-tight">
                 Rust from Zero
@@ -226,11 +376,11 @@ export function GuideShell({
 
           <button
             type="button"
-            onClick={() => setMobileDrawerOpen(false)}
+            onClick={() => setDrawerOpen(false)}
             aria-label="Close navigation"
-            className="grid h-8 w-8 place-items-center rounded-lg text-[var(--g-ink2)] hover:bg-[var(--g-line)]/60 lg:hidden"
+            className="grid h-9 w-9 place-items-center rounded-lg text-[var(--g-ink2)] hover:bg-[var(--g-line)]/60 lg:hidden"
           >
-            <X className="h-4 w-4" />
+            <X className="h-4 w-4" aria-hidden="true" />
           </button>
         </div>
 
@@ -246,13 +396,20 @@ export function GuideShell({
               type="search"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={onSearchKeyDown}
               placeholder="Search the whole guide"
               aria-label="Search the whole guide"
+              title="Search the whole guide (press / or Ctrl-K)"
+              aria-controls="search-results"
               autoComplete="off"
               spellCheck={false}
-              className="h-9 w-full rounded-lg border border-[var(--g-line)] bg-[var(--g-surface)] pr-8 pl-9 text-[13px] text-[var(--g-ink)] shadow-card placeholder:text-[var(--g-ink3)] focus:border-[var(--g-accent)] focus:outline-none"
+              className="h-9 w-full rounded-lg border border-[var(--g-line)] bg-[var(--g-surface)] pr-14 pl-9 text-[13px] text-[var(--g-ink)] shadow-card placeholder:text-[var(--g-ink3)] focus:border-[var(--g-accent)] focus:outline-none"
             />
-            <kbd className="pointer-events-none absolute right-2.5 hidden rounded-md border border-[var(--g-line)] bg-[var(--g-sunken)] px-1.5 py-0.5 text-[11px] font-medium text-[var(--g-ink3)] sm:inline-block">
+            <kbd
+              aria-hidden="true"
+              title="Press / or Ctrl-K"
+              className="pointer-events-none absolute right-2.5 hidden rounded-md border border-[var(--g-line)] bg-[var(--g-sunken)] px-1.5 py-0.5 font-sans text-[11px] font-medium text-[var(--g-ink3)] sm:inline-block"
+            >
               /
             </kbd>
           </label>
@@ -260,7 +417,7 @@ export function GuideShell({
 
         {/* Progress */}
         <div className="border-b border-[var(--g-line)] px-4 pb-3.5">
-          <div className="mb-2 flex items-center justify-between text-xs">
+          <div className="mb-2 flex items-center justify-between gap-2 text-xs">
             <span className="font-medium text-[var(--g-ink2)]">
               {doneCount} of {tracked.length} complete
             </span>
@@ -268,16 +425,28 @@ export function GuideShell({
               {donePct}%
             </strong>
           </div>
-          <div className="h-1.5 overflow-hidden rounded-full bg-[var(--g-line)]">
+          <div
+            role="progressbar"
+            aria-label="Course progress"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={donePct}
+            className="h-1.5 overflow-hidden rounded-full bg-[var(--g-line)]"
+          >
             <div
-              className="h-full rounded-full bg-[var(--g-accent)] transition-all duration-300"
+              className="h-full rounded-full bg-[var(--g-accent)] transition-[width] duration-300"
               style={{ width: `${donePct}%` }}
             />
           </div>
         </div>
 
-        {/* Search results OR Table of Contents */}
-        <div className="min-h-0 flex-1 overflow-y-auto px-2 py-2">
+        {/* Search results OR table of contents */}
+        <div
+          id="search-results"
+          className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 py-2"
+          data-scroll-pane
+          tabIndex={-1}
+        >
           {hits !== null ? (
             <div className="space-y-1">
               {searching && (
@@ -291,32 +460,46 @@ export function GuideShell({
                   look in the glossary.
                 </p>
               )}
-              {hits.map((h, i) => (
+              {!searching && hits.length > 0 && (
+                <p className="px-2 py-1 text-[11px] font-semibold tracking-wide text-[var(--g-ink3)] uppercase">
+                  {hits.length} {hits.length === 1 ? "match" : "matches"} · ↑↓ to
+                  move, Enter to open
+                </p>
+              )}
+              {hits.map((hit, index) => (
                 <Link
-                  key={`${h.chapterId}-${h.anchor}-${i}`}
-                  href={`/chapters/${h.chapterId}${h.anchor ? `#${h.anchor}` : ""}`}
-                  onClick={() => {
-                    setQuery("");
-                    setHits(null);
-                  }}
-                  className="block rounded-lg px-2.5 py-2 transition-colors hover:bg-[var(--g-surface)]"
+                  key={`${hit.chapterId}-${hit.anchor}-${index}`}
+                  href={`/chapters/${hit.chapterId}${
+                    hit.anchor ? `#${hit.anchor}` : ""
+                  }`}
+                  onMouseEnter={() => setActiveHit(index)}
+                  className={`block scroll-mt-2 rounded-lg px-2 py-1.5 transition-colors ${
+                    index === activeHit
+                      ? "bg-[var(--g-accent-soft)] text-[var(--g-ink)]"
+                      : "hover:bg-[var(--g-surface)]"
+                  }`}
                 >
-                  <div className="text-[11px] font-bold text-[var(--g-accent)]">
-                    {h.num} · {h.chapterTitle}
+                  <div className="flex items-baseline gap-1.5">
+                    <span className="shrink-0 font-mono text-[11px] text-[var(--g-ink3)]">
+                      {hit.num}
+                    </span>
+                    <span className="min-w-0 truncate text-[12px] font-bold text-[var(--g-ink)]">
+                      {hit.chapterTitle}
+                    </span>
                   </div>
-                  {h.heading && (
-                    <div className="truncate text-xs font-semibold text-[var(--g-ink)]">
-                      {h.heading}
+                  {hit.heading && (
+                    <div className="truncate text-[11px] font-medium text-[var(--g-accent)]">
+                      {hit.heading}
                     </div>
                   )}
-                  <div className="mt-0.5 line-clamp-2 text-[11.5px] text-[var(--g-ink2)]">
-                    {h.before}
-                    {h.match && (
+                  <div className="mt-0.5 line-clamp-2 text-[12px] leading-snug text-[var(--g-ink3)]">
+                    {hit.before}
+                    {hit.match && (
                       <mark className="rounded bg-amber-300/60 px-0.5 text-[#33291c] dark:bg-amber-500/30 dark:text-amber-100">
-                        {h.match}
+                        {hit.match}
                       </mark>
                     )}
-                    {h.after}
+                    {hit.after}
                   </div>
                 </Link>
               ))}
@@ -338,20 +521,26 @@ export function GuideShell({
                       className="flex w-full items-center gap-1.5 rounded-lg px-2 py-1.5 text-left text-xs font-bold text-[var(--g-ink2)] hover:bg-[var(--g-line)]/40 hover:text-[var(--g-ink)]"
                     >
                       {isCollapsed ? (
-                        <ChevronRight className="h-3.5 w-3.5 shrink-0 text-[var(--g-ink3)]" />
+                        <ChevronRight
+                          className="h-3.5 w-3.5 shrink-0 text-[var(--g-ink3)]"
+                          aria-hidden="true"
+                        />
                       ) : (
-                        <ChevronDown className="h-3.5 w-3.5 shrink-0 text-[var(--g-ink3)]" />
+                        <ChevronDown
+                          className="h-3.5 w-3.5 shrink-0 text-[var(--g-ink3)]"
+                          aria-hidden="true"
+                        />
                       )}
                       <span className="min-w-0 flex-1 truncate">
                         {part.partLabel && (
-                          <span className="mr-1.5 text-[10.5px] uppercase tracking-wider text-[var(--g-ink3)]">
+                          <span className="mr-1.5 text-[10.5px] tracking-wider text-[var(--g-ink3)] uppercase">
                             {part.partLabel}
                           </span>
                         )}
                         {part.title}
                       </span>
                       {part.key !== "app" && (
-                        <span className="text-[11px] font-medium text-[var(--g-ink3)]">
+                        <span className="text-[11px] font-medium text-[var(--g-ink3)] tabular-nums">
                           {pDone}/{list.length}
                         </span>
                       )}
@@ -369,10 +558,16 @@ export function GuideShell({
                                 aria-current={isActive ? "page" : undefined}
                                 className={`relative flex items-center gap-2 rounded-lg px-2 py-1.5 text-[13px] leading-snug transition-colors ${
                                   isActive
-                                    ? "bg-[var(--g-accent-soft)] font-semibold text-[var(--g-accent)] before:absolute before:-left-[7px] before:top-1 before:bottom-1 before:w-[3px] before:rounded-full before:bg-[var(--g-accent)]"
+                                    ? "bg-[var(--g-accent-soft)] font-semibold text-[var(--g-accent)]"
                                     : "text-[var(--g-ink2)] hover:bg-[var(--g-surface)] hover:text-[var(--g-ink)]"
                                 }`}
                               >
+                                {isActive && (
+                                  <span
+                                    aria-hidden="true"
+                                    className="absolute top-1.5 bottom-1.5 -left-2 w-[3px] rounded-full bg-[var(--g-accent)]"
+                                  />
+                                )}
                                 <span className="min-w-[1.6rem] shrink-0 font-mono text-[11px] tabular-nums text-[var(--g-ink3)]">
                                   {c.num}
                                 </span>
@@ -404,40 +599,82 @@ export function GuideShell({
           )}
         </div>
 
-        {/* Footer */}
-        <div className="flex items-center justify-between gap-2 border-t border-[var(--g-line)] px-4 py-2.5 text-[11.5px] text-[var(--g-ink3)]">
-          <span>
-            {persistent ? "Saved in browser" : "Session-only progress"}
-          </span>
-          <button
-            type="button"
-            onClick={resetAllProgress}
-            className="font-semibold text-[var(--g-ink2)] underline-offset-2 hover:text-[var(--g-accent)] hover:underline"
-          >
-            Reset progress
-          </button>
+        {/* Footer: reading settings live here on small screens */}
+        <div className="border-t border-[var(--g-line)] px-4 py-3 text-[11.5px] text-[var(--g-ink3)]">
+          <div className="mb-2 flex items-center justify-between gap-2 lg:hidden">
+            <span className="font-medium text-[var(--g-ink2)]">Text size</span>
+            <div
+              role="group"
+              aria-label="Text size"
+              className="flex items-center overflow-hidden rounded-lg border border-[var(--g-line)] bg-[var(--g-surface)]"
+            >
+              <button
+                type="button"
+                onClick={() => stepFontSize(-1)}
+                aria-label="Smaller text"
+                className="grid h-8 w-9 place-items-center text-[11px] font-bold text-[var(--g-ink2)] hover:bg-[var(--g-sunken)] hover:text-[var(--g-ink)]"
+              >
+                A−
+              </button>
+              <div className="h-5 w-px bg-[var(--g-line)]" aria-hidden="true" />
+              <button
+                type="button"
+                onClick={() => stepFontSize(1)}
+                aria-label="Larger text"
+                className="grid h-8 w-9 place-items-center text-[13px] font-bold text-[var(--g-ink2)] hover:bg-[var(--g-sunken)] hover:text-[var(--g-ink)]"
+              >
+                A+
+              </button>
+            </div>
+          </div>
+          <div className="flex items-center justify-between gap-2">
+            <span>{persistent ? "Saved in browser" : "Session-only progress"}</span>
+            {confirmReset ? (
+              <span className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    resetAllProgress();
+                    setConfirmReset(false);
+                  }}
+                  className="font-bold text-red-700 underline-offset-2 hover:underline dark:text-red-400"
+                >
+                  Erase all
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setConfirmReset(false)}
+                  className="font-semibold text-[var(--g-ink2)] underline-offset-2 hover:underline"
+                >
+                  Cancel
+                </button>
+              </span>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setConfirmReset(true)}
+                className="font-semibold text-[var(--g-ink2)] underline-offset-2 hover:text-[var(--g-accent)] hover:underline"
+              >
+                Reset progress
+              </button>
+            )}
+          </div>
         </div>
       </aside>
 
-      {/* Main Column */}
-      <div className="flex min-w-0 flex-col">
-        <header className="no-print sticky top-0 z-20 flex h-14 items-center gap-2.5 border-b border-[var(--g-line)] bg-[var(--g-bg)]/90 px-4 backdrop-blur-md">
+      {/* Main column */}
+      <div className="app-body">
+        <header className="app-header no-print sticky top-0 z-30 flex h-[var(--shell-header)] items-center gap-2 border-b border-[var(--g-line)] bg-[var(--g-bg)]/90 px-3 backdrop-blur-md sm:px-4">
           <button
             type="button"
-            aria-label="Toggle navigation"
-            aria-expanded={desktopSidebarOpen || mobileDrawerOpen}
+            aria-label={navExpanded ? "Hide navigation" : "Show navigation"}
+            aria-expanded={navExpanded}
             aria-controls="sidebar"
-            title="Toggle navigation"
-            onClick={() => {
-              if (window.innerWidth < 1024) {
-                setMobileDrawerOpen((o) => !o);
-              } else {
-                setDesktopSidebarOpen((o) => !o);
-              }
-            }}
-            className="grid h-9 w-9 shrink-0 place-items-center rounded-lg text-[var(--g-ink2)] hover:bg-[var(--g-sunken)] hover:text-[var(--g-ink)]"
+            title="Navigation"
+            onClick={toggleNavigation}
+            className="grid h-10 w-10 shrink-0 place-items-center rounded-lg text-[var(--g-ink2)] hover:bg-[var(--g-sunken)] hover:text-[var(--g-ink)]"
           >
-            <Menu className="h-5 w-5" />
+            <Menu className="h-5 w-5" aria-hidden="true" />
           </button>
 
           <div className="min-w-0 flex-1 truncate font-sans text-xs sm:text-[13px]">
@@ -462,17 +699,28 @@ export function GuideShell({
               <span className="text-[var(--g-ink2)]">
                 <strong className="font-bold text-[var(--g-ink)]">
                   Rust from Zero
-                </strong>{" "}
+                </strong>
                 <span className="hidden sm:inline">
+                  {" "}
                   · the complete hands-on guide
                 </span>
               </span>
             )}
           </div>
 
-          <div className="flex items-center gap-1.5 font-sans">
+          <div className="flex shrink-0 items-center gap-1.5 font-sans">
+            <button
+              type="button"
+              onClick={openSearch}
+              aria-label="Search the guide"
+              title="Search (press / or ⌘K)"
+              className="grid h-9 w-9 place-items-center rounded-lg border border-[var(--g-line)] bg-[var(--g-surface)] text-[var(--g-ink2)] shadow-card hover:bg-[var(--g-sunken)] hover:text-[var(--g-ink)] lg:hidden"
+            >
+              <Search className="h-4 w-4" aria-hidden="true" />
+            </button>
+
             <div
-              className="flex items-center overflow-hidden rounded-lg border border-[var(--g-line)] bg-[var(--g-surface)] shadow-card"
+              className="hidden items-center overflow-hidden rounded-lg border border-[var(--g-line)] bg-[var(--g-surface)] shadow-card sm:flex"
               role="group"
               aria-label="Text size"
             >
@@ -481,35 +729,33 @@ export function GuideShell({
                 onClick={() => stepFontSize(-1)}
                 aria-label="Smaller text"
                 title="Smaller text"
-                className="grid h-8 w-8 place-items-center text-[11px] font-bold text-[var(--g-ink2)] transition-colors hover:bg-[var(--g-sunken)] hover:text-[var(--g-ink)]"
+                className="grid h-9 w-9 place-items-center text-[11px] font-bold text-[var(--g-ink2)] transition-colors hover:bg-[var(--g-sunken)] hover:text-[var(--g-ink)]"
               >
                 A−
               </button>
-              <div
-                className="h-5 w-px bg-[var(--g-line)]"
-                aria-hidden="true"
-              />
+              <div className="h-5 w-px bg-[var(--g-line)]" aria-hidden="true" />
               <button
                 type="button"
                 onClick={() => stepFontSize(1)}
                 aria-label="Larger text"
                 title="Larger text"
-                className="grid h-8 w-8 place-items-center text-[13px] font-bold text-[var(--g-ink2)] transition-colors hover:bg-[var(--g-sunken)] hover:text-[var(--g-ink)]"
+                className="grid h-9 w-9 place-items-center text-[13px] font-bold text-[var(--g-ink2)] transition-colors hover:bg-[var(--g-sunken)] hover:text-[var(--g-ink)]"
               >
                 A+
               </button>
             </div>
+
             <button
               type="button"
               onClick={toggleTheme}
-              aria-label="Switch between light and dark theme"
-              title="Switch theme"
-              className="grid h-8 w-8 place-items-center rounded-lg border border-[var(--g-line)] bg-[var(--g-surface)] text-[var(--g-ink2)] shadow-card transition-colors hover:bg-[var(--g-sunken)] hover:text-[var(--g-ink)]"
+              aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}
+              title={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}
+              className="grid h-9 w-9 place-items-center rounded-lg border border-[var(--g-line)] bg-[var(--g-surface)] text-[var(--g-ink2)] shadow-card transition-colors hover:bg-[var(--g-sunken)] hover:text-[var(--g-ink)]"
             >
               {theme === "dark" ? (
-                <Sun className="h-4 w-4" />
+                <Sun className="h-4 w-4" aria-hidden="true" />
               ) : (
-                <Moon className="h-4 w-4" />
+                <Moon className="h-4 w-4" aria-hidden="true" />
               )}
             </button>
           </div>
@@ -520,7 +766,7 @@ export function GuideShell({
             aria-valuemin={0}
             aria-valuemax={100}
             aria-valuenow={Math.round(scrollPct)}
-            className={`absolute right-0 bottom-0 left-0 h-0.5 bg-transparent transition-opacity ${
+            className={`absolute inset-x-0 bottom-0 h-0.5 bg-transparent transition-opacity ${
               activeChapter ? "opacity-100" : "opacity-0"
             }`}
           >
@@ -531,10 +777,47 @@ export function GuideShell({
           </div>
         </header>
 
-        <main id="main" className="min-w-0 flex-1">
+        <main id="main" className="app-main">
           {children}
         </main>
       </div>
     </div>
+  );
+}
+
+/** The gear-and-tick mark, drawn inline so it needs no network request. */
+function RustMark() {
+  return (
+    <svg
+      className="h-8 w-8 shrink-0 text-[var(--g-accent)]"
+      viewBox="0 0 32 32"
+      aria-hidden="true"
+    >
+      <circle
+        cx="16"
+        cy="16"
+        r="11"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="5"
+        strokeDasharray="4.32 4.32"
+      />
+      <circle
+        cx="16"
+        cy="16"
+        r="8.4"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2.6"
+      />
+      <path
+        d="M11.5 16.2l3.2 3.2 5.8-6.4"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2.4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
   );
 }
