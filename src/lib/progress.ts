@@ -21,6 +21,7 @@ export interface ChapterMeta {
   short: string;
   partTitle: string;
   kind: "chapter" | "project" | "orientation" | "appendix";
+  level: string;
   minutes: number;
   quizzes: QuizMeta[];
   exercises: string[];
@@ -45,6 +46,7 @@ export interface ChapterProgress {
   short: string;
   partTitle: string;
   kind: ChapterMeta["kind"];
+  level: string;
   minutes: number;
   done: boolean;
   bookmarked: boolean;
@@ -103,6 +105,7 @@ export function collectChapterMeta(chapter: ChapterData): ChapterMeta {
     short: chapter.short,
     partTitle: chapter.partTitle,
     kind: chapter.kind,
+    level: chapter.level,
     minutes: chapter.time,
     quizzes,
     exercises,
@@ -113,10 +116,7 @@ function ratio(done: number, total: number): number {
   return total > 0 ? Math.round((100 * done) / total) : 0;
 }
 
-export function buildChapterProgress(
-  meta: ChapterMeta,
-  state: ProgressState
-): ChapterProgress {
+export function buildChapterProgress(meta: ChapterMeta, state: ProgressState): ChapterProgress {
   const answers = state.quiz;
   let quizTotal = 0;
   let quizAnswered = 0;
@@ -137,8 +137,7 @@ export function buildChapterProgress(
   const done = Boolean(state.done[meta.id]);
 
   const units = 1 + quizTotal + exerciseTotal;
-  const earned =
-    (done ? 1 : 0) + Math.min(quizAnswered, quizTotal) + exerciseSolved;
+  const earned = (done ? 1 : 0) + Math.min(quizAnswered, quizTotal) + exerciseSolved;
 
   return {
     id: meta.id,
@@ -147,6 +146,7 @@ export function buildChapterProgress(
     short: meta.short,
     partTitle: meta.partTitle,
     kind: meta.kind,
+    level: meta.level,
     minutes: meta.minutes,
     done,
     bookmarked: Boolean(state.bookmarks[meta.id]),
@@ -192,8 +192,7 @@ export function summariseProgress(rows: ChapterProgress[]): ProgressTotals {
     if (row.bookmarked) totals.bookmarksTotal += 1;
 
     units += 1 + row.quizTotal + row.exerciseTotal;
-    earned +=
-      (row.done ? 1 : 0) + row.quizAnswered + row.exerciseSolved;
+    earned += (row.done ? 1 : 0) + row.quizAnswered + row.exerciseSolved;
   }
 
   totals.pct = ratio(earned, units);
@@ -208,6 +207,178 @@ export function summariseProgress(rows: ChapterProgress[]): ProgressTotals {
 /** The chapter to read next: the first unfinished one, in curriculum order. */
 export function nextChapter(rows: ChapterProgress[]): ChapterProgress | null {
   return rows.find((row) => !row.done) ?? null;
+}
+
+// ---- progress export / import ---------------------------------------------
+//
+// A reader's progress lives in one browser. The export is a small JSON
+// document they can carry to another machine; the import validates it against
+// the schema below before anything is applied, and the reader chooses between
+// replacing and merging — imported state never silently overwrites local
+// state. There is no account, no upload and no server copy.
+
+/** State that may travel in an export: progress plus reading preferences. */
+export interface ExportableProgressState extends ProgressState {
+  last?: string;
+  theme?: string;
+  fs?: number;
+}
+
+export const PROGRESS_EXPORT_FORMAT = "rust-from-zero-progress";
+export const PROGRESS_EXPORT_VERSION = 1;
+
+export interface ProgressExport {
+  format: typeof PROGRESS_EXPORT_FORMAT;
+  version: typeof PROGRESS_EXPORT_VERSION;
+  exportedAt: string;
+  state: ExportableProgressState;
+}
+
+export function serialiseProgress(
+  state: ExportableProgressState,
+  exportedAt: Date = new Date(),
+): string {
+  const document: ProgressExport = {
+    format: PROGRESS_EXPORT_FORMAT,
+    version: PROGRESS_EXPORT_VERSION,
+    exportedAt: exportedAt.toISOString(),
+    state: {
+      done: state.done,
+      quiz: state.quiz,
+      saved: state.saved,
+      bookmarks: state.bookmarks,
+      last: state.last,
+      theme: state.theme,
+      fs: state.fs,
+    },
+  };
+  return JSON.stringify(document, null, 2);
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+function numberRecord(value: unknown, field: string): Record<string, number> {
+  if (value === undefined) return {};
+  if (!isRecord(value)) throw new Error(`“${field}” must be an object`);
+  const out: Record<string, number> = {};
+  for (const [key, entry] of Object.entries(value)) {
+    if (typeof entry !== "number" || !Number.isFinite(entry)) {
+      throw new Error(`“${field}.${key}” must be a number`);
+    }
+    out[key] = entry;
+  }
+  return out;
+}
+
+function quizRecord(value: unknown): Record<string, Record<string, StoredQuizAnswer>> {
+  if (value === undefined) return {};
+  if (!isRecord(value)) throw new Error("“quiz” must be an object");
+  const out: Record<string, Record<string, StoredQuizAnswer>> = {};
+  for (const [quizId, answers] of Object.entries(value)) {
+    if (!isRecord(answers)) throw new Error(`“quiz.${quizId}” must be an object`);
+    const clean: Record<string, StoredQuizAnswer> = {};
+    for (const [index, answer] of Object.entries(answers)) {
+      if (typeof answer === "number") {
+        // 2.0.0 stored the bare option index, before correctness was kept.
+        clean[index] = { picked: answer };
+      } else if (isRecord(answer) && typeof answer.picked === "number") {
+        clean[index] = {
+          picked: answer.picked,
+          correct: typeof answer.correct === "boolean" ? answer.correct : undefined,
+        };
+      } else {
+        throw new Error(`“quiz.${quizId}.${index}” is not a stored answer`);
+      }
+    }
+    if (Object.keys(clean).length > 0) out[quizId] = clean;
+  }
+  return out;
+}
+
+export type ProgressImportResult =
+  { ok: true; state: ExportableProgressState; exportedAt: string } | { ok: false; error: string };
+
+/** Validate an export document. Nothing is applied when this fails. */
+export function parseProgressExport(text: string): ProgressImportResult {
+  let raw: unknown;
+  try {
+    raw = JSON.parse(text);
+  } catch {
+    return { ok: false, error: "That file is not JSON." };
+  }
+  try {
+    if (!isRecord(raw)) throw new Error("The file does not hold an export document.");
+    if (raw.format !== PROGRESS_EXPORT_FORMAT) {
+      throw new Error("That file was not exported by Rust from Zero.");
+    }
+    if (raw.version !== PROGRESS_EXPORT_VERSION) {
+      throw new Error(`Export version ${String(raw.version)} is not supported here.`);
+    }
+    if (!isRecord(raw.state)) throw new Error("The export has no “state” object.");
+    const state: ExportableProgressState = {
+      done: numberRecord(raw.state.done, "done"),
+      quiz: quizRecord(raw.state.quiz),
+      saved: numberRecord(raw.state.saved, "saved"),
+      bookmarks: numberRecord(raw.state.bookmarks, "bookmarks"),
+      last: typeof raw.state.last === "string" ? raw.state.last : undefined,
+      theme:
+        raw.state.theme === "light" || raw.state.theme === "dark" || raw.state.theme === "system"
+          ? raw.state.theme
+          : undefined,
+      fs:
+        typeof raw.state.fs === "number" && raw.state.fs >= 15 && raw.state.fs <= 24
+          ? raw.state.fs
+          : undefined,
+    };
+    return {
+      ok: true,
+      state,
+      exportedAt: typeof raw.exportedAt === "string" ? raw.exportedAt : "",
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      error: error instanceof Error ? error.message : "That export is not valid.",
+    };
+  }
+}
+
+/** True when a state holds anything a reader would mind losing. */
+export function hasProgress(state: ExportableProgressState): boolean {
+  return (
+    Object.keys(state.done).length > 0 ||
+    Object.keys(state.quiz).length > 0 ||
+    Object.keys(state.saved).length > 0 ||
+    Object.keys(state.bookmarks).length > 0
+  );
+}
+
+/**
+ * Merge an import into local state without removing local work: every local
+ * entry stays, and imported entries are added only where local state has
+ * nothing. Replacing wholesale is a separate, explicit choice in the
+ * interface; merging is the safe default when the reader is unsure which
+ * machine is newer.
+ */
+export function mergeProgress(
+  local: ExportableProgressState,
+  imported: ExportableProgressState,
+): ExportableProgressState {
+  const quiz: ExportableProgressState["quiz"] = { ...imported.quiz };
+  for (const [quizId, answers] of Object.entries(local.quiz)) {
+    quiz[quizId] = { ...(imported.quiz[quizId] ?? {}), ...answers };
+  }
+  return {
+    done: { ...imported.done, ...local.done },
+    quiz,
+    saved: { ...imported.saved, ...local.saved },
+    bookmarks: { ...imported.bookmarks, ...local.bookmarks },
+    last: local.last ?? imported.last,
+    theme: local.theme ?? imported.theme,
+    fs: local.fs ?? imported.fs,
+  };
 }
 
 export function bookmarkedChapters(rows: ChapterProgress[]): ChapterProgress[] {

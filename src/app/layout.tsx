@@ -1,9 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { GuideShell } from "@/components/GuideShell";
-import {
-  GuideStateProvider,
-  type GlossaryTipItem,
-} from "@/components/GuideStateProvider";
+import { GuideStateProvider, type GlossaryTipItem } from "@/components/GuideStateProvider";
 import { loadGuide } from "@/lib/guide-parser";
 import { websiteJsonLd } from "@/lib/seo";
 import "./globals.css";
@@ -37,7 +34,7 @@ export const metadata: Metadata = {
     images: ["/og.png"],
   },
   twitter: {
-    card: "summary",
+    card: "summary_large_image",
     title: "Rust from Zero — The Complete Hands-On Guide",
     description: `Learn computer systems and Rust from zero: ${CHAPTERS} chapters, ${EXERCISES} solved exercises, ${QUIZZES} quiz questions and ${PROJECTS} real projects.`,
   },
