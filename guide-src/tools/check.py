@@ -31,7 +31,7 @@ CH = ROOT / "chapters"
 BASE = Path(os.environ.get("RUST_CHECK_HOME", "/opt/rs"))
 WORK = BASE / "chk"
 EXT = BASE / "ext"
-CAPTURED = ROOT / "captured"   # real compiler messages / program output, inserted by build.py into `auto` blocks
+CAPTURED = ROOT / "captured"   # real compiler messages / program output, inserted into `auto` blocks
 ENV = dict(os.environ)
 if (BASE / "cargo").exists():
     ENV.update(RUSTUP_HOME=str(BASE / "rustup"), CARGO_HOME=str(BASE / "cargo"),

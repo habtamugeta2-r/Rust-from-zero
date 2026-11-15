@@ -14,8 +14,13 @@ __pycache__/
 .pytest_cache/
 .venv/
 
-# Node tooling (screenshots, browsers)
+# Node tooling (Next.js, screenshots, browsers)
 node_modules/
+.next/
+out/
+.env*.local
+next-env.d.ts
+tsconfig.tsbuildinfo
 
 # Environment and secrets
 .env

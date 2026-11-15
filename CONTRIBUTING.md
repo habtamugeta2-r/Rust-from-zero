@@ -9,9 +9,16 @@ than no change.
 ## Get set up
 
 ```sh
-python3 -m pip install pygments     # the only build dependency
-python3 guide-src/tools/build.py    # writes ./rust-guide.html
-python3 guide-src/tools/audit.py    # must report "0 structural remark(s)"
+npm install                       # installs Next.js, Shiki, Tailwind & TypeScript
+npm run verify:content            # checks every chapter, link & captured output
+npm run typecheck && npm run build
+python3 guide-src/tools/audit.py --strict   # must report "0 structural remark(s)"
+```
+
+To run the local Next.js site with live reload while editing chapters:
+
+```sh
+npm run dev
 ```
 
 To check the examples you also need a Rust toolchain (stable, plus `clippy` and
@@ -29,11 +36,10 @@ python3 guide-src/tools/check.py --projects         # multi-file & Wasm/no_std p
 `:::analogy`/`:::warn`/`:::quiz`/`:::exercise` boxes, code-fence flags, and the
 captured-output mechanism.
 
-## What to edit, and what never to edit
+## What to edit, and what never to delete
 
-- Edit `guide-src/chapters/*.md` and `guide-src/assets/*`.
-- **Never edit `rust-guide.html` by hand.** Run `build.py` and commit the result
-  in the same commit as the chapter change, so the two cannot drift.
+- Edit `guide-src/chapters/*.md` for guide prose and examples, or `src/` for the
+  Next.js application and parser.
 - Delete nothing from `guide-src/captured/`: those files hold the real outputs
   that the `output auto` blocks are filled from.
 
@@ -63,16 +69,15 @@ captured-output mechanism.
 2. Run `python3 guide-src/tools/check.py <chapter>` and let it capture the real
    output.
 3. Do not hand-type output. Put an ```` ```output auto ```` or
-   ```` ```error auto ```` block after the example; `build.py` fills it from
-   `captured/`.
+   ```` ```error auto ```` block after the example; the Next.js parser fills it
+   from `guide-src/captured/`.
 4. If the example needs a crate, add the crate and version to
    `guide-src/tools/ext-main-Cargo.toml`, and check it with `--ext`.
 
 ## Before you open a pull request
 
-- [ ] `python3 guide-src/tools/build.py` runs without warnings, and the rebuilt
-      `rust-guide.html` is part of the commit.
-- [ ] `python3 guide-src/tools/audit.py` reports **0 structural remarks**.
+- [ ] `npm run verify:content`, `npm run typecheck`, and `npm run build` pass cleanly.
+- [ ] `python3 guide-src/tools/audit.py --strict` reports **0 structural remarks**.
 - [ ] `python3 guide-src/tools/check.py` passes for every chapter you touched
       (and `--ext` if you touched a crate example).
 - [ ] Multi-file and target projects still rebuild and test:
