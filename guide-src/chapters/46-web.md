@@ -84,7 +84,11 @@ You will build exactly this API later in the chapter.
 
 ## A first server
 
-A **web framework** is a library that does the common work of a server: it reads requests, finds the right function, and writes responses. This chapter uses **Axum**, the framework made by the Tokio team. It is the most widely used one today, it has little magic, and it builds on the crates of the last chapter: Tokio, tower and Serde.
+A **web framework** is a library that does the common work of a server: it reads requests, finds the right function, and writes responses. This chapter uses **Axum**, the framework made by the Tokio team. It is the most widely used one today, it has little magic, and it is built on **Tokio** for the async runtime and **tower** for the layer stack around each service, both from [chapter 60](#async-ecosystem). The third ingredient is **Serde**, which turns structs into JSON and back; it gets a full chapter of its own later ([chapter 78](#serde)), so here is the part this chapter needs:
+
+:::plain Serde in one box
+`#[derive(Serialize)]` on a struct generates code that writes it into a data format, and `#[derive(Deserialize)]` generates the code that reads it back. A format crate such as `serde_json` supplies the actual bytes. Field names become JSON keys, `Option<T>` becomes `null` for `None`, and `#[serde(rename_all = "snake_case")]` rewrites the keys in bulk. In Axum, a handler returning `Json<T>` needs `T: Serialize`; a handler taking `Json<T>` as an argument needs `T: Deserialize`. That is the entire integration.
+:::
 
 ```toml
 [dependencies]

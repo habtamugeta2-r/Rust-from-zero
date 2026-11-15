@@ -42,6 +42,18 @@ Deliverable: Next.js App Router web application (`src/`) built directly from
 - Method for long chapters with tested programs: build and test the program in /opt/rs/scratch, write the chapter
   text with @@NAME@@ markers, and fill the markers from the tested files with a small Python script.
 
+## Reader experience (web UI)
+- **Text size.** The `A−` / `A+` control in the header sets `--guide-fs` (15–24 px, saved in
+  `localStorage` under `rust-guide-v1.fs`). `.guide-prose` reads that variable, and chapter
+  headings are sized in `em`, so the whole chapter scales together instead of only the prose.
+- **Table of contents.** `ChapterRail` lists `h2` *and* `h3` entries. From `xl` up it is a sticky
+  rail beside the prose; below `xl` the same tree is a collapsed `<details>` panel above the article,
+  so long chapters stay navigable on a laptop or a phone.
+- **`[[term]]` pills** resolve against `90-glossary.md` at parse time. A key with no entry produces
+  a `verify:content` warning and falls back to plain text: keep the glossary in sync when adding
+  pills. Use `[[shown|key]]`; the key is trimmed and lowercased, and **must not contain backticks**
+  (the inline-code pass runs first and breaks them).
+
 ## Chapter format (see chapters/03-variables.md for a model)
 Header: @id @part @title @short @level @time @learn a | b | c   (@kind project|appendix)
 Blocks: ## h2, ### h3, lists, tables, ```lang flags, :::analogy|plain|compare|warn|tip|note|key|recap Title … :::,

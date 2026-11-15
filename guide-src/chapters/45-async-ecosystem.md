@@ -19,6 +19,10 @@ Earlier chapters in this part explained the machinery of concurrency: threads, l
 
 ## Rayon: all cores for one calculation
 
+:::plain The async ecosystem in one paragraph
+Rust ships `async`/`await` as syntax but deliberately ships no runtime, so the ecosystem fills the gap. **Tokio** provides the reactor and the scheduler that poll futures on `epoll`-ready events, `spawn` for background tasks, and the `#[tokio::main]` macro that starts it. **Rayon** is the other half of the picture: a work-stealing thread pool for CPU-bound data parallelism, where `par_iter()` turns a sequential iterator into a parallel one. On top of the runtime sit `reqwest` for HTTP, `tower` for composable layers around a service, `tonic` for gRPC, and `serde` for every wire format. Choosing a runtime is a real architectural decision, and it is why the guide shows both a `tokio::spawn` and a `rayon` version of the same job.
+:::
+
 :::analogy A team of movers
 Four movers empty a lorry. Each one gets a quarter of the boxes. One of them has only light boxes and is finished early. A good mover does not sit down then: he walks over to a colleague who is behind, and takes boxes from the far end of that pile. Nobody plans this in advance, and still everyone is busy until the lorry is empty. Rayon's worker threads behave this way. The technique is called **work stealing**.
 :::
@@ -1352,7 +1356,7 @@ async fn main() -> Result<(), BoxError> {
 requests seen: 3
 ```
 
-The `Service` trait has two methods. `poll_ready` says whether the service can accept a request now. `call` takes the request and returns a future. `Count<S>` is generic over the inner service `S`, so it wraps any service at all. That is all there is to middleware: a struct that holds the next service, does something, and passes the request on. For simple cases, Axum offers a shorter way with an async function, as the next chapter shows.
+The `Service` trait has two methods. `poll_ready` says whether the service can accept a request now. `call` takes the request and returns a future. `Count<S>` is generic over the inner service `S`, so it wraps any service at all. That is all there is to middleware: a struct that holds the next service, does something, and passes the request on. For simple cases, Axum offers a shorter way with an async function, as [chapter 64](#web) shows.
 :::
 
 ## gRPC services with `tonic`
@@ -1436,7 +1440,7 @@ They are not alternatives. Metrics tell you *that* something is wrong; traces te
 
 Any log system — Loki, Elasticsearch, CloudWatch, Datadog, `jq` on a file — can then answer "every request slower than 500 ms on `/notes` yesterday" without a regular expression written by hand. The `message` field stays human, the fields stay machine-readable.
 
-In Rust the crate for this is [`tracing`](https://docs.rs/tracing), which [chapter 77](#crates) introduced: an *event* is a log line, a *span* is a named region of work with fields attached, and every event inside that region inherits them. It is the same crate for logs and traces, which is why the ecosystem settled on it. The subscriber decides the format:
+In Rust the crate for this is [`tracing`](https://docs.rs/tracing), the crate the [observability chapter](#observability) builds on: an *event* is a log line, a *span* is a named region of work with fields attached, and every event inside that region inherits them. It is the same crate for logs and traces, which is why the ecosystem settled on it. The subscriber decides the format:
 
 - `tracing_subscriber::fmt()` prints human-readable lines, as in [chapter 69](#project-api);
 - `tracing_subscriber::fmt().json()` prints one JSON object per line — the production format;

@@ -16,6 +16,10 @@ When that day comes, this chapter gives you a method. It has three rules, and th
 
 [Chapter 40](#idioms) asked you to write the clear version first and to optimise only what a measurement points at. Here is how to get that measurement.
 
+:::plain Measure, then change one thing
+Performance work is a loop, not a list of tricks: **measure** with a release build (debug builds are `10–100×` slower and meaningless for timing), find the actual bottleneck with `perf` or `cargo flamegraph`, change **one** thing, and measure again. The usual suspects are allocations (a `String` per line), unnecessary copies (`&Vec<T>` arguments), the wrong data structure (a `Vec` scan where a `HashSet` belongs), unbuffered I/O, and the default hasher. The usual non-answer is guessing: the line that *looks* slow is regularly not the one that is, which is why `Instant::now()` around two implementations settles arguments faster than any opinion.
+:::
+
 :::analogy The slow restaurant
 A restaurant gets complaints: the food takes too long. The owner is sure that the cooks are slow, and buys a faster stove. Nothing improves. Then somebody stands in the kitchen for an evening with a watch. Cooking a dish takes six minutes. But every plate waits ten minutes on the counter, because one waiter serves the whole room. The stove was never the problem. Programs are like this. The slow part is very often not where you would bet, and only a watch can tell you.
 :::

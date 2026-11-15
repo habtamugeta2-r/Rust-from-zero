@@ -53,6 +53,10 @@ The project brings together the practical tools and backend stack:
 
 It also keeps the promises of the tooling chapters: format, lint, test, document, and a CI-style checklist at the end.
 
+:::plain One program, every layer
+The capstone is the guide's only chapter that uses everything at once: a `Cargo.toml` with real dependencies, modules with privacy boundaries, enums for the domain, `Result` and `thiserror` for failures, a SQLite schema with indexes, an Axum layer with typed state, `tracing` for observability, integration tests against a temporary database, and a Dockerfile with a small release build. Nothing in it is new. The exercise is composition: recognising that each earlier chapter solved one part of the problem, and knowing which part to reach for when the requirements change.
+:::
+
 :::analogy A library card catalogue
 A library has a card catalogue: one card per book, filed so that any librarian can find a book by title, author or subject. The catalogue is the database. The librarian behind the desk is the rules layer — they check that a new book has a title before filing it. The public catalogue terminal and the telephone are the web API and the CLI: two different ways to ask the same librarian about the same cards.
 :::

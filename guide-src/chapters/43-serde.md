@@ -10,6 +10,10 @@ Programs exchange data all the time: they save it to files, send it over the net
 
 In Rust, nearly all of this is done with one library: **Serde** (from "**ser**ialise" and "**de**serialise"). You describe your data as ordinary structs and enums, add one line, and Serde converts them to and from JSON, TOML, YAML, CSV and a dozen other formats.
 
+:::plain Serde in one paragraph
+**Serde** separates *what a value is* from *how it is represented*. `#[derive(Serialize, Deserialize)]` generates the conversion code for your struct once, and a separate format crate — `serde_json`, `toml`, `bincode`, `postcard` — supplies the bytes. Attributes tune the mapping: `#[serde(rename_all = "camelCase")]`, `#[serde(default)]`, `#[serde(skip_serializing_if = "Option::is_none")]`, and `#[serde(deny_unknown_fields)]` for strict inputs. Because the derive is a macro rather than reflection, the result is monomorphised and fast, and it works in `no_std` environments where there is no runtime metadata at all.
+:::
+
 :::analogy A universal adaptor
 A travel adaptor has two sides: one for your plug, and one for the foreign socket. With one adaptor, any of your devices works in any country. Serde is the adaptor between Rust types on one side and data formats on the other. A type that works with Serde works with every format, and a new format works with every type.
 :::

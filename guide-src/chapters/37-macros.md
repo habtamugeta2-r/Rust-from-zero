@@ -8,6 +8,10 @@
 
 Since your first program you have used `println!`. The exclamation mark means that it is a **macro**, not a function. `vec!`, `format!`, `assert_eq!`, `matches!` and `#[derive(Debug)]` are macros as well. This chapter shows what they are and how to write your own.
 
+:::plain Declarative and procedural macros
+A **[[macro]]** is code that runs at compile time and produces code. `macro_rules!` matches token patterns and re-emits tokens, which is how `vec![]` and `println!` are written; it is hygienic, so names introduced inside do not leak out. **Procedural** macros are separate crates that take a token stream and return one: `#[derive(Clone)]` is a derive macro, `#[inline]` is an attribute macro, and `sqlx::query!` is a function-like macro that can check SQL against a live database at compile time. Macros are the escape hatch for what borrowing and generics cannot express; reach for a function first, and a macro only when the syntax itself must be new.
+:::
+
 :::analogy A rubber stamp
 An office that writes the same paragraph into hundreds of letters gets a rubber stamp made. Pressing the stamp produces the full text, and nobody has to write it out again. Some stamps have blanks that are filled in each time, such as a date. A macro is a stamp for code: you write a short form, and the compiler expands it into the full code before the program is built.
 :::

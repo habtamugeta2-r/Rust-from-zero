@@ -60,9 +60,10 @@ Owner calls drop(guard):
 ```
 :::
 
-Look how elegant `futex` is:
-- **99% of uncontended locks and unlocks never enter the Linux kernel at all**—just one atomic CPU instruction (`lock cmpxchg` / `xchg`) in Ring 3!
-- **Only when threads genuinely collide** does the waiting thread call `SYS_futex(FUTEX_WAIT)` so the OS puts it peacefully to sleep at `0%` CPU instead of burning battery spinning in a `while` loop!
+Notice why **[[futex]]** scales so well:
+
+- **Uncontended locks and unlocks never enter the Linux kernel at all**—just one [[atomic]] CPU instruction (`lock cmpxchg` / `xchg`) in Ring 3.
+- **Only when threads genuinely collide** does the waiting thread call `SYS_futex(FUTEX_WAIT)` so the OS puts it peacefully to sleep at `0%` CPU instead of burning battery spinning in a `while` loop.
 
 Let's simulate that exact two-state `futex`-style lock protocol in safe Rust using `AtomicU32` (in production, `std::sync::Mutex` or the `parking_lot` crate handles the real `SYS_futex` / OS wait parking):
 
@@ -108,11 +109,16 @@ Look at the dangerous trap here: what if your thread was **midway inside `malloc
 
 **Instant single-thread deadlock!** The signal handler waits forever for the heap lock already held by the paused frame *right underneath it on the very same thread's call stack*!
 
+:::plain What does async-signal-safe mean?
+A function is **async-signal-safe** if it can safely run even when a signal interrupted your thread right in the middle of another library call on the *same* stack. Lock-free atomics (`AtomicBool::store`) and raw `write(fd, ...)` syscalls are async-signal-safe; anything that acquires a user-space lock or allocates heap memory (`malloc`, `println!`, `String::from`, `Mutex::lock`) is **not**.
+:::
+
 :::warn Only async-signal-safe operations belong inside raw Unix signal handlers
-Inside a raw POSIX signal handler (`sigaction`), POSIX forbids `malloc`, `free`, `println!`, `Mutex::lock()`, and almost all of Rust `std`! Only **async-signal-safe** primitives are allowed:
+Inside a raw POSIX signal handler (`sigaction`), POSIX forbids `malloc`, `free`, `println!`, `Mutex::lock()`, and almost all of Rust `std`. Only **async-signal-safe** primitives are allowed:
+
 - Writing to a lock-free `AtomicBool` (e.g. `SHUTDOWN.store(true, Ordering::Release)`),
-- Calling raw `libc::write(fd, ...)` on a pipe/eventfd (**the self-pipe trick!**), or
-- Letting crates like **`signal-hook`** or **`tokio::signal`** catch the raw signal safely via a self-pipe / `signalfd` and turn it into an ordinary Rust iterator, channel message, or async future!
+- Calling raw `libc::write(fd, ...)` on a pipe/eventfd (**the self-pipe trick**), or
+- Letting crates like **`signal-hook`** or **`tokio::signal`** catch the raw signal safely via a self-pipe / `signalfd` and turn it into an ordinary Rust iterator, channel message, or async future.
 :::
 
 Common POSIX signals every systems programmer knows by heart:
@@ -129,7 +135,62 @@ Common POSIX signals every systems programmer knows by heart:
 
 ## Graceful shutdown pattern in Rust (atomic flag vs async `tokio::signal`)
 
-In production Rust CLI tools and servers, never put business logic or `Drop` cleanup inside a raw signal handler. Set an `AtomicBool` (via `ctrlc` / `signal-hook`) or await `tokio::signal::ctrl_c()`, exit your main loop normally, and let Rust's normal `Drop` destructors flush buffers, close database transactions, and drain open HTTP requests cleanly!
+In production Rust CLI tools and servers, never put business logic or `Drop` cleanup inside a raw signal handler. Set an `AtomicBool` (via `ctrlc` / `signal-hook`) or await `tokio::signal::ctrl_c()`, exit your main loop normally, and let Rust's normal `Drop` destructors flush buffers, close database transactions, and drain open HTTP requests cleanly.
+
+## Resource limits (`rlimit`) and Linux `cgroups` v2
+
+How does Linux stop one runaway process or container from opening ten million files, exhausting every byte of physical RAM, or starving sibling services of CPU? Two complementary kernel mechanisms enforce resource budgets:
+
+1. **Per-process resource limits (`rlimit` / `ulimit`):** Every process inherits soft and hard ceilings (`getrlimit` / `prlimit64`), visible live in `/proc/self/limits`:
+   - `RLIMIT_NOFILE` (`ulimit -n`): maximum open file descriptors (e.g. `1024` or `65536`; exceeding it returns `EMFILE`).
+   - `RLIMIT_STACK` (`ulimit -s`): maximum main-thread `[stack]` size (typically `8 MiB`).
+   - `RLIMIT_AS` / `RLIMIT_CORE`: virtual address space cap and core-dump file cap.
+2. **Control groups ([[cgroup]], `/sys/fs/cgroup`):** While namespaces ([Chapter 48](#processes-threads-scheduling)) isolate *what a container sees*, **`cgroups` v2** cap *how much hardware a group of processes may consume*:
+   - **`memory.max`:** Hard physical RAM ceiling for the container. Exceeding it wakes the kernel **OOM killer**, which terminates the offending process with an uncatchable `SIGKILL` (`exit status 137`).
+   - **`cpu.max`:** Bandwidth quota (for example `200000 100000` = at most 2.0 CPU cores per 100 ms period). Note that `std::thread::available_parallelism()` in modern Rust checks cgroup CPU quotas on Linux so thread pools do not spawn 64 threads inside a 2-CPU container!
+
+You can inspect your own process's active kernel `rlimit` ceilings right from Rust:
+
+```rust run nocmp
+fn main() {
+    if let Ok(limits) = std::fs::read_to_string("/proc/self/limits") {
+        for line in limits.lines() {
+            if line.starts_with("Limit")
+                || line.starts_with("Max stack size")
+                || line.starts_with("Max open files")
+            {
+                println!("{line}");
+            }
+        }
+    }
+}
+```
+```output
+Limit                     Soft Limit           Hard Limit           Units
+Max stack size            8388608              unlimited            bytes
+Max open files            1048576              1048576              files
+```
+
+## Putting Part VI together: Linux architecture end-to-end
+
+Every piece of Part VI fits into one unified operating-system picture:
+
+```text
+  Ring 3 User Space:   [ Your Rust Code ] ──► [ std / libc / vDSO ]
+                                │                         │
+  ═══════════════ syscall / sysretq (RAX, RDI..R9, R10) ══╪═════════ Signals (SIGINT/SIGTERM)
+                                ▼                         ▼
+  Ring 0 Linux Kernel: ┌──────────────────────────────────────────────────────────┐
+                       │ System Call Entry  │  EEVDF Scheduler  │  futex Wait Qs  │
+                       │ VFS & Page Cache   │  TCP/IP Sockets   │  Namespaces &   │
+                       │ Virtual Mem (MMU)  │  epoll / io_uring │  cgroups v2     │
+                       ├──────────────────────────────────────────────────────────┤
+                       │ Device Drivers, Block Layer (blk-mq), Top/Bottom IRQs    │
+                       └────────────────────────────┬─────────────────────────────┘
+  ═══════════════ PCIe / Memory Bus / DMA / Hardware IRQs ════════════════════════
+                                                    ▼
+  Hardware:            [ CPU Cores + TLB ]   [ DRAM ]   [ NVMe SSD ]   [ NIC ]
+```
 
 :::exercise guided Diagnosing why a signal handler froze a server
 A C/Rust server installs a raw `sigaction` handler for `SIGTERM` that formats a timestamp using `chrono` (`String::from` + `println!`) before calling `_exit(0)`. Under heavy traffic, 1 in 10,000 shutdowns hangs permanently at `100%` deadlock until `kill -9` kills it. Explain the exact mechanism of this bug.
@@ -185,7 +246,8 @@ fn main() {
 worker observed shutdown cleanly
 main joined worker cleanly
 ```
-(Note timing variations across threads can make `ticks` `2` or `3`; if running under tight CPU load, cap the loop safely or keep `nocmp` if wall-clock timing varies.)
+
+Pairing `Ordering::Release` on `store` with `Ordering::Acquire` on `load` guarantees that every memory write made before the shutdown flag was set is visible to the waking worker thread.
 :::
 
 :::recap

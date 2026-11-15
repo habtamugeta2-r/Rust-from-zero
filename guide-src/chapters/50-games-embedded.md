@@ -12,6 +12,10 @@ Three more fields where Rust is used, and each of them could fill a book of its 
 The Cortex-M3 bare-metal project (`thumbv7m-none-eabi`) is extracted and cross-compiled in CI by `tools/check.py --projects`, and the standalone `embedded-hal`, `heapless`, `ndarray`, and machine-learning listings are checked and run by `tools/check.py`. Windowed games (`macroquad`, `Bevy`) were built and played on Linux with real key presses, the QEMU firmware run and Raspberry Pi Pico binary were verified against their targets locally, and the Polars snippet was run against the chapter 26 sales data.
 :::
 
+:::plain Games, chips, and data
+This chapter is a three-part survey of Rust outside the web. **Games** are a game loop plus state: macroquad for a small 2D game, Bevy for an ECS where entities are ids, components are data, and systems are functions that declare what they read. **Embedded** is `no_std` Rust on a microcontroller with kilobytes of RAM: `embedded-hal` abstracts pins and buses, `heapless` gives collections with no allocator, and a Cortex-M3 binary runs under QEMU. **Data and ML** is `ndarray` for matrices, Polars for data frames, and `linfa`/`candle` when the model itself is the program. The common thread is that the language does not change; only what is available underneath does.
+:::
+
 ## Games
 
 :::analogy A flip book

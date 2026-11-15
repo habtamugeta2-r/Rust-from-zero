@@ -20,6 +20,10 @@ fn main() {
 
 It looks effortless—eleven tokens and a macro. Underneath, all ten layers of your computer execute in perfect lockstep. Let's trace every single nanosecond and byte from source text to glowing pixels on your screen!
 
+:::plain The whole path, in one paragraph
+This chapter is the guide folded into a single trace. One line of Rust — `let name = String::from("Habtamu"); println!("{}", name);` — touches every layer you have met: `rustc` turns it into MIR then LLVM IR then machine code; the linker builds an ELF file; the kernel's loader maps that ELF into a fresh address space and jumps to `_start`; `lang_start` sets up the runtime; `String::from` reaches the allocator and the heap; `println!` locks stdout and issues a `write` syscall through the vDSO-less path into the kernel; the TTY driver copies bytes to the terminal; and the process exits with a status the shell reads. Following those ten stages once makes every later chapter a detail of a picture you already hold.
+:::
+
 :::analogy Following a parcel from app tap to doorstep
 When you tap "Order" on a phone, the screen hides ten separate organisations: the mobile app (`Rust source`), warehouse software (`MIR/LLVM`), barcoded container (`ELF sections`), city map (`Virtual Memory`), local courier (`glibc malloc`), driver relay (`CPU registers`), customs border (`syscall`), postal hub (`Linux Kernel VFS/TTY`), delivery van (`stdout pipe/PTY`), and your doorbell (`Terminal glyph rendering`). This chapter tracks our 7-byte parcel `"Habtamu"` across every checkpoint without skipping a single door.
 :::
@@ -84,29 +88,32 @@ fn main() {
 ```
 
 Trace every step of `let name = String::from("Habtamu");`:
-- **CPU & TLB:** `main` starts executing from an L1i cache hit; its `RIP` virtual address translates via the TLB to `.text`'s physical frame.
-- **Heap allocator:** `System::alloc(Layout::from_size_align(7, 1))` calls `malloc(7)`. `glibc`'s `ptmalloc2` (or `jemalloc`) checks the current thread's local cache (`tcache`) for the smallest size class (`16` or `32` bytes), pops an already-mapped chunk from `[heap]` (returning an address like `0x55608aa662a0`), and takes ~15 nanoseconds—no kernel syscall needed if a bin already has free space!
-- **Cache line transfer:** Copying the 7 bytes from `.rodata` into that heap address pulls the 64-byte `.rodata` cache line into L1d, writes `48 61 62 74 61 6d 75` into the heap buffer's 64-byte L1d cache line, and places `(ptr=0x556..., cap=7, len=7)` on the stack (or directly in CPU registers if LLVM keeps it there!).
+
+- **CPU & [[TLB]]:** `main` starts executing from an L1i [[cache]] hit; its `RIP` virtual address translates via the TLB to `.text`'s physical frame.
+- **Heap allocator:** `System::alloc(Layout::from_size_align(7, 1))` calls `malloc(7)`. `glibc`'s `ptmalloc2` (or `jemalloc`) checks the current thread's local cache (`tcache`) for the smallest size class (`16` or `32` bytes) and pops an already-mapped chunk from `[heap]` (returning an address like `0x55608aa662a0`) in ~15 nanoseconds—no kernel syscall needed when a bin already has free space.
+- **[[Cache line|cache line]] transfer:** Copying the 7 bytes from `.rodata` into that heap address pulls the 64-byte `.rodata` cache line into L1d, writes `48 61 62 74 61 6d 75` into the heap buffer's 64-byte L1d cache line, and places `(ptr=0x556..., cap=7, len=7)` on the stack (or directly in CPU registers).
 
 ## Stages 9–10: `println!`, `write()` Syscall, Kernel & Terminal Screen
 
-Now `println!("{}", name)` executes:
-1. **Formatting into `StdoutLock`:** `std::io::_print` locks the global `Stdout` (`ReentrantLock`, wrapping an `Arc`/`OnceLock` mutex) and formats `"Habtamu"` followed by `"\n"` into an internal `LineWriter` buffer (1,024 bytes by default).
-2. **Line flush triggers a syscall:** Because `println!` ends with `\n` (`0x0a`), `LineWriter` flushes immediately by calling libc `write(1, buf_ptr, 8)`.
-3. **Ring 3 -> Ring 0 transition:** On Linux x86-64, libc places `rax = 1` (`SYS_write`), `rdi = 1` (`stdout` file descriptor), `rsi = buf_ptr`, `rdx = 8`, and executes the **`syscall`** instruction! The CPU saves user `RIP` into `RCX`, switches privilege level from **Ring 3** (user) to **Ring 0** (kernel), and jumps to Linux's syscall entry handler.
-4. **Inside the Linux kernel (`sys_write`):** The kernel verifies `fd == 1` in the process's file descriptor table, copies the 8 bytes safely (`copy_from_user`) from the process buffer into kernel memory, and writes them to whatever backs `fd 1`:
-   - If writing to a **pseudo-terminal (PTY)** (a normal terminal window), the kernel's TTY line discipline wakes the sleeping terminal emulator process (e.g. `xterm`, `Alacritty`, VS Code terminal).
-   - If redirected (`./prog > out.txt`), the kernel copies the 8 bytes into the **page cache** (`ext4`/`tmpfs`) to be flushed asynchronously to SSD blocks.
-5. **Terminal pixels:** Your terminal emulator reads the 8 UTF-8 bytes from the PTY master fd, decodes `H a b t a m u \n`, looks up font glyph outlines, rasterises them into your GPU framebuffer, and lights up pixels on your display!
+Now `println!("{}", name)` executes across six crisp steps:
+
+1. **Formatting into `StdoutLock`:** `std::io::_print` locks the global `Stdout` (`ReentrantLock`) and formats `"Habtamu"` followed by `"\n"` into an internal `LineWriter` buffer (1,024 bytes by default).
+2. **Line flush triggers a write:** Because `println!` ends with `\n` (`0x0a`), `LineWriter` flushes immediately by calling libc `write(1, buf_ptr, 8)`.
+3. **Ring 3 -> Ring 0 transition:** On Linux x86-64, libc places `rax = 1` (`SYS_write`), `rdi = 1` (`stdout` [[file descriptor]]), `rsi = buf_ptr`, `rdx = 8`, and executes the **`syscall`** instruction (a [[system call]]). The CPU saves user `RIP` into `RCX`, switches privilege level from **Ring 3** (user) to **Ring 0** ([[kernel]]), and jumps to Linux's syscall entry handler.
+4. **Inside the Linux kernel (`sys_write`):** The kernel verifies `fd == 1` in the process's file descriptor table, copies the 8 bytes safely (`copy_from_user`) into kernel memory, and writes them to whatever backs `fd 1`:
+   - If writing to a **pseudo-terminal ([[PTY]])** (a normal terminal window), the kernel's TTY line discipline wakes the sleeping terminal emulator process (such as `xterm`, `Alacritty`, or VS Code's terminal).
+   - If redirected (`./prog > out.txt`), the kernel copies the 8 bytes into the **[[page cache]]** (`ext4`/`tmpfs`) to be flushed asynchronously to SSD blocks.
+5. **Terminal pixels:** Your terminal emulator reads the 8 UTF-8 bytes from the PTY master fd, decodes `H a b t a m u \n`, looks up font glyph outlines, rasterises them into your GPU framebuffer, and lights up pixels on your display.
 6. **Cleanup (`drop(name)`):** Back in user space right before `main` exits, `Drop::drop(&mut name)` passes `ptr` and `Layout(7, 1)` to `System::dealloc`, which calls `free(ptr)` and returns the chunk back to the thread-local allocator bin. Finally, `lang_start_internal` returns `0` to `exit_group(0)`, and the Linux kernel tears down every page table and file descriptor of the process cleanly.
 
-:::details Watch the bytes literally travel!
+:::details Watch the bytes literally travel
 Notice that at no point did `"Habtamu"` stop being 7 concrete bytes `[0x48, 0x61, 0x62, 0x74, 0x61, 0x6d, 0x75]`:
+
 - Stored statically inside the ELF file on disk (`.rodata`)
 - Mapped read-only in virtual memory by `execve`
 - Copied into a heap slab inside L1d cache by `String::from`
 - Copied across the Ring 3 / Ring 0 boundary by `sys_write(1, ..., 8)`
-- Decoded as UTF-8 glyphs by the terminal program!
+- Decoded as UTF-8 glyphs by the terminal program
 :::
 
 :::exercise guided Pinpointing where allocations and syscalls occur

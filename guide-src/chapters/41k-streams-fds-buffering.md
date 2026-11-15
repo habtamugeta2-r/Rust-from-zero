@@ -49,15 +49,42 @@ That three-tier design explains three classic Unix behaviours immediately:
 ## Unix Pipes and Backpressure
 
 A **Unix pipe** (`pipe2()` syscall) allocates two FDs—`read_end` and `write_end`—connected to a **kernel ring buffer** (typically **64 KiB** on Linux):
-- If the writer (`producer`) writes faster than the reader (`consumer`), the 64 KiB pipe buffer fills up, and the kernel puts the writer **to sleep** automatically (**backpressure!**)—zero memory explosion!
-- If the reader closes `read_end`, the next `write()` on `write_end` triggers `SIGPIPE` / `EPIPE` (`BrokenPipe`), cleanly halting upstream stages like `yes | head -n 5`!
-- When the writer closes `write_end` (`Drop` on `ChildStdin`!), the reader sees `read()` return **`0` bytes (`EOF`)**.
+
+- If the writer (`producer`) writes faster than the reader (`consumer`), the 64 KiB pipe buffer fills up, and the kernel puts the writer **to sleep** automatically (**backpressure**)—preventing unbounded memory growth.
+- If the reader closes `read_end`, the next `write()` on `write_end` triggers `SIGPIPE` / `EPIPE` (`BrokenPipe`), cleanly halting upstream stages like `yes | head -n 5`.
+- When the writer closes `write_end` (`Drop` on `ChildStdin`), the reader sees `read()` return **`0` bytes (`EOF`)**.
+
+## File offsets (`lseek`) and Terminals (`TTY` / `PTY`)
+
+Two more everyday Unix stream behaviours sit right inside that Open File Description table:
+
+### 1. File offsets, `Seek`, and `pread` (`FileExt::read_at`)
+
+Regular files track a current **byte offset** inside the kernel's Open File Description: reading 100 bytes advances the offset from `0` to `100`. Calling `file.seek(SeekFrom::Start(0))` invokes the **`lseek`** [[system call]], updating that kernel cursor without copying any file bytes.
+
+Because two `File` handles cloned via `file.try_clone()` share the **same** Open File Description, seeking on one handle moves the cursor for the other! When multiple threads read different offsets of the same file concurrently (as databases do), use `std::os::unix::fs::FileExt::read_at(&file, buf, offset)` (`pread64` syscall), which reads at an explicit byte offset **without touching the shared file cursor**.
+
+### 2. Terminals (`TTY` / [[PTY]]): canonical line mode vs raw mode
+
+When `stdin` (`FD 0`) and `stdout` (`FD 1`) are attached to an interactive terminal (`std::io::IsTerminal::is_terminal(&io::stdin())`), a kernel driver called the **TTY line discipline** sits between your keyboard and your Rust program:
+
+- **Canonical (cooked) mode (the default):** The kernel holds typed characters inside an internal line buffer, handles `Backspace` editing itself, turns `Ctrl+C` into `SIGINT` and `Ctrl+D` into `EOF`, and wakes your blocked `stdin().read_line(...)` call **only when the user presses Enter (`\n`)**.
+- **Raw mode (used by TUI crates like `crossterm` and `ratatui`):** Disables line buffering, echo, and `Ctrl+C` signal translation via `tcsetattr` (`termios`), delivering every single keypress (`Up`, `Esc`, `q`) byte-by-byte to your Rust program immediately.
 
 ## User-space buffering vs Kernel buffering (`fsync`)
 
-Writing a file actually involves **two completely separate buffers**:
+:::plain Three places your written bytes can sit
+When your Rust program writes text to a file, the bytes pass through **three** distinct stages:
+
+1. **User-space `BufWriter` (process RAM):** fast batching array; lost if your process crashes before `.flush()`.
+2. **Kernel [[page cache]] (OS RAM):** populated by `write()`; survives a process crash, **lost if the machine loses power**.
+3. **Non-volatile SSD/disk media:** guaranteed only after `file.sync_all()?` (**[[fsync]]**) returns `Ok(())`.
+:::
+
+Writing a file therefore involves two separate RAM buffers before storage hardware ever sees a byte:
+
 1. **User-space buffer (`BufWriter` / `LineWriter`):** Accumulates small writes in your process's heap array (default `8 KiB`) to eliminate redundant `write()` syscalls. Calling `.flush()` (or dropping `BufWriter`) executes `write()` to push bytes into the kernel—**note `BufWriter::drop` silently ignores flush errors, so always call `writer.flush()?` explicitly before closing!**
-2. **Kernel page cache:** `write()` does **not** wait for spinning platters or SSD flash cells! It copies your bytes into kernel RAM (dirty pages in the OS **page cache**) and returns immediately in ~1 µs! The kernel writes dirty pages asynchronously in the background—which means if power drops 100 ms later, your data vanishes unless you call `file.sync_all()?` (**`fsync`**, flushing data + metadata all the way to persistent storage!) or `file.sync_data()?` (`fdatasync`).
+2. **Kernel page cache:** `write()` does **not** wait for spinning platters or SSD flash cells. It copies your bytes into kernel RAM (dirty pages in the OS page cache) and returns in ~1 µs. To guarantee durability across a sudden power cut, call `file.sync_all()?` (`fsync`, flushing data + [[inode]] metadata) or `file.sync_data()?` (`fdatasync`).
 
 ## RAII `Drop` prevents file descriptor leaks (`EMFILE`)
 

@@ -8,6 +8,10 @@
 
 Text is everywhere in programs: names, messages, file contents. It looks simple, and it is one of the trickiest kinds of data. Rust has two main text types, and beginners often ask why. The answer comes straight from ownership: one type **owns** its text, the other **borrows** it.
 
+:::plain `String`, `&str`, and slices in one paragraph
+A **`String`** owns a growable buffer on the heap, so you can append to it and pass it around. A **`&str`** is a *borrowed view* into text someone else owns: a pointer and a length, with no allocation of its own, which is why string literals are `&'static str`. A **slice** `&[T]` is the same idea for any array-like data: a length and a pointer into an existing `Vec` or array. Functions should usually take `&str` or `&[T]` and return owned values, so callers keep ownership and you avoid needless copies.
+:::
+
 ## Two kinds of text
 
 | | `String` | `&str` (say "string slice") |

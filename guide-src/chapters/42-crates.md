@@ -10,6 +10,10 @@ Rust's standard library is small on purpose. It has no random numbers, no regula
 
 This chapter shows how to find and judge crates, and introduces the ones you will use in almost every project. The chapters after it go deeper into the main areas: data formats, command-line tools, async and web, databases, and applications.
 
+:::plain Choosing a crate without regret
+A crate is a dependency you are choosing to maintain for as long as your project lives. Judge it on facts rather than on stars: when it was last released, whether issues get answered, whether the docs contain worked examples, how many transitive dependencies it drags in, and whether it offers a feature flag that lets you drop the parts you do not use. Prefer the crate the ecosystem has converged on (`serde`, `tokio`, `clap`, `tracing`) unless you have a concrete reason, and check the licence before it enters `Cargo.toml`. One dependency is a decision; `cargo tree` is how you see what it actually cost.
+:::
+
 :::analogy A toolbox with a label on every drawer
 The standard library is the set of tools that comes with the workbench. Crates are the tools you choose for a particular job. A label helps you reach for the right tool, but before using one you still check that it fits, is maintained, and has no hidden damage. In the same way, learn a crate's job and check its source, docs, dependencies and release history before trusting it in a project.
 :::

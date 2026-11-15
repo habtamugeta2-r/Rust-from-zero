@@ -8,6 +8,10 @@
 
 A program that always runs the same lines in the same order cannot do much. Real programs **decide** (if the password is right, let the user in) and **repeat** (do this for every item in the list). Together these are called **control flow**: they control which line runs next. With sequence, decision and repetition you can express any computation.
 
+:::plain Conditions, loops, and expressions in one paragraph
+**Control flow** is how a program decides what to do next: `if` runs a block only when a `bool` is true, `match` picks one arm out of many, and `loop`, `while` and `for` repeat work. In Rust every one of those is an **expression** with a value, so `let x = if c { 1 } else { 2 };` is ordinary code. A loop can also produce a value with `break x`, and the compiler insists that every path through an `if`/`match` yields the same type.
+:::
+
 :::analogy A crossroads with signs
 When you reach a junction, a sign tells you which road to take. A program is the same. It reaches a condition and chooses one path, not several. The road signs are the `if`, `else if`, and `else` branches.
 :::

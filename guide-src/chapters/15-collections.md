@@ -8,6 +8,10 @@
 
 An array has a fixed length, decided when you write the program. Real data is rarely like that: a shopping cart, the lines of a file and the players in a game all grow and shrink. A **collection** is a type that holds a changing number of values on the heap. The standard library has several. Three of them cover almost everything: `Vec`, `HashMap` and `HashSet`.
 
+:::plain The three collections in one paragraph
+A **`Vec<T>`** is a growable array of same-typed values stored contiguously, so indexing is fast and the data is cache-friendly. A **`HashMap<K, V>`** looks values up by key in roughly constant time, at the cost of unordered iteration. A **`BTreeMap<K, V>`** keeps its keys sorted, so iteration is ordered and range queries are cheap, at a small constant factor in speed. Choosing between them is a question about iteration order and access pattern, not about which one is "better".
+:::
+
 ## `Vec`: a list that grows
 
 A `Vec<T>` (say "vector") is a growable list of values that all have the same type `T`. It is by far the most used collection in Rust.

@@ -10,6 +10,10 @@ Compiling a single `.rs` file produces machine instructions, yet those instructi
 
 ## Starting point: why compilation stops at object files first
 
+:::plain Object file vs executable
+An **[[object file]]** (`.o` or `.rlib`) is a half-finished building block: it holds compiled machine code for *one* crate or file, with blank placeholders wherever it calls functions from other files. An **executable** (an **[[ELF]]** binary on Linux) is the finished program after the **[[linker]]** joins all object files together and fills in every missing address.
+:::
+
 :::analogy Assembling chapters into a bound book
 Writing one chapter produces loose pages with cross-references like *"see chapter ??"* because the final page numbers are not fixed yet. You need a bookbinder (**the linker**) to collect every chapter and appendix (`.o` / `.rlib` object files), replace every blank placeholder with its true page number (**relocation**), and wrap everything in a front cover (**the ELF header**) telling readers where page 1 starts.
 :::
@@ -54,13 +58,14 @@ Static Linking:                              Dynamic Linking:
 | Memory sharing | Each distinct binary carries its own copy | One physical RAM copy of `libc.so.6` shared across all processes |
 | Rust default on Linux | Rust crates link **statically** (`.rlib`), while `libc` links **dynamically** unless targeting `x86_64-unknown-linux-musl` | Default for `libc`, `libm`, `libpthread` on `gnu` Linux targets |
 
-When a dynamically linked program calls a shared-library function such as `printf` or `malloc`, the compiler cannot hard-code its runtime address (ASLR randomises where `libc.so.6` loads on every run!). Instead, the linker routes calls through two clever indirection tables:
+When a dynamically linked program calls a shared-library function such as `printf` or `malloc`, the compiler cannot hard-code its runtime address ([[ASLR]] randomises where `libc.so.6` loads on every run). Instead, the linker routes calls through two small indirection tables:
+
 - **PLT (Procedure Linkage Table):** Tiny executable trampolines in `.plt` (`call printf@PLT`) that jump through a slot in the GOT.
 - **GOT (Global Offset Table):** Writable pointers in `.got.plt` patched by the dynamic linker (`ld-linux.so`) with the true runtime addresses in `libc.so.6`.
 
 ## The ELF format: sections vs segments
 
-On Linux, object files (`.o`), shared libraries (`.so`), and finished programs are all encoded in **ELF** (**Executable and Linkable Format**). Every ELF binary begins with a 64-byte **ELF Header** (`readelf -h`):
+On Linux, object files (`.o`), shared libraries (`.so`), and finished programs are all encoded in **[[ELF]]** (**Executable and Linkable Format**). Every ELF binary begins with a 64-byte **ELF Header** (`readelf -h`):
 
 ```text
 Offset 0x00:  7f 45 4c 46   02      01         01       ...
@@ -72,6 +77,7 @@ Offset 0x00:  7f 45 4c 46   02      01         01       ...
 ```
 
 An ELF file carries **two different tables** describing its contents for two different audiences:
+
 1. **Section Headers** (used by the **linker & debugger**): fine-grained sections like `.text`, `.rodata`, `.data`, `.bss`, `.symtab`, `.debug_info`.
 2. **Program Headers / Segments** (used by the **OS kernel loader**): coarse-grained memory slices (`PT_LOAD`) grouped strictly by **page permissions** (`R`, `R E`, `R W`) and `PT_INTERP` naming `/lib64/ld-linux-x86-64.so.2`.
 

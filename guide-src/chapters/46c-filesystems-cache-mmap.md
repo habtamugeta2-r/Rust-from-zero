@@ -11,6 +11,10 @@ Notice something extraordinary if you run `ripgrep` across a 500 MB codebase twi
 
 In this chapter we climb up one layer from raw NVMe blocks to the **Linux VFS**, **`ext4` / CoW file systems (`btrfs`/`ZFS`/`APFS`)**, **crash-safe file replacement**, and **`mmap` memory-mapped files**.
 
+:::plain Paths, inodes, links, and the page cache
+A **path** is a name, not a file: the kernel walks each component through the directory cache until it reaches an **inode**, the record of one file's permissions, size, timestamps and disk extents. A **hard link** is a second name for the same inode (the `nlink` count says how many), while a **symbolic link** is a tiny file whose *content* is another path. Reads go through the **page cache**, so a second read of a `500 MB` tree costs DRAM bandwidth rather than NVMe latency, and `mmap` maps those same page-cache frames into your address space to avoid the copy — at the price of `unsafe`, because another process can change or truncate the file underneath you.
+:::
+
 :::analogy A library catalog, reading table, and checkout slips
 - **Directories (`dentry`)** are name-to-number index cards mapping `"notes.txt"` -> **Inode `#8821`** (a file can even appear on two cards at once—a **hard link**!).
 - **Inodes** hold permissions, size, timestamps, and the map of **disk extents** (where the bytes live on SSD), *not* the filename!
@@ -34,6 +38,69 @@ When you open `/home/habtamu/notes.txt`, Linux's **VFS (Virtual File System)** d
 3. **Hard links vs Symbolic links (`ln` vs `ln -s`):**
    - A **hard link** adds a second directory entry pointing straight to the **exact same Inode `#8821`** (`nlink` increments to `2`). Deleting one name leaves the other untouched until `nlink` drops to `0` AND the last open FD closes!
    - A **symbolic link (symlink)** is a tiny special file storing a *text path* (`"../target.txt"`) that can cross file systems or dangle if the target disappears.
+
+Both link types are visible from Rust with no crate at all, and the numbers `stat` prints are exactly the fields you get from `MetadataExt`. This program builds a real inode with two names and watches `nlink` change:
+
+```rust run
+use std::fs;
+use std::os::unix::fs::MetadataExt;
+
+fn main() -> std::io::Result<()> {
+    // A unique directory, so the demo never collides with real files.
+    let dir = std::env::temp_dir().join(format!("fs-demo-{}", std::process::id()));
+    let _ = fs::remove_dir_all(&dir);
+    fs::create_dir_all(&dir)?;
+
+    let original = dir.join("notes.txt");
+    let linked = dir.join("notes-link.txt");
+    let symlinked = dir.join("notes-sym.txt");
+
+    fs::write(&original, b"hello from one inode\n")?;
+    fs::hard_link(&original, &linked)?;                 // second name, same inode
+    std::os::unix::fs::symlink(&original, &symlinked)?; // tiny file holding a path
+
+    let m = fs::metadata(&original)?;
+    println!("size = {} bytes", m.size());
+    println!("link count = {}", m.nlink());
+    println!("uses disk blocks = {}", m.blocks() > 0);
+    println!("owner can read = {}", m.mode() & 0o400 != 0);
+
+    // Same inode through the second name: hard links are one file, two entries.
+    let m2 = fs::metadata(&linked)?;
+    println!("same inode = {}", m.ino() == m2.ino());
+
+    // A symlink is a different inode whose contents are a path.
+    let s = fs::symlink_metadata(&symlinked)?;          // lstat: do not follow
+    println!("is_symlink = {}", s.file_type().is_symlink());
+    println!("symlink points at notes.txt = {}",
+             fs::read_link(&symlinked)?.ends_with("notes.txt"));
+
+    // Removing one name only drops the link count; the data survives.
+    fs::remove_file(&linked)?;
+    println!("after unlink link count = {}", fs::metadata(&original)?.nlink());
+    println!("still readable = {:?}", fs::read_to_string(&original)?.trim());
+
+    fs::remove_dir_all(&dir)?;
+    Ok(())
+}
+```
+```output
+size = 21 bytes
+link count = 2
+uses disk blocks = true
+owner can read = true
+same inode = true
+is_symlink = true
+symlink points at notes.txt = true
+after unlink link count = 1
+still readable = "hello from one inode"
+```
+
+Three details are worth remembering:
+
+- **`fs::metadata` follows symlinks, `fs::symlink_metadata` does not.** This is `stat` versus `lstat`, and using the wrong one is how programs end up "resolving" a link when they meant to inspect it.
+- **`blocks` is in 512-byte units**, regardless of the file system's real block size, so `blocks * 512` is the disk space actually allocated — usually more than `size` for small files, because the last block is padded.
+- **`nlink == 2` is the proof of a hard link**, and the data only disappears when the count reaches zero *and* no open file descriptor still points at the inode.
 
 ## Crash-Safe Atomic File Updates & Journaling (`WAL` for metadata!)
 
@@ -59,7 +126,7 @@ Look at how production Rust tools (`cargo`, `rustup`, editors, databases) guaran
 ```
 :::
 
-And how does `ext4` keep the *directory structure itself* from corrupting mid-`rename` or mid-`mkdir` if power cuts out? **Journaling (Write-Ahead Logging)**: before updating directory/inode/bitmap blocks in place, `ext4` writes a small commit record into its circular **JBD2 journal** (`ordered` mode writes file data *before* committing metadata so files never end up pointing to garbage uninitialized disk blocks!). Newer **Copy-on-Write (CoW)** file systems (`btrfs`, `ZFS`, `APFS`) never overwrite blocks in place at all—writing new blocks + updating the tree root atomically!
+And how does `ext4` keep the *directory structure itself* from corrupting mid-`rename` or mid-`mkdir` if power cuts out? **Journaling ([[WAL]])**: before updating directory/inode/bitmap blocks in place, `ext4` writes a small commit record into its circular **JBD2 journal** (`ordered` mode writes file data *before* committing metadata so files never end up pointing to garbage uninitialized disk blocks!). Newer **Copy-on-Write (CoW)** file systems (`btrfs`, `ZFS`, `APFS`) never overwrite blocks in place at all—writing new blocks + updating the tree root atomically!
 
 ## The Linux Page Cache: Why Unused RAM Is Cached Disk
 

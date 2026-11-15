@@ -10,6 +10,10 @@ In [chapter 15](#borrowing) you learned the rule that a reference must never out
 
 Most of the time you never see lifetimes: the compiler works them out silently. Occasionally a function or struct is ambiguous, and the compiler asks you to describe how the references relate to each other. That description is a **lifetime annotation**. It is the part of Rust with the most unfamiliar syntax, but the idea behind it is simple.
 
+:::plain Lifetimes in one paragraph
+A **lifetime** is how long a borrow is valid, and the borrow checker's job is to prove no reference outlives the value it points at. Most of the time the compiler infers lifetimes; the annotations `<'a>` exist only to connect a function's inputs to its outputs, as in `fn longest<'a>(x: &'a str, y: &'a str) -> &'a str`, which says the result is valid exactly as long as both inputs are. A lifetime is not a duration in seconds and not something you set: it is a constraint the compiler solves, and `'static` is simply the lifetime of data that lives for the whole program.
+:::
+
 :::analogy A library book
 You borrow a book from a library. You may lend it to a friend for a while, but your friend must give it back before your own loan ends. A loan that hangs on another loan cannot last longer than the original one. Lifetimes are the due dates, and the compiler is a librarian who checks all of them before anybody leaves the building.
 :::

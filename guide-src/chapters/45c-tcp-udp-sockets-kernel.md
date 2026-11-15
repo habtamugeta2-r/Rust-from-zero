@@ -12,8 +12,12 @@ In Part VII you learned how `epoll` watches thousands of file descriptors. In th
 Why can `TcpStream::read` return just 3 bytes when the client wrote 500 bytes in one `write_all`? Why does restarting a crashed server complain `Address already in use` (`EADDRINUSE`) unless `SO_REUSEADDR` is set? And why can `TCP_NODELAY` slash interactive latency by 40 milliseconds?
 
 :::analogy Phone call (TCP) vs throwing postcards in the mail (UDP)
-- **TCP** is a continuous, ordered phone call: both sides dial and say *"Hello? Can you hear me? Yes!"* (3-way handshake), sequence every spoken word so missing phrases get re-requested (`ACK` + retransmit), slow down if the listener asks for breathing room (**flow control**), slow down if the highway clogs (**congestion control**), and say *"Goodbye / Goodbye"* (`FIN` / `TIME_WAIT`)—with **zero boundary lines** separating sentences unless you add punctuation!
-- **UDP** is dropping fixed-size postcards into a mailbox: each `send()` stays one distinct card (never split across two cards or merged into another), takes minimal headers (8 bytes!), needs no handshake—yet cards can arrive out of order, twice, or vanish silently if overloaded!
+- **[[TCP]]** is a continuous, ordered phone call: both sides dial and say *"Hello? Can you hear me? Yes!"* (3-way handshake), sequence every spoken word so missing phrases get re-requested (`ACK` + retransmit), slow down if the listener asks for breathing room (**flow control**), slow down if the highway clogs (**congestion control**), and say *"Goodbye / Goodbye"* (`FIN` / `TIME_WAIT`)—with **zero boundary lines** separating sentences unless you add punctuation!
+- **[[UDP]]** is dropping fixed-size postcards into a mailbox: each `send()` stays one distinct card (never split across two cards or merged into another), takes minimal headers (8 bytes!), needs no handshake—yet cards can arrive out of order, twice, or vanish silently if overloaded!
+:::
+
+:::plain UDP in one paragraph
+**UDP** is a thin wrapper around IP: an 8-byte header carrying source port, destination port, length and checksum, and nothing else. Every `send_to` produces exactly one datagram that either arrives whole or not at all, so message boundaries survive — a 900-byte datagram never arrives as 400 + 500 bytes. What UDP does *not* give you is ordering, retransmission, duplicate suppression, flow control or congestion control; those are your job if you need them, which is why QUIC (HTTP/3) rebuilds all of them in user space on top of UDP. It is the right choice when a late answer is worthless (voice, video, game state), or when you want to implement the reliability policy yourself.
 :::
 
 :::compare TCP vs UDP Inside the Linux Kernel
@@ -91,6 +95,164 @@ frame 2 = "beta-payload"
 ```
 
 Look how **`read_exact`** solves partial TCP reads automatically: it loops internally until either all `len` bytes arrive or EOF breaks mid-frame (`UnexpectedEof`)!
+
+## `UdpSocket`: datagrams that keep their edges
+
+The API is smaller than `TcpStream` because there is no connection state to manage. One `send_to` is one datagram; one `recv_from` returns one whole datagram plus the sender's address. There is no `accept`, no handshake, and no ordering:
+
+```rust run
+use std::net::UdpSocket;
+
+fn main() -> std::io::Result<()> {
+    // Port 0 means "the kernel picks a free port" - always do this in tests.
+    let server = UdpSocket::bind("127.0.0.1:0")?;
+    let addr = server.local_addr()?;
+
+    let client = UdpSocket::bind("127.0.0.1:0")?;
+    client.send_to(b"PING", addr)?;
+
+    // One recv_from == one whole datagram, at most 65,507 bytes.
+    let mut buf = [0_u8; 16];
+    let (n, peer) = server.recv_from(&mut buf)?;
+    println!("server got {:?} from loopback", std::str::from_utf8(&buf[..n]).unwrap());
+    println!("reply address is a real socket: {}", peer.port() != 0);
+
+    // The reply needs no connection: the destination comes from `peer`.
+    server.send_to(b"PONG", peer)?;
+    let (n, _) = client.recv_from(&mut buf)?;
+    println!("client got {:?}", std::str::from_utf8(&buf[..n]).unwrap());
+    Ok(())
+}
+```
+```output
+server got "PING" from loopback
+reply address is a real socket: true
+client got "PONG"
+```
+
+The client's port is whatever the kernel handed out, so the program prints a boolean instead of a number that would change on every run — that is `bind("...:0")` doing its job. Two rules follow from the missing guarantees:
+
+- **Datagrams are not free of size limits.** The IPv4 length field caps a UDP payload at `65,507` bytes, and most paths will drop anything beyond the path MTU unless fragmentation is allowed. Treat ~`1,200` bytes as a safe upper bound for internet traffic.
+- **`recv_from` truncates silently.** If the datagram is larger than your buffer, the excess is discarded and you only learn about it from `MSG_TRUNC` when you pass flags with `recv_from`'s lower-level equivalent. Size the buffer to the largest message you accept.
+- **Nothing is retransmitted.** A lost packet is lost. QUIC, DNS over TCP fallback, and game netcode all exist because somebody had to rebuild those pieces above UDP.
+
+:::compare Same job, different syscall
+| Task | TCP | UDP |
+|---|---|---|
+| Create the socket | `socket(AF_INET, SOCK_STREAM, 0)` | `socket(AF_INET, SOCK_DGRAM, 0)` |
+| Set up | `bind`, `listen`, `accept` | `bind` only |
+| Send | `write` on the connected fd | `sendto(fd, buf, addr)` per datagram |
+| Receive | `read` on the accepted fd | `recvfrom(fd, buf)` returns payload + peer |
+| Handle peers | one fd per connection | one fd for *all* peers; you track them |
+| Kernel state | full state machine per connection | a single receive queue |
+:::
+
+## What the kernel does between `send` and the wire
+
+The socket API is the boundary you can see, but the interesting part is the path a packet takes inside the kernel. On Linux it looks like this in both directions:
+
+```text
+  TX                                                    RX
+  ──                                                    ──
+  write() on fd                                         NIC receives a frame
+      │                                                      │
+      ▼                                                      ▼
+  socket layer: copy user bytes into an sk_buff         DMA writes the frame into
+      │                                                 a ring-buffer descriptor
+      ▼                                                      │
+  TCP/UDP: header, checksum, sequence                    NIC raises an interrupt
+      │                                                      │
+      ▼                                                      ▼
+  IP: routing lookup, TTL, fragmentation                hard IRQ handler is tiny:
+      │                                                 it only schedules NAPI
+      ▼                                                      │
+  qdisc (queueing discipline): fair queue,               NAPI poll: batches up to
+  pacing, AQM                                           64 frames per poll, builds
+      │                                                 sk_buff for each
+      ▼                                                      │
+  driver: map sk_buff into the TX ring,                 IP: reassembly, routing check
+  hand a descriptor to the NIC                              │
+      │                                                      ▼
+      ▼                                                 socket receive queue
+  NIC DMA-reads the frame, sends it                     (SO_RCVBUF, drops when full)
+  and interrupts to reclaim the descriptor                   │
+                                                             ▼
+                                                        read() wakes the process
+```
+
+Four ideas carry most of the weight:
+
+- **`sk_buff`** ([[sk_buff]]) is the kernel's packet struct: a header plus headroom, a data region, and a tail, so each layer can prepend its header *in place* without copying the payload. When you hear "zero-copy networking", this extra headroom is what makes it possible.
+- **Ring buffers** ([[ring buffer]]) are circular arrays of descriptors shared between the driver and the NIC. The NIC reads a descriptor, DMAs the frame straight into RAM, and writes the completion index; the CPU never copies the payload for the device.
+- **[[DMA]]** (direct memory access) lets the NIC read and write system memory without the CPU moving bytes. The CPU only sets up descriptors and handles completions, which is why a `10 Gbit/s` link can saturate one core.
+- **[[NAPI]]** is the interrupt-coalescing trick: under load, the driver switches from "one interrupt per packet" to "one interrupt, then poll a batch", so a flood of small packets cannot livelock the machine in interrupt handlers.
+
+You can watch every stage with `ss` (socket queues), `nstat`/`netstat -s` (drops and retransmits), `ethtool -S` (ring-buffer overruns), and `dropwatch` (where in the stack a packet was dropped). A receive queue that stays at its `SO_RCVBUF` limit while `ethtool` shows no drops means your *application* is not reading fast enough — the kernel is doing its job and applying backpressure.
+
+:::details Tuning socket buffers without guessing
+`SO_RCVBUF` is auto-tuned by default, and that is usually correct. When it is not, the numbers to check are `net.core.rmem_max`, `net.ipv4.tcp_rmem` and `net.ipv4.tcp_wmem`; raise the ceiling, not the default, and measure with `ss -m` before and after. For UDP, a receive buffer sized for one datagram is a bug: size it for the burst you expect during a scheduling hiccup, or you will drop packets in the kernel while your process is simply not scheduled.
+:::
+
+## A complete loopback conversation: TCP and UDP in one program
+
+Nothing above needs a second machine. This program runs a real TCP listener and a real UDP socket on `127.0.0.1`, talks to both, and shuts down cleanly — the shape of any integration test you will write for a networked Rust program:
+
+```rust run
+use std::io::{Read, Write};
+use std::net::{TcpListener, TcpStream, UdpSocket};
+use std::thread;
+
+fn main() -> std::io::Result<()> {
+    // --- TCP: bind to an ephemeral port, then serve one connection ---
+    let listener = TcpListener::bind("127.0.0.1:0")?;
+    let tcp_addr = listener.local_addr()?;
+    println!("listening on loopback, port {} (chosen by the kernel)", tcp_addr.port() > 0);
+
+    let server = thread::spawn(move || -> std::io::Result<()> {
+        let (mut conn, peer) = listener.accept()?;      // one per-client fd
+        conn.set_nodelay(true)?;                        // no Nagle for this RPC
+        let mut buf = [0_u8; 5];
+        conn.read_exact(&mut buf)?;                     // wait for the whole frame
+        conn.write_all(b"HELLO, BACK")?;
+        println!("server saw {:?} from {}", std::str::from_utf8(&buf).unwrap(), peer.ip());
+        Ok(())
+    });
+
+    let mut client = TcpStream::connect(tcp_addr)?;
+    client.write_all(b"HELLO")?;
+    let mut reply = String::new();
+    client.read_to_string(&mut reply)?;                 // EOF ends the read
+    println!("client received {reply:?}");
+    server.join().unwrap()?;
+
+    // --- UDP: one datagram out, one datagram back, on the same loopback ---
+    let udp_server = UdpSocket::bind("127.0.0.1:0")?;
+    let udp_addr = udp_server.local_addr()?;
+    let udp_client = UdpSocket::bind("127.0.0.1:0")?;
+    udp_client.send_to(b"ping", udp_addr)?;
+
+    let mut buf = [0_u8; 32];
+    let (n, peer) = udp_server.recv_from(&mut buf)?;
+    println!("udp server got {:?}", std::str::from_utf8(&buf[..n]).unwrap());
+    udp_server.send_to(b"pong", peer)?;                 // reply needs no connect
+
+    let (n, _) = udp_client.recv_from(&mut buf)?;
+    println!("udp client got {:?}", std::str::from_utf8(&buf[..n]).unwrap());
+    Ok(())
+}
+```
+```output
+listening on loopback, port true (chosen by the kernel)
+server saw "HELLO" from 127.0.0.1
+client received "HELLO, BACK"
+udp server got "ping"
+udp client got "pong"
+```
+
+The port numbers change on every run, so the program prints `true` instead of a number — the sequence does not change, and that is exactly what a test cares about. Two details are worth copying into real code:
+
+- **`read_to_string` terminates on EOF, not on the end of the reply.** It returned the moment the server thread dropped `conn` and the kernel sent `FIN`, which is why the server does not need a length prefix here. With a long-lived connection you *must* frame messages, as the previous section showed.
+- **The server thread owns the listener.** Moving `listener` into the thread is what lets the main thread keep using `tcp_addr` without a lock, and `join()` propagates the `io::Result` so a failed `accept` is not silently lost.
 
 ## Flow control, Congestion control, `TCP_NODELAY`, and `TIME_WAIT`
 

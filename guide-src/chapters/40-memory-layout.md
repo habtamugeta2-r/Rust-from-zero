@@ -50,6 +50,10 @@ A `char` takes 4 bytes, because it can hold any Unicode character. A `bool` take
 
 A struct stores its fields one after another. To give every field its alignment, the compiler may have to leave gaps. These unused bytes are called **padding**.
 
+:::plain Size, alignment, and padding
+A struct's in-memory layout is not just its fields side by side. Each field must sit at an address that is a multiple of its **alignment**, so the compiler inserts invisible **padding** bytes between fields, and `size_of::<T>()` includes them. Reordering fields from largest to smallest can shrink a struct substantially, and `#[repr(C)]` fixes the order to C's (no reordering) while `#[repr(Rust)]` lets the compiler choose. Enums carry a hidden **discriminant** describing which variant is active, and the **niche optimisation** squeezes `Option<Box<T>>` into one pointer because a null pointer is an unused bit pattern.
+:::
+
 :::analogy Packing a suitcase
 Imagine a suitcase with fixed compartments, in which large items may only start at certain marks. Put a small item first and a large one after it, and space is left over in between. Put the large items first and the small ones last, and everything fits tightly.
 :::

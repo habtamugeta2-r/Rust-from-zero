@@ -56,9 +56,54 @@ Every modern x86-64 and Apple/ARM64 server chip arranges memory in a steep pyram
 ```
 :::
 
-When your code reads byte `0x1004`, the CPU never fetches only byte `0x1004`. It fetches the aligned **64-byte cache line** `0x1000..0x103f`:
-- **Spatial locality:** Scanning `Vec<u64>` sequentially loads 8 integers per cache-line fetch, plus the CPU's **hardware prefetcher** detects the regular stride and starts fetching the *next* cache line before you even ask for it! By contrast, traversing a linked list (`Node { val, next: Option<Box<Node>> }`) scatters nodes across separate heap chunks, turning every step into a dependent **pointer chase** (`60–100 ns` cache miss each!).
-- **Temporal locality:** Reusing a small hot lookup array or hash table inside L1 (`32 KiB`) hits cache again and again.
+When your code reads byte `0x1004`, the CPU never fetches only byte `0x1004`. It fetches the aligned **64-byte [[cache line]]** `0x1000..0x103f`:
+
+:::plain Spatial locality vs temporal locality
+**Spatial locality** means reading bytes that sit right next to each other in memory (such as walking a `Vec<u64>` from index `0` to `n`), so one 64-byte cache-line fetch pays for eight 8-byte numbers at once. **Temporal locality** means reading the *same* memory address again soon while it is still sitting hot in L1 [[cache]].
+:::
+
+- **Spatial locality in action:** Scanning `Vec<u64>` sequentially loads 8 integers per cache-line fetch, plus the CPU's **hardware prefetcher** detects the regular stride and starts fetching the *next* cache line before you even ask for it. By contrast, traversing a linked list (`Node { val, next: Option<Box<Node>> }`) scatters nodes across separate heap chunks, turning every step into a dependent **pointer chase** (`60–100 ns` cache miss each).
+- **Temporal locality in action:** Reusing a small hot lookup array or buffer that fits inside L1 (`32 KiB`) hits cache again and again at ~1 ns per access.
+
+### Practical experiment: stride-1 vs stride-16 across 64-byte cache lines
+
+Notice what happens when two loops perform the **exact same number of additions**, one stepping by `1` (`u64` = 8 bytes, so 8 hits per 64-byte cache line) and the other stepping by `8` (`8 * 8 = 64` bytes, jumping to a brand-new cache line on every single read!):
+
+```rust run nocmp
+use std::hint::black_box;
+use std::time::Instant;
+
+fn main() {
+    // 4 MiB buffer = 524,288 u64 elements (larger than L1 + L2 cache)
+    let data = vec![1_u64; 524_288];
+    let steps = 65_536;
+
+    // Loop A: stride 1 (touches 65,536 elements across 8,192 cache lines)
+    let t0 = Instant::now();
+    let mut sum_stride1 = 0_u64;
+    for i in 0..steps {
+        sum_stride1 += data[i];
+    }
+    let d1 = t0.elapsed();
+
+    // Loop B: stride 8 u64s = 64 bytes (touches 65,536 elements across 65,536 cache lines!)
+    let t1 = Instant::now();
+    let mut sum_stride8 = 0_u64;
+    for i in 0..steps {
+        sum_stride8 += data[i * 8];
+    }
+    let d8 = t1.elapsed();
+
+    println!("sums: {} == {}", black_box(sum_stride1), black_box(sum_stride8));
+    println!("stride-1 (8 hits/line): {:?} | stride-8 (1 hit/line): {:?}", d1, d8);
+}
+```
+```output
+sums: 65536 == 65536
+stride-1 (8 hits/line): 38.4µs | stride-8 (1 hit/line): 194.2µs
+```
+
+Both loops execute `65,536` additions. Yet `stride-8` touches **8× as many 64-byte cache lines** (`4 MiB` total instead of `512 KiB`), spending most of its time waiting on L3/DRAM fetches!
 
 ## Data-Oriented Design: AoS vs SoA and struct field ordering
 
@@ -111,8 +156,9 @@ aos[0].x=1.5, soa.xs[0]=1.5
 ```
 
 Count the cache lines loaded by `step_aos` vs `step_soa`:
-- **`ParticleAoS`** is `64` bytes per struct (`8 + 8 + 48`): every 64-byte cache line brings **1 particle's** `x` and `vx` along with 48 bytes of untouched `tag`!
-- **`ParticlesSoA`** packs `8` `f64` positions per 64-byte cache line and `8` `f64` velocities per line—**4× fewer cache misses** and easy **SIMD** vectorisation!
+
+- **`ParticleAoS`** is `64` bytes per struct (`8 + 8 + 48`): every 64-byte cache line brings **1 particle's** `x` and `vx` along with 48 bytes of untouched `tag`.
+- **`ParticlesSoA`** packs `8` `f64` positions per 64-byte cache line and `8` `f64` velocities per line—**4× fewer cache misses** and easy **[[SIMD]]** vectorisation.
 
 ## False sharing across CPU cores
 

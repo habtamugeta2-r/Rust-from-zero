@@ -24,15 +24,35 @@ A play does not begin when the lead actor speaks line one. First the stage manag
 
 ## Step 1: `fork()` + `execve()` and kernel ELF loading
 
+:::plain Why does starting a program take two system calls (`fork` + `execve`)?
+On Unix and Linux, creating a new process and loading a new program file are deliberately separate steps. **`fork()`** clones the shell process (giving the child a chance to redirect `stdin`/`stdout` pipes or change directories first), and **`execve()`** replaces the child's memory with the new [[ELF]] binary while keeping those open file descriptors intact.
+:::
+
 When your shell runs `./hello`:
-1. The shell calls `fork()` (or `clone()`), creating a child process sharing read-only Copy-on-Write pages.
-2. The child immediately calls the `execve("./hello", argv, envp)` system call.
-3. The Linux kernel's ELF binary loader (`fs/binfmt_elf.c`) opens `./hello`, verifies the `7f 45 4c 46` magic bytes (`\x7fELF`), reads its `PT_LOAD` program headers, tears down the child's old address space, and maps `.text` (`R+X`), `.rodata` (`R`), and `.data`/`.bss` (`R+W`) at ASLR-randomised virtual addresses.
-4. Notice the stack! Before transferring control, the kernel constructs a pristine initial user stack containing:
-   - `argc` (argument count)
-   - `argv[]` pointers + NUL-terminated argument strings
-   - `envp[]` pointers + NUL-terminated environment strings (`PATH=...`, `HOME=...`)
-   - **`auxv` (Auxiliary Vector):** key-value pairs passed straight from the kernel to user space, including `AT_PAGESZ` (`4096`), `AT_RANDOM` (16 cryptographically random bytes used to seed the stack canary and `HashMap`'s SipHash!), `AT_ENTRY` (the binary's true `_start` address), and `AT_SYSINFO_EHDR` (the `[vdso]` virtual page).
+
+1. The shell calls `fork()` (or `clone()`), creating a child process sharing read-only [[copy-on-write]] pages.
+2. The child immediately calls the `execve("./hello", argv, envp)` [[system call]].
+3. The Linux [[kernel]]'s ELF binary loader (`fs/binfmt_elf.c`) opens `./hello`, verifies the `7f 45 4c 46` magic bytes (`\x7fELF`), reads its `PT_LOAD` program headers, tears down the child's old address space, and maps `.text` (`R+X`), `.rodata` (`R`), and `.data`/`.bss` (`R+W`) at [[ASLR]]-randomised virtual addresses.
+4. Before transferring control to user space, the kernel builds a clean initial user [[stack]] holding command-line arguments, environment variables, and kernel metadata:
+
+```text
+High virtual addresses (top of [stack] VMA)
+  +----------------------------------------------------------+
+  | Raw NUL-terminated strings: "./hello\0", "PATH=/usr...\0"|
+  +----------------------------------------------------------+
+  | auxv[] pairs: (AT_PAGESZ, 4096), (AT_RANDOM, ptr),       |
+  |               (AT_ENTRY, _start), (AT_NULL, 0)           |
+  +----------------------------------------------------------+
+  | envp[]: pointers to environment strings, ended by NULL   |
+  +----------------------------------------------------------+
+  | argv[]: pointers to argument strings, ended by NULL      |
+  +----------------------------------------------------------+
+  | argc  : integer argument count (e.g. 1)                  | <-- initial RSP!
+  +----------------------------------------------------------+
+Low virtual addresses (stack grows downward from RSP)
+```
+
+That **`auxv` (Auxiliary Vector)** block lets the kernel hand facts directly to user space without extra startup syscalls: `AT_PAGESZ` (`4096`), `AT_RANDOM` (16 cryptographically random bytes used to seed stack canaries and `HashMap`'s SipHash), `AT_ENTRY` (the binary's true `_start` address), and `AT_SYSINFO_EHDR` (the [[vDSO|vdso]] virtual page).
 
 ## Step 2: `PT_INTERP` and `ld-linux-x86-64.so.2`
 
@@ -70,9 +90,10 @@ Kernel execve() ──► ld-linux _start
 Even in Rust, `_start` starts in C runtime startup (`crt1.o`) unless you pass `#![no_main]`. Why does Rust keep a tiny startup wrapper between `__libc_start_main` and your `fn main()`?
 
 Inside Rust's `std::rt::lang_start_internal`, the standard library runs several quiet safeguards before invoking your `main`:
+
 - **Stores `argc`/`argv`:** So `std::env::args()` works anywhere in your program without taking parameters on `fn main()`.
-- **Resets `SIGPIPE` handling:** On Unix, writing to a closed pipe (e.g., `mytool | head -n 1`) sends `SIGPIPE`, which normally kills a process silently. Rust ignores `SIGPIPE` by default so broken pipes surface cleanly as `Err(ErrorKind::BrokenPipe)` rather than abrupt process death!
-- **Registers main-thread guard/stack-overflow handlers:** Sets up an alternate signal stack (`sigaltstack`) so a stack overflow prints a readable message instead of crashing silently when the normal stack hits its guard page.
+- **Resets `SIGPIPE` handling:** On Unix, writing to a closed pipe (e.g., `mytool | head -n 1`) sends `SIGPIPE`, which normally kills a process silently. Rust ignores `SIGPIPE` by default so broken pipes surface cleanly as `Err(ErrorKind::BrokenPipe)` rather than abrupt process death.
+- **Registers main-thread guard/stack-overflow handlers:** Sets up an alternate signal stack (`sigaltstack`) so a stack overflow prints a readable message instead of crashing silently when the normal stack hits its [[guard page]].
 - **Handles `Result` return codes (`Termination` trait):** Because `fn main() -> Result<(), E>` implements `Termination`, `lang_start` turns `Ok(())` into exit code `0` and `Err(e)` into printing `Error: ...` to `stderr` plus exit code `1`.
 
 ## Inspecting arguments, environment, and stack pointers at runtime

@@ -10,6 +10,10 @@ Things go wrong. A file is missing, the user types letters where a number belong
 
 ## Two kinds of problems
 
+:::plain Errors as values in one paragraph
+Rust splits failure in two. A **[[panic]]** is a bug: the program stops, unwinds the stack, and there is nothing sensible to continue with. A **`Result<T, E>`** is data: the function returns either `Ok(value)` or `Err(error)`, and the caller must deal with both because the compiler will not let a `Result` be used as if it were a `T`. The `?` operator is the shorthand that propagates an `Err` upward, so the happy path stays readable, and `Box<dyn Error>`, `thiserror` and `anyhow` are three ways of choosing how much type information that error carries.
+:::
+
 :::analogy A restaurant
 A guest orders a dish that is sold out. That is a normal situation: the waiter says so, and the guest picks something else. Now imagine the kitchen is on fire. Nobody carries on taking orders. Everything stops.
 :::

@@ -10,6 +10,10 @@ Code can be correct and still feel foreign. Every language has its own way of sa
 
 This chapter gathers the habits of experienced Rust programmers. Most of the pieces you have seen already. Here they are side by side, as a reference to come back to.
 
+:::plain Idiomatic Rust
+**Idiomatic** Rust is the set of habits that make a program look like the standard library: take `&str` and `&[T]` rather than `&String` and `&Vec<T>`, return `impl Trait` instead of a concrete type, implement `From` instead of a pile of constructors, let the type system carry invariants in newtypes, prefer `Iterator` chains to index loops, and use `?` instead of nested `match`. These are not style preferences for their own sake: each one is what makes the borrow checker quiet, the optimizer effective, and the next reader unsurprised. Knowing the idioms is how you stop fighting the compiler and start using it.
+:::
+
 :::analogy Driving on the correct side of the road
 Every place has a pattern for how traffic moves. Rust has patterns for names, returns and ownership too. They are not arbitrary—they make the code more predictable, easier to scan and easier to compare across projects.
 :::
@@ -655,7 +659,7 @@ When you publish a type for others to use, go through this list. It is condensed
 - It is `Send` and `Sync` where possible.
 - Enums and structs that may grow are marked `#[non_exhaustive]`.
 
-Two tools enforce most idioms automatically. **`rustfmt`** formats code in the standard style, and **Clippy** knows several hundred idioms and suggests the better form with an explanation. You already met both in [chapter 71](#quality-tools). Running Clippy on your own code is one of the fastest ways to learn idiomatic Rust.
+Two tools enforce most idioms automatically. **`rustfmt`** formats code in the standard style, and **Clippy** knows several hundred idioms and suggests the better form with an explanation ([chapter 71](#quality-tools) covers both in detail). Running `cargo clippy` on your own code is one of the fastest ways to learn idiomatic Rust.
 
 :::compare Design patterns from other languages
 Many classic object-oriented design patterns exist to work around a missing language feature, and shrink in Rust:

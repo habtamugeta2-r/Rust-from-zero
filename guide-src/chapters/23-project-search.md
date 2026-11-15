@@ -23,6 +23,10 @@ todo.txt:2:learn Rust
 
 The project brings together modules and a library crate, error handling with `Result` and `?`, a struct with a lifetime, traits through `derive`, and tests.
 
+:::plain Parsing, walking, matching, printing
+A `grep` clone is four small, separable jobs: **parse** the arguments, **walk** the tree of files, **match** a pattern against each line, and **print** the hits in a consistent format. Each one is a function you can test alone, and each one has a crate if it gets complicated. The lesson of the project is decomposition: the search itself is three lines, and everything else is deciding what to skip, how to report a line number, and what to do when a file cannot be read.
+:::
+
 ## Step 0: plan
 
 **What does the user give us?** A text to search for, one or more file names, and two optional switches: `-i` to ignore upper and lower case, and `-n` to show line numbers.

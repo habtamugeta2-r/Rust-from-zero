@@ -39,7 +39,7 @@ Notice how each hex digit maps cleanly to **exactly four bits**:
 
 Unsigned integers (`u8`, `u16`, `u32`, `u64`) count strictly upward from `0`. How does a machine represent **negative** whole numbers using the same 0/1 bits so addition hardware still works?
 
-Virtually every modern CPU uses **two's complement**. In an 8-bit signed integer (`i8`), the top bit carries weight **−128** instead of **+128**:
+Virtually every modern CPU uses **[[two's complement]]**. In an 8-bit signed integer (`i8`), the top bit carries weight **−128** instead of **+128**:
 
 ```text
 Bit position:   b7    b6   b5   b4   b3   b2   b1   b0
@@ -47,11 +47,16 @@ Unsigned weight:+128  +64  +32  +16   +8   +4   +2   +1   (u8: 0 .. 255)
 Signed weight:  -128  +64  +32  +16   +8   +4   +2   +1   (i8: -128 .. +127)
 ```
 
-To negate a number in two's complement, **invert every bit and add 1**:
+:::plain Two's complement in one sentence
+To flip the sign of any integer in **two's complement**, **invert every bit (`0` ↔ `1`) and add `1`**. That clever layout means `-1` is all ones (`1111_1111`), and adding `1` rolls cleanly back to `0000_0000` (`0`) using the exact same hardware adder circuit as unsigned numbers.
+:::
+
+Watch that rule work on `+5`:
+
 - `+5` in `i8` is `0000_0101`.
 - Invert bits: `1111_1010`.
 - Add `1`: `1111_1011` (`-128 + 64 + 32 + 16 + 8 + 2 + 1 = -5`).
-- Check what happens when the ALU adds `+5 + (-5)`: `0000_0101 + 1111_1011 = (1) 0000_0000`! Dropping the ninth carry bit leaves `0`. That is why the ALU uses **one single binary adder circuit** for both `u8` and `i8`.
+- Check what happens when the [[ALU]] adds `+5 + (-5)`: `0000_0101 + 1111_1011 = (1) 0000_0000`! Dropping the ninth carry bit leaves `0`. That is why the ALU uses **one single binary adder circuit** for both `u8` and `i8`.
 
 ## Floating-point numbers (IEEE-754) and UTF-8 text
 
@@ -78,7 +83,11 @@ Because `0.1` in decimal has a repeating binary expansion (`0.0001100110011...�
 
 ## Endianness: byte order in multi-byte memory
 
-A single byte sits at one memory address. What order do the 4 bytes of a `u32` such as `0x12345678` occupy in RAM?
+A single byte sits at one memory address. What order do the 4 bytes of a 32-bit integer (`u32`) such as `0x12345678` occupy in RAM? That rule is called **[[endianness]]**:
+
+:::plain Little-endian vs big-endian
+Think of writing a date: `15-11-2026` puts the **smallest** unit (the day) first, whereas `2026-11-15` puts the **biggest** unit (the year) first. **Little-endian** CPUs (x86-64 and ARM64) store the *smallest* ("least-significant") byte at the first memory address; **big-endian** network protocols store the *biggest* ("most-significant") byte first on the wire.
+:::
 
 - **Little-endian** (used by `x86-64` and almost all Linux/Windows ARM64 systems) puts the **least-significant byte** (`0x78`) at the **lowest address**: `78 56 34 12`.
 - **Big-endian** (used by network protocols such as TCP/IP—often called *network byte order*) puts the **most-significant byte** (`0x12`) first: `12 34 56 78`.
@@ -109,7 +118,9 @@ To a RAM chip, `0x8d 0x04 0x37 0xc3` is just four bytes—indistinguishable from
 
 ## Following the ten-stage lens: inspecting raw byte representations in Rust
 
-1. **Starting point:** Seeing how a negative number, a float, and text look as raw bytes in memory.
+Just as in [Chapter 2](#hardware-architecture), you do not need to memorise the Rust syntax yet ([Chapter 4](#setup) and [Part III](#variables) teach every piece)—focus on how each value turns into raw bits and bytes:
+
+1. **Starting point:** Seeing how a negative number, a float, and [[UTF-8]] text look as raw bytes in memory.
 2. **Source code:**
 ```rust run
 fn main() {
@@ -118,6 +129,7 @@ fn main() {
     let float_val: f32 = -5.5;
     let text = "A🦀";
 
+    // {:032b} prints 32 binary digits; {:02x?} prints hexadecimal bytes:
     println!("i32 -5 in binary : {:032b}", unsigned_bits);
     println!("i32 -5 LE bytes  : {:02x?}", signed.to_le_bytes());
     println!("i32 -5 BE bytes  : {:02x?}", signed.to_be_bytes());

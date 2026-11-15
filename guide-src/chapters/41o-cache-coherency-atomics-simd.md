@@ -38,10 +38,15 @@ When Core 0 reads variable `X` into its private L1d cache and Core 1 also reads 
 - **`S` (Shared):** Multiple cores hold clean read-only copies.
 - **`I` (Invalid):** Another core just wrote to this address and broadcast an **Invalidate** message across the interconnect, marking our stale copy dead!
 
-Now ask: if Core 0 writes `flag = true` and Core 1 currently caches `flag`'s line as `S`, waiting synchronously for Core 1's invalidation acknowledgement across all 64 cores takes dozens of nanoseconds! So CPU designers inserted a tiny FIFO queue between each core and its L1 cache called the **Store Buffer**:
-- Core 0 drops `store flag = true` into its private **Store Buffer** and moves immediately to the *next* instruction without waiting!
-- Until Core 0 drains its Store Buffer, **Core 0 sees its own write via store-forwarding, while Core 1 does NOT yet see it!**
-- Even wilder on ARM64: Core 1 might predictively execute `read(payload)` *before* `read(flag)` completes (`Load-Load` reordering)—reading stale `payload` even though `flag == true`!
+Now ask: if Core 0 writes `flag = true` and Core 1 currently caches `flag`'s [[cache line]] as `S`, waiting synchronously for Core 1's invalidation acknowledgement across 64 cores would stall for dozens of nanoseconds. So CPU designers inserted a tiny FIFO queue between each core and its L1 cache called the **Store Buffer**:
+
+- Core 0 drops `store flag = true` into its private **Store Buffer** and moves immediately to the *next* instruction without waiting.
+- Until Core 0 drains its Store Buffer, **Core 0 sees its own write via store-forwarding, while Core 1 does NOT yet see it.**
+- On weakly ordered chips like ARM64, Core 1 may even speculatively execute `read(payload)` *before* `read(flag)` completes (`Load-Load` reordering)—reading stale `payload` even after `flag == true`.
+
+:::plain Why Rust's `Ordering` enum exists on every atomic call
+`Ordering` is not an arbitrary Rust ceremony—it tells LLVM which CPU memory instructions to emit so hardware **store buffers** and **out-of-order loads** do not let one thread see `READY == true` while still reading stale `DATA`. Whenever one thread publishes data and another reads it, pair **`Ordering::Release`** on the publishing store with **`Ordering::Acquire`** on the observing load.
+:::
 
 ## Rust `std::sync::atomic::Ordering` mapped straight to CPU instructions
 
@@ -79,10 +84,11 @@ fn main() {
 verified cross-thread DATA = 12345
 ```
 
-Look closely at what each `Ordering` guarantees:
-- **`Relaxed`:** Only guarantees *this single atomic variable* won't tear or race (great for metrics/counters like `requests_total.fetch_add(1, Relaxed)`). Zero ordering guarantees relative to *other* memory addresses!
-- **`Release` + `Acquire` pair:** The golden workhorse of lock-free rings, `Arc::drop`, and `Mutex`! `Release` on store + `Acquire` on load forms a **happens-before** bridge: everything written before `Release` is guaranteed visible after `Acquire` observes that stored value—**at zero extra hardware fence cost on x86-64** and clean `stlr`/`ldar` instructions on ARM64!
-- **`SeqCst` (Sequentially Consistent):** Adds a single global total order across *all* `SeqCst` variables everywhere—forcing expensive `mfence`/`xchg` store-buffer flushes on x86-64. Only needed when two threads independently race on *two different* atomic flags simultaneously (e.g. Dekker's algorithm).
+Look closely at what each [[atomic]] `Ordering` guarantees:
+
+- **`Relaxed`:** Only guarantees *this single atomic variable* will not tear or race (great for standalone counters like `requests_total.fetch_add(1, Relaxed)`). Zero ordering guarantees relative to *other* memory addresses.
+- **`Release` + `Acquire` pair:** The everyday workhorse of lock-free rings, `Arc::drop`, and `Mutex`. `Release` on store + `Acquire` on load forms a **happens-before** bridge: everything written before `Release` is guaranteed visible after `Acquire` observes that stored value—**at zero extra hardware fence cost on x86-64** and clean `stlr`/`ldar` instructions on ARM64.
+- **`SeqCst` (Sequentially Consistent):** Adds a single global total order across *all* `SeqCst` variables everywhere—forcing expensive `mfence`/`xchg` store-buffer flushes on x86-64. Only needed when multiple threads independently write and read *two different* atomic flags simultaneously.
 
 :::details How Read-Modify-Write atomics work in silicon (`fetch_add`, `compare_exchange`)
 - **x86-64:** Emits **`lock xadd`** (for `fetch_add`) or **`lock cmpxchg`** (for `compare_exchange`), acquiring exclusive ownership (`M` state) of that single 64-byte cache line across cores.
@@ -90,6 +96,10 @@ Look closely at what each `Ordering` guarantees:
 :::
 
 ## Part 2: SIMD — Data-Level Parallelism Inside Every Core
+
+:::plain What SIMD means in one sentence
+Normal scalar instructions (`add eax, ebx`) add **one** pair of numbers per instruction; **[[SIMD]]** (*Single Instruction, Multiple Data*) packs 4, 8, or 16 numbers side by side into one wide vector register (`128`, `256`, or `512` bits) and adds **all lanes at once** in a single CPU cycle.
+:::
 
 Now zoom back inside a *single* CPU core. Every modern x86-64 chip guarantees **SSE2** (`128`-bit = four `f32` or `i32` lanes at once) and modern servers include **AVX2** (`256`-bit = eight `i32`/`f32` lanes) or **AVX-512** (`512`-bit = sixteen `i32` lanes); ARM64 guarantees **NEON** (`128`-bit) universally.
 

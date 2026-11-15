@@ -27,12 +27,16 @@ Two **processes** live in separate locked apartments: each has its own private f
 
 ## Inside Linux: `fork()`, `clone()`, and the secret unity of processes and threads
 
-Surprise: inside the Linux kernel, **there is no separate fundamental object called "a process vs a thread"**! Both are represented by the exact same kernel struct, **`task_struct`**, and both are created underneath by the same system call: **`clone()`**!
+Inside the Linux [[kernel]], **there is no separate fundamental struct for "a process" versus "a thread"**. Both are represented by the exact same kernel structure, **`task_struct`**, and both are created underneath by the same [[system call]]: **`clone()`**.
+
+:::plain PID vs TGID vs TID on Linux
+Linux naming can surprise newcomers: inside the kernel, every thread gets its own unique kernel **TID** (*Thread ID*), while all threads belonging to the same process share one **TGID** (*Thread Group ID*). What user-space tools (`ps`, `kill`, `std::process::id()`) call the **PID** (*Process ID*) is actually that shared **TGID**! For the initial main thread, `TID == TGID`.
+:::
 
 What distinguishes a child process from a new thread is simply **which bitmask flags** you pass to `clone()`:
 
-- **`fork()` (new process):** Calls `clone(SIGCHLD)`—creates a new `task_struct` with its **own copy-on-write virtual address space (`mm_struct`)**, its own copy of the **file descriptor table**, and its own `TGID` (Process ID = `PID`).
-- **`std::thread::spawn` / `pthread_create` (new OS thread):** Calls `clone(CLONE_VM | CLONE_FS | CLONE_FILES | CLONE_SIGHAND | CLONE_THREAD | CLONE_SETTLS)`—creates a new `task_struct` with its own kernel `TID` and user stack, while **sharing** the parent's `mm_struct` (virtual memory!), `files_struct` (open files!), signal dispositions, and `PID` (`TGID`)!
+- **`fork()` (new process):** Calls `clone(SIGCHLD)`—creates a new `task_struct` with its **own [[copy-on-write]] virtual address space (`mm_struct`)**, its own copy of the **[[file descriptor]] table**, and its own `TGID` (Process ID = `PID`).
+- **`std::thread::spawn` / `pthread_create` (new OS thread):** Calls `clone(CLONE_VM | CLONE_FS | CLONE_FILES | CLONE_SIGHAND | CLONE_THREAD | CLONE_SETTLS)`—creates a new `task_struct` with its own kernel `TID` and user stack, while **sharing** the parent's `mm_struct` (virtual memory), `files_struct` (open files), signal dispositions, and `PID` (`TGID`).
 
 Look how cleanly that explains why two threads in one Rust process share the exact same heap (`Arc<Mutex<T>>`), same global `static`s, and same file descriptors—while two forked processes need IPC (pipes, sockets, or shared `mmap`) to communicate!
 
@@ -78,6 +82,14 @@ When the kernel preempts Thread A to run Thread B:
 5. Restore Thread B's registers and `iretq`/`sysretq` back to Ring 3.
 
 Notice the subtle lesson: the register swap itself takes only ~1 microsecond, whereas **cache pollution**—Thread B evicting Thread A's hot L1/L2 lines and suffering cold cache misses for the next tens of thousands of cycles—can make rapid thread ping-ponging cost **10–50+ microseconds** in total throughput!
+
+## Unix users, permissions, capabilities, and namespaces
+
+Every `task_struct` also carries security credentials checked by the kernel on every `openat`, `kill`, or `bind` syscall:
+
+- **Users and groups (`UID` / `GID`):** Ordinary users get numeric IDs like `1000`; **`UID 0`** is the superuser (`root`). Classic file mode bits (`rwxr-xr-x`, octal `0755`) grant Read (`4`), Write (`2`), and Execute (`1`) separately to the file's **owner**, **group**, and **others**. (A special `setuid` bit on binaries like `/usr/bin/sudo` lets an executable start with its file owner's `effective UID`.)
+- **Linux capabilities:** Historically, binding TCP port `80` or raw ping sockets required running the entire server as omnipotent `UID 0` (`root`). Modern Linux splits `root`'s power into ~40 fine-grained **capabilities**: granting just `CAP_NET_BIND_SERVICE` lets a non-root Rust web server bind port `443` while keeping zero permission to touch system files or other processes.
+- **Linux [[namespace]] (how containers work):** Passing flags like `CLONE_NEWPID | CLONE_NEWNET | CLONE_NEWNS | CLONE_NEWUSER` to `clone()` or `unshare()` places a process in isolated **namespaces**. Inside a `PID` namespace, your Rust binary sees itself as `PID 1`; inside a `NET` namespace, it gets its own private loopback and virtual Ethernet interface; inside a `MNT` namespace (`pivot_root`), it sees only the container image's files—all running on the **exact same host Linux kernel** with zero virtual-machine overhead!
 
 ## Inspecting processes and threads live in Rust
 
@@ -133,9 +145,11 @@ Compare crash/security blast radius (`CR3` isolation) against zero-copy shared-m
 
 :::exercise challenge Estimating thread-pool sizing for CPU-bound vs I/O-bound work
 Suppose you have an 8-core server running:
+
 - Workload A: pure CPU hashing (`sha256` in tight loops).
 - Workload B: synchronous blocking PostgreSQL queries (`5 ms` network wait + `0.1 ms` CPU each).
-Why is **8 threads** optimal for Workload A (and **64 threads worse!**), whereas **8 threads** starves throughput on Workload B?
+
+Why is **8 threads** optimal for Workload A (and **64 threads worse**), whereas **8 threads** starves throughput on Workload B?
 ::hint
 Think about context switching & cache thrashing vs blocked wait queues (`TASK_INTERRUPTIBLE`)!
 ::solution

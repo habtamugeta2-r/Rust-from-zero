@@ -28,7 +28,25 @@ If Runner A and Runner B did not agree beforehand which hand holds the baton and
 
 ## Inside a real Linux x86-64 stack frame
 
-Recall the disassembly we observed earlier from `gcc -O2` on a real 7-argument function:
+Suppose we compile a 7-argument function in release mode (`rustc -C opt-level=3`) using the standard C [[ABI]]:
+
+```rust run
+#[unsafe(no_mangle)]
+pub extern "C" fn compute(
+    a: i32, b: i32, c: i32, d: i32, e: i32, f: i32, g: i32,
+) -> i32 {
+    a + b + c + d + e + f + g
+}
+
+fn main() {
+    println!("compute(1..=7) = {}", compute(1, 2, 3, 4, 5, 6, 7));
+}
+```
+```output
+compute(1..=7) = 28
+```
+
+Disassembling `compute` on Linux x86-64 (`objdump -d -M intel`) reveals just seven instructions:
 
 ```asm
 <compute>:
@@ -41,27 +59,39 @@ Recall the disassembly we observed earlier from `gcc -O2` on a real 7-argument f
     ret                           ; return value lives in EAX/RAX
 ```
 
-Pause and admire every byte of `<compute>`:
-1. **Six arguments in registers, zero stack writes:** Arguments `1..6` arrive straight in `edi`, `esi`, `edx`, `ecx`, `r8d`, `r9d`.
-2. **Where did arg 7 land?** Before `call compute`, `<main>` pushed `7` onto the stack (`push 0x7`) while maintaining 16-byte stack alignment (`sub rsp, 8` beforehand). Then the **`call`** instruction pushed the 8-byte return address on top of `[rsp]`, shifting arg 7 to **`[rsp + 8]`**!
-3. **Leaf-function perfection:** Notice `<compute>` doesn't even `push rbp` or `sub rsp`! Because it calls no further functions and overwrites only **caller-saved** scratch registers (`edi`, `eax`), it touches zero stack slots of its own and returns with a single `ret` (`c3`).
+Notice three concrete facts in `<compute>`:
 
-Now contrast what happens in `<main>` when calling `malloc` and `compute`:
+1. **Six arguments in registers, zero stack writes:** Arguments `1..6` arrive straight in `edi`, `esi`, `edx`, `ecx`, `r8d`, `r9d`.
+2. **Where did arg 7 land?** Before `call compute`, the caller pushed `7` onto the [[stack]] (`push 0x7`) while maintaining 16-byte alignment (`sub rsp, 8` beforehand). Then the **`call`** instruction pushed the 8-byte return address on top of `[rsp]`, shifting arg 7 to **`[rsp + 8]`**.
+3. **Leaf-function optimisation:** `<compute>` does not even execute `push rbp` or `sub rsp`. Because it calls no further functions and touches only scratch registers (`edi`, `eax`), it allocates zero stack space of its own and returns with a single `ret` (`0xc3`).
+
+:::plain Caller-saved vs callee-saved registers
+Registers are split into two teams so functions do not have to save all 16 registers on every tiny call:
+
+- **Caller-saved (scratch) registers** (`rax`, `rdi`, `rsi`, `rdx`, `rcx`, `r8`–`r11`): any called function may overwrite them freely. Great for temporary math!
+- **Callee-saved (preserved) registers** (`rbx`, `rbp`, `r12`–`r15`): if a called function touches one, it **must** save the old value on the stack first and restore it before `ret`. Callers keep long-lived variables here across function calls.
+:::
+
+Now contrast what happens in a non-leaf caller `<main>` that calls `malloc` and then `compute`:
+
 ```asm
 <main>:
-    push   r14              ; save callee-saved R14 (main uses it!)
+    push   r14              ; save callee-saved R14
     mov    edi, 0x40        ; arg1 = 64 bytes for malloc
     push   r13              ; save callee-saved R13
-    push   r12              ; ...
+    push   r12
     push   rbp
     push   rbx
-    sub    rsp, 0x110       ; allocate local stack variables + align to 16 bytes
+    sub    rsp, 0x110       ; allocate local stack frame + align RSP to 16 bytes
     ...
-    call   malloc@plt       ; RAX returns heap pointer; caller saves it in R13!
-    mov    r13, rax         ; R13 is callee-saved: printf/compute CANNOT clobber R13!
+    call   malloc@plt       ; RAX returns heap pointer; caller saves it in R13
+    mov    r13, rax         ; R13 is callee-saved: later calls cannot clobber R13
 ```
+
 Look at **`r13` vs `rax`**:
-- **`rax` (`edi`, `esi`, `rcx`, ...)** are **caller-saved (volatile)**: any function you `call` is free to overwrite them. If `<main>` needs `malloc`'s return pointer after calling `printf`, `<main>` moves it into **`r13`** (**callee-saved / non-volatile**)—because `<main>` pushed `r13` at entry and pops `r13` before returning, any callee that wants to touch `r13` must preserve it too!
+
+- **`rax` (`edi`, `esi`, `rcx`, ...)** are **caller-saved (volatile)**: any function you `call` is free to overwrite them.
+- **`r13` (`rbx`, `rbp`, `r12`..`r15`)** are **callee-saved (non-volatile)**: because `<main>` needs `malloc`'s pointer to survive later calls to `printf` and `compute`, it parks that pointer safely in `r13`.
 
 :::note Stack layout across a function call (x86-64 growing downward)
 ```text
@@ -139,6 +169,45 @@ sum_pair = 123
 ```
 
 Look at that size difference: `PointC` is forced into `12` bytes by C declaration order, while `PointRust` shrinks by 33% down to `8` bytes (passing effortlessly inside a single 64-bit register `RDI`!).
+
+## Recursion at the machine level and stack overflow
+
+When a function calls itself recursively, the CPU does nothing special: it executes the exact same `call` instruction, pushing a brand-new [[stack frame]] downward onto `[stack]` with its own return address and local variables. You can watch those frames march downward in live memory right from Rust:
+
+```rust run nocmp
+#[inline(never)]
+fn trace_frames(depth: usize, max_depth: usize, prev_addr: usize) {
+    let local_marker: u64 = depth as u64;
+    let addr = &local_marker as *const u64 as usize;
+    let delta = if prev_addr == 0 { 0 } else { prev_addr.saturating_sub(addr) };
+    println!("depth {depth}: &local_marker = 0x{addr:x} (frame step = -{delta} bytes)");
+
+    if depth < max_depth {
+        trace_frames(depth + 1, max_depth, addr);
+    }
+}
+
+fn main() {
+    trace_frames(0, 4, 0);
+}
+```
+```output
+depth 0: &local_marker = 0x7ffe6490a398 (frame step = -0 bytes)
+depth 1: &local_marker = 0x7ffe6490a338 (frame step = -96 bytes)
+depth 2: &local_marker = 0x7ffe6490a2d8 (frame step = -96 bytes)
+depth 3: &local_marker = 0x7ffe6490a278 (frame step = -96 bytes)
+depth 4: &local_marker = 0x7ffe6490a218 (frame step = -96 bytes)
+```
+
+Every recursive step subtracts a fixed multiple of 16 bytes from `RSP`. Because Linux gives the main thread an `8 MiB` stack (`2 MiB` for spawned threads), recursing ~100,000 frames deep without a base case drives `RSP` straight into the unmapped **[[guard page]]** below `[stack]`. The MMU raises a hardware `SIGSEGV` fault; Rust's signal handler (running on the separate `sigaltstack` installed before `main` in [Chapter 44](#program-loading-startup)) catches that fault and prints `thread 'main' has overflowed its stack` cleanly.
+
+## Stack unwinding (`Drop` + `.eh_frame`) and `exit_group`
+
+How does a program leave a chain of active stack frames? Three paths exist:
+
+1. **Normal `ret` chain + `exit_group(status)`:** Each function runs its compiler-inserted `Drop` destructors, restores `RSP`, and executes `ret`. When `main` returns to `lang_start_internal` and `__libc_start_main`, `libc` flushes stdio streams and invokes the `exit_group` [[system call]], terminating all threads in the process and returning the exit status to the parent shell.
+2. **Zero-cost stack unwinding (`panic = "unwind"`, Rust's default):** Notice that normal code pays **zero extra instructions** on the happy path for panics. Instead, the compiler stores compact DWARF unwind tables inside the read-only **`.eh_frame`** ELF section. Only when `panic!` actually fires does `libunwind` walk `[stack]` upward frame by frame, consulting `.eh_frame` to find saved registers and calling each frame's MIR cleanup landing pad (`Drop` destructors for `Vec`, `File`, `MutexGuard`, etc.) before printing the panic message.
+3. **Immediate abort (`panic = "abort"`):** Skips `.eh_frame` unwinding altogether (shrinking binary size) and terminates the process immediately via `abort()` (`SIGABRT`), letting the OS kernel reclaim all memory and file descriptors in one sweep.
 
 :::exercise guided Mapping registers in a System V AMD64 call
 Consider `#[inline(never)] extern "C" fn calc(x: u64, y: *const u8, flag: bool, z: f64, w: u32) -> u64`. Which physical CPU register carries each of the 5 arguments and the return value on Linux x86-64?

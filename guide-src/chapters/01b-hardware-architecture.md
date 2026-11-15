@@ -49,13 +49,13 @@ The CPU is the silicon engine that executes instructions one step at a time (or 
                                   RAM
 ```
 
-- **Registers** are tiny, ultra-fast storage slots etched directly inside the CPU core. A 64-bit CPU typically exposes 16 to 31 general-purpose registers (each holding 64 bits = 8 bytes), plus special-purpose registers such as:
+- **[[Registers|register]]** are tiny, ultra-fast storage slots etched directly inside the CPU core. A 64-bit CPU typically exposes 16 to 31 general-purpose registers (each holding 64 bits = 8 bytes), plus special-purpose registers such as:
   - the **program counter** (**PC**, called `RIP` on x86-64), which holds the memory address of the next instruction to run;
   - the **instruction register** (**IR**), which holds the instruction currently being decoded;
-  - the **stack pointer** (`RSP` on x86-64, `SP` on ARM64), tracking the active top of the call stack;
+  - the **stack pointer** (`RSP` on x86-64, `SP` on ARM64), tracking the active top of the call [[stack]];
   - a **flags register** (`RFLAGS` / `NZCV`), recording whether the last calculation produced zero, a negative sign, or arithmetic overflow.
-- The **control unit** (**CU**) coordinates every step. It reads the address in the program counter, fetches that instruction from memory/cache, decodes what operation the bits represent, and routes signals telling the ALU and registers what to do next.
-- The **arithmetic logic unit** (**ALU**) performs actual arithmetic (`+`, `-`, integer comparisons) and bitwise logic (`AND`, `OR`, `XOR`, bit shifts) on values held in registers. Separate floating-point and vector units handle decimal arithmetic and parallel data lanes.
+- The **[[control unit]]** (**CU**) coordinates every step. It reads the address in the program counter, fetches that instruction from memory/[[cache]], decodes what operation the bits represent, and routes signals telling the ALU and registers what to do next.
+- The **[[arithmetic logic unit|ALU]]** (**ALU**) performs actual arithmetic (`+`, `-`, integer comparisons) and bitwise logic (`AND`, `OR`, `XOR`, bit shifts) on values held in registers. Separate floating-point and vector units ([[SIMD]]) handle decimal arithmetic and parallel data lanes.
 - The **clock** ticks billions of times per second (for example, `3.0 GHz` means 3 billion clock cycles per second). Each step inside the CPU is synchronised to clock ticks.
 
 :::plain Latency numbers that govern everything
@@ -76,6 +76,11 @@ Computers store information across a **storage hierarchy**, trading cost and cap
 | **HDD** | Spinning magnetic platters + head | No | 1 TB – 20+ TB | ~4 – 10 ms | High-capacity bulk archival storage |
 
 Notice two crucial boundaries:
+
+:::plain Volatile vs non-volatile memory
+**Volatile** memory (registers, SRAM [[cache]], and DRAM main memory) needs continuous power: switch off the computer and every stored bit disappears immediately. **Non-volatile** storage (ROM firmware, SSDs, and HDDs) keeps its bytes even when unplugged—which is why saved files rest on an SSD, and are copied into DRAM whenever a program opens or runs them.
+:::
+
 1. **RAM vs storage:** The CPU can only execute instructions and directly address variables that are mapped into **main memory (RAM)** and caches. Files sitting on an **SSD** or **HDD** must first be copied into RAM before your program can inspect their bytes.
 2. **ROM/UEFI firmware:** When you press the power button, RAM is completely empty garbage. The CPU is hard-wired to start fetching its very first instructions from **read-only / non-volatile firmware** (**UEFI** on modern PCs, **BIOS** on older ones), which initialises the memory controller and loads the operating system bootloader from disk.
 
@@ -93,12 +98,17 @@ From inside Rust, memory looks like one flat numbered street of bytes. Underneat
 
 ## Following the ten-stage lens on a single addition
 
+:::note How to read the short Rust previews in Chapters 2 and 3
+You have **not** learned Rust syntax yet—[Chapter 4](#setup) installs Rust from scratch, and [Part III](#variables) teaches every word (`fn`, `let`, `for`, `if`) step by step. For now, treat these tiny programs as live lab demonstrations: read the `//` comments and watch what the hardware does with the numbers!
+:::
+
 Suppose we want to add two numbers (`10 + 32`) on a computer. Watch how the layers connect:
 
 1. **Starting point:** Adding two small numbers and keeping the answer.
 2. **Source code:**
 ```rust run
 fn main() {
+    // Store two 32-bit whole numbers and add them:
     let a: i32 = 10;
     let b: i32 = 32;
     let sum = a + b;
@@ -129,19 +139,17 @@ $ lscpu | head -n 12
 $ grep -E 'MemTotal|MemAvailable' /proc/meminfo
 ```
 
-And in pure Rust (`std`), you can query the logical hardware threads the OS exposes to your process:
+And in pure Rust (`std`), you can query how many logical hardware threads the OS exposes to your process and read the top lines of `/proc/meminfo`. Your output will show the exact CPU thread count and RAM of your own machine; here is an example run on a 2-core Linux system:
 
 ```rust run nocmp
-use std::fs;
-use std::thread;
-
 fn main() {
-    let cores = thread::available_parallelism()
-        .map(|n| n.get())
-        .unwrap_or(1);
-    println!("Logical CPU threads available: {cores}");
+    // Ask the OS how many logical CPU threads are available:
+    if let Ok(cores) = std::thread::available_parallelism() {
+        println!("Logical CPU threads available: {cores}");
+    }
 
-    if let Ok(meminfo) = fs::read_to_string("/proc/meminfo") {
+    // Read the first three lines of Linux's live memory report:
+    if let Ok(meminfo) = std::fs::read_to_string("/proc/meminfo") {
         for line in meminfo.lines().take(3) {
             println!("{line}");
         }
@@ -154,8 +162,6 @@ MemTotal:        8153420 kB
 MemFree:         5120300 kB
 MemAvailable:    6412100 kB
 ```
-
-(Because this program reads live system hardware metrics, we mark it `nocmp` so it succeeds on any machine regardless of CPU count or RAM size.)
 
 :::recap
 - **Hardware** is physical silicon, memory chips, buses, and drives; **software** consists of encoded instructions and data loaded into memory.
@@ -207,29 +213,26 @@ Start with the address sitting in the program counter before the instruction is 
 :::
 
 :::exercise practice Inspect your hardware architecture
-Write a small Rust program that reads `/proc/cpuinfo` (falling back cleanly if the file does not exist) and prints only lines containing `"model name"`, `"cpu MHz"`, or `"cache size"` for the first CPU core.
+Trace or run a small Rust program that reads `/proc/cpuinfo` (falling back cleanly if the file does not exist) and prints only lines starting with `"model name"`, `"cpu MHz"`, or `"cache size"` for the first CPU core.
 ::hint
-Use `std::fs::read_to_string("/proc/cpuinfo")`, iterate over `.lines()`, stop after seeing a blank line (which separates CPU cores in `/proc/cpuinfo`), and check `.starts_with(...)`.
+Use `if let Ok(text) = std::fs::read_to_string("/proc/cpuinfo")`, loop over `for line in text.lines()`, stop at the first empty line (which separates CPU cores in `/proc/cpuinfo`), and check `line.starts_with(...)`.
 ::solution
 ```rust run nocmp
-use std::fs;
-
 fn main() {
-    let Ok(text) = fs::read_to_string("/proc/cpuinfo") else {
+    if let Ok(text) = std::fs::read_to_string("/proc/cpuinfo") {
+        for line in text.lines() {
+            if line.is_empty() {
+                break; // stop after CPU 0
+            }
+            if line.starts_with("model name")
+                || line.starts_with("cpu MHz")
+                || line.starts_with("cache size")
+            {
+                println!("{line}");
+            }
+        }
+    } else {
         println!("Not on Linux /proc/cpuinfo");
-        return;
-    };
-
-    for line in text.lines() {
-        if line.is_empty() {
-            break; // stop after CPU 0
-        }
-        if line.starts_with("model name")
-            || line.starts_with("cpu MHz")
-            || line.starts_with("cache size")
-        {
-            println!("{line}");
-        }
     }
 }
 ```

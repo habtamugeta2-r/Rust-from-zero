@@ -11,6 +11,10 @@ Every `File::write_all` and SQLite `COMMIT` eventually ends at physical storage 
 
 Why does random 4 KiB I/O crawl at ~100 operations/sec on an HDD yet scream past **500,000+ IOPS** on an NVMe SSD? Why does overwriting 512 bytes on an SSD secretly force the drive controller to read, copy, and erase hundreds of kilobytes (**write amplification**)? And why can an SSD tell Linux `"write complete!"` while data still vanishes during a power failure unless `fsync` sends a flush barrier?
 
+:::plain IOPS, write amplification, and fsync in one paragraph
+**IOPS** counts how many small random operations a device completes per second, and it is the number that decides whether a database feels instant or unusable; sequential bandwidth is a different, much friendlier number. **Write amplification** is the ratio between bytes the host asked to write and bytes the storage actually wrote, and on NAND it is above `1` because a `4 KiB` page cannot be overwritten in place — the controller writes a new page, marks the old one dead, and later rewrites whole `2–8 MiB` erase blocks to reclaim space. **`fsync`** is the syscall that asks the device to push data out of its volatile cache and onto media, and without it a `write` that returned `Ok` can still vanish on power loss.
+:::
+
 :::analogy Vinyl turntable vs electric filing whiteboard
 - An **HDD** is a record player: reading the next consecutive byte is quick once the arm sits on the right track, yet moving the mechanical needle across the spinning platter takes **5–10 milliseconds** (`5,000,000–10,000,000 ns`—an eternity!).
 - An **NVMe SSD** stores electric charges in silicon Flash cells across dozens of parallel channels connected directly to PCIe—**no moving parts!** Yet NAND Flash has one bizarre physical quirk: you can **write 4–16 KiB pages**, while you can **erase only entire 2–8 MiB erase blocks**!
@@ -30,8 +34,8 @@ Why does random 4 KiB I/O crawl at ~100 operations/sec on an HDD yet scream past
 Every NVMe SSD hides a multi-core ARM processor and gigabytes of DRAM inside its own thumb-sized PCB running firmware called the **FTL (Flash Translation Layer)**:
 
 1. **Out-of-place updates (Pages vs Erase Blocks):** Because NAND cells cannot overwrite `0 -> 1` without resetting an entire **2–8 MiB erase block**, overwriting logical block `#42` causes the FTL to write the new 4 KiB page to a *fresh* physical NAND page, mark the old physical page stale, and update a hidden virtual-to-physical **LBA mapping table**!
-2. **Garbage Collection & Write Amplification (`WAF`):** When clean erase blocks run low, the FTL must read all live pages out of a dirty block, write them elsewhere, and erase the whole block—multiplying host writes by 2×–5× (**write amplification**). Appending sequentially (**WAL logs**, LSM-trees like RocksDB!) eliminates random overwrites and reduces write amplification sharply.
-3. **TRIM (`fstrim` / `BLKDISCARD`):** When you `std::fs::remove_file` a 10 GiB file, the OS only clears file-system pointers—the SSD still thinks all 10 GiB of old blocks are "live"! Sending **`TRIM`** tells the FTL those blocks are dead so SSD garbage collection stops copying deleted bytes forever.
+2. **Garbage Collection & [[write amplification]] (`WAF`):** When clean erase blocks run low, the FTL must read all live pages out of a dirty block, write them elsewhere, and erase the whole block—multiplying host writes by 2×–5× (**write amplification**). Appending sequentially (**WAL logs**, LSM-trees like RocksDB!) eliminates random overwrites and reduces write amplification sharply.
+3. **[[TRIM]] (`fstrim` / `BLKDISCARD`):** When you `std::fs::remove_file` a 10 GiB file, the OS only clears file-system pointers—the SSD still thinks all 10 GiB of old blocks are "live"! Sending **`TRIM`** tells the FTL those blocks are dead so SSD garbage collection stops copying deleted bytes forever.
 4. **Wear Leveling:** Each Flash cell survives only ~1,000–3,000 program/erase cycles (TLC/QLC); the FTL rotates hot logical blocks across fresh physical silicon blocks automatically.
 
 ## Linux `blk-mq` & NVMe's 64,000 Lockless Hardware Queues
@@ -52,7 +56,7 @@ Notice the astonishing design symmetry: **NVMe's ring-buffer Submission/Completi
 
 ## Block Alignment (`4096` / `512` bytes) & Write Ordering Hazards
 
-Hardware disks do **not** read or write single arbitrary bytes: they transfer **sectors** (`512` B logical, **`4096` B physical** 4Kn pages!). Even a single-byte edit on a file reads the enclosing 4 KiB page into OS page cache, flips one byte, and schedules a 4 KiB block writeback.
+Hardware disks do **not** read or write single arbitrary bytes: they transfer **sectors** (`512` B logical, **`4096` B physical** 4Kn pages!) — the boundary is called [[block alignment]] and it decides how much of your `write` really reaches the device. Even a single-byte edit on a file reads the enclosing 4 KiB page into OS page cache, flips one byte, and schedules a 4 KiB block writeback.
 
 Even more critical for databases (`SQLite`, `PostgreSQL`, `sled`):
 1. **Volatile drive write cache:** Most consumer SSDs/HDDs carry a fast DRAM cache in front of Flash/platters. Without an explicit flush/barrier command (`fsync()` -> `SYNCHRONIZE_CACHE` / `NVMe Flush` or **`FUA`** *Force Unit Access*), the drive acknowledges writes *while they sit in volatile drive RAM*! Power loss wipes them out—even though `write()` returned `Ok`!

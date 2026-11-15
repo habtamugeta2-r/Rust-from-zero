@@ -27,7 +27,11 @@ How does silicon decode raw bytes into ALU arithmetic and branches, and why does
 
 ## Inside an instruction byte stream & micro-ops (µops)
 
-Recall the real disassembly from our Linux x86-64 machine earlier:
+:::plain ISA, opcode, and micro-ops (µops)
+An **[[ISA]]** (*Instruction Set Architecture*, like x86-64 or ARM64) is the public contract between software and silicon: which registers exist and what each binary **[[opcode]]** means. Inside modern x86-64 chips, complex multi-byte instructions are cracked by hardware decoders into tiny internal RISC-like steps called **micro-ops (µops)** so the execution engine inside can run fast and wide.
+:::
+
+Recall the `compute` function we disassembled in [Chapter 45](#calling-conventions-execution) (`pub extern "C" fn compute(a..g) -> i32`, returning `(a + b) + f + g`):
 
 ```asm
 1280: 01 f7                add    edi, esi
@@ -36,9 +40,19 @@ Recall the real disassembly from our Linux x86-64 machine earlier:
 1291: c3                   ret
 ```
 
-Notice two surprising engineering facts hidden inside those 13 bytes:
-1. **Addressing modes (`[base + index*scale + displacement]`):** x86-64's **`lea`** (*Load Effective Address*) computes `base + index*scale + displacement` in **one cycle** inside dedicated address-generation hardware—so compilers abuse `lea` everywhere for fast integer multiplication (`x*3`, `x*5`, `x*9`) and 3-operand addition (`eax = rdi + r9`) without touching the flags register!
-2. **Macro-op -> Micro-op (µop) cracking:** Under the hood, modern Intel and AMD CPUs do **not** execute variable-length CISC instructions directly on the core ALU! Their front-end decoders translate `add eax, DWORD PTR [rsp+8]` into two tiny RISC-like **µops** (`load tmp, [rsp+8]` + `add eax, tmp`) cached in a fast **µop cache** (`L0`), so once decoded, hot loops run cleanly on RISC-style execution pipelines!
+Two important hardware details sit inside those 13 bytes:
+
+1. **x86-64 addressing modes (`[base + index*scale + displacement]`):** Any memory operand (and the address-calculation instruction **`lea`**, *Load Effective Address*) can combine a base register, an index register multiplied by `1`, `2`, `4`, or `8`, and a constant byte offset in **one single cycle**:
+
+   | Rust expression | Assembly operand | How hardware computes the address |
+   |---|---|---|
+   | `*ptr` | `[rdi]` | `base` |
+   | `point.y` (offset 8) | `[rdi + 8]` | `base + displacement` |
+   | `u64_slice[i]` | `[rdi + rsi*8]` | `base + index * sizeof::<u64>()` |
+   | `packet.words[i]` | `[rdi + rsi*4 + 16]` | `base + index * 4 + header_offset` |
+
+   Compilers also reuse `lea` for fast integer arithmetic (`lea eax, [rdi + rdi*4]` computes `x * 5` in 1 cycle without touching `RFLAGS`).
+2. **Macro-op -> Micro-op (µop) cracking:** Under the hood, modern Intel and AMD CPUs do **not** execute variable-length CISC instructions directly on the core [[ALU]]. Their front-end decoders split `add eax, DWORD PTR [rsp+8]` into two RISC-like **µops** (`load tmp, [rsp+8]` + `add eax, tmp`) cached in a fast **µop cache** (`L0`), so hot loops run smoothly on internal RISC pipelines.
 
 ## Status flags (`ZF`, `CF`, `SF`, `OF`) and Rust integer semantics
 
@@ -57,13 +71,13 @@ Every control-flow construct lowers to one of three hardware patterns:
 
 1. **Conditional jump (`cmp` + `jcc`):** Used when branches execute substantial separate code or fail rarely (like slice bounds checks `cmp idx, len; jae panic_bounds_check`—almost never taken, predicted 99.99% of the time!).
 2. **Jump table (`.rodata` pointer array):** For a dense `match code { 0 => ..., 1 => ..., ..., 15 => ... }`, checking 16 `cmp`/`je` pairs sequentially wastes cycles. Instead, LLVM emits an array of 16 code offsets in `.rodata` and performs one bounds check + indirect jump **`jmp [table + code*8]`**—executing in **O(1)** constant time regardless of arm count!
-3. **Branchless conditional move (`cmov` / `csel`):** Suppose you write:
+3. **Branchless conditional move ([[cmov]] / `csel`):** Suppose you write:
    ```rust
    fn clamp_max(x: i32, limit: i32) -> i32 {
        if x > limit { limit } else { x }
    }
    ```
-   Rather than emitting a branch instruction that the CPU could mispredict on random inputs, LLVM emits a **single `cmp` + `cmovg`** (*Conditional Move if Greater*): compute both values cleanly in registers and overwrite the register **only if `RFLAGS` matches**—zero jumps, zero branch misprediction penalty!
+   Rather than emitting a branch instruction that the CPU could mispredict on random inputs, LLVM emits a **single `cmp` + `cmovg`** (*Conditional Move if Greater*): compute both values in registers and overwrite the destination **only if `RFLAGS` matches**—zero jumps, zero branch misprediction penalty.
 
 ## Writing branchless Rust when randomness hurts
 
@@ -115,8 +129,10 @@ Compute `rdi + rdi * 4`, and compare single-cycle address arithmetic vs multi-cy
 
 :::exercise practice Choosing jump table vs binary branch tree for `match`
 You write two `match` functions in Rust:
+
 - `fn dense(x: u8) -> u32`: arms `0..=15` returning distinct constants.
 - `fn sparse(x: u64) -> u32`: arms `1, 1_000, 1_000_000_000, _`.
+
 Which one lowers to a `.rodata` **jump table** and why would the other blow up memory if turned into a jump table?
 ::hint
 How big would a `0..=1_000_000_000` pointer array in `.rodata` be?!

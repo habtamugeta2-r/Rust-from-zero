@@ -88,9 +88,109 @@ Poll result = Ready(25)
 State machine size = 12 bytes
 ```
 
-Look closely at `size_of::<AddMachine>() = 12` bytes: there is **no heap stack**, **no thread**, and **`rustc` overlaps variables whose lifetimes do not cross the same `.await`** (just like union variants!). If `async_step` isn't ready yet, `poll` simply returns `Poll::Pending`, leaving `AddMachine` sitting inertly on the executor heap (`Box`/`tokio::task`) until its `Waker` fires!
+Look closely at `size_of::<AddMachine>() = 12` bytes: there is **no heap stack**, **no extra OS thread**, and **`rustc` overlaps variables whose lifetimes do not cross the same `.await`** (just like enum variants). If an inner step is not ready yet, `poll` simply returns `Poll::Pending`, leaving the [[future]] sitting inertly in memory until its **[[waker]]** fires.
 
-## Why `Pin<&mut T>` exists: Self-Referential Futures!
+## Building a real multi-task `Future` executor in 55 lines of pure `std`
+
+Let's remove all remaining magic around async runtimes by building a **working cooperative single-threaded executor** from scratch—using only `std::task::{RawWaker, RawWakerVTable, Waker, Context}` and a `VecDeque` ready queue, with zero external crates:
+
+```rust run
+use std::cell::RefCell;
+use std::collections::VecDeque;
+use std::future::Future;
+use std::pin::Pin;
+use std::rc::Rc;
+use std::task::{Context, Poll, RawWaker, RawWakerVTable, Waker};
+
+struct TaskWaker {
+    task_id: usize,
+    ready_queue: Rc<RefCell<VecDeque<usize>>>,
+}
+
+fn make_waker(task_id: usize, ready_queue: Rc<RefCell<VecDeque<usize>>>) -> Waker {
+    unsafe fn clone_waker(ptr: *const ()) -> RawWaker {
+        let rc = unsafe { Rc::from_raw(ptr as *const TaskWaker) };
+        let cloned = Rc::clone(&rc);
+        let _ = Rc::into_raw(rc);
+        RawWaker::new(Rc::into_raw(cloned) as *const (), &VTABLE)
+    }
+    unsafe fn wake(ptr: *const ()) {
+        let rc = unsafe { Rc::from_raw(ptr as *const TaskWaker) };
+        rc.ready_queue.borrow_mut().push_back(rc.task_id);
+    }
+    unsafe fn wake_by_ref(ptr: *const ()) {
+        let tw = unsafe { &*(ptr as *const TaskWaker) };
+        tw.ready_queue.borrow_mut().push_back(tw.task_id);
+    }
+    unsafe fn drop_waker(ptr: *const ()) {
+        drop(unsafe { Rc::from_raw(ptr as *const TaskWaker) });
+    }
+    static VTABLE: RawWakerVTable =
+        RawWakerVTable::new(clone_waker, wake, wake_by_ref, drop_waker);
+
+    let ptr = Rc::into_raw(Rc::new(TaskWaker { task_id, ready_queue })) as *const ();
+    unsafe { Waker::from_raw(RawWaker::new(ptr, &VTABLE)) }
+}
+
+struct Countdown {
+    name: &'static str,
+    remaining: u8,
+}
+
+impl Future for Countdown {
+    type Output = &'static str;
+
+    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        if self.remaining == 0 {
+            println!("{}: Ready!", self.name);
+            Poll::Ready(self.name)
+        } else {
+            println!("{}: Pending ({} left)", self.name, self.remaining);
+            self.remaining -= 1;
+            cx.waker().wake_by_ref(); // push our task_id back onto ready_queue
+            Poll::Pending
+        }
+    }
+}
+
+fn main() {
+    let ready_queue = Rc::new(RefCell::new(VecDeque::from([0_usize, 1])));
+    let mut tasks: [Option<Pin<Box<dyn Future<Output = &'static str>>>>; 2] = [
+        Some(Box::pin(Countdown { name: "task-A", remaining: 2 })),
+        Some(Box::pin(Countdown { name: "task-B", remaining: 1 })),
+    ];
+
+    loop {
+        let next_id = ready_queue.borrow_mut().pop_front();
+        let Some(id) = next_id else { break };
+        if let Some(mut fut) = tasks[id].take() {
+            let waker = make_waker(id, Rc::clone(&ready_queue));
+            let mut cx = Context::from_waker(&waker);
+            match fut.as_mut().poll(&mut cx) {
+                Poll::Ready(done) => println!("executor retired {done}"),
+                Poll::Pending => tasks[id] = Some(fut),
+            }
+        }
+    }
+}
+```
+```output
+task-A: Pending (2 left)
+task-B: Pending (1 left)
+task-A: Pending (1 left)
+task-B: Ready!
+executor retired task-B
+task-A: Ready!
+executor retired task-A
+```
+
+Every production executor—Tokio, `smol`, `embassy` on bare-metal microcontrollers—is built around this exact loop. The only difference in Tokio is that instead of `Countdown` calling `wake_by_ref()` immediately, Tokio hands that `Waker` to its [[epoll]] / timer reactor ([Chapter 51](#blocking-epoll-io-uring)), which calls `wake()` milliseconds later when a network packet or timer fires.
+
+## Why `Pin<&mut T>` exists: Self-Referential Futures
+
+:::plain Why `Pin<&mut T>` exists in plain words
+Moving an ordinary Rust struct copies its bytes to a new address (`memcpy`). If a suspended `async fn` holds a reference pointing **into another local variable inside that same Future**, moving the Future to a new address would leave that internal pointer pointing at the old, dead address. **[[Pin]]** locks the Future at one fixed memory address so internal borrows across `.await` can never dangle.
+:::
 
 Now look at what happens the instant an `async fn` holds a **reference across an `.await`**:
 
@@ -122,9 +222,10 @@ Now imagine you MOVE SneakyFuture to 0x6800 (`std::mem::swap` or moving a Vec!):
 Because Rust moves structs via a shallow `memcpy` without running custom move-constructors (unlike C++), moving a suspended self-referential future would turn `slice.ptr` into an instant **use-after-free dangling pointer**!
 
 **`Pin<&mut T>` solves that statically in the type system:**
+
 - Ordinary `Copy`/`Vec`/`String`/`i32` types implement the marker trait **`Unpin`** automatically—moving them is always harmless, so `Pin<&mut T>` hands out `&mut T` freely.
 - Generated `async fn` futures that hold borrows across `.await` are marked **`!Unpin`** by the compiler.
-- Putting a `!Unpin` future behind **`Pin<P>`** (via `Box::pin(fut)` on the heap or `std::pin::pin!(fut)` on the current stack frame) **promises in safe Rust that the memory address will never move again until `Drop` runs!** Safe code can never pull `&mut T` back out of `Pin<&mut T>` when `T: !Unpin`, making self-referential `.await` borrows 100% memory safe!
+- Putting a `!Unpin` future behind **`Pin<P>`** (via `Box::pin(fut)` on the heap or `std::pin::pin!(fut)` on the current stack frame) **promises in safe Rust that the memory address will never move again until `Drop` runs.** Safe code can never pull `&mut T` back out of `Pin<&mut T>` when `T: !Unpin`, making self-referential `.await` borrows completely memory-safe.
 
 ## Inside Tokio's Work-Stealing Multi-Threaded Scheduler
 
@@ -146,17 +247,19 @@ Shared Injection Queue (global mutex/list — external spawns & reactor wakeups)
 ```
 :::
 
-Look at four real-world systems optimisations packed inside Tokio's scheduler:
-1. **Per-worker lock-free local run queue (256 slots):** Most spawns/wakeups happen on the *current* worker thread and push onto its private lock-free ring buffer without touching global locks!
-2. **The LIFO slot (cache locality trick!):** When Task A wakes Task B over an internal channel, Tokio places B in the current thread's **LIFO slot** so B runs *immediately next* on the exact same CPU core—often finding Task A's message **still warm in L1 cache**!
-3. **Work stealing:** If Worker 1 finishes all local tasks, it picks a random sibling worker and **steals half** of that worker's local queue rather than going idle while Worker 0 holds 200 queued requests!
-4. **Cooperative preemption budget (`128` per poll):** If a future keeps returning `Poll::Pending` only after exhausting a busy ready stream (`loop { stream.next().await }` when data is always ready), Tokio forces `Poll::Pending` after 128 cooperative units and schedules the task cleanly so it cannot starve sibling HTTP connections!
+Four systems optimisations sit inside Tokio's scheduler:
+
+1. **Per-worker lock-free local run queue (256 slots):** Most spawns and wakeups happen on the *current* worker thread and push onto its private lock-free ring buffer without touching global locks.
+2. **The LIFO slot (cache locality trick):** When Task A wakes Task B over an internal channel, Tokio places B in the current thread's **LIFO slot** so B runs *immediately next* on the exact same CPU core—often finding Task A's message **still warm in L1 cache**.
+3. **Work stealing:** If Worker 1 finishes all local tasks, it picks a sibling worker and **steals half** of that worker's local queue rather than sitting idle while Worker 0 holds 200 queued requests.
+4. **Cooperative preemption budget (`128` per poll):** If a future keeps finding ready work without yielding (`loop { stream.next().await }` when data is always ready), Tokio forces `Poll::Pending` after 128 operations so one busy task cannot starve sibling HTTP connections.
 
 ## Why `!Send` types (`Rc`, `MutexGuard`) fail across `.await`
 
-Now you know why holding `std::sync::MutexGuard` or `Rc<T>` across an `.await` fails compilation under `tokio::spawn`:
-- `tokio::spawn` requires the spawned `Future` to be **`Send`**, because **Worker 1 might steal that suspended `Future` and resume `.await` on Worker 1!**
-- Because every local variable alive across an `.await` becomes a **field of the compiler-generated state-machine `enum`**, if a `!Send` type (`Rc` or `MutexGuard`) lives across `.await`, the entire `Future` enum contains a `!Send` field and cannot safely move to another OS thread! (Dropping the `MutexGuard` in an inner `{ ... }` scope *before* `.await` excludes it from the enum variant across `.await`, making the `Future` cleanly `Send` again!)
+Now you can see why holding `std::sync::MutexGuard` or `Rc<T>` across an `.await` fails compilation under `tokio::spawn`:
+
+- `tokio::spawn` requires the spawned `Future` to be **`Send`**, because **Worker 1 might steal that suspended `Future` and resume `.await` on Worker 1.**
+- Because every local variable alive across an `.await` becomes a **field of the compiler-generated state-machine `enum`**, if a `!Send` type (`Rc` or `MutexGuard`) lives across `.await`, the entire `Future` enum contains a `!Send` field and cannot safely move to another OS thread. Dropping the `MutexGuard` inside an inner `{ ... }` block *before* `.await` excludes it from the suspended variant, making the `Future` `Send` again.
 
 ## Lock-free atomics & `Arc`'s `Release` / `Acquire` drop fence
 

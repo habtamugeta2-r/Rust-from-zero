@@ -8,6 +8,10 @@
 
 A reference (`&T`) borrows a value and does nothing else. A **smart pointer** is a type that also points to data, but in addition **owns** it and adds some extra ability. You already know two: `String` and `Vec<T>` own a block of heap memory and manage it for you. This chapter introduces the smart pointers that are about ownership itself.
 
+:::plain Pointers that own things
+A **smart pointer** is a struct that owns the value it points at and adds behaviour on top: `Box<T>` puts a value on the heap and owns it, `Rc<T>`/`Arc<T>` count how many owners exist and free the value at zero, `RefCell<T>` moves one borrow check from compile time to run time, and `Cell<T>` allows cheap in-place replacement. Combining them (`Rc<RefCell<T>>`, `Arc<Mutex<T>>`) builds the shared ownership and mutation that plain `&T` forbids. Every one of them costs something — an allocation, an atomic increment, a counter check — so the plain borrow is still the default and the smart pointer is the deliberate exception.
+:::
+
 :::analogy A smart keycard
 A smart pointer is like a keycard that both opens a room and keeps track of who is allowed to use it. It points to the right place and carries extra rules about ownership, borrowing and cleanup.
 :::
