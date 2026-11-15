@@ -437,6 +437,7 @@ This part is structured across four progressive sub-tracks:
 - **[Appendix B · Reference tables](#reference)** — Rust syntax, format specifiers, System V AMD64 & ARM64 registers, Linux syscall reference, ELF sections, `/proc` files, and binary inspection command cheatsheet.
 - **[Appendix C · Compiler errors and how to repair them](#errors-ref)** — Real `rustc` diagnostics paired with causes and repairs.
 - **[Appendix D · Coming from another language](#from-other-languages)** — Fast translation tables from Python, JavaScript/TypeScript, Java/C#/Kotlin, Go, and C/C++.
+- **[Appendix E · From source to silicon](#under-the-hood)** — Optional single-page end-to-end deep dive tracing Rust through lexing, AST, HIR, MIR borrow checking, LLVM IR, machine bytes, ELF loading, virtual memory, and CPU fetch–decode–execute.
 
 :::recap Your path through the whole machine
 1. **Parts I–II** show what hardware is and how `rustc` turns source code into ELF machine binaries.

@@ -17,7 +17,7 @@ Picture a street with billions of small letterboxes in a row. Each box holds one
 :::
 
 :::note The numbers are logical, not physical
-A modern computer does not hand a program the real hardware memory directly. The operating system gives each program its own private view of a very large range of numbers, called **virtual** memory, and quietly translates them to the real boxes behind the scenes. When this guide talks about an "address", it means one of those logical numbers, from the program's own point of view. That is why one program's address 100 and another program's address 100 are different places entirely, and why the picture of a single long street of letterboxes is a helpful simplification of something the operating system manages for you.
+A modern computer does not hand a program the real hardware memory directly. The operating system gives each program its own private view of a very large range of numbers, called **virtual** memory, and quietly translates them to the real boxes behind the scenes. When this guide talks about an "address", it means one of those logical numbers, from the program's own point of view. That is why one program's address 100 and another program's address 100 are different places entirely, and why the picture of a single long street of letterboxes is a helpful simplification of something the operating system manages for you. For the machinery behind that translation — page tables, the MMU and the guard pages that catch stack overflows — see [the silicon appendix](#under-the-hood).
 :::
 
 A program uses its memory in two different ways, in two different areas: the **stack** and the **heap**.

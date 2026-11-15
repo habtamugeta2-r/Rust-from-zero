@@ -81,6 +81,10 @@ Why does Rust do this, instead of letting both variables use the text? Think abo
 
 So Rust picks the cheap and safe option: an assignment **moves** ownership. The old variable becomes unusable, and the compiler enforces that.
 
+:::note What the machine actually does for a move
+A move is a copy of the stack record's bytes and nothing more. For a `String` that is 24 bytes (pointer, length, capacity); no heap access happens, and no counter is incremented. The compiler also marks the old variable as off-limits, which is a compile-time bookkeeping decision, not a change to the bytes. [The silicon appendix](#under-the-hood) follows one of these assignments all the way down to machine instructions.
+:::
+
 :::analogy Giving away your only copy
 You have one printed copy of a report and you hand it to a colleague. Now they have it and you do not. You cannot read from it or write on it any more, and it would be absurd for both of you to shred it. If you both need one, somebody has to make a photocopy first.
 :::

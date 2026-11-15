@@ -17,6 +17,7 @@ API :: The set of functions and types that a library or a web service offers to 
 argument :: A value that is passed to a function in a call. The function receives it in a parameter.
 array :: A list with a fixed length, known at compile time, whose elements all have the same type: `[i32; 3]`. See [chapter 9](#types).
 ASLR :: Address Space Layout Randomisation: shuffling where `.text`, heap, shared libraries, and stack map in virtual memory on every launch. See [chapter 41](#virtual-memory-address-spaces) and [chapter 44](#program-loading-startup).
+assembly :: The human-readable spelling of machine-code instructions, such as `mov eax, edi`. Each line stands for one instruction. See [chapter 6](#assembly-machine-code) and [the silicon appendix](#under-the-hood).
 associated function :: A function that belongs to a type but has no `self` parameter, called as `Type::name()`. `String::new()` is one.
 associated type :: A type that a trait leaves open and each implementation fills in, such as `Item` in `Iterator`. See [chapter 33](#advanced-traits).
 async :: A way to write code that waits (for the network, for a timer) without blocking a thread. An `async fn` returns a future. See [chapter 57](#async).
@@ -36,7 +37,8 @@ buffer :: A block of memory that collects data so that it can be read or written
 bug :: A mistake in a program that makes it behave wrongly.
 build script :: A file `build.rs` that Cargo runs before it compiles a package, for example to generate code in `OUT_DIR` or compile C code. See [chapter 37](#ffi) and [chapter 70](#cargo).
 byte :: Eight bits. The unit in which memory and files are measured.
-cache line :: The fixed 64-byte chunk transferred as a unit between main DRAM and CPU L1/L2/L3 caches. See [chapter 43](#pointers-safety-caches).
+cache :: A small, fast memory between the processor and RAM that keeps recently used data. Fetching from it costs about a nanosecond. See [chapter 2](#hardware-architecture), [chapter 43](#pointers-safety-caches), and [the silicon appendix](#under-the-hood).
+cache line :: The fixed 64-byte chunk transferred as a unit between main DRAM and CPU L1/L2/L3 caches. See [chapter 43](#pointers-safety-caches) and [the silicon appendix](#under-the-hood).
 cancellation safety :: Whether an async operation can be dropped mid-`.await` (for example in `tokio::select!`) without losing data or leaving corrupt state. See [chapter 57](#async).
 Cargo :: Rust's tool for building, testing, documenting and publishing packages, and for fetching dependencies. See [chapter 70](#cargo).
 channel :: A queue for sending values from one thread or task to another. See [chapter 55](#threads).
@@ -46,7 +48,7 @@ clone :: An explicit, complete copy of a value, made with `.clone()`. It may be 
 closure :: A function without a name that can use variables from the place where it was written: `|x| x + offset`. See [chapter 29](#closures).
 collection :: A type that holds many values: `Vec`, `HashMap`, `HashSet` and others. See [chapter 20](#collections).
 compile time :: The moment when the compiler translates the program. A mistake found "at compile time" never reaches a user.
-compiler :: The tool that translates your source code into a program the computer can run, and checks it for mistakes first. Rust's compiler is called `rustc`. See [chapter 5](#compilation-pipeline).
+compiler :: The tool that translates your source code into a program the computer can run, and checks it for mistakes first. Rust's compiler is called `rustc`. See [chapter 5](#compilation-pipeline) and [the silicon appendix](#under-the-hood).
 concurrency :: Dealing with several tasks during the same period of time. They may take turns on one processor core.
 context switch :: The kernel saving one thread's CPU registers and switching stacks (and `CR3` page tables across processes) to resume another runnable thread. See [chapter 48](#processes-threads-scheduling).
 const :: A value that is fixed when the program is compiled, with a name in capital letters.
@@ -91,6 +93,7 @@ garbage collector :: A part of many languages that searches for unused memory an
 GAT :: Generic associated type: an associated type inside a trait that takes lifetime or type parameters of its own, such as `type Item<'a>`. See [chapter 33](#advanced-traits).
 generic :: Written once for many types, with a type parameter such as `T`. See [chapter 24](#generics).
 guard :: A value whose only job is to undo something when it is dropped, such as the guard that unlocks a mutex. Also: an extra `if` condition on a `match` arm.
+guard page :: A page of memory deliberately left unmapped at the end of a stack. The first write into it faults, stopping runaway recursion cleanly. See [chapter 13](#memory), [chapter 41](#virtual-memory-address-spaces), and [the silicon appendix](#under-the-hood).
 handle :: A value that stands for something you cannot hold directly, such as an open file or a running thread.
 hash :: A number computed from a value, used to find it quickly in a `HashMap`.
 HashMap :: A collection that finds a value by its key. See [chapter 20](#collections).
@@ -101,6 +104,7 @@ idiomatic :: Written the way experienced users of the language would write it. S
 immutable :: Not changeable. Variables and references are immutable unless marked `mut`.
 impl :: The block in which the methods of a type, or the implementation of a trait for a type, are written.
 inlining :: An optimisation that copies the body of a small function into the place where it is called.
+instruction :: One operation the processor can carry out. Machine code is a sequence of instructions with numeric opcodes. See [chapter 6](#assembly-machine-code), [chapter 52](#isa-opcodes-control-flow), and [the silicon appendix](#under-the-hood).
 integer :: A whole number. Rust has signed ones (`i8` to `i128`, `isize`) and unsigned ones (`u8` to `u128`, `usize`).
 integration test :: A test in the folder `tests/` that uses a crate from the outside, as a user would. See [chapter 27](#testing).
 interior mutability :: Changing a value through a shared reference, with the safety check moved to run time or to the processor. `Cell`, `RefCell`, `Mutex` and atomics do this. See [chapter 32](#smart-pointers).
@@ -118,16 +122,17 @@ lifetime :: The stretch of the program during which a reference is valid. Writte
 linker :: The tool that joins all compiled pieces into one program file, as the last step of a build. See [chapter 7](#linking-elf).
 lint :: A check for code that compiles but is probably a mistake or bad style. Warnings come from lints.
 literal :: A value written directly in the code: `42`, `"hello"`, `true`.
-LLVM IR :: Target-independent Static Single Assignment (SSA) intermediate representation emitted by `rustc` for LLVM optimisations and machine code generation. See [chapter 5](#compilation-pipeline).
+LLVM IR :: Target-independent Static Single Assignment (SSA) intermediate representation emitted by `rustc` for LLVM optimisations and machine code generation. See [chapter 5](#compilation-pipeline) and [the silicon appendix](#under-the-hood).
 lock :: See mutex.
+machine code :: The bytes of a program as the processor fetches and executes them. Produced by the compiler backend; `89 F8` is one instruction. See [chapter 6](#assembly-machine-code) and [the silicon appendix](#under-the-hood).
 macro :: Code that writes code. A macro call ends in `!`, as in `println!`. See [chapter 35](#macros).
 match :: The expression that compares a value with a list of patterns and runs the first arm that fits. It must cover every case.
 memory leak :: Memory that is never freed although nothing uses it any more.
 memory safety :: The guarantee that a program never reads or writes memory it should not: no dangling pointers, no access past the end of a list, no data races.
 method :: A function that belongs to a type and is called with a dot: `text.len()`. Its first parameter is `self`.
-MIR :: Mid-level Intermediate Representation: Rust's control-flow graph IR used for borrow checking, drop elaboration, and constant evaluation before LLVM. See [chapter 5](#compilation-pipeline) and [chapter 39](#rust-stdlib-internals).
+MIR :: Mid-level Intermediate Representation: Rust's control-flow graph IR used for borrow checking, drop elaboration, and constant evaluation before LLVM. See [chapter 5](#compilation-pipeline), [chapter 39](#rust-stdlib-internals), and [the silicon appendix](#under-the-hood).
 mmap :: A system call that maps anonymous zeroed memory or file pages directly into a process's virtual address space. See [chapter 41](#virtual-memory-address-spaces) and [chapter 67](#filesystems-cache-mmap).
-MMU :: Memory Management Unit: the CPU hardware component that translates virtual memory addresses into physical RAM frames using page tables and the TLB. See [chapter 41](#virtual-memory-address-spaces).
+MMU :: Memory Management Unit: the CPU hardware component that translates virtual memory addresses into physical RAM frames using page tables and the TLB. See [chapter 41](#virtual-memory-address-spaces) and [the silicon appendix](#under-the-hood).
 module :: A named group of items inside a crate, with its own privacy boundary. See [chapter 22](#modules).
 monomorphisation :: The way the compiler handles generics: it makes a separate, specialised copy of the code for every type it is used with.
 move :: Handing a value over to a new owner. The old variable can no longer be used. See [chapter 14](#ownership).
@@ -144,6 +149,7 @@ package :: A folder with a `Cargo.toml`: one or more crates that are built and p
 page :: The fixed-size (typically 4 KiB) chunk of virtual or physical memory tracked by OS page tables and the MMU. See [chapter 41](#virtual-memory-address-spaces).
 page cache :: Unused physical DRAM managed by the OS kernel as an automatic cache of recent disk file blocks. See [chapter 67](#filesystems-cache-mmap).
 page fault :: A CPU exception raised when accessing an unmapped, demand-zeroed, file-backed, or permission-violating virtual memory page. See [chapter 41](#virtual-memory-address-spaces).
+page table :: The per-process multi-level table that the MMU walks to map a virtual page onto physical memory. See [chapter 41](#virtual-memory-address-spaces) and [the silicon appendix](#under-the-hood).
 panic :: The controlled stop of a thread after a bug was detected, with a message and a location. See [chapter 23](#errors).
 parallelism :: Doing several things at the same instant, on several processor cores.
 parameter :: A variable in a function definition that receives an argument.
@@ -160,7 +166,7 @@ raw pointer :: A pointer without any guarantee, `*const T` or `*mut T`. It can o
 Rc :: A pointer with a counter that allows several owners of one value in one thread. `Arc` is the version for several threads.
 recursion :: A function that calls itself.
 reference :: A pointer that Rust guarantees to be valid: `&T` for reading, `&mut T` for changing. See [chapter 15](#borrowing).
-register :: Smallest, fastest storage slots inside the CPU core itself (`rax`, `rdi`, `rsp`, `rip`; `x0`–`x30`), read in under one nanosecond. See [chapter 2](#hardware-architecture) and [chapter 45](#calling-conventions-execution).
+register :: Smallest, fastest storage slots inside the CPU core itself (`rax`, `rdi`, `rsp`, `rip`; `x0`–`x30`), read in under one nanosecond. See [chapter 2](#hardware-architecture), [chapter 45](#calling-conventions-execution), and [the silicon appendix](#under-the-hood).
 release build :: The optimised build made by `cargo build --release`. It is the one to measure and to ship.
 Result :: The type for an operation that can fail: `Ok(value)` or `Err(error)`. See [chapter 23](#errors).
 return value :: The value that a function hands back to its caller.
@@ -180,6 +186,7 @@ smart pointer :: A type that behaves like a pointer and does something more, suc
 socket :: An OS kernel file descriptor endpoint for network communication (`TCP`/`UDP`/Unix domain). See [chapter 62](#tcp-udp-sockets-kernel).
 span :: A timed unit of work in structured `tracing`, tracking everything that happens during one request or operation along with its fields. See [chapter 65](#observability).
 stack :: The part of memory for the local variables of the functions that are running. It is fast, and it is tidied up automatically. See [chapter 13](#memory).
+stack frame :: The slice of the stack belonging to one active function call, holding its parameters, local variables, saved registers, and return address. See [chapter 13](#memory) and [chapter 45](#calling-conventions-execution).
 standard library :: The library that comes with Rust: collections, text, files, threads and more. A map is in [the reference appendix](#reference).
 statement :: A piece of code that does something and produces no value, such as a `let`. It ends with a semicolon.
 static :: A value with a fixed place in memory that lives for the whole run of the program.

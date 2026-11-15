@@ -139,6 +139,10 @@ Any number of people can read a document at the same time. Nothing can go wrong,
 
 That is why `&T` is called a **shared reference** and `&mut T` an **exclusive** (mutable) reference. The part of the compiler that checks these rules is called the **borrow checker**.
 
+:::note Why the compiler loves the rule too
+The many-readers/one-writer rule is not only about crashes. It also tells the optimiser what it may assume. While a `&T` is alive, the compiler knows the value behind it cannot change, so it can load the value once and keep it in a register instead of re-reading memory every time. A hidden `&mut T` would make that assumption false and could change the answer mid-expression. The rule exists so the compiler can make your code fast without asking you to annotate `const` everywhere. [The silicon appendix](#under-the-hood) shows the analysis (it happens on MIR) that makes this guarantee real.
+:::
+
 Rule 1 forbids this:
 
 ```rust fail E0502

@@ -13,10 +13,10 @@ full-text search all work out of the box.
 
 | | |
 |---|---|
-| Sections | 87 total across 13 Parts + 4 Appendices (81 numbered chapters + 2 welcome guides + 4 appendices), including 9 projects & labs |
-| Examples | 1,298 code blocks, **991 of them Rust** (plus x86-64/ARM64 assembly, LLVM IR, C, SQL, and Linux CLI) |
-| Exercises | 271, every one with a hint and a worked solution |
-| Quiz questions | 346, each with an explanation of the answer |
+| Sections | 88 total across 13 Parts + 5 Appendices (81 numbered chapters + 2 welcome guides + 5 appendices), including 9 projects & labs |
+| Examples | 1,308 code blocks, **991 of them Rust** (plus x86-64/ARM64 assembly, LLVM IR, C, SQL, and Linux CLI) |
+| Exercises | 274, every one with a hint and a worked solution |
+| Quiz questions | 351, each with an explanation of the answer |
 | Captured output | 104 real compiler messages and program outputs |
 | Stack | Next.js 16 App Router, React 19, TypeScript, Tailwind CSS v4, Shiki |
 
@@ -25,7 +25,7 @@ comparison tables, runnable examples and machine-level walkthroughs, exercises,
 a quiz, and a recap. Verified Rust examples are compiled and checked against
 printed output by `guide-src/tools/check.py` (Rust Edition 2024).
 
-## What the guide covers (13 Parts + 4 Appendices)
+## What the guide covers (13 Parts + 5 Appendices)
 
 Explore the full dependency graph in the **[Complete Learning Roadmap](./guide-src/chapters/00b-roadmap.md)** (`#roadmap`) or filter by route (**Core Rust**, **Systems & internals**, **CLI tools**, **Web & APIs**, **Optional surveys**) directly on the home page:
 
@@ -43,7 +43,7 @@ Explore the full dependency graph in the **[Complete Learning Roadmap](./guide-s
 - **Part XI — Storage and file systems:** HDD vs NAND SSD FTL/wear leveling/NVMe `blk-mq`, VFS inodes/dentries, Linux Page Cache, crash-safe `rename()`/`fsync()`, `mmap`, SQLx/Diesel/SeaORM databases, and URL-shortener API project
 - **Part XII — Practical system programming with Rust:** Cargo workspaces, `rustfmt`/Clippy/CI, testing strategies, `clap` CLI project, performance profiling & flame graphs, a pure-Rust **Linux `/proc` & ELF64 systems inspector lab**, and the full-stack library capstone project
 - **Part XIII — Applied Rust ecosystem and next steps:** crate selection, Serde, WebAssembly/Tauri/GUI apps, Bevy/`no_std`/data science, and continuing paths
-- **Appendices:** Searchable glossary, Rust & Linux/ABI quick reference tables, real compiler error catalogue, and translation guides from Python, JS/TS, Java/C#, Go, and C/C++
+- **Appendices (`A`–`E`):** Searchable glossary, Rust & Linux/ABI quick reference tables, real compiler error catalogue, translation guides from Python, JS/TS, Java/C#, Go, and C/C++, and a from-source-to-silicon end-to-end compiler/OS/CPU walkthrough (`94-under-the-hood`)
 
 ## What it deliberately does not cover
 
@@ -61,7 +61,7 @@ npm run dev       # start development server at http://localhost:3000
 For a production build and server:
 
 ```sh
-npm run verify:content   # validates all 87 sections, links & captured outputs
+npm run verify:content   # validates all 88 sections, links & captured outputs
 npm run typecheck        # TypeScript check
 npm run build            # builds all routes and static chapter pages
 npm start                # serves the production Next.js app on port 3000
