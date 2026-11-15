@@ -12,11 +12,12 @@ down by hand and its rules were enforced by memory plus a parser. 2.2.0 added
 the content lint; 3.0.0 makes the numbers impossible to drift, gives the lint
 tests of its own, closes the content gaps a fresh full review measured, and
 adds the two reader features that were missing rather than five that were
-half-finished. No Rust example changed: with no toolchain in the release
-environment, this release does not touch a single Rust code fence, so rule
-one — every printed output is real captured output — is untouched. The three
-`check.py` gates are therefore reported as not run for this release in the
-pull request, with the toolchain reason stated, rather than passed quietly.
+half-finished. No Rust example changed: this release does not touch a single
+Rust code fence, so rule one — every printed output is real captured output —
+is untouched. There was no Rust toolchain in the local release environment,
+so the three `check.py` gates could not be run there; they run in the CI
+`examples` job, and the pull request records their result from CI rather than
+claiming a local pass that never happened.
 
 ### Fixed — the facts
 
