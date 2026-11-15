@@ -4,6 +4,158 @@ All notable changes to the guide are recorded here. The version number tracks
 the web application in `package.json`; the chapters themselves are content, and
 they change continuously.
 
+## 3.0.0 — the measured release
+
+This is a major version not because the guide looks different, but because the
+promises behind it changed shape. Until now the guide's numbers were written
+down by hand and its rules were enforced by memory plus a parser. 2.2.0 added
+the content lint; 3.0.0 makes the numbers impossible to drift, gives the lint
+tests of its own, closes the content gaps a fresh full review measured, and
+adds the two reader features that were missing rather than five that were
+half-finished. No Rust example changed: with no toolchain in the release
+environment, this release does not touch a single Rust code fence, so rule
+one — every printed output is real captured output — is untouched. The three
+`check.py` gates are therefore reported as not run for this release in the
+pull request, with the toolchain reason stated, rather than passed quietly.
+
+### Fixed — the facts
+
+- **The README's numbers were wrong, and nothing checked them.** It claimed
+  1,308 code blocks, 991 Rust, 274 exercises and 351 quiz questions; the
+  parser counted 1,329 / 1,005 / 273 / 347. `npm run stats` now prints every
+  published number from the parser, the README table is generated from it,
+  and the `docs/stats` lint rule fails the build when the two disagree.
+- **`guide-src/CONTENT-REVIEW.md` described a release that no longer exists**
+  (2,017 code blocks, 12 long sentences, spelling findings fixed in 2.2.0,
+  and its finding 1, which its own correction says was a false alarm). It is
+  deleted; a fresh measured review lives in `guide-src/PLAN.md`, where it
+  cannot be mistaken for current truth once it ages.
+- **18 chapters linked nowhere.** The lint failed on a chapter nobody linked
+  *to*, but said nothing about the reverse, and 18 chapters — most of the
+  systems sequence — ended in a dead end. Each now cross-references where the
+  prose calls for it (50 link edits; inbound edges 1,051 → 1,135, outbound
+  islands 18 → 0), and `graph/no-outgoing-link` is an error so they cannot
+  come back.
+- **8 project chapters had no quiz** and the lint called that a warning. Each
+  project now ends with a four-question quiz on the decisions it made — why
+  the names mutex is never held across an `.await`, why uniqueness lives in
+  the database, why money is integer cents — with an explanation per answer
+  (347 → 379 questions). `structure/project-quiz` is an error.
+- **The five appendices declared no reading time**, so the published total
+  silently excluded their 14,862 words of prose. They now declare a `@time`
+  measured from that prose at 200 words per minute (25/10/10/10/20), and the
+  total includes them deliberately: 4,483 → 4,558 declared minutes. The
+  decision is written in `PLAN.md`; the code, the README and the plan agree.
+- **`what-is-rust` was the last tracked teaching chapter without a challenge
+  exercise**; it has one (plan your first program: inputs, outputs, steps,
+  named failures). `start` and `roadmap` stay without one — they are
+  orientation. Exercises 273 → 274.
+- **The glossary was a third linked: 98 of 253 terms.** Foundational words a
+  beginner meets early — *borrowing*, *crate*, *array*, *argument*, *trait
+  object* — existed only on the glossary page. Terms are now wrapped at their
+  first substantive explanation: 211 of 253 (83%). Two automated wraps that
+  landed on the wrong sense (`instruction register`, `match guard`) were
+  moved by hand.
+- **Eight sentences ran past 55 words** (seven at the 2.2.0 measurement, one
+  more from the new cross-links). Split; the count is now zero.
+- **Ten technical claims spot-checked** against the sources they rest on: the
+  x86-64 `syscall` register contract (`RCX`/`R11`, fourth argument in `R10`),
+  `String` at 24 bytes, `char` at 4 bytes, 64-byte cache lines, 4 KiB frames,
+  the ~1,460-byte TCP MSS (and the 1,460+1,460+1,176 segmentation of 4 KiB),
+  the Release/Acquire pairing guarantee, the 8 MiB main-thread stack, file
+  descriptors 0/1/2, and the `i8` range. Each was correct; nothing needed
+  changing, and the checks are listed here so they can be repeated.
+
+### Added — one definition of green
+
+- **A test suite** (`npm test`, Node's built-in runner via `tsx` — no Jest):
+  a parser fixture chapter covering every block type, `auto` fill from a real
+  capture, and the unknown-glossary-term warning; search ranking, prefix and
+  synonym matching and snippet windows; progress arithmetic at 0%, partial
+  and complete, including 2.0.0's bare-index quiz answers; and **one test per
+  lint rule** that injects the fault and asserts the rule fires, beside a
+  clean fixture it must stay silent on. The 2.2.0 practice — verify a rule by
+  hand, once — is now permanent. 37 tests.
+- **ESLint and Prettier** behind one `npm run lint`, wired into CI. New
+  dev-dependencies, each needed for that command and nothing else: `eslint`
+  (the runner), `@eslint/js` (its recommended rules, imported directly by the
+  flat config), `typescript-eslint` (the TypeScript parser and rules),
+  `prettier` (the formatter) and `eslint-config-prettier` (so the two never
+  fight over style). Prettier adoption is incremental — files this release
+  created or materially edited are formatted and checked; the hand-formatted
+  remainder is listed in `.prettierignore`, which may only shrink. The whole
+  tree was deliberately not restyled in this release.
+- **Capture-orphan detection.** The lint warns on a `captured/*.txt` that no
+  `auto` block references (3 exist: stale output from examples that changed)
+  and on an `auto` block whose capture is missing (none). The stale files are
+  kept — deleting captured output is forbidden — so these are the only three
+  warnings `verify:content` prints, stated here rather than silenced.
+- **One CI workflow.** `.github/workflows/build.yml` is now the single
+  definition of green: a `guide` job on every push (deploy config, content,
+  lint, tests, typecheck, build, structural audit) and an `examples` job on
+  pull requests, weekly and on demand (all three `check.py` gates, keeping
+  the `::error::` failure annotations and the Monday cron). The duplicate
+  `guide-checks.yml` is deleted.
+
+### Added — the missing doors
+
+- **`/chapters`**: the URL people type now lands on the chapter index —
+  grouped by part, with kind, level, declared reading time and the reader's
+  own completion state on every entry. It joins the sitemap and the
+  sidebar's study-tools links.
+- **A site icon and a real social card.** `src/app/icon.svg` carries the
+  gear-and-tick mark; `public/og.png` is redrawn in the 404 page's
+  compiler-message language at 1200×630 and 61 KB (was 1424×752 at 1.2 MB,
+  the wrong shape for the card it feeds). Twitter cards now use the large
+  image form that matches it.
+- **Search that meets the reader half-way.** Matching is whole-word first,
+  then prefix — `borrow` finds *borrowing* — then substring, with a small
+  documented synonym map (`mut` → *mutability*, *mutable*; `cli` → *command
+  line*). Misspellings are deliberately not corrected: `asnyc` is a typo, not
+  a synonym, and a wrong confident guess is worse than the suggestion list.
+  One implementation still serves the API, the palette and `/search`.
+- **Accessibility, from a code-level pass over the shell.** Part toggles in
+  the sidebar now name the list they control (`aria-controls`), the sidebar
+  search is a combobox whose `aria-activedescendant` follows the arrow keys
+  with results as options, and the search buttons announce the dialog they
+  open (`aria-haspopup`, `aria-expanded`). This is a list of fixes, not a
+  conformance claim: no WCAG audit was run, and none is claimed.
+- **Progress export and import.** The dashboard downloads your progress —
+  finished chapters, quiz answers, solved exercises, bookmarks, theme and
+  text size — as one JSON file, and imports it on another machine. The import
+  is schema-checked before anything is applied (2.0.0 bare-index answers are
+  migrated), and when the browser already holds progress you choose replace
+  or merge; merging keeps every local entry and adds what the file has.
+  Nothing is uploaded; there is still no account and no sync.
+- **"You are here" continuity.** The next-chapter card at the foot of a
+  chapter now says *why* as well as *what*: the next chapter's first `@learn`
+  objective, beside its title and reading time.
+
+### Measured
+
+- Client JavaScript for a chapter page (`/chapters/ownership`, scripts the
+  prerendered page loads): 659,574 → 664,462 bytes raw (196.0 → 197.4 KiB
+  gzip), +0.7% for the chapter index and export code in shared chunks, across
+  the same 11 scripts. `shiki` was checked rather than assumed: no client
+  chunk contains the highlighter — highlighting happens in the server
+  component that renders code, and the one `shiki` string in a client chunk
+  is a CSS class name.
+- Build: 96 → 98 static pages (the chapter index and the icon), no warnings.
+
+### Declined, deliberately
+
+- **Print/PDF-friendliness** (the third reader-feature candidate) was not
+  started: two features done properly outrank three done thinly, and the
+  print stylesheet already drops the chrome.
+- **Typo-tolerant search** beyond prefix matching: rejected above.
+- **Restyling the tree with Prettier**: the config is adopted, the reformat
+  is a separate, reviewable change for another release.
+- New chapters, accounts, sync, scoring: out of scope, unchanged.
+
+### Changed
+
+- Version 3.0.0.
+
 ## 2.2.0 — the content integrity release
 
 The guide has 88 chapters, 221,636 words, 273 exercises and 347 quiz questions,

@@ -66,8 +66,9 @@ Blocks: ## h2, ### h3, lists, tables, ```lang flags, :::analogy|plain|compare|wa
 - `[label](#chapter-id)` — a chapter link. Use the id, never the number in the target; the visible
   label is renumbered for you (`[chapter 99](#errors)` becomes “chapter 23”).
 - `[label](#home)` — the landing page. `home` is the only non-chapter name allowed after `#`.
-- `[label](/progress)`, `[label](/search)` — a route link: rendered with `next/link`, in the same
-  tab, no external-link arrow. Allowed routes are `/`, `/progress` and `/search`.
+- `[label](/progress)`, `[label](/search)`, `[label](/chapters)` — a route link: rendered with
+  `next/link`, in the same tab, no external-link arrow. Allowed routes are `/`, `/chapters`,
+  `/progress` and `/search` (the lint's `APP_ROUTES`).
 - Anything else after `#` or a leading `/` is a `verify:content` error (a dead target, or a route
   the app does not serve), and a plain `https://…` target is an external link opened in a new tab.
 
@@ -80,7 +81,58 @@ British spelling throughout (`behaviour`, `initialise`, `licence`). `npm run ver
 that plus the rest of the house style — see `../CONTRIBUTING.md` — and fails the build on any
 `TODO`/`FIXME`/`TBD` left in visible text, on a tracked chapter that loses its `@learn` list, recap,
 quiz or exercises, on a declared `@time` below 60% of the chapter's own reading time, on duplicate
-titles/ids, on a chapter nobody links to, and on a link to a chapter id or route that does not exist.
+titles/ids, on a chapter nobody links to, on a link to a chapter id or route that does not exist,
+and — since 3.0.0 — on a chapter that links to no other chapter (`graph/no-outgoing-link`, the
+reverse direction of the older reachability rule), on a project chapter without a quiz
+(`structure/project-quiz`, an error, not a warning), and on a README statistics table that
+disagrees with `npm run stats` (`docs/stats`). It warns on a `captured/*.txt` that no `auto`
+block references (`capture/orphan`; the files are kept under the never-delete rule) and on an
+`auto` block whose capture is missing (`capture/missing`).
+
+## Maintenance decisions (3.0.0)
+
+- **Appendix reading time is included in the published total.** The five appendices declare a
+  realistic `@time`, measured from their prose at 200 words per minute and rounded (glossary 25,
+  reference 10, compiler-errors 10, from-other-languages 10, under-the-hood 20). The parser's
+  `totalMinutes` sums **all** chapters, appendices included, and the README table follows it.
+  Appendices still do not count as tracked chapters for progress.
+- **Published numbers come from `npm run stats`.** The README statistics table is checked by the
+  `docs/stats` lint rule; regenerating the table is pasting the output of `npm run stats`.
+- **Tests are permanent.** `npm test` runs `node:test` via `tsx` over `tests/`: a parser fixture
+  chapter (every block type, `auto` fill, unknown glossary term), search ranking and snippets
+  (whole-word, prefix and synonym matching), progress arithmetic including 2.0.0's bare-index
+  quiz answers, and one test per content-lint rule that injects the rule's fault. The 2.2.0
+  practice of verifying a rule by hand once is now a test that runs in CI.
+- **`npm run lint` is ESLint plus a Prettier check.** New dependencies, justified in the
+  changelog: `eslint`, `@eslint/js`, `typescript-eslint`, `prettier`, `eslint-config-prettier`.
+  Prettier adoption is incremental: files created or materially edited since 3.0.0 are
+  formatted and checked; pre-existing hand-formatted files are listed in `.prettierignore`,
+  which may only shrink.
+- **CI is one workflow** (`.github/workflows/build.yml`): job `guide` on every push (deploy
+  config, content, lint, tests, typecheck, build, audit) and job `examples` on pull requests,
+  weekly and on demand (the three `check.py` gates, with `::error::` annotations).
+- **Search matching** is whole-word, then prefix, then substring, with a documented synonym
+  map in `src/lib/search.ts`. Misspellings are deliberately not corrected.
+- **Reader features added in 3.0.0:** progress export/import as validated JSON (replace or
+  merge, never silently) and next-chapter cards that name the next chapter's first `@learn`
+  objective. Print/PDF work was not started; see the changelog's declined list.
+
+## Content review (3.0.0, measured in this tree)
+
+This replaces `guide-src/CONTENT-REVIEW.md`, which described 2.2.0 and is deleted:
+its findings are either fixed below or were false alarms, and a stale review is
+worse than none.
+
+| Finding at 2.2.0 | State at 3.0.0 |
+|---|---|
+| 18 chapters with no outgoing cross-link | 0; the lint fails if one returns |
+| 8 project chapters without a quiz | 9 of 9 project chapters have a 4-question quiz on their decisions |
+| Glossary 98 of 253 terms linked | 211 of 253, wrapped at the term's first substantive explanation |
+| Sentences over 55 words: 7 (8 after the new links) | 0 |
+| Appendices with no `@time`, excluded from the total | Each declares a measured `@time`; the total includes them |
+| `what-is-rust` the only tracked teaching chapter without a challenge exercise | It has one; `start` and `roadmap` stay challenge-free as orientation |
+| README statistics disagreed with the parser | The table is generated by `npm run stats` and checked by `docs/stats` |
+| 104 captured files, some unreferenced | 3 captures are unreferenced stale output; the lint warns on them and they are kept under the never-delete rule |
 
 ## Outline (file → id). [x] = written and checked
 welcome: [x] 00-start → start
