@@ -112,6 +112,8 @@ The heap can hold data of any size, the size may be decided while the program ru
 
 Most interesting data uses both. Rust's growable text type, `String`, is a good example. The characters live on the heap, because nobody knows in advance how many there will be. On the stack there is a small record of fixed size that says where the characters are and how many there are.
 
+![Diagram of a String: pointer, length and capacity on the stack, the word hello on the heap](/images/stack-and-heap.svg "A `String` is a small stack record pointing at heap text. Step through it below.")
+
 :::stepper A String uses the stack and the heap
 ```rust
 fn main() {

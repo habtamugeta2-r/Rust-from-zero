@@ -59,6 +59,8 @@ interface ParseCtx {
   stats: { code: number; exercises: number; questions: number; projects: number };
   /** Directory `auto` blocks read captured output from (a fixture in tests). */
   capturedDir: string;
+  /** Directory figure images must exist in (a fixture in tests). */
+  publicDir: string;
 }
 
 function slugify(text: string): string {
@@ -466,6 +468,7 @@ function isBlockStart(line: string): boolean {
   const s = line.trim();
   return (
     s.startsWith("```") ||
+    s.startsWith("![") ||
     s.startsWith(":::") ||
     s.startsWith("|") ||
     s.startsWith("> ") ||
@@ -882,6 +885,28 @@ function parseBlocks(lines: string[], ctx: ParseCtx): BlockNode[] {
       continue;
     }
 
+    // A standalone image line is a figure, never a paragraph: the alt text
+    // is the accessible description, the optional quoted title is the
+    // visible caption (falling back to the alt text). The file must exist
+    // under public/, so a renamed image fails the build instead of 404ing.
+    const fig = s.match(/^!\[([^\]]*)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)$/);
+    if (fig) {
+      const alt = fig[1].trim();
+      const src = fig[2].trim();
+      if (!alt) ctx.warnings.push(`${ctx.id}: figure ${src} has no alt text`);
+      if (src.startsWith("/") && !fs.existsSync(path.join(ctx.publicDir, src))) {
+        ctx.warnings.push(`${ctx.id}: figure image not found in public/: ${src}`);
+      }
+      out.push({
+        type: "figure",
+        src,
+        alt,
+        caption: splitMarkdownInline(fig[3]?.trim() || alt, ctx),
+      });
+      i += 1;
+      continue;
+    }
+
     const hm = s.match(/^(#{2,4})\s+(.+)$/);
     if (hm) {
       const level = hm[1].length as 2 | 3 | 4;
@@ -997,6 +1022,22 @@ function collectSearchEntries(
             text,
             lower: text.toLowerCase(),
             weight: 8,
+          });
+        }
+        break;
+      }
+      case "figure": {
+        const text = inlinePlainText(b.caption);
+        if (text.length >= 3) {
+          out.push({
+            chapterId: ch.id,
+            num: ch.num,
+            chapterTitle: ch.title,
+            anchor: curHeading.anchor,
+            heading: curHeading.text,
+            text,
+            lower: text.toLowerCase(),
+            weight: 6,
           });
         }
         break;
@@ -1208,6 +1249,7 @@ export function loadGuide(forceReload = false, rootDir?: string): LoadedGuide {
     check: 0,
     lastHash: "",
     capturedDir,
+    publicDir: rootDir ? path.join(rootDir, "public") : path.join(process.cwd(), "public"),
     glossary: glossaryMap,
     nums,
     links,
@@ -1266,6 +1308,7 @@ export function loadGuide(forceReload = false, rootDir?: string): LoadedGuide {
       check: 0,
       lastHash: "",
       capturedDir,
+      publicDir: rootDir ? path.join(rootDir, "public") : path.join(process.cwd(), "public"),
       glossary: glossaryMap,
       nums,
       links,

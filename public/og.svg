@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" role="img" aria-labelledby="t d">
+  <title id="t">Rust from Zero — Learn Rust. Understand the whole machine.</title>
+  <desc id="d">Social card for the Rust from Zero guide: title, the write-compile-load-execute-kernel-output journey, and the guide's ferris-style gear mark.</desc>
+  <defs>
+    <linearGradient id="acc" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#E9743E"/><stop offset="1" stop-color="#2DD4BF"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="#141311"/>
+  <rect x="24" y="24" width="1152" height="582" rx="28" fill="#1C1A17" stroke="#3E3930" stroke-width="2"/>
+  <g fill="none" stroke="#E9743E" stroke-linecap="round" stroke-linejoin="round" transform="translate(88 76)">
+    <circle cx="34" cy="34" r="22" stroke-width="10" stroke-dasharray="8.6 8.6"/>
+    <circle cx="34" cy="34" r="16" stroke-width="5"/>
+    <path d="M26 35l6 6 11-12" stroke-width="5"/>
+  </g>
+  <text x="176" y="112" font-family="DejaVu Sans, sans-serif" font-size="21" font-weight="700" letter-spacing="3" fill="#A49B88">RUST FROM ZERO</text>
+  <text x="84" y="248" font-family="DejaVu Sans, sans-serif" font-size="72" font-weight="700" fill="#ECE7DD">Learn Rust from zero.</text>
+  <text x="84" y="330" font-family="DejaVu Sans, sans-serif" font-size="52" font-weight="700" fill="url(#acc)">Understand the whole machine.</text>
+  <text x="84" y="392" font-family="DejaVu Serif, serif" font-size="25" fill="#C2BBAF">Transistors to Tokio — every layer opened, named, and tested.</text>
+  <g font-family="DejaVu Sans, sans-serif" font-size="19" font-weight="700" text-anchor="middle">
+    <rect x="84" y="448" width="150" height="56" rx="14" fill="#39231A" stroke="#E9743E" stroke-width="2"/><text x="159" y="484" fill="#F5C6AC">Write</text>
+    <rect x="262" y="448" width="150" height="56" rx="14" fill="#232019" stroke="#3E3930" stroke-width="2"/><text x="337" y="484" fill="#ECE7DD">Compile</text>
+    <rect x="440" y="448" width="150" height="56" rx="14" fill="#232019" stroke="#3E3930" stroke-width="2"/><text x="515" y="484" fill="#ECE7DD">Load</text>
+    <rect x="618" y="448" width="150" height="56" rx="14" fill="#12322E" stroke="#2DD4BF" stroke-width="2"/><text x="693" y="484" fill="#A7F3EA">Execute</text>
+    <rect x="796" y="448" width="170" height="56" rx="14" fill="#232019" stroke="#3E3930" stroke-width="2"/><text x="881" y="484" fill="#ECE7DD">Ask kernel</text>
+    <rect x="994" y="448" width="122" height="56" rx="14" fill="#ECE7DD"/><text x="1055" y="484" fill="#141311">See it</text>
+  </g>
+  <g fill="#E9743E" font-family="DejaVu Sans, sans-serif" font-size="22" font-weight="700">
+    <text x="240" y="486">›</text><text x="418" y="486">›</text><text x="596" y="486">›</text><text x="774" y="486">›</text><text x="972" y="486">›</text>
+  </g>
+  <text x="84" y="566" font-family="DejaVu Sans Mono, monospace" font-size="18" fill="#A49B88">Chapters · solved exercises · quizzes · hands-on projects</text>
+</svg>

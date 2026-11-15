@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 470" role="img" aria-labelledby="t d">
+  <title id="t">Virtual memory: every program gets its own address space</title>
+  <desc id="d">A virtual address is split into a page number and an offset. Page tables translate the page number into a physical frame; the MMU and TLB make that fast.</desc>
+  <rect width="1200" height="470" rx="24" fill="#FCFBF8"/>
+  <rect x="1" y="1" width="1198" height="468" rx="23" fill="none" stroke="#E5E0D5" stroke-width="2"/>
+  <text x="48" y="58" font-family="system-ui, sans-serif" font-size="24" font-weight="700" fill="#1C1915">The address you see is not the address in RAM</text>
+  <text x="48" y="86" font-family="system-ui, sans-serif" font-size="15" fill="#6F6659">Page tables translate, per process — so two programs can both use address 0x1000 safely.</text>
+  <defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#BC4114"/></marker></defs>
+  <g font-family="system-ui, sans-serif">
+    <text x="48" y="140" font-size="14" font-weight="700" letter-spacing="2" fill="#BC4114">YOUR PROGRAM</text>
+    <rect x="48" y="158" width="300" height="120" rx="14" fill="#F7E8DE" stroke="#BC4114" stroke-width="2"/>
+    <text x="72" y="200" font-family="ui-monospace, monospace" font-size="17" font-weight="700" fill="#1C1915">virtual 0x7f3a_1000</text>
+    <text x="72" y="230" font-size="14" fill="#6F6659">page 0x7f3a · offset 0x000</text>
+    <text x="72" y="254" font-size="14" fill="#6F6659">“the only memory there is”</text>
+
+    <text x="440" y="140" font-size="14" font-weight="700" letter-spacing="2" fill="#0369A1">PAGE TABLES · MMU + TLB</text>
+    <rect x="420" y="158" width="330" height="120" rx="14" fill="#EAF1F8" stroke="#0369A1" stroke-width="2"/>
+    <text x="444" y="196" font-size="15" fill="#1C1915">page 0x7f3a → frame 0x04c2</text>
+    <text x="444" y="224" font-size="14" fill="#45403A">permissions: read · write · user</text>
+    <text x="444" y="252" font-size="14" fill="#0369A1">TLB caches this, so it stays fast</text>
+
+    <text x="842" y="140" font-size="14" font-weight="700" letter-spacing="2" fill="#0F766E">PHYSICAL RAM</text>
+    <rect x="822" y="158" width="330" height="120" rx="14" fill="#E6F2F0" stroke="#0F766E" stroke-width="2"/>
+    <text x="846" y="200" font-family="ui-monospace, monospace" font-size="17" font-weight="700" fill="#1C1915">physical 0x04c2_000</text>
+    <text x="846" y="230" font-size="14" fill="#6F6659">one 4 KiB frame among millions</text>
+    <text x="846" y="254" font-size="14" fill="#6F6659">shared by nobody else, unless mapped so</text>
+  </g>
+  <path d="M352 218 L414 218" stroke="#BC4114" stroke-width="3" marker-end="url(#ar)"/>
+  <path d="M754 218 L816 218" stroke="#BC4114" stroke-width="3" marker-end="url(#ar)"/>
+  <g font-family="system-ui, sans-serif" font-size="14.5">
+    <rect x="48" y="322" width="1104" height="52" rx="12" fill="#F3F0E9" stroke="#E5E0D5"/>
+    <text x="72" y="355" fill="#45403A">Not mapped? The CPU raises a <tspan font-weight="700" fill="#1C1915">page fault</tspan> — the kernel loads the page, grows the stack, or ends the process.</text>
+    <text x="48" y="416" font-size="14" font-style="italic" fill="#6F6659">Isolation, lazy loading and mmap are all this one translation, used three ways.</text>
+  </g>
+</svg>

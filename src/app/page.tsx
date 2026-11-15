@@ -3,6 +3,7 @@ import Link from "next/link";
 import { BadgeCheck } from "lucide-react";
 import { GuideSearchButton } from "@/components/GuideSearchButton";
 import { HomeContinueButton } from "@/components/HomeContinueButton";
+import { GuideFigure } from "@/components/GuideFigure";
 import { HomeRoutesSection } from "@/components/HomeRoutesSection";
 import { loadGuide } from "@/lib/guide-parser";
 import { courseJsonLd } from "@/lib/seo";
@@ -90,7 +91,9 @@ export default function HomePage() {
           <h1 className="mt-5 font-sans text-[40px] leading-[1.08] font-bold tracking-[-0.02em] text-balance text-[var(--g-ink)] sm:text-[52px] 2xl:text-[58px]">
             Learn Rust from zero.
             <br />
-            <span className="text-[var(--g-accent)]">Understand the whole machine.</span>
+            <span className="bg-gradient-to-r from-[var(--g-accent)] to-[var(--g-accent-2)] bg-clip-text text-transparent">
+              Understand the whole machine.
+            </span>
           </h1>
 
           <p className="mt-5 max-w-xl font-sans text-[16.5px] leading-relaxed text-pretty text-[var(--g-ink2)] sm:text-[17px]">
@@ -187,6 +190,15 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* The journey, in one picture */}
+      <div className="mt-14">
+        <GuideFigure
+          src="/images/end-to-end-trace.svg"
+          alt="Diagram of the end-to-end journey: write, compile, load, execute, ask the kernel, see output"
+          caption="Every chapter opens one layer of this picture — compiler, linker, loader, CPU, memory, kernel, terminal — and teaches the Rust that lives there."
+        />
+      </div>
 
       {/* How this guide works */}
       <section className="mt-20">

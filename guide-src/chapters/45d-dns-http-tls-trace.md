@@ -69,6 +69,8 @@ Because QUIC acknowledges and retransmits **per stream**, a lost packet only del
 
 One field chooses between all of this before a single byte of HTTP is sent: **[[ALPN]]** (Application-Layer Protocol Negotiation), an extension in the TLS `ClientHello` that lists the protocols the client speaks (`h2`, `http/1.1`, `h3`). The server picks one and echoes it in `ServerHello`, so port `443` serves an old `curl` and a modern browser without guessing and without an extra round trip.
 
+![Diagram of a web request journey: DNS, TCP, TLS, then HTTP nested inside them](/images/network-journey.svg "The four steps below, stacked. Each one rides on the layer beneath it.")
+
 ## Step 1: DNS Resolution (`/etc/hosts` -> UDP Port 53 -> Caching)
 
 When `reqwest` (or `std::net::ToSocketAddrs`) calls `getaddrinfo("example.com", "443")`:

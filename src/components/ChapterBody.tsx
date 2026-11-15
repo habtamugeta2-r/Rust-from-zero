@@ -18,63 +18,26 @@ import { ChecklistWidget } from "./ChecklistWidget";
 import { CodeBlock } from "./CodeBlock";
 import { ExerciseCard } from "./ExerciseCard";
 import { FlameGraph } from "./FlameGraph";
+import { GuideFigure } from "./GuideFigure";
 import { GlossaryDirectory } from "./GlossaryDirectory";
 import { InlineRenderer } from "./InlineRenderer";
 import { MemoryStepper } from "./MemoryStepper";
 import { QuizWidget } from "./QuizWidget";
 
-const CALLOUT_STYLES: Record<
+/* Kind colours live in globals.css (.guide-callout[data-kind=…]) so the
+   eight tints are design tokens, not palette classes scattered here. */
+const CALLOUT_ICONS: Record<
   CalloutKind,
-  { border: string; bg: string; labelColor: string; Icon: React.ComponentType<{ className?: string }> }
+  React.ComponentType<{ className?: string }>
 > = {
-  analogy: {
-    border: "border-l-4 border-l-amber-500 border-[var(--g-line)]",
-    bg: "bg-amber-50/45 dark:bg-amber-950/15",
-    labelColor: "text-amber-700 dark:text-amber-300",
-    Icon: Lightbulb,
-  },
-  plain: {
-    border: "border-l-4 border-l-sky-500 border-[var(--g-line)]",
-    bg: "bg-sky-50/45 dark:bg-sky-950/15",
-    labelColor: "text-sky-700 dark:text-sky-300",
-    Icon: MessageSquare,
-  },
-  compare: {
-    border: "border-l-4 border-l-violet-500 border-[var(--g-line)]",
-    bg: "bg-violet-50/40 dark:bg-violet-950/15",
-    labelColor: "text-violet-700 dark:text-violet-300",
-    Icon: Scale,
-  },
-  warn: {
-    border: "border-l-4 border-l-red-500 border-[var(--g-line)]",
-    bg: "bg-red-50/50 dark:bg-red-950/20",
-    labelColor: "text-red-700 dark:text-red-300",
-    Icon: AlertTriangle,
-  },
-  tip: {
-    border: "border-l-4 border-l-emerald-500 border-[var(--g-line)]",
-    bg: "bg-emerald-50/45 dark:bg-emerald-950/15",
-    labelColor: "text-emerald-700 dark:text-emerald-300",
-    Icon: Sparkles,
-  },
-  note: {
-    border: "border-l-4 border-l-slate-400 border-[var(--g-line)]",
-    bg: "bg-[var(--g-sunken)]/70",
-    labelColor: "text-[var(--g-ink2)]",
-    Icon: Info,
-  },
-  key: {
-    border: "border-l-4 border-l-[var(--g-accent)] border-[var(--g-line)]",
-    bg: "bg-[var(--g-accent-soft)]/45",
-    labelColor: "text-[var(--g-accent)]",
-    Icon: KeyRound,
-  },
-  recap: {
-    border: "border-l-4 border-l-teal-600 border-[var(--g-line)]",
-    bg: "bg-teal-50/45 dark:bg-teal-950/15",
-    labelColor: "text-teal-700 dark:text-teal-300",
-    Icon: ListChecks,
-  },
+  analogy: Lightbulb,
+  plain: MessageSquare,
+  compare: Scale,
+  warn: AlertTriangle,
+  tip: Sparkles,
+  note: Info,
+  key: KeyRound,
+  recap: ListChecks,
 };
 
 export async function BlockList({ blocks }: { blocks: BlockNode[] }) {
@@ -226,6 +189,18 @@ async function renderBlock(
       );
     }
 
+    case "figure":
+      return (
+        <GuideFigure
+          key={key}
+          src={block.src}
+          alt={block.alt}
+          caption={
+            block.caption.length > 0 ? <InlineRenderer nodes={block.caption} /> : null
+          }
+        />
+      );
+
     case "flame":
       return (
         <FlameGraph
@@ -240,17 +215,10 @@ async function renderBlock(
       );
 
     case "callout": {
-      const style = CALLOUT_STYLES[block.kind];
-      const Icon = style.Icon;
+      const Icon = CALLOUT_ICONS[block.kind];
       return (
-        <aside
-          key={key}
-          role="note"
-          className={`my-6 rounded-well border px-5 py-4 ${style.border} ${style.bg}`}
-        >
-          <div
-            className={`mb-2 flex items-center gap-2 font-sans text-xs font-bold tracking-[0.06em] uppercase ${style.labelColor}`}
-          >
+        <aside key={key} role="note" className="guide-callout" data-kind={block.kind}>
+          <div className="guide-callout-label mb-2 flex items-center gap-2 font-sans text-xs font-bold tracking-[0.06em] uppercase">
             <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
             <span>{CALLOUT_LABELS[block.kind]}</span>
           </div>

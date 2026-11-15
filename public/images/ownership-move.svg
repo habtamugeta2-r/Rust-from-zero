@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 430" role="img" aria-labelledby="t d">
+  <title id="t">A move transfers ownership</title>
+  <desc id="d">After let b = a, the heap text has one owner, b. The compiler rejects any later use of a.</desc>
+  <rect width="1200" height="430" rx="24" fill="#FCFBF8"/>
+  <rect x="1" y="1" width="1198" height="428" rx="23" fill="none" stroke="#E5E0D5" stroke-width="2"/>
+  <text x="48" y="58" font-family="system-ui, sans-serif" font-size="24" font-weight="700" fill="#1C1915">A move changes the owner, not the data</text>
+  <text x="48" y="86" font-family="system-ui, sans-serif" font-size="15" fill="#6F6659">The heap bytes stay put. Only the right to use and free them moves.</text>
+  <defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#BC4114"/></marker></defs>
+  <g font-family="system-ui, sans-serif">
+    <rect x="48" y="140" width="300" height="150" rx="16" fill="#F1EDE4" stroke="#D2CABB" stroke-width="2" stroke-dasharray="7 6"/>
+    <text x="72" y="178" font-family="ui-monospace, monospace" font-size="19" font-weight="700" fill="#6F6659">a</text>
+    <text x="72" y="212" font-size="15" fill="#6F6659">moved out of here</text>
+    <text x="72" y="258" font-size="15" font-weight="700" fill="#B3261E">✕ compiler: use of moved value</text>
+    <rect x="450" y="118" width="300" height="64" rx="32" fill="#BC4114"/>
+    <text x="600" y="158" font-family="ui-monospace, monospace" font-size="19" font-weight="700" fill="#FFFFFF" text-anchor="middle">let b = a;</text>
+    <path d="M356 215 L442 215" stroke="#BC4114" stroke-width="3" marker-end="url(#ar)"/>
+    <path d="M758 215 L844 215" stroke="#BC4114" stroke-width="3" marker-end="url(#ar)"/>
+    <rect x="852" y="140" width="300" height="150" rx="16" fill="#E6F2F0" stroke="#0F766E" stroke-width="2"/>
+    <text x="876" y="178" font-family="ui-monospace, monospace" font-size="19" font-weight="700" fill="#1C1915">b · the one owner</text>
+    <text x="876" y="212" font-size="15" fill="#45403A">ptr · len 5 · cap 5</text>
+    <text x="876" y="258" font-size="15" font-weight="700" fill="#0F766E">✓ dropped once, at scope end</text>
+    <text x="600" y="352" font-size="15" font-style="italic" fill="#6F6659" text-anchor="middle">One owner at a time is why Rust needs no garbage collector — and has no double-free.</text>
+  </g>
+  <path d="M1002 298 L1002 330" stroke="#0F766E" stroke-width="2.5" stroke-dasharray="4 5"/>
+</svg>
