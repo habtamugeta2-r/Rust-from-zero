@@ -71,7 +71,7 @@ fn main() {
 
 Run it with `cargo run`, type something, and press {{Enter}}. Several things here are new. You will study each of them properly later. For now, this is what they do:
 
-- **`use std::io;`** Rust comes with a large collection of ready-made code called the **standard library**, or `std`. Its part called `io` (for *input/output*) handles reading and writing. This line makes the name `io` available in your file.
+- **`use std::io;`** Rust comes with a large collection of ready-made code called the **[[standard library]]**, or `std`. Its part called `io` (for *input/output*) handles reading and writing. This line makes the name `io` available in your file.
 - **`String::new()`** creates a new, empty piece of text that can grow. The variable is `mut` because reading will put characters into it.
 - **`io::stdin()`** gives access to the keyboard input of the terminal ("standard input").
 - **`.read_line(&mut input)`** waits until the player presses {{Enter}} and adds everything they typed to `input`. The `&mut` in front means "you may change my variable". Why that is needed is the subject of [chapter 15](#borrowing).
@@ -355,6 +355,37 @@ if distance != 0 && distance <= 5 {
 - Operations that can fail return `Ok(value)` or `Err(problem)`. Handle both with `match`, or stop the program with `.expect("message")`.
 - `match` forces you to cover every case.
 :::
+
+:::quiz Check your understanding
+? The game needs a random secret number, so the project added the `rand` crate. Why not write the random number generator itself?
++ Because Rust's standard library deliberately ships without one, so a published crate is the supported route
+- Because `rand` is faster than any generator you could write
+- Because the compiler refuses to compile randomness without a crate
+- Because `cargo add` also writes the algorithm for you
+= Rust's standard library stays small on purpose and has no random number generator. Adding `rand` as a dependency, through `cargo add`, is the normal way to get one. Cargo also records the exact version in `Cargo.lock`, so every machine builds the same program.
+
+? The player types `50` and presses {{Enter}}. Why does the program call `.trim()` before `.parse()`?
+- Because `trim()` removes spaces from the middle of the text
++ Because the text still contains the line ending the player typed, and `parse` refuses it
+- Because `parse()` only works on `&str` and not on `String`
+- Because `trim()` turns the text into a number
+= {{Enter}} leaves a line ending at the end of the text, and `parse` will not read `"50\n"` as a number. `trim()` removes the whitespace around the text first, so the parse succeeds.
+
+? What does `.parse::<u32>()` give back when the player types `abc`, and what did the project do with it?
+- It panics, because the text is not a number
++ A `Result` holding either the number or an error, and the program asks the player to try again
+- `0`, because the text could not be read
+- A `String`, because the parse failed
+= `parse` returns a `Result`. The program matches on it: the `Ok` arm compares the guess, and the `Err` arm prints a friendly message and loops back for another try. Using `.expect()` here would end the game on one typo.
+
+? The comparison uses `std::cmp::Ordering` and a `match`. Why compare with an enum instead of writing `if guess > secret`?
+- Because `Ordering` is faster than a comparison operator
++ Because `match` over `Ordering` forces all three cases to be handled, so one cannot be forgotten
+- Because `>` does not work on numbers in Rust
+- Because `Ordering` sorts the numbers for you
+= `Ordering` has exactly three values, `Less`, `Greater` and `Equal`. A `match` over it must cover all of them, so the compiler reports a missing arm. An `if`/`else` chain can quietly leave a case out.
+:::
+
 
 :::checklist
 - I ran the game and won at least once.

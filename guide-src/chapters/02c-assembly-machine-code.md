@@ -38,11 +38,11 @@ fn main() {
 42
 ```
 
-(When you run `rustc --emit=asm -C opt-level=3`, adding `#[unsafe(no_mangle)]` or inspecting the mangled symbol shows `add_and_double`'s exact assembly!)
+(When you run `rustc --emit=asm -C opt-level=3`, adding `#[unsafe(no_mangle)]` or inspecting the mangled symbol shows `add_and_double`'s exact assembly!) Turning that assembly into a file the kernel can load is the next step: [object files, linking and ELF](#linking-elf). Turning that assembly into a file the kernel can load is the next step: [object files, linking and ELF](#linking-elf). Turning that assembly into a file the kernel can load is the next step: [object files, linking and ELF](#linking-elf).
 
 ## Reading x86-64 assembly (Intel syntax)
 
-Let us read the real optimised x86-64 assembly produced for `(a + b) * 2` under the Linux System V calling convention (where the first two integer arguments arrive in 32-bit `edi` and `esi`, and the return value goes back in `eax`):
+Let us read the real optimised x86-64 assembly produced for `(a + b) * 2` under the Linux System V calling convention (where the first two integer arguments arrive in 32-bit `edi` and `esi`, and the return value goes back in `eax`; the full rule set is in [calling conventions and execution](#calling-conventions-execution)):
 
 ```asm
 add_and_double:
@@ -105,8 +105,8 @@ Look at those four hexadecimal bytes (`8d 04 37 c3`):
 
 ## Memory, execution, OS, and hardware view
 
-1. **Memory perspective:** Those exact four bytes (`8d 04 37 c3`) live inside the `.text` executable section of your program binary on disk and are mapped read-execute (`R-X`) into virtual RAM when the program runs.
-2. **Execution perspective:** The CPU fetches `8d 04 37` from L1i cache, decodes it into an internal micro-operation (`LEA`), reads `rdi` and `rsi` from the register file, adds them in the ALU, writes `eax`, then executes `c3` (`ret`) to return.
+1. **Memory perspective:** Those exact four bytes (`8d 04 37 c3`) live inside the `.text` executable section of your program binary on disk — the section table that names it is [ELF](#linking-elf) — and are mapped read-execute (`R-X`) into virtual RAM when the program runs, exactly as [virtual memory](#virtual-memory-address-spaces) shows in `/proc/self/maps`.
+2. **Execution perspective:** The CPU fetches `8d 04 37` from L1i cache, decodes it into an internal micro-operation (`LEA`) — the decode stage is [the ISA and opcode chapter](#isa-opcodes-control-flow) — reads `rdi` and `rsi` from the register file, adds them in the ALU, writes `eax`, then executes `c3` (`ret`) to return.
 3. **OS & hardware perspective:** Neither the Linux kernel nor RAM knows the name `add_and_double` during execution—they only see executable memory pages and raw bytes flowing into the CPU instruction decoder.
 
 ## Practical experiment: emit assembly and disassemble machine bytes

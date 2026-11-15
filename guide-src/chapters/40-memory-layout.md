@@ -290,7 +290,7 @@ A `Box<dyn Shape>` or `&dyn Shape` is a fat pointer with two addresses:
                                  └──────────────────────────────┘
 ```
 
-The **vtable** ("virtual method table") is a small table that the compiler creates once for every combination of type and trait. Calling `shape.area()` means: follow the vtable pointer, read the address of `area`, call it with the data pointer. That is **dynamic dispatch**. It costs one extra memory read per call, and it keeps the compiler from pasting the method's body into the caller, which is usually the bigger loss. Generic code has neither cost.
+The **vtable** ("virtual method table") is a small table that the compiler creates once for every combination of type and trait. Calling `shape.area()` means: follow the vtable pointer, read the address of `area`, call it with the data pointer. That is **[[dynamic dispatch]]**. It costs one extra memory read per call, and it keeps the compiler from pasting the method's body into the caller, which is usually the bigger loss. Generic code has neither cost.
 
 ## Where data lives
 

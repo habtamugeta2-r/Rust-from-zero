@@ -17,7 +17,7 @@ You can tell the time just by reading the dial (`Vec::push`, `Option::unwrap`). 
 Rust's standard library is layered in three concentric crates:
 
 1. **`core`** — OS-independent, allocator-independent foundations: primitive intrinsics, `Option`, `Result`, `Cell`, `UnsafeCell`, `MaybeUninit`, `ManuallyDrop`, `NonNull`, slices, and `Iterator`.
-2. **`alloc`** — Heap-backed containers built over a global allocator (`GlobalAlloc`): `Box<T>`, `RawVec<T>`, `Vec<T>`, `String`, `Rc<T>`, `Arc<T>`, `BTreeMap`.
+2. **`alloc`** — Heap-backed containers built over a global allocator (`GlobalAlloc`): `Box<T>`, `RawVec<T>`, `Vec<T>`, `String`, `Rc<T>`, `Arc<T>`, `BTreeMap`. What actually answers those allocation calls is covered in [heap allocators](#allocators-heap-internals). What actually answers those allocation calls is covered in [heap allocators](#allocators-heap-internals). What actually answers those allocation calls is covered in [heap allocators](#allocators-heap-internals).
 3. **`std`** — OS integration (`std::fs`, `std::net`, `std::io`, `std::thread`, `std::sync::Mutex`), built on `core`, `alloc`, and OS syscalls or `libc`.
 
 ## Internal layouts of `Box`, `Vec`, `String`, and `Rc`
@@ -43,8 +43,8 @@ Five implementation details inside `alloc` explain why these types are both safe
 
 - **`NonNull<T>` over `*mut T`:** `Box`, `Vec`, and `Rc` store `core::ptr::NonNull<T>` rather than a nullable `*mut T`. That tells the compiler *"this pointer is never `0` (null)"*—unlocking **[[niche]] optimisation**.
 - **Co-variance and `PhantomData<T>`:** `NonNull<T>` is covariant in `T` (unlike `*mut T`, which is invariant) and carries zero bytes. Containers add `PhantomData<T>` so the **drop checker (`dropck`)** knows the wrapper logically owns a `T` and drops it when destroyed.
-- **`RawVec` growth and ZSTs:** When a non-zero-sized `Vec<T>` fills up, `RawVec` grows capacity roughly exponentially (doubling from small capacities like 4 → 8 → 16) so repeated `push` calls take **amortised O(1)** time. For **zero-sized types** (ZSTs like `Vec<()>`), `RawVec` allocates **zero heap bytes**, sets `ptr` to `NonNull::dangling()` (a well-aligned non-zero address), and reports capacity as `usize::MAX`.
-- **`String` is literally `struct String { vec: Vec<u8> }`:** Every `String` invariant reduces to one guarantee: the `len` initialised bytes inside `vec` are always valid UTF-8.
+- **`RawVec` growth and ZSTs:** When a non-zero-sized `Vec<T>` fills up, `RawVec` asks the [global allocator](#allocators-heap-internals) for a bigger block and grows capacity roughly exponentially (doubling from small capacities like 4 → 8 → 16) so repeated `push` calls take **amortised O(1)** time. For **zero-sized types** (ZSTs like `Vec<()>`), `RawVec` allocates **zero heap bytes**, sets `ptr` to `NonNull::dangling()` (a well-aligned non-zero address), and reports capacity as `usize::MAX`.
+- **`String` is literally `struct String { vec: Vec<u8> }`:** Every `String` invariant reduces to one guarantee: the `len` initialised bytes inside `vec` are always valid UTF-8. The order of those three words also decides which cache lines two strings share — see [pointers, safety and caches](#pointers-safety-caches). The order of those three words also decides which cache lines two strings share — see [pointers, safety and caches](#pointers-safety-caches). The order of those three words also decides which cache lines two strings share — see [pointers, safety and caches](#pointers-safety-caches).
 - **`RcBox<T>` uses `Cell<usize>`:** Even though `Rc<T>` only hands out shared `&Rc<T>` references, cloning or dropping changes `strong`/`weak` counts via `Cell` (which wraps `UnsafeCell` for [[interior mutability]]).
 
 ## Niche optimisation: why `Option<&T>` costs zero extra bytes
@@ -171,7 +171,7 @@ During **[[MIR]] drop elaboration**:
 **[[Provenance|provenance]]** means a pointer is more than a raw 64-bit house number: it also carries a "hall pass" recording *which* variable or heap block it came from and whether it has read-only or read-write permission. Forging a pointer from a plain integer (`usize as *const T`) throws away that hall pass, which can confuse optimiser passes that track aliasing.
 :::
 
-Two pointers can share the exact same numeric address (`0x7ffd...100`) while having different provenance. Converting an integer back into a pointer (`usize as *const T`) loses provenance unless you use Rust's Strict Provenance APIs (`ptr.addr()`, `ptr.with_addr(...)`) that derive valid provenance from a live pointer into the same allocation.
+Two pointers can share the exact same numeric address (`0x7ffd...100`) while having different provenance; [raw pointers, dangling pointers and strict provenance](#pointers-safety-caches) work through those rules in detail. Converting an integer back into a pointer (`usize as *const T`) loses provenance unless you use Rust's Strict Provenance APIs (`ptr.addr()`, `ptr.with_addr(...)`) that derive valid provenance from a live pointer into the same allocation.
 
 When `unsafe` code violates aliasing or out-of-bounds provenance ([[undefined behaviour]]), LLVM does not crash cleanly at the line of the bug—it treats undefined behaviour as **mathematically impossible**, allowing constant-propagation and dead-code passes to delete null checks, fuse conflicting branches, or return stale register values.
 

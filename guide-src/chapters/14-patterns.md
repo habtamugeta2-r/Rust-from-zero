@@ -9,7 +9,7 @@
 You have already used patterns many times: in `match` arms, in `if let`, and in `let (a, b) = pair;`. A **pattern** describes the *shape* of a value. Rust compares a value with the pattern, and if the shape fits, it can pull out the parts and give them names. This chapter collects everything patterns can do. You do not need to memorise it all. Read it once, do the exercises, and come back when you need a particular form.
 
 :::plain Patterns and exhaustiveness in one paragraph
-A **pattern** is a shape that a value is tested against, and the same syntax works in `match`, `if let`, `while let`, `let`, and function parameters. Patterns can bind parts of a value (`Some(n)`), ignore parts (`_`), add conditions (**guards**, `Some(n) if n > 0`), and destructure structs, tuples and enums. The compiler requires `match` to be **exhaustive**: every possible value must fit some arm, which is how adding a new enum variant turns into a compile error at every place that must handle it.
+A **pattern** is a shape that a value is tested against, and the same syntax works in `match`, `if let`, `while let`, `let`, and function parameters. Patterns can bind parts of a value (`Some(n)`), ignore parts (`_`), add conditions (**guards**, `Some(n) if n > 0`), and destructure structs, tuples and enums. The compiler requires [[match]] to be **exhaustive**: every possible value must fit some arm, which is how adding a new enum variant turns into a compile error at every place that must handle it.
 :::
 
 :::analogy Sorting a desk drawer

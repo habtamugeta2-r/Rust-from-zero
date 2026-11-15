@@ -12,6 +12,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "monthly",
       priority: 1,
     },
+    {
+      url: `${base}/chapters`,
+      lastModified: new Date("2026-11-14"),
+      changeFrequency: "monthly",
+      priority: 0.9,
+    },
     ...guide.summaries.map((ch) => ({
       url: `${base}/chapters/${ch.id}`,
       lastModified: new Date("2026-11-14"),

@@ -7,7 +7,7 @@
 @time 35
 @learn Trace the exact Linux socket syscalls behind Rust TcpListener and TcpStream (socket, bind, listen, accept, connect) | Follow TCP's 3-way handshake, sequence/ACK numbers, sliding windows, and 4-way FIN teardown (TIME_WAIT / SO_REUSEADDR) | Contrast TCP's ordered byte stream (message framing pitfalls!) with UDP's datagram boundaries | Understand TCP congestion control (cwnd, slow start, BBR/CUBIC), Nagle's algorithm, and TCP_NODELAY
 
-In Part VII you learned how `epoll` watches thousands of file descriptors. In this chapter we look inside the **socket** file descriptors themselves—how Rust's `std::net::TcpListener`, `TcpStream`, and `UdpSocket` map directly onto Linux kernel socket buffers and **TCP's state machine**!
+In Part VII you learned how `epoll` watches thousands of file descriptors ([blocking, `epoll` and `io_uring`](#blocking-epoll-io-uring)). In this chapter we look inside the **socket** file descriptors themselves—how Rust's `std::net::TcpListener`, `TcpStream`, and `UdpSocket` map directly onto Linux kernel socket buffers and **TCP's state machine**! The packets those sockets put on the wire are wrapped by [network layers, Ethernet and IP](#network-layers-ethernet-ip).
 
 Why can `TcpStream::read` return just 3 bytes when the client wrote 500 bytes in one `write_all`? Why does restarting a crashed server complain `Address already in use` (`EADDRINUSE`) unless `SO_REUSEADDR` is set? And why can `TCP_NODELAY` slash interactive latency by 40 milliseconds?
 

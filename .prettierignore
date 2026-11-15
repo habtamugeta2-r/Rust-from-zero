@@ -1,0 +1,32 @@
+# Prettier adoption is incremental (3.0.0): every file this release created
+# or materially edited is formatted and checked. The files below predate
+# Prettier and are hand-formatted; they are adopted one by one as they are
+# next edited, and this list may only shrink. New files must never be added.
+scripts/check-deploy-config.mjs
+src/app/api/search/route.ts
+src/app/error.tsx
+src/app/not-found.tsx
+src/app/page.tsx
+src/app/progress/page.tsx
+src/app/search/page.tsx
+src/components/ChapterActions.tsx
+src/components/ChapterBody.tsx
+src/components/ChapterBookmark.tsx
+src/components/ChapterRail.tsx
+src/components/ChecklistWidget.tsx
+src/components/CodeBlock.tsx
+src/components/CommandPalette.tsx
+src/components/ExerciseCard.tsx
+src/components/FlameGraph.tsx
+src/components/GlossaryDirectory.tsx
+src/components/GuideSearchButton.tsx
+src/components/HomeContinueButton.tsx
+src/components/HomeRoutesSection.tsx
+src/components/MemoryStepper.tsx
+src/components/QuizWidget.tsx
+src/components/use-guide-search.ts
+src/lib/guide-config.ts
+src/lib/guide-types.ts
+src/lib/highlight.ts
+src/lib/seo.ts
+tsconfig.json

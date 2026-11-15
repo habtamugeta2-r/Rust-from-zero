@@ -1234,6 +1234,37 @@ Passing `today` into `run` keeps the logic free of the system clock. The test de
 - Send results to standard output and errors to standard error, and work well in pipelines.
 :::
 
+:::quiz Check your understanding
+? The command line is described with a struct and clap's derive macros instead of by hand with `std::env::args()`. What does clap generate from that?
++ The help text, the value parsing, the validation errors and the version output
+- A faster argument parser written in Rust
+- The completion scripts for your shell
+- The man page for the program
+= A struct annotated with `#[derive(Parser)]` is one description that clap turns into all the user-facing behaviour: `--help`, `--version`, type checking of each value and clear messages when something is wrong.
+
+? What happens when the user types `todo --colour` and the program has no such option?
++ `Cli::parse()` prints an explanation of the problem and exits with a non-zero code
+- The unknown option is ignored
+- The program panics with a backtrace
+- The option is stored as a string
+= `parse()` is the "parse or exit" entry point: it writes a short message naming the offending argument and stops. `try_parse_from` returns the error instead, which is what the tests use.
+
+? The tool keeps its work in a function that takes the parsed command and returns the output. Why?
++ So the logic can be tested without running the program, and `main` stays a thin layer that loads, calls, saves, prints and sets the exit code
+- Because a function cannot print and return a value at the same time
+- Because `main` must be shorter than ten lines
+- Because clap can only be used inside a function
+= Separating the decision from the presentation means the tests call the function directly with a command value, and the terminal, the file and the exit code stay in one place at the edge.
+
+? The tool writes results to standard output and problems to standard error. What does that buy a user?
++ Results can be piped into another program while problems stay visible on the screen
+- Problems are printed twice
+- The tool runs faster
+- The tool can be used without a terminal
+= Standard output carries the program's data; standard error carries its commentary. Keeping them apart is what lets `todo list | grep milk` work while a failure still reaches the screen.
+:::
+
+
 :::checklist
 - I built the `todo` tool and used it from my terminal.
 - I read the generated help with `todo --help` and `todo add --help`.

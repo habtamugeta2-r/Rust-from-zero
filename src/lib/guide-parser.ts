@@ -1,13 +1,7 @@
 import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
-import {
-  CALLOUT_LABELS,
-  CHECK_FLAGS,
-  LANG_LABELS,
-  RAW_PARTS,
-  ROUTES,
-} from "./guide-config";
+import { CALLOUT_LABELS, CHECK_FLAGS, LANG_LABELS, RAW_PARTS, ROUTES } from "./guide-config";
 import type {
   BlockNode,
   CalloutKind,
@@ -30,7 +24,6 @@ import type {
 
 const GUIDE_SRC = path.join(process.cwd(), "guide-src");
 const CHAPTERS_DIR = path.join(GUIDE_SRC, "chapters");
-const CAPTURED_DIR = path.join(GUIDE_SRC, "captured");
 
 const SOFT_WRAP_AT = 100;
 const BOX_DRAWING_RE = /[─│┌┐└┘├┤┬┴┼▲▼◄►]/;
@@ -64,10 +57,12 @@ interface ParseCtx {
   links: { from: string; target: string }[];
   warnings: string[];
   stats: { code: number; exercises: number; questions: number; projects: number };
+  /** Directory `auto` blocks read captured output from (a fixture in tests). */
+  capturedDir: string;
 }
 
 function slugify(text: string): string {
-  const cleaned = text.toLowerCase().replace(/[`*\[\]]/g, "");
+  const cleaned = text.toLowerCase().replace(/[`*[\]]/g, "");
   return cleaned.replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "section";
 }
 
@@ -132,19 +127,13 @@ function splitMarkdownInline(text: string, ctx: ParseCtx): InlineNode[] {
   let s = text;
 
   // 1. Backtick code spans
-  s = s.replace(/`([^`\n]+)`/g, (_, code: string) =>
-    keep({ type: "code", text: code })
-  );
+  s = s.replace(/`([^`\n]+)`/g, (_, code: string) => keep({ type: "code", text: code }));
 
   // 2. Escaped punctuation
-  s = s.replace(/\\([*_\[\]`|{}\\#:<>])/g, (_, ch: string) =>
-    keep({ type: "text", text: ch })
-  );
+  s = s.replace(/\\([*_[\]`|{}\\#:<>])/g, (_, ch: string) => keep({ type: "text", text: ch }));
 
   // 3. Keyboard shortcut tokens {{Key}}
-  s = s.replace(/\{\{(.+?)\}\}/g, (_, kbd: string) =>
-    keep({ type: "kbd", text: kbd })
-  );
+  s = s.replace(/\{\{(.+?)\}\}/g, (_, kbd: string) => keep({ type: "kbd", text: kbd }));
 
   // 4. Glossary term links [[shown|key]] or [[term]]
   s = s.replace(/\[\[(.+?)\]\]/g, (_, inner: string) => {
@@ -184,7 +173,7 @@ function splitMarkdownInline(text: string, ctx: ParseCtx): InlineNode[] {
           anchor: anchor || undefined,
           children: expandPlaceholders(typo(label), stash),
         },
-        true
+        true,
       );
     }
     // A single leading slash is one of our own routes: `/progress`, `/search`.
@@ -196,7 +185,7 @@ function splitMarkdownInline(text: string, ctx: ParseCtx): InlineNode[] {
           href: target,
           children: expandPlaceholders(typo(label), stash),
         },
-        true
+        true,
       );
     }
     return keep(
@@ -205,7 +194,7 @@ function splitMarkdownInline(text: string, ctx: ParseCtx): InlineNode[] {
         href: target,
         children: expandPlaceholders(typo(label), stash),
       },
-      true
+      true,
     );
   });
 
@@ -219,6 +208,7 @@ function splitMarkdownInline(text: string, ctx: ParseCtx): InlineNode[] {
 
 function expandPlaceholders(input: string, stash: InlineNode[]): InlineNode[] {
   const out: InlineNode[] = [];
+  // eslint-disable-next-line no-control-regex -- \x00/\x01 are the stash markers
   const re = /[\x00\x01](\d+)[\x00\x01]/g;
   let last = 0;
   let m: RegExpExecArray | null;
@@ -307,7 +297,10 @@ function renderFlame(caption: string, lines: string[], ctx: ParseCtx): BlockNode
     if (!raw.trim()) continue;
     const leading = raw.length - raw.trimStart().length;
     const depth = Math.floor(leading / 2);
-    const fields = raw.trim().split("|").map((f) => f.trim());
+    const fields = raw
+      .trim()
+      .split("|")
+      .map((f) => f.trim());
     const pct = Number(fields[1]);
     if (fields.length < 2 || Number.isNaN(pct)) {
       ctx.warnings.push(`${ctx.id}: bad flame line ${JSON.stringify(raw)}`);
@@ -377,7 +370,11 @@ function renderCode(info: string, rawLines: string[], ctx: ParseCtx): BlockNode 
       const st = l.trimStart();
       return st === "#" || st.startsWith("# ");
     });
-    if ((kind === "run" || kind === "wrap") && (hidden || kind === "wrap") && !flags.includes("ext")) {
+    if (
+      (kind === "run" || kind === "wrap") &&
+      (hidden || kind === "wrap") &&
+      !flags.includes("ext")
+    ) {
       const src: string[] = [];
       for (const l of rawLines) {
         const st = l.trimStart();
@@ -405,7 +402,7 @@ function renderCode(info: string, rawLines: string[], ctx: ParseCtx): BlockNode 
   }
 
   if ((lang === "output" || lang === "error") && flags.includes("auto")) {
-    const capPath = path.join(CAPTURED_DIR, `${ctx.lastHash || "none"}.txt`);
+    const capPath = path.join(ctx.capturedDir, `${ctx.lastHash || "none"}.txt`);
     if (fs.existsSync(capPath)) {
       lines = fs.readFileSync(capPath, "utf8").replace(/\n+$/, "").split("\n");
       for (const f of flags) {
@@ -417,7 +414,9 @@ function renderCode(info: string, rawLines: string[], ctx: ParseCtx): BlockNode 
         }
       }
     } else {
-      ctx.warnings.push(`${ctx.id}: no captured text for an \`auto\` block yet (run tools/check.py)`);
+      ctx.warnings.push(
+        `${ctx.id}: no captured text for an \`auto\` block yet (run tools/check.py)`,
+      );
       lines = ["(run tools/check.py to fill this in)"];
     }
   }
@@ -431,8 +430,7 @@ function renderCode(info: string, rawLines: string[], ctx: ParseCtx): BlockNode 
       ? "Output (the program crashed)"
       : (LANG_LABELS[lang] ?? lang.toUpperCase());
 
-  const hasLongLine =
-    lines.length > 0 && Math.max(...lines.map((l) => l.length)) > SOFT_WRAP_AT;
+  const hasLongLine = lines.length > 0 && Math.max(...lines.map((l) => l.length)) > SOFT_WRAP_AT;
   const hasBoxDrawing = lines.some((l) => BOX_DRAWING_RE.test(l));
   const isSoft =
     flags.includes("soft") ||
@@ -926,11 +924,7 @@ function parseBlocks(lines: string[], ctx: ParseCtx): BlockNode[] {
     if (LIST_RE.test(raw)) {
       const buf: string[] = [];
       let j = i;
-      while (
-        j < n &&
-        lines[j].trim() &&
-        (LIST_RE.test(lines[j]) || lines[j].startsWith("  "))
-      ) {
+      while (j < n && lines[j].trim() && (LIST_RE.test(lines[j]) || lines[j].startsWith("  "))) {
         buf.push(lines[j]);
         j += 1;
       }
@@ -971,7 +965,7 @@ function collectSearchEntries(
   blocks: BlockNode[],
   ch: RawChapter,
   out: SearchEntry[],
-  curHeading: { anchor: string; text: string }
+  curHeading: { anchor: string; text: string },
 ): void {
   for (const b of blocks) {
     switch (b.type) {
@@ -1092,20 +1086,23 @@ function collectSearchEntries(
 
 let cachedGuide: LoadedGuide | null = null;
 
-export function loadGuide(forceReload = false): LoadedGuide {
+export function loadGuide(forceReload = false, rootDir?: string): LoadedGuide {
   if (cachedGuide && !forceReload && process.env.NODE_ENV === "production") {
     return cachedGuide;
   }
 
+  const chaptersDir = rootDir ? path.join(rootDir, "guide-src", "chapters") : CHAPTERS_DIR;
+  const capturedDir = rootDir
+    ? path.join(rootDir, "guide-src", "captured")
+    : path.join(GUIDE_SRC, "captured");
+
   const files = fs
-    .readdirSync(CHAPTERS_DIR)
+    .readdirSync(chaptersDir)
     .filter((f) => f.endsWith(".md"))
     .sort();
 
   const rawChapters: RawChapter[] = files.map((file) => {
-    const rawLines = fs
-      .readFileSync(path.join(CHAPTERS_DIR, file), "utf8")
-      .split("\n");
+    const rawLines = fs.readFileSync(path.join(chaptersDir, file), "utf8").split("\n");
     const meta: Record<string, string> = {};
     let i = 0;
     while (i < rawLines.length && rawLines[i].startsWith("@")) {
@@ -1210,6 +1207,7 @@ export function loadGuide(forceReload = false): LoadedGuide {
     ex: 0,
     check: 0,
     lastHash: "",
+    capturedDir,
     glossary: glossaryMap,
     nums,
     links,
@@ -1267,6 +1265,7 @@ export function loadGuide(forceReload = false): LoadedGuide {
       ex: 0,
       check: 0,
       lastHash: "",
+      capturedDir,
       glossary: glossaryMap,
       nums,
       links,
@@ -1324,7 +1323,10 @@ export function loadGuide(forceReload = false): LoadedGuide {
   for (const ch of chapters) chapterMap[ch.id] = ch;
 
   const tracked = summaries.filter((c) => c.kind !== "appendix");
-  const totalMinutes = tracked.reduce((acc, c) => acc + c.time, 0);
+  // Declared time covers every chapter, appendices included: since 3.0.0 the
+  // appendices declare a realistic `@time`, and the published total is the
+  // sum a reader can check against the chapter list. See guide-src/PLAN.md.
+  const totalMinutes = summaries.reduce((acc, c) => acc + c.time, 0);
 
   const guide: LoadedGuide = {
     parts,

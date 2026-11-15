@@ -11,14 +11,33 @@ full-text search all work out of the box.
 
 ## What is in it
 
-| | |
-|---|---|
-| Sections | 88 total across 13 Parts + 5 Appendices (81 numbered chapters + 2 welcome guides + 5 appendices), including 9 projects & labs |
-| Examples | 1,308 code blocks, **991 of them Rust** (plus x86-64/ARM64 assembly, LLVM IR, C, SQL, and Linux CLI) |
-| Exercises | 274, every one with a hint and a worked solution |
-| Quiz questions | 351, each with an explanation of the answer |
-| Captured output | 104 real compiler messages and program outputs |
-| Stack | Next.js 16 App Router, React 19, TypeScript, Tailwind CSS v4, Shiki |
+The numbers below are measured by `npm run stats` from the parser and the
+chapter sources, and the `docs/stats` lint rule fails the build when this
+table disagrees with that measurement.
+
+| Published number | Count |
+| --- | ---: |
+| Chapters | 88 |
+| Tracked chapters | 83 |
+| Appendices | 5 |
+| Projects | 9 |
+| Code blocks | 1,329 |
+| Rust code fences | 1,005 |
+| Exercises | 274 |
+| Quiz questions | 379 |
+| Captured outputs | 104 |
+| Search entries | 14,413 |
+| Glossary terms | 253 |
+| Glossary terms linked from prose | 211 |
+| Cross-links (inbound edges) | 1,135 |
+| Words of prose | 223,726 |
+| Declared reading time (minutes) | 4,558 |
+
+Exercises carry a hint and a worked solution; quiz questions carry an
+explanation of the answer. Declared reading time sums the `@time` of all 88
+chapters, appendices included (the five appendices declare reading time from
+3.0.0). Stack: Next.js 16 App Router, React 19, TypeScript, Tailwind CSS v4,
+Shiki.
 
 Every chapter follows the same rhythm: the idea in plain words, an analogy,
 comparison tables, runnable examples and machine-level walkthroughs, exercises,
@@ -61,7 +80,7 @@ npm run dev       # start development server at http://localhost:3000
 For a production build and server:
 
 ```sh
-npm run verify:content   # validates all 88 sections, links & captured outputs
+npm run verify:content   # validates the chapters, links & captured outputs
 npm run typecheck        # TypeScript check
 npm run build            # builds all routes and static chapter pages
 npm start                # serves the production Next.js app on port 3000
@@ -111,7 +130,8 @@ component changes.
 | Type scale | `--guide-fs` | The A− / A+ control in the header (and in the drawer on phones) scales the prose only |
 | Command palette | `CommandPalette` | `/`, `⌘K` or `Ctrl-K` opens one dialog that searches every heading and paragraph *and* offers continue / progress / roadmap / theme |
 | Results page | `/search?q=` | Server-rendered, grouped by chapter, matched words highlighted, `noindex` |
-| Progress page | `/progress` | Chapters, quizzes, exercises and bookmarks in one dashboard |
+| Chapter index | `/chapters` | Every chapter grouped by part, with kind, level, reading time and your completion state |
+| Progress page | `/progress` | Chapters, quizzes, exercises and bookmarks in one dashboard, plus progress export/import as JSON |
 | Theme | `data-theme` on `<html>` | Light, dark, or *system*; the choice is applied before first paint |
 
 Geometry lives in CSS custom properties in
@@ -124,16 +144,28 @@ variables, which is why a jump never hides a heading behind the header.
 
 Search is one implementation, not three. `src/lib/search.ts` ranks hits and cuts
 snippets from the same index for the API route, the palette and the results
-page, so they cannot disagree. Around it sit the four things a reader needs to
-stay oriented:
+page, so they cannot disagree. Matching is whole-word first, then prefix (so
+`borrow` finds *borrowing*), then substring, and a small synonym map expands
+the abbreviations readers type (`mut` searches *mutability* and *mutable*).
+Misspellings are not silently corrected; the empty-results page offers
+suggested topics instead. Around it sit the things a reader needs to stay
+oriented:
 
 - **Command palette** (`src/components/CommandPalette.tsx`) — the single search
   surface, reachable from the header, the home page, or `/` and `⌘K`. Arrow keys
   move, `Enter` opens, `Esc` closes and returns focus to the trigger.
 - **`/search`** — the same hits, but as a linkable page: grouped by chapter, with
   suggested topics when the query is empty.
+- **`/chapters`** — the chapter index: grouped by part, with kind, level,
+  reading time and your completion state on each entry.
 - **`/progress`** — chapters done, overall completion, quiz accuracy, exercises
-  solved, bookmarks, what to read next, and what is still untouched.
+  solved, bookmarks, what to read next, and what is still untouched. Progress
+  can be exported as a JSON file and imported on another machine; an import is
+  validated first, and you choose whether it replaces or merges with what the
+  browser already holds.
+- **Next-chapter cards** — the card at the foot of a chapter names the first
+  thing the next chapter teaches (its first `@learn` objective), not only its
+  title and reading time.
 - **Bookmarks** — a chapter can be pinned from its header or its completion card;
   bookmarks are a reading list and survive "Reset progress".
 
@@ -153,6 +185,9 @@ print stylesheet that drops every piece of chrome.
 # Content & Next.js checks:
 npm run verify:content # parser + content lint (style, structure, links, reading times)
 npm run verify:deploy   # no Node pin, lockfile version in sync
+npm run stats           # every published number, measured from the parser
+npm run lint            # ESLint + Prettier check
+npm test                # parser, search, progress and lint-rule tests (node:test via tsx)
 npm run typecheck
 npm run build
 
@@ -176,15 +211,19 @@ python3 guide-src/tools/check.py --projects # rebuild & test all multi-file and 
 glossary term, exercise without a solution, link to a chapter that does not
 exist), and `src/lib/content-lint.ts` enforces the house style and teaching
 structure — British spelling, no `TODO`/`FIXME` in visible text, objectives +
-recap + quiz + exercises on every tracked chapter, declared reading times that
-agree with the prose, unique titles, an entry for every chapter in the link
-graph, and only the routes the app actually serves. It reports glossary-link
-coverage, cross-link count and long sentences without failing on them.
+recap + quiz + exercises on every tracked chapter (project chapters included),
+declared reading times that agree with the prose, unique titles, an entry for
+every chapter in the link graph in both directions (a chapter nobody links to
+and a chapter that links nowhere both fail), only the routes the app actually
+serves, and a README statistics table that matches `npm run stats`. It warns
+on a captured output no `auto` block references, and reports glossary-link
+coverage, cross-link count and long sentences without failing on them. Every
+lint rule has a permanent test in `tests/lint.test.ts` that injects its fault.
 
-CI verifies the Next.js build, `verify:content`, and `audit.py --strict` on
-every push, and **compiles and tests every verified Rust example and extracted
-project** (see [`.github/workflows/build.yml`](./.github/workflows/build.yml)
-and [`.github/workflows/guide-checks.yml`](./.github/workflows/guide-checks.yml)).
+CI is one file, [`.github/workflows/build.yml`](./.github/workflows/build.yml):
+the `guide` job (deploy config, content, lint, tests, typecheck, build, audit)
+runs on every push, and the `examples` job **compiles and tests every verified
+Rust example and extracted project** on pull requests, weekly, and on demand.
 
 ## Licence
 

@@ -6,7 +6,7 @@
 @time 55
 @learn Follow Rust's naming and API conventions | Replace verbose `match` code with `Option` and `Result` combinators | Design function signatures that are flexible for callers | Apply the builder, newtype, RAII guard and state-machine patterns | Recognise and avoid common anti-patterns
 
-Code can be correct and still feel foreign. Every language has its own way of saying things, and code that follows it is called **idiomatic**. Idiomatic code is easier for others to read, works better with the standard library, and usually has fewer bugs, because the idioms grew out of experience.
+Code can be correct and still feel foreign. Every language has its own way of saying things, and code that follows it is called **[[idiomatic]]**. Idiomatic code is easier for others to read, works better with the standard library, and usually has fewer bugs, because the idioms grew out of experience.
 
 This chapter gathers the habits of experienced Rust programmers. Most of the pieces you have seen already. Here they are side by side, as a reference to come back to.
 

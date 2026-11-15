@@ -4,6 +4,7 @@
 @title From source to silicon: under the hood
 @short From source to silicon
 @level advanced
+@time 20
 
 This appendix is for readers who want the last layer of the story. [Chapter 13](#memory) introduced the stack and the heap. [Chapter 38](#memory-layout) showed how individual values are arranged byte by byte. This page takes the remaining step: what the compiler does between your source text and a running program, what the operating system does to start it, and what the processor does with each instruction once it is running.
 
@@ -263,7 +264,7 @@ fn main() {
 | 11 | Runtime | `numbers` goes out of scope; the allocator is asked to free the 12 bytes |
 | 12 | OS | `main` returns; the kernel reclaims the whole address space; the exit code goes to the shell |
 
-The interesting part is not any single step but the agreement between them: the layout rules from [chapter 38](#memory-layout), the ownership rules from [chapter 14](#ownership), and the machine the OS hands to your program all match, so the compiler can insert clean-up code with no reference counting, no garbage collector and no run-time checks for ownership.
+The interesting part is not any single step but the agreement between them. The layout rules from [chapter 38](#memory-layout), the ownership rules from [chapter 14](#ownership), and the machine the OS hands to your program all match. The compiler can therefore insert clean-up code with no reference counting, no garbage collector and no run-time checks for ownership.
 
 ## 11. Where the time goes
 

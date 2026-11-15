@@ -4,6 +4,7 @@
 @title Coming from another language
 @short From other languages
 @level all
+@time 10
 
 If you already program in another language, most of what you know still holds: variables, functions, loops, collections and tests work as you expect. This page is a translation table for the rest. Find your language, read which Rust feature takes the place of each thing you are used to, and follow the link to the chapter.
 

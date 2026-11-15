@@ -9,7 +9,7 @@
 
 Everything your Rust program touches outside its own registers and already-mapped RAM—files, terminals, sockets, clocks, new threads, new processes, extra heap pages—belongs to the **operating system kernel**. Your binary cannot talk directly to the NVMe controller, overwrite another process's page tables, or disable CPU interrupts. If it tried, the hardware would trap immediately.
 
-The kernel is the single privileged gatekeeper managing shared hardware fairly and safely across all programs running on the machine.
+The kernel is the single privileged gatekeeper managing shared hardware fairly and safely across all programs running on the machine. How it schedules the work that reaches it is in [processes, threads and scheduling](#processes-threads-scheduling).
 
 :::analogy Airport terminal vs air-traffic control tower
 User-space programs (`Ring 3` on x86-64, `EL0` on ARM64) are passengers inside the terminal: they can walk freely within their assigned gates (their virtual address space) and run instructions at full CPU speed. Only air-traffic control (`Ring 0` / `EL1`, the **[[kernel]]**) can direct planes on the runway (disk controllers, network cards, MMU page tables, and CPU timers). Every time your program needs a runway operation, it steps up to the security window—a **[[system call]]** (`syscall`)—and waits for the kernel to verify permissions and perform the work.
@@ -52,7 +52,7 @@ Clobbered by CPU  caller-saved                RCX = user return RIP, R11 = user 
 ```
 :::
 
-Look closely at **Row 4 (`R10` instead of `RCX`)**: when the CPU executes `syscall`, the hardware saves the user return address (`RIP`) into **`RCX`** and the user flags (`RFLAGS`) into **`R11`**, flips Current Privilege Level (`CPL`) from `3` to `0`, switches to the kernel's entry trampoline (`entry_SYSCALL_64`), saves all user registers onto the kernel stack, runs `sys_write()` (or whichever syscall index `RAX` names), restores user registers, and executes **`sysretq`** to drop back to Ring 3!
+Look closely at **Row 4 (`R10` instead of `RCX`)**. When the CPU executes `syscall`, the hardware saves the user return address (`RIP`) into **`RCX`** and the user flags (`RFLAGS`) into **`R11`**. It flips Current Privilege Level (`CPL`) from `3` to `0`, and switches to the kernel's entry trampoline (`entry_SYSCALL_64`). It saves all user registers onto the kernel stack, and runs `sys_write()` (or whichever syscall index `RAX` names). It then restores the user registers, and executes **`sysretq`** to drop back to Ring 3!
 
 ## Why syscalls cost ~50–300+ nanoseconds (and how `vDSO` cheats)
 
@@ -87,7 +87,7 @@ At the Linux syscall boundary, there is no `Result<T, E>` enum. `sys_open` or `s
 
 ## User-space kernel interfaces on Linux: `/proc`, `/sys`, and `syscall` wrappers
 
-Besides direct syscalls (`read`, `write`, `openat`, `mmap`, `futex`, `epoll_wait`, `io_uring_enter`), Linux exposes rich live kernel state as virtual files inside `/proc` and `/sys`—reading `/proc/self/status` or `/proc/cpuinfo` uses ordinary `openat` + `read` syscalls to read live kernel data structures formatted on the fly!
+Besides direct syscalls (`read`, `write`, `openat`, `mmap`, `futex`, `epoll_wait`, `io_uring_enter`), Linux exposes rich live kernel state as virtual files inside `/proc` and `/sys`—reading `/proc/self/status` or `/proc/cpuinfo` uses ordinary `openat` + `read` syscalls to read live kernel data structures formatted on the fly! The file-descriptor rules that make those reads work are in [streams, file descriptors and buffering](#streams-fds-buffering), and the readiness-driven variants are in [blocking, `epoll` and `io_uring`](#blocking-epoll-io-uring).
 
 ```rust run nocmp
 use std::fs;

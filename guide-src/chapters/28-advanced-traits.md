@@ -90,7 +90,7 @@ The question to ask: *can a type sensibly implement this trait several times, wi
 
 ### Generic associated types: a type that depends on a lifetime
 
-Everything above has one hidden limitation: an associated type cannot mention a lifetime. `type Item = &str` is not a type — it is missing the lifetime of the borrow — and `type Item<'a>` was not allowed until 2022. A **generic associated type**, or **GAT**, lets the associated type take parameters of its own, and the usual parameter is a lifetime.
+Everything above has one hidden limitation: an associated type cannot mention a lifetime. `type Item = &str` is not a type — it is missing the lifetime of the borrow — and `type Item<'a>` was not allowed until 2022. A **generic associated type**, or **[[GAT]]**, lets the associated type take parameters of its own, and the usual parameter is a lifetime.
 
 The difference is easiest to see on a type that lends out a view of its insides:
 
@@ -508,7 +508,7 @@ The compiler even knows the name of the trick: the last `note` of the message ca
 
 ## What can be a `dyn Trait`?
 
-Not every trait can be used as a trait object. A `dyn Trait` value has forgotten its concrete type, and some methods cannot work without it. A trait is **dyn compatible** (older texts say "object safe") if, roughly:
+Not every trait can be used as a trait object. A `dyn Trait` value has forgotten its concrete type, and some methods cannot work without it. A trait is **[[dyn]] compatible** (older texts say "object safe") if, roughly:
 
 - none of its methods has a generic type parameter,
 - none of its methods returns `Self` or takes another `Self` by value,

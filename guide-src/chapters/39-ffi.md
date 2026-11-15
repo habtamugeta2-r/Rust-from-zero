@@ -6,7 +6,7 @@
 @time 50
 @learn Explain what an ABI is and why C is the common language between languages | Call C functions from Rust and wrap them safely | Compile C code into a Rust project | Offer Rust functions to C and to Python | Handle strings, structs and ownership across a language boundary
 
-No language lives alone. Decades of proven software are written in C and C++: operating systems, databases, image and audio libraries, cryptography. Other teams work in Python or JavaScript and want one slow part to be fast. Rust was designed to fit into this world. It can call code in other languages and be called by them, with no translation layer in between and no cost at run time. The mechanism is called the **foreign function interface**, or **FFI**.
+No language lives alone. Decades of proven software are written in C and C++: operating systems, databases, image and audio libraries, cryptography. Other teams work in Python or JavaScript and want one slow part to be fast. Rust was designed to fit into this world. It can call code in other languages and be called by them, with no translation layer in between and no cost at run time. The mechanism is called the **foreign function interface**, or **[[FFI]]**.
 
 :::plain Calling C from Rust and Rust from C
 **FFI** (foreign function interface) is how Rust talks to code compiled by other languages, almost always through the **C ABI**: `extern "C"` declares a function whose calling convention, symbol names and struct layout follow C's rules. `#[no_mangle]` keeps a symbol name from being mangled so C can find it, `#[repr(C)]` makes a struct's field order match C's, and `unsafe` is required because the compiler cannot verify the other side honours its promises. Whole-toolchain options — bindgen, cbindgen, and `cxx` — generate the glue so the layout rules are written once and checked by the compiler instead of by hand.
@@ -148,7 +148,7 @@ Users of `c_length` cannot cause undefined behaviour, whatever they pass. That i
 
 ## Compiling C code into your project
 
-When the C code is not a system library but a few files of your own, Cargo can compile it together with your Rust code. This needs a **build script**: a Rust program called `build.rs`, in the package's root folder, that Cargo runs before it compiles the package.
+When the C code is not a system library but a few files of your own, Cargo can compile it together with your Rust code. This needs a **[[build script]]**: a Rust program called `build.rs`, in the package's root folder, that Cargo runs before it compiles the package.
 
 ```text
 withc/

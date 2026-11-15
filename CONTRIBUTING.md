@@ -12,6 +12,9 @@ than no change.
 npm install                       # installs Next.js, Shiki, Tailwind & TypeScript
 npm run verify:content            # checks every chapter, link & captured output
 npm run verify:deploy             # no Node pin; lockfile version in sync
+npm run stats                     # every published number, measured from the parser
+npm run lint                      # ESLint + Prettier check
+npm test                          # parser, search, progress & lint-rule tests
 npm run typecheck && npm run build
 python3 guide-src/tools/audit.py --strict   # must report "0 structural remark(s)"
 ```
@@ -111,19 +114,23 @@ components, keep these rules or the layout will regress the way it did in 1.x:
 ### Links and the content lint
 
 Cross-reference in one of three ways: `[label](#chapter-id)` for a chapter, `[label](#home)` for
-the landing page, `[label](/progress)` or `[label](/search)` for an app route. A label that reads
+the landing page, `[label](/chapters)`, `[label](/progress)` or `[label](/search)` for an app route. A label that reads
 “chapter 23” is renumbered automatically, so write the id in the target and let the number follow.
+A link belongs in a sentence that needs it, not in a bolted-on list at the end of a chapter.
 
 `npm run verify:content` runs the parser *and* `src/lib/content-lint.ts`, which fails on: American
 spelling, a `TODO`/`FIXME`/`TBD` in visible text, a tracked chapter without three objectives, a
-recap, a quiz or exercises, a declared `@time` below 60% of the chapter's own reading time,
-duplicate titles or ids, a chapter no other chapter links to, and a link to a chapter id or route
-that does not exist. It prints the glossary-link coverage, the number of cross-links and the long
-sentences without failing on them.
+recap, a quiz or exercises (project chapters need a quiz too), a declared `@time` below 60% of the chapter's own reading time,
+duplicate titles or ids, a chapter no other chapter links to, a chapter that links to no other
+chapter, a link to a chapter id or route that does not exist, and a README statistics table that
+disagrees with `npm run stats`. It warns on a captured output that no `auto` block references
+(those files are kept, never deleted) and prints the glossary-link coverage, the number of
+cross-links and the long sentences without failing on them. Every rule has a test in
+`tests/lint.test.ts`: add the fault-injecting test when you add a rule.
 
 ## Before you open a pull request
 
-- [ ] `npm run verify:content` (parser **and** content lint), `npm run verify:deploy`, `npm run typecheck`, and `npm run build` pass cleanly.
+- [ ] `npm run verify:content` (parser **and** content lint), `npm run verify:deploy`, `npm run lint`, `npm test`, `npm run typecheck`, and `npm run build` pass cleanly.
 - [ ] The layout still behaves at 375, 768, 1024, 1240 and 1440 px (see “Interface changes”).
 - [ ] `/`, `⌘K`, the palette and `/search?q=` all return the same hits, and `/progress`
       updates when a chapter, quiz or bookmark changes.

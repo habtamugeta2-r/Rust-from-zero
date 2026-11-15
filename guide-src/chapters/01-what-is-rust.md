@@ -49,7 +49,7 @@ Imagine you wrote a speech in English and the audience speaks only Japanese.
 - An **interpreter** is the live interpreter. It reads your code and carries it out line by line, every time the program runs. Python and JavaScript mostly work this way.
 
 :::plain Compiler, compile, compile time, run time
-The **compiler** is the tool that turns your source code into a program the computer can run. For Rust this tool is called `rustc`. To **compile** is to do that translation. **Compile time** is the moment when the compiler is working. **Run time** (also written *runtime*) is the moment when the finished program is running. A mistake caught at compile time never reaches the people who use your program. That idea is central to Rust.
+The **compiler** is the tool that turns your source code into a program the computer can run. For Rust this tool is called `rustc`. To **compile** is to do that translation. **[[Compile time]]** is the moment when the compiler is working. **[[Run time]]** (also written *runtime*) is the moment when the finished program is running. A mistake caught at compile time never reaches the people who use your program. That idea is central to Rust.
 :::
 
 :::note For the curious: the compiler's conveyor belt
@@ -58,11 +58,11 @@ What exactly happens inside the compiler, and what exactly the processor does wi
 
 ## Bugs, and the kind Rust was built to stop
 
-A mistake in a program is called a **bug**. Some bugs are small, like a button in the wrong colour. Some are serious: a program that **crashes** (stops suddenly), loses your data, or lets a criminal break in.
+A mistake in a program is called a **[[bug]]**. Some bugs are small, like a button in the wrong colour. Some are serious: a program that **crashes** (stops suddenly), loses your data, or lets a criminal break in.
 
 One family of bugs has caused huge damage for decades: **memory bugs**. A program keeps the data it is working with in the computer's memory. In older languages such as C and C++, the programmer must manage that memory by hand: ask for it, use it, give it back, and never touch it afterwards. A person who does this thousands of times will get it wrong sometimes. The results are crashes and security holes. Microsoft and Google have both reported that about 70% of the serious security bugs in their large C and C++ products were memory bugs.
 
-Languages such as Java, Python, JavaScript and Go avoid most of these bugs with a **garbage collector**: a helper that runs inside your program, watches the memory, and cleans up what is no longer used. That is safe, but it has a cost. The helper uses time and memory, and now and then it makes the program pause for a moment.
+Languages such as Java, Python, JavaScript and Go avoid most of these bugs with a **[[garbage collector]]**: a helper that runs inside your program, watches the memory, and cleans up what is no longer used. That is safe, but it has a cost. The helper uses time and memory, and now and then it makes the program pause for a moment.
 
 So for a long time programmers had to choose:
 
@@ -90,11 +90,11 @@ The promise above is worth making precise, because it is easy to over- or under-
 Now notice what is *not* on the list. Compiling does not prove that your program does what you meant. If a function is supposed to sort a list but the logic is wrong, the compiler will build it happily. Rust removes *whole classes* of bugs from your program; it does not check your reasoning. This is what people mean when they say Rust is "safe": safe from a clearly defined set of low-level machine mistakes, not safe from every possible mistake. Knowing the difference keeps you from being surprised later.
 
 :::compare "Safe" and "unsafe" Rust
-Nearly everything you will write is in **safe** Rust, and every guarantee above is true of it. There is also **unsafe Rust**: a small set of extra tools for working at the very bottom of the machine — reading raw memory, talking to hardware, or using a library written in C. Unsafe does not mean "broken" or "dangerous to use"; it means *you, the programmer, make the safety argument that the compiler would otherwise make*. You are allowed to use those tools only where you can show the code you write is sound. The great majority of Rust programs — and all of this guide — stay entirely in safe Rust.
+Nearly everything you will write is in **safe** Rust, and every guarantee above is true of it. There is also **[[unsafe]] Rust**: a small set of extra tools for working at the very bottom of the machine — reading raw memory, talking to hardware, or using a library written in C. Unsafe does not mean "broken" or "dangerous to use"; it means *you, the programmer, make the safety argument that the compiler would otherwise make*. You are allowed to use those tools only where you can show the code you write is sound. The great majority of Rust programs — and all of this guide — stay entirely in safe Rust.
 :::
 
 :::plain Zero-cost abstraction
-Rust is built around a design principle called **zero-cost abstraction**. You can write a program with clean, high-level tools — a loop over a list, a small function, an object with methods — without paying any extra cost in speed or memory once the program is compiled. The compiler removes the "extra" scaffolding during compilation. The goal is that a readable Rust program can run as fast as the rawest, most manual code for the same job. You will see this principle quietly at work throughout the guide: the safe way to do a thing is also the fast way.
+Rust is built around a design principle called **[[zero-cost abstraction]]**. You can write a program with clean, high-level tools — a loop over a list, a small function, an object with methods — without paying any extra cost in speed or memory once the program is compiled. The compiler removes the "extra" scaffolding during compilation. The goal is that a readable Rust program can run as fast as the rawest, most manual code for the same job. You will see this principle quietly at work throughout the guide: the safe way to do a thing is also the fast way.
 :::
 
 ## A short history of Rust
@@ -233,4 +233,22 @@ Pick a category for your first project: command-line tool, web service, terminal
 Think about what you want to do with the program, not about the syntax. A CLI is easier to start with if you want a tool for files and folders.
 ::solution
 A good answer is specific and connected to a real task. For example: "I want a command-line tool that renames my photos by date, because I have many files and I want a quicker way to organise them." The purpose of the exercise is to turn a vague wish into a project you can finish and learn from.
+:::
+
+:::exercise challenge Plan a program before you can write one
+Choose the goal you wrote down in the earlier exercise, and plan the program for it on paper. This is the planning step a programmer does before any code exists, and it is the same thinking you used for the tea-making robot, applied to your own idea.
+
+Write down: the inputs (what the program is given), the outputs (what it must produce), and the steps in between, in order. Mark every place where a step could fail — a missing file, a number where you expected a word — and write what the program should do in that case. Finish by naming the first small version you could build and test, leaving the rest for later versions.
+::hint
+Keep the first version small enough to describe in three steps. If a step needs the words "and then handle everything else", split it: hidden steps are where vague plans turn into confusing programs. For each input, ask where it comes from — typed by a person, read from a file, or worked out by the program itself.
+::solution
+One worked answer, for a tool that renames photo files by date:
+
+- **Inputs:** a folder of photo files, each carrying the date it was taken.
+- **Outputs:** the same files with names such as `2026-03-14-beach.jpg`, plus a printed list of the old and new names.
+- **Steps:** list the files in the folder; read the date from each file; build the new name; check that no two new names collide; rename; print the list.
+- **Failures:** a file with no date keeps its name and is reported, rather than stopping the run; a name collision adds a number instead of overwriting an existing file.
+- **First version:** rename the files in one named folder, with no options. Folders inside folders, undo, and a preview mode belong to later versions.
+
+The shape matters more than the example: inputs, outputs, ordered steps, named failures, and a first version small enough to finish. You will meet this shape again in the project chapters, where each project starts from a plan of this kind.
 :::

@@ -56,7 +56,7 @@ fn main() {
 ```output auto panic
 ```
 
-When a panic comes from deep inside a program, set the environment variable `RUST_BACKTRACE=1` when running (`RUST_BACKTRACE=1 cargo run`). Rust then prints the **backtrace**: the chain of function calls that led to the panic.
+When a panic comes from deep inside a program, set the environment variable `RUST_BACKTRACE=1` when running (`RUST_BACKTRACE=1 cargo run`). Rust then prints the **[[backtrace]]**: the chain of function calls that led to the panic.
 
 Other macros that panic, useful while a program is under construction:
 

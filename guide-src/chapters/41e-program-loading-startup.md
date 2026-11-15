@@ -7,7 +7,7 @@
 @time 35
 @learn Trace execve() from shell fork() into the Linux kernel ELF loader | Understand ld-linux, PT_INTERP, GOT/PLT lazy symbol resolution, and ASLR | Inspect argc, argv, envp, and auxv placed on the initial stack | Follow Rust's crt0 / std::rt::lang_start_internal execution before your fn main() runs
 
-You type `./hello` in a terminal and press Enter. Less than a millisecond later, `"Hello, world!"` prints. Yet your `fn main()` is nowhere near the first code that ran! Between pressing Enter and entering `main()`, your shell, the Linux kernel, the dynamic linker `ld-linux-x86-64.so.2`, C runtime initialisation (`crt0`), and Rust's standard runtime (`std::rt::lang_start`) execute hundreds of carefully ordered steps.
+You type `./hello` in a terminal and press Enter. Less than a millisecond later, `"Hello, world!"` prints. Yet your `fn main()` is nowhere near the first code that ran! Between pressing Enter and entering `main()`, your shell, the Linux kernel, the dynamic linker `ld-linux-x86-64.so.2`, C runtime initialisation (`crt0`), and Rust's standard runtime (`std::rt::lang_start`) execute hundreds of carefully ordered steps. The file formats those steps read are in [object files, linking and ELF](#linking-elf).
 
 :::analogy Opening night at a theatre
 A play does not begin when the lead actor speaks line one. First the stage manager unlocks the theatre (`execve`), turns on the stage lights and props (`mmap` of `.text`, `.rodata`, `.data`), hires external musicians (`ld-linux` loading `libc.so.6`), checks safety alarms (`stack canary` and `guard pages`), and cues the stagehand (`lang_start`)—only *then* does `fn main()` walk onto the stage.
@@ -31,8 +31,8 @@ On Unix and Linux, creating a new process and loading a new program file are del
 When your shell runs `./hello`:
 
 1. The shell calls `fork()` (or `clone()`), creating a child process sharing read-only [[copy-on-write]] pages.
-2. The child immediately calls the `execve("./hello", argv, envp)` [[system call]].
-3. The Linux [[kernel]]'s ELF binary loader (`fs/binfmt_elf.c`) opens `./hello`, verifies the `7f 45 4c 46` magic bytes (`\x7fELF`), reads its `PT_LOAD` program headers, tears down the child's old address space, and maps `.text` (`R+X`), `.rodata` (`R`), and `.data`/`.bss` (`R+W`) at [[ASLR]]-randomised virtual addresses.
+2. The child immediately calls the `execve("./hello", argv, envp)` [[system call]]; what happens inside that call is in [kernel, system calls and processes](#kernel-syscalls-processes).
+3. The Linux [[kernel]]'s ELF binary loader (`fs/binfmt_elf.c`) opens `./hello`, verifies the `7f 45 4c 46` magic bytes (`\x7fELF`), reads its `PT_LOAD` program headers, tears down the child's old address space, and maps `.text` (`R+X`), `.rodata` (`R`), and `.data`/`.bss` (`R+W`) at [[ASLR]]-randomised virtual addresses — the map you can read back in `/proc/self/maps`, as [virtual memory](#virtual-memory-address-spaces) shows.
 4. Before transferring control to user space, the kernel builds a clean initial user [[stack]] holding command-line arguments, environment variables, and kernel metadata:
 
 ```text
@@ -56,7 +56,7 @@ That **`auxv` (Auxiliary Vector)** block lets the kernel hand facts directly to 
 
 ## Step 2: `PT_INTERP` and `ld-linux-x86-64.so.2`
 
-If the ELF file declares a `PT_INTERP` header pointing to `/lib64/ld-linux-x86-64.so.2`, the kernel maps the dynamic linker too and starts the CPU instruction pointer (`RIP`) inside `ld-linux`'s `_start`, *not* inside `./hello`!
+If the ELF file declares a `PT_INTERP` header pointing to `/lib64/ld-linux-x86-64.so.2`, the kernel maps the dynamic linker too and starts the CPU instruction pointer (`RIP`) inside `ld-linux`'s `_start`, *not* inside `./hello`! (`PT_INTERP` is one of the program headers described in [linking and ELF](#linking-elf).)
 
 `ld-linux` performs four essential tasks before entering your program:
 1. **Loads shared libraries:** Reads `.dynamic` (`DT_NEEDED` entries like `libc.so.6`), searches `/etc/ld.so.cache` and `/lib`, and `mmap`s each shared library into the process's virtual address space.

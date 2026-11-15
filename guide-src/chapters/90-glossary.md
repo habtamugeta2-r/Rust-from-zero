@@ -4,6 +4,7 @@
 @title Glossary
 @short Glossary
 @level all
+@time 25
 
 The technical words of this guide, in plain language. Type in the box to filter the list. Where a chapter explains the word in full, the entry links to it.
 

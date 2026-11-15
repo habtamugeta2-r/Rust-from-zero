@@ -9,7 +9,7 @@
 [Chapter 27](#testing) taught the mechanics: `#[test]`, the assertion macros, unit and integration tests. This chapter is about using them well in a growing project, and about the more powerful techniques and tools.
 
 :::plain The test pyramid, in Rust terms
-Three levels of test, each answering a different question. **Unit tests** sit next to the code and check one function in isolation, so they are fast and precise. **Integration tests** in `tests/` drive the public API the way a user would, catching wiring mistakes the unit tests cannot see. **End-to-end tests** start the real server against a real database and are slow and few, because their job is to prove the pieces fit, not to cover every branch. The pyramid is a budget: many cheap tests at the bottom, a handful at the top, and no level trying to do another level's work.
+Three levels of test, each answering a different question. **[[Unit tests|unit test]]** sit next to the code and check one function in isolation, so they are fast and precise. **Integration tests** in `tests/` drive the public API the way a user would, catching wiring mistakes the unit tests cannot see. **End-to-end tests** start the real server against a real database and are slow and few, because their job is to prove the pieces fit, not to cover every branch. The pyramid is a budget: many cheap tests at the bottom, a handful at the top, and no level trying to do another level's work.
 :::
 
 ## What to test where
@@ -32,7 +32,7 @@ A good test has four properties. It is **fast**. It is **deterministic**: the sa
 
 Some code is hard to test because it reaches out to the world by itself: it reads the clock, a file, the network, a random number. Such a function gives different results at different times, or needs a server to be running.
 
-The cure is to **pass in what the code depends on**. This is called **dependency injection**. In Rust, the dependency is described by a trait. The real program passes the real implementation, and a test passes a simple stand-in, called a **fake** or a **test double**.
+The cure is to **pass in what the code depends on**. This is called **[[dependency]] injection**. In Rust, the dependency is described by a trait. The real program passes the real implementation, and a test passes a simple stand-in, called a **fake** or a **test double**.
 
 ```rust test
 /// Something that can tell the current hour of the day (0 to 23).
@@ -336,7 +336,7 @@ Snapshots are comfortable, and that is their danger: it is easy to accept a chan
 
 ## Fuzzing
 
-**Fuzzing** is property testing taken further. A fuzzer feeds a function millions of inputs, watches which parts of the code each input reaches, and mutates the inputs to reach more. It runs for minutes or days, and it is extremely good at finding inputs that crash parsers and decoders. The tool is **`cargo fuzz`** (it needs the nightly toolchain):
+**[[Fuzzing]]** is property testing taken further. A fuzzer feeds a function millions of inputs, watches which parts of the code each input reaches, and mutates the inputs to reach more. It runs for minutes or days, and it is extremely good at finding inputs that crash parsers and decoders. The tool is **`cargo fuzz`** (it needs the nightly toolchain):
 
 ```rust
 #![no_main]
@@ -353,7 +353,7 @@ Any code that reads data from outside (file formats, network protocols, user inp
 
 ## Benchmarks
 
-A **benchmark** measures how long code takes. Measuring time well is harder than it looks: the first runs are slow, other programs disturb the measurement, and the optimiser may remove a calculation whose result is never used. The crate **`criterion`** handles all of that. It runs the code many times, analyses the measurements statistically, and compares with the previous run.
+A **[[benchmark]]** measures how long code takes. Measuring time well is harder than it looks: the first runs are slow, other programs disturb the measurement, and the optimiser may remove a calculation whose result is never used. The crate **`criterion`** handles all of that. It runs the code many times, analyses the measurements statistically, and compares with the previous run.
 
 ```toml
 [dev-dependencies]

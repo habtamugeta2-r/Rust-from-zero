@@ -57,7 +57,7 @@ fn count_letters(text: &String) -> usize {
 :::
 
 :::plain Reference
-A **reference** is a pointer that Rust guarantees to be valid: it always points to a living value of the right type. You create one with `&`. In the last chapter you read that a pointer is an address. A reference is an address plus a promise checked by the compiler. And like any other value, a reference has a size — the size of a pointer. Passing a reference to a function copies that small value; the data it points at is never copied. That is why borrowing is cheap even when the data behind it is large.
+A **[[reference]]** is a pointer that Rust guarantees to be valid: it always points to a living value of the right type. You create one with `&`. In the last chapter you read that a pointer is an address. A reference is an address plus a promise checked by the compiler. And like any other value, a reference has a size — the size of a pointer. Passing a reference to a function copies that small value; the data it points at is never copied. That is why borrowing is cheap even when the data behind it is large.
 :::
 
 ## A shared reference cannot change the value
@@ -107,7 +107,7 @@ This is deliberate. Anyone who reads the call `shout(&mut text)` can see that `t
 
 ### Reaching the value behind a reference: `*`
 
-For method calls such as `t.push_str(...)`, Rust follows the reference for you. When you want to read or replace the value itself, write `*` in front of the reference. This is called **dereferencing**: "go to what this points at".
+For method calls such as `t.push_str(...)`, Rust follows the reference for you. When you want to read or replace the value itself, write `*` in front of the reference. This is called **[[dereferencing|dereference]]**: "go to what this points at".
 
 ```rust run
 fn main() {
@@ -346,7 +346,7 @@ When the borrow checker rejects your code, it has usually found a real problem, 
 1. **Read the whole message.** It shows where the first borrow starts, where the conflict is, and where the first borrow is used later.
 2. **Shorten the borrow.** Finish using a reference before you change the value. Often it is enough to move one line.
 3. **Copy out what you need.** If you only need a number from inside the data, store the number, not a reference to it: `let first = numbers[0];` copies the integer.
-4. **Clone.** It costs some time and memory, but it is always correct.
+4. **[[Clone]].** It costs some time and memory, but it is always correct.
 5. **Ask what would go wrong.** Suppose the compiler accepted your code: which name would be left looking at freed or half-changed data? If you can point at it, the compiler has found a real bug and the design has to change. If you cannot, the code is probably safe, but written in a way the compiler cannot follow, and a small rearrangement is enough. [Chapter 20](#collections) walks through the cases that come up most often with lists.
 
 :::recap

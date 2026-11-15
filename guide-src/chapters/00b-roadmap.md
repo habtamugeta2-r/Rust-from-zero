@@ -307,7 +307,7 @@ This part is structured across four progressive sub-tracks:
 - **Dependencies:** [Instruction Set Architectures, Opcodes, and Control Flow](#isa-opcodes-control-flow).
 
 ### Chapter 54 — Hardware Caches, Coherency, Atomic Instructions, and SIMD
-- **Subchapters:** Multi-core L1/L2/L3 caches and the MESI coherency protocol; Store buffers and invalidation queues (why cores see reordered writes); Memory barriers (`MFENCE`, `DMB ISH`) and mapping Rust `Ordering` (`Relaxed`, `Acquire`, `Release`, `SeqCst`) onto x86-64 vs ARM64; Hardware atomic instructions (`LOCK XADD`, `LOCK CMPXCHG`, ARM LL/SC vs LSE); SIMD vector lanes (`SSE`/`AVX`/`NEON`) and Rust auto-vectorisation; False sharing on 64-byte cache lines.
+- **Subchapters:** Multi-core L1/L2/L3 caches and the MESI coherency protocol. Store buffers and invalidation queues (why cores see reordered writes). Memory barriers (`MFENCE`, `DMB ISH`) and mapping Rust `Ordering` (`Relaxed`, `Acquire`, `Release`, `SeqCst`) onto x86-64 vs ARM64. Hardware atomic instructions (`LOCK XADD`, `LOCK CMPXCHG`, ARM LL/SC vs LSE). SIMD vector lanes (`SSE`/`AVX`/`NEON`) and Rust auto-vectorisation. False sharing on 64-byte cache lines.
 - **Topics covered:** Why x86-64 TSO hides bugs that fail on ARM64, MESI invalidation storms, false sharing, SIMD throughput vs scalar loops, `std::is_x86_feature_detected!`.
 - **Learning objectives:** Explain why memory ordering exists because of store buffers and invalidation queues; map Rust `Ordering` modes to x86-64 and ARM64 fences; detect and fix false sharing.
 - **Dependencies:** [Pipelining, Branch Prediction, and Out-of-Order Execution](#pipelines-branch-prediction-ooo), Part IV ([CPU Cache Hierarchy](#pointers-safety-caches)).

@@ -1,4 +1,4 @@
-name: build
+name: CI
 
 on:
   push:
@@ -35,6 +35,12 @@ jobs:
 
       - name: Verify guide chapters and captured outputs
         run: npm run verify:content
+
+      - name: Lint (ESLint and Prettier)
+        run: npm run lint
+
+      - name: Unit tests
+        run: npm test
 
       - name: Typecheck TypeScript
         run: npm run typecheck

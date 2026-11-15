@@ -16,7 +16,7 @@ let body = reqwest::get("https://example.com/data").await?.text().await?;
 Before `"example.com"` responds with JSON or HTML, your machine resolves DNS names to IP addresses, opens a TCP connection, negotiates **TLS 1.3** cryptography (via `rustls` or OpenSSL), sends an **HTTP** request, receives encrypted TCP packets through NIC interrupts and `epoll`, decrypts them in user space, and delivers `&str` bytes!
 
 :::plain DNS, TLS, and HTTP in one paragraph
-**DNS** turns a name into an IP address by asking a chain of servers, each answer carrying a **TTL** that says how long to cache it. **[[TLS]]** then turns the TCP connection into an authenticated, encrypted channel: the server proves its identity with a certificate chain, both sides derive a shared key with ephemeral Diffie–Hellman, and every later byte is encrypted and integrity-checked. **HTTP** is what travels inside that channel — text in HTTP/1.1, binary frames in HTTP/2, and independent streams over QUIC in HTTP/3. Each layer exists to solve one problem: naming, trust, or meaning.
+**[[DNS]]** turns a name into an IP address by asking a chain of servers, each answer carrying a **TTL** that says how long to cache it. **[[TLS]]** then turns the TCP connection into an authenticated, encrypted channel: the server proves its identity with a certificate chain, both sides derive a shared key with ephemeral Diffie–Hellman, and every later byte is encrypted and integrity-checked. **HTTP** is what travels inside that channel — text in HTTP/1.1, binary frames in HTTP/2, and independent streams over QUIC in HTTP/3. Each layer exists to solve one problem: naming, trust, or meaning.
 :::
 
 :::analogy Calling a foreign bank securely

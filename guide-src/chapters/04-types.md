@@ -157,7 +157,7 @@ You will not reach for these every day, but recognising them matters. A line of 
 
 ### When a number gets too big: overflow
 
-A `u8` can hold at most 255. What is 255 + 1 in a `u8`? There is no room for 256. This situation is called **overflow**.
+A `u8` can hold at most 255. What is 255 + 1 in a `u8`? There is no room for 256. This situation is called **[[overflow]]**.
 
 :::analogy A car's mileage counter
 An old mileage counter with five digits shows 99999, and after one more kilometre it shows 00000. The number did not get smaller. The counter simply ran out of digits. Integer overflow is the same thing.
@@ -206,7 +206,7 @@ In C and C++, overflowing a signed integer is "undefined behaviour": the program
 
 ## Numbers with decimals: floats
 
-Numbers with a decimal point are called **floating-point numbers**, or **floats**. Rust has two: `f32` (32 bits) and `f64` (64 bits, more exact). Use `f64` unless you have a reason not to. It is the type Rust picks for `let x = 2.5;`.
+Numbers with a decimal point are called **[[floating|float]]-point numbers**, or **floats**. Rust has two: `f32` (32 bits) and `f64` (64 bits, more exact). Use `f64` unless you have a reason not to. It is the type Rust picks for `let x = 2.5;`.
 
 ```rust run
 fn main() {
@@ -281,7 +281,7 @@ C, Java and JavaScript convert between number types automatically in many places
 
 ## True or false: `bool`
 
-A **Boolean** (`bool`) has only two possible values: `true` and `false`. Comparisons produce Booleans, and decisions in your program are based on them.
+A **[[Boolean]]** (`bool`) has only two possible values: `true` and `false`. Comparisons produce Booleans, and decisions in your program are based on them.
 
 ```rust run
 fn main() {
@@ -359,16 +359,16 @@ Sara is 29. Member: true
 ```
 
 - You reach one part with a dot and its position: `person.0` is the first part. **Counting starts at 0.**
-- `let (name, age, is_member) = person;` unpacks the tuple into three variables in one step. This is called **destructuring**.
+- `let (name, age, is_member) = person;` unpacks the tuple into three variables in one step. This is called **[[destructuring]]**.
 - The type of this tuple is written `(&str, i32, bool)`.
 
 Tuples are good for small groups, such as a pair of coordinates `(x, y)`. For anything bigger you will use a *struct*, which gives each part a name ([chapter 17](#structs)).
 
-The empty tuple `()` is called the **unit** type. It means "nothing useful here", and you will meet it in the next chapter.
+The empty tuple `()` is called the **[[unit]]** type. It means "nothing useful here", and you will meet it in the next chapter.
 
 ## Lists of the same type: arrays
 
-An **array** is a row of values that all have the same type. Its length is fixed when you write the program.
+An **[[array]]** is a row of values that all have the same type. Its length is fixed when you write the program.
 
 ```rust run
 fn main() {

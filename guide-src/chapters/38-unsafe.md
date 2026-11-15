@@ -53,7 +53,7 @@ In safe Rust, none of these can happen. That is the meaning of "memory safe". In
 
 ## Raw pointers
 
-A **raw pointer** is an address in memory with a type attached, and no guarantees. There are two kinds: `*const T` (for reading) and `*mut T` (for reading and writing).
+A **[[raw pointer]]** is an address in memory with a type attached, and no guarantees. There are two kinds: `*const T` (for reading) and `*mut T` (for reading and writing).
 
 | | Reference `&T`, `&mut T` | Raw pointer `*const T`, `*mut T` |
 |---|---|---|

@@ -69,7 +69,7 @@ It also has two limits:
 For both cases there is the heap.
 
 :::details Recursion and stack overflow
-A function may call itself. This is called **recursion**. Every call gets its own stack frame, with its own copies of the variables.
+A function may call itself. This is called **[[recursion]]**. Every call gets its own stack frame, with its own copies of the variables.
 
 ```rust run
 fn main() {
@@ -103,7 +103,7 @@ You go to the front desk of a storage warehouse and say: "I need room for 20 box
 The heap is that warehouse:
 
 - The program asks for a certain number of bytes. This is called **allocating** memory.
-- It gets back the address of a free area. A value that holds an address is called a **pointer**, because it points to where the data is.
+- It gets back the address of a free area. A value that holds an address is called a **[[pointer]]**, because it points to where the data is.
 - When the data is no longer needed, the memory must be given back. This is called **freeing** or *deallocating* it.
 
 The heap can hold data of any size, the size may be decided while the program runs, and the data stays alive until it is freed, no matter which functions start or end in the meantime. The price is threefold. **Allocating is slower than using the stack**: before the data can be used, the system has to find a free stretch of memory big enough and mark it as taken, and the operating system may have to hand over brand-new pages of real memory that were not in use yet. Reaching the data also takes an extra step: follow the pointer to where the data really is. And **someone has to free the memory at the right time**.
@@ -170,7 +170,7 @@ Think of heap memory as hotel rooms and of pointers as key cards.
 - **Out-of-bounds access (buffer overflow):** you booked room 12 but also walk into rooms 13 and 14. In a program: reading or writing past the end of an array.
 :::
 
-A pointer that still holds the address of memory that has been freed is called a **dangling pointer**. It is the "key card you kept".
+A pointer that still holds the address of memory that has been freed is called a **[[dangling pointer]]**. It is the "key card you kept".
 
 These bugs are dangerous because the program often *keeps running* with wrong data. They may show up only sometimes, on some machines. Attackers look for them on purpose: a use-after-free or a buffer overflow can often be turned into a way to take control of a program. As you read in [chapter 1](#what-is-rust), around 70% of the serious security bugs in large C and C++ products are memory bugs of this kind.
 
@@ -274,7 +274,7 @@ For each piece of data, decide whether its contents can live on the stack or nee
 Ask one question each time: is the size known when the program is compiled, and does it stay the same?
 ::solution
 1. **Stack.** An `i32` is always 4 bytes.
-2. **Heap.** The length is unknown and changes while the user types. A small record on the stack points to it.
+2. **[[Heap]].** The length is unknown and changes while the user types. A small record on the stack points to it.
 3. **Stack.** A tuple of three `u8` values is always 3 bytes.
 4. **Heap.** The number of files is known only while the program runs.
 5. **Stack.** An array has a fixed length that is part of its type.

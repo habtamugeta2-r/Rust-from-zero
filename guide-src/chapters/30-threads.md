@@ -12,8 +12,8 @@ Doing several things at once is one of the hardest parts of programming in most 
 
 ## Words first
 
-- **Concurrency** means dealing with several tasks in overlapping periods of time. One cook who chops vegetables while the soup simmers works concurrently.
-- **Parallelism** means really doing several things at the same instant. Two cooks, each at their own stove, work in parallel. Parallelism needs several cores.
+- **[[Concurrency]]** means dealing with several tasks in overlapping periods of time. One cook who chops vegetables while the soup simmers works concurrently.
+- **[[Parallelism]]** means really doing several things at the same instant. Two cooks, each at their own stove, work in parallel. Parallelism needs several cores.
 - A **process** is a running program with its own, separate memory. Your browser and your editor are processes.
 - A **thread** is one line of execution inside a process. Every program starts with one, the **main thread**, and can start more. All threads of a process share its memory.
 
@@ -28,7 +28,7 @@ A restaurant kitchen with one cook can prepare one dish at a time. Hire three mo
 Sharing memory is what makes threads efficient, and what makes them dangerous.
 
 :::key What a data race is
-A **data race** happens when two threads access the same piece of memory at the same time, at least one of them writes, and nothing coordinates them. The result depends on tiny timing differences. A program with a data race may work a million times and then corrupt its data once, on a customer's machine, in a way nobody can reproduce.
+A **[[data race]]** happens when two threads access the same piece of memory at the same time, at least one of them writes, and nothing coordinates them. The result depends on tiny timing differences. A program with a data race may work a million times and then corrupt its data once, on a customer's machine, in a way nobody can reproduce.
 
 Look at the definition again: several accesses, at least one writer. That is exactly what the borrowing rule "many readers **or** one writer" forbids. Rust extends that rule across threads. **A safe Rust program cannot contain a data race.** The compiler rejects it.
 :::
@@ -233,7 +233,7 @@ The crate **`rayon`** reduces this whole pattern to one word. Write `numbers.par
 
 ## Channels: passing messages
 
-The second way for threads to cooperate is to share nothing, and to send each other **messages**. A **channel** is a one-way pipe: one end sends values in, and the other end takes them out.
+The second way for threads to cooperate is to share nothing, and to send each other **messages**. A **[[channel]]** is a one-way pipe: one end sends values in, and the other end takes them out.
 
 :::analogy A conveyor belt
 One worker puts parcels on a conveyor belt. Another worker at the far end takes them off, in the order they were put on. The two never touch the same parcel at the same time, and they never need to talk about who has what.

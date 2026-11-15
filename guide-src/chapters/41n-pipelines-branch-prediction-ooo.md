@@ -9,7 +9,7 @@
 
 Why does a modern 4 GHz processor execute **3 or 4 instructions *per single clock cycle***—yet suddenly stall for 15–20 wasted cycles every time an `if` goes the unexpected way? And how does sorting an array *before* summing conditional items sometimes make the exact same Rust loop run **3× faster**?
 
-The answer lives inside the CPU core's instruction assembly line: **pipelining**, **out-of-order (OoO) execution**, and **speculative branch prediction**.
+The answer lives inside the CPU core's instruction assembly line: **pipelining**, **out-of-order (OoO) execution**, and **speculative branch prediction**. The machine code that flows down that line is in [assembly and machine code](#assembly-machine-code), and the caches it stalls on are in [pointers, safety and caches](#pointers-safety-caches).
 
 :::analogy A five-station car-wash assembly line
 Washing one car from start to finish takes 5 sequential minutes (Soap -> Scrub -> Rinse -> Wax -> Dry). Instead of waiting until Car 1 dries before starting Car 2, a **pipelined** car wash pushes a new car in every minute: **5 cars wash concurrently**, boosting throughput 5×! Now imagine a driver suddenly says at Station 4: "Wait, wrong car—back everything out and start over!" Every partially washed car in Stations 1–3 gets **flushed** out of the bay. That is a **branch misprediction**.
@@ -40,7 +40,7 @@ While Instruction 1 sits in `WB`, Instruction 2 sits in `MEM`, Instruction 3 in 
 ## Branch Prediction: guessing the future with ~99% accuracy
 
 :::plain Pipelining, branch prediction, and out-of-order execution
-A **[[pipeline]]** overlaps instruction stages so 15–20 instructions are half-finished inside one core at the same instant. **Branch prediction** guesses which way an `if` will go *before* evaluating the condition so the pipeline never pauses; if the guess is wrong, all speculative work in flight is thrown out (~15–20 wasted cycles). **[[out-of-order execution|Out-of-order execution]]** lets independent instructions run ahead while an earlier load waits on slow RAM, then commits results in original program order.
+A **[[pipeline]]** overlaps instruction stages so 15–20 instructions are half-finished inside one core at the same instant. **Branch prediction** guesses which way an `if` will go *before* evaluating the condition so the pipeline never pauses; if the guess is wrong, all speculative work in flight is thrown out (~15–20 wasted cycles). **[[out-of-order execution|Out-of-order execution]]** lets independent instructions run ahead while an earlier load waits on slow RAM, then commits results in original program order. How several cores keep their caches agreeing while doing this is in [caches, coherency and SIMD](#cache-coherency-atomics-simd).
 :::
 
 Because modern CPUs execute **4–6 instructions per cycle across 15–20 pipeline stages**, waiting for an `if` condition would stall every loop. Instead, the CPU **guesses** immediately at Fetch using dedicated hardware predictors (**BTB** Branch Target Buffer + **TAGE** history predictors):

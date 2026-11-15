@@ -6,7 +6,7 @@
 @time 50
 @learn Explain what serialisation is | Convert your structs and enums to and from JSON with `derive` | Control the result with Serde attributes | Read configuration from TOML and handle data of unknown shape | Validate data while it is being read
 
-Programs exchange data all the time: they save it to files, send it over the network, and read configuration. For that, a value in memory must be turned into a sequence of bytes in an agreed format, and back again. The first direction is called **serialisation**, and the second **deserialisation**.
+Programs exchange data all the time: they save it to files, send it over the network, and read configuration. For that, a value in memory must be turned into a sequence of bytes in an agreed format, and back again. The first direction is called **[[serialisation]]**, and the second **[[deserialisation]]**.
 
 In Rust, nearly all of this is done with one library: **Serde** (from "**ser**ialise" and "**de**serialise"). You describe your data as ordinary structs and enums, add one line, and Serde converts them to and from JSON, TOML, YAML, CSV and a dozen other formats.
 
@@ -33,7 +33,7 @@ The feature `derive` provides the derive macros, which generate the conversion c
 
 ## To JSON and back
 
-**JSON** is the most common format for exchanging data, especially on the web. It knows objects (`{ "key": value }`), lists (`[1, 2]`), strings, numbers, `true`, `false` and `null`.
+**[[JSON]]** is the most common format for exchanging data, especially on the web. It knows objects (`{ "key": value }`), lists (`[1, 2]`), strings, numbers, `true`, `false` and `null`.
 
 ```rust ext run
 use serde::{Deserialize, Serialize};

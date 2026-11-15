@@ -2,13 +2,7 @@ import React from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import {
-  ArrowLeft,
-  ArrowRight,
-  CheckCircle2,
-  Clock,
-  Flag,
-} from "lucide-react";
+import { ArrowLeft, ArrowRight, CheckCircle2, Clock, Flag } from "lucide-react";
 import { ChapterActions } from "@/components/ChapterActions";
 import { ChapterBookmark } from "@/components/ChapterBookmark";
 import { BlockList } from "@/components/ChapterBody";
@@ -40,11 +34,7 @@ export async function generateMetadata({
   return chapterMetadata(ch);
 }
 
-export default async function ChapterPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
+export default async function ChapterPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const chapter = loadChapter(id);
   if (!chapter) notFound();
@@ -72,16 +62,10 @@ export default async function ChapterPage({
         }}
       />
 
-      <div
-        className="chapter-layout"
-        data-rail={showRail ? "on" : "off"}
-      >
+      <div className="chapter-layout" data-rail={showRail ? "on" : "off"}>
         <article className="chapter-article">
           {/* Breadcrumb (visible + mirrors the BreadcrumbList schema) */}
-          <nav
-            aria-label="Breadcrumb"
-            className="mb-5 font-sans text-xs text-[var(--g-ink3)]"
-          >
+          <nav aria-label="Breadcrumb" className="mb-5 font-sans text-xs text-[var(--g-ink3)]">
             <ol className="flex flex-wrap items-center gap-x-1.5 gap-y-1">
               <li>
                 <Link href="/" className="hover:text-[var(--g-accent)]">
@@ -91,10 +75,7 @@ export default async function ChapterPage({
               <li aria-hidden="true">/</li>
               <li className="max-w-full truncate">{chapter.partTitle}</li>
               <li aria-hidden="true">/</li>
-              <li
-                className="max-w-full truncate text-[var(--g-ink2)]"
-                aria-current="page"
-              >
+              <li className="max-w-full truncate text-[var(--g-ink2)]" aria-current="page">
                 {chapter.short}
               </li>
             </ol>
@@ -106,18 +87,12 @@ export default async function ChapterPage({
               <span className="rounded-full bg-[var(--g-accent-soft)] px-3 py-1 text-[11px] font-bold tracking-wide text-[var(--g-accent)]">
                 {eyebrow}
               </span>
-              <span className="hidden text-[var(--g-ink3)] sm:inline">
-                {chapter.partTitle}
-              </span>
+              <span className="hidden text-[var(--g-ink3)] sm:inline">{chapter.partTitle}</span>
               <ChapterTocTrigger headings={chapter.headings} />
-              <ChapterBookmark
-                chapterId={chapter.id}
-                title={chapter.title}
-              />
+              <ChapterBookmark chapterId={chapter.id} title={chapter.title} />
               {chapter.time > 0 && (
                 <span className="ml-auto inline-flex items-center gap-1.5 text-[var(--g-ink3)]">
-                  <Clock className="h-3.5 w-3.5" aria-hidden="true" />
-                  ~{chapter.time} min
+                  <Clock className="h-3.5 w-3.5" aria-hidden="true" />~{chapter.time} min
                 </span>
               )}
             </div>
@@ -166,11 +141,7 @@ export default async function ChapterPage({
             className="no-print mt-10 grid gap-3 border-t border-[var(--g-line)] pt-6 font-sans sm:grid-cols-2"
           >
             {prev ? (
-              <ChapterStepLink
-                direction="previous"
-                href={`/chapters/${prev.id}`}
-                chapter={prev}
-              />
+              <ChapterStepLink direction="previous" href={`/chapters/${prev.id}`} chapter={prev} />
             ) : (
               <ChapterStepLink
                 direction="previous"
@@ -181,18 +152,9 @@ export default async function ChapterPage({
             )}
 
             {next ? (
-              <ChapterStepLink
-                direction="next"
-                href={`/chapters/${next.id}`}
-                chapter={next}
-              />
+              <ChapterStepLink direction="next" href={`/chapters/${next.id}`} chapter={next} />
             ) : (
-              <ChapterStepLink
-                direction="next"
-                href="/"
-                label="Finish"
-                title="Back to home"
-              />
+              <ChapterStepLink direction="next" href="/" label="Finish" title="Back to home" />
             )}
           </nav>
         </article>
@@ -205,6 +167,16 @@ export default async function ChapterPage({
       </div>
     </div>
   );
+}
+
+/** An `@learn` objective as plain text for the next-chapter card. */
+function plainObjective(markdown: string): string {
+  return markdown
+    .replace(/\[\[([^\]|]+)\|([^\]]+)\]\]/g, "$1")
+    .replace(/\[\[([^\]]+)\]\]/g, "$1")
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1")
+    .replace(/[`*_]/g, "")
+    .trim();
 }
 
 function ChapterStepLink({
@@ -245,12 +217,15 @@ function ChapterStepLink({
           )}
           {heading}
         </div>
-        <div className="mt-0.5 line-clamp-2 text-sm font-bold text-[var(--g-ink)]">
-          {name}
-        </div>
+        <div className="mt-0.5 line-clamp-2 text-sm font-bold text-[var(--g-ink)]">{name}</div>
         {chapter && chapter.time > 0 && (
           <div className="mt-0.5 text-[11.5px] font-medium text-[var(--g-ink3)]">
             ~{chapter.time} min
+          </div>
+        )}
+        {isNext && chapter?.learn?.[0] && (
+          <div className="mt-1 line-clamp-2 text-[11.5px] leading-snug font-medium text-[var(--g-ink2)]">
+            You will learn: {plainObjective(chapter.learn[0])}
           </div>
         )}
       </div>

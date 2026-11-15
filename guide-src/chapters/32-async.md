@@ -29,7 +29,7 @@ An async program is that waiter. Whenever a task has to wait, the thread sets it
 
 ## A first async program
 
-Async Rust needs a **runtime**: a library that keeps track of all tasks and runs whichever one is ready. The language provides the syntax, and the runtime comes from a crate. The most widely used runtime is **Tokio**. Create a project and add it:
+Async Rust needs a **[[runtime|runtime (async)]]**: a library that keeps track of all tasks and runs whichever one is ready. The language provides the syntax, and the runtime comes from a crate. The most widely used runtime is **Tokio**. Create a project and add it:
 
 ```text
 cargo new async_demo
@@ -236,7 +236,7 @@ medium finished
 slow finished
 ```
 
-`async move { ... }` is an **async block**: a future written in place, like a closure. With `move` it takes ownership of the variables it uses, which a spawned task needs for the same reason a spawned thread does.
+`async move { ... }` is an **[[async]] block**: a future written in place, like a closure. With `move` it takes ownership of the variables it uses, which a spawned task needs for the same reason a spawned thread does.
 
 :::tip Structured concurrency with `JoinSet`
 Dropping a plain `Vec<JoinHandle>` **detaches** those tasks: they keep running in the background with nobody waiting on them, which can leak work after a request finishes or fails. Dropping a **`JoinSet`**, by contrast, **aborts every unfinished task automatically**. Prefer `JoinSet` (or `join!` / `try_join!`) whenever spawned tasks should never outlive the scope that started them.
@@ -689,7 +689,7 @@ async fn main() {
 | Many at once, from a list | `buffer_unordered(n)` | Maps a stream to futures, at most `n` in flight ([chapter 60](#async-ecosystem)) |
 | Many independent tasks | `JoinSet` | Tasks may be cancelled, and `tokio-console` sees them |
 
-**A set of futures that grows and shrinks.** `FuturesUnordered` from the `futures` crate holds futures of one output type, lets you push new ones while it is being polled, and yields results in the order they finish. That is exactly what a worker needs when a finished job may add another job. It is also the honest answer to "how is this different from the other three?": `buffer_unordered` needs an iterator of items up front and applies a map function, `JoinSet` turns each future into an independent spawned task (so it needs `'static`, and gains cancellation and visibility), and `FuturesUnordered` polls them all inside the task that owns it, so the futures may borrow from that task's data.
+**A set of futures that grows and shrinks.** `FuturesUnordered` from the `futures` crate holds futures of one output type, lets you push new ones while it is being polled, and yields results in the order they finish. That is exactly what a worker needs when a finished job may add another job. It is also the honest answer to "how is this different from the other three?". `buffer_unordered` needs an iterator of items up front and applies a map function. `JoinSet` turns each future into an independent spawned task, so it needs `'static`, and gains cancellation and visibility. `FuturesUnordered` polls them all inside the task that owns it, so the futures may borrow from that task's data.
 
 **Projecting a pin, when the compiler asks.** A hand-written `Future` eventually has to turn `Pin<&mut Self>` into `Pin<&mut Field>`, and that operation is only sound if the field is never moved afterwards — which is why it cannot be written in safe Rust. Two escapes: put the self-referential part behind `Box::pin`, as the recursive `async fn` above does, or let `pin-project-lite` generate the projection and its `unsafe` for you. Libraries that implement `Stream`, `Future` or an async trait by hand use the second. Application code almost never needs either, and it is fine to recognise the pattern rather than write it.
 

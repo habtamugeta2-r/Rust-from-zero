@@ -479,7 +479,7 @@ fn main() {
 30 ["T-3", "T-2", "T-1"]
 ```
 
-`type Item = u32;` is an **associated type**: a type that belongs to the trait implementation. It says what this iterator yields. You wrote one method, and received `filter`, `map`, `sum`, `collect` and some seventy more for free, because they are default methods of the trait that build on `next`.
+`type Item = u32;` is an **[[associated type]]**: a type that belongs to the trait implementation. It says what this iterator yields. You wrote one method, and received `filter`, `map`, `sum`, `collect` and some seventy more for free, because they are default methods of the trait that build on `next`.
 
 For a quick one-off iterator, `std::iter::from_fn` turns a closure into an iterator without a new struct:
 

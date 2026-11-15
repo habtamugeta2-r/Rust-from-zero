@@ -1,12 +1,6 @@
 "use client";
 
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -39,21 +33,13 @@ export function GuideShell({
 }) {
   const pathname = usePathname();
   const router = useRouter();
-  const {
-    state,
-    persistent,
-    resetAllProgress,
-    cycleTheme,
-    themeMode,
-    stepFontSize,
-  } = useGuideState();
+  const { state, persistent, resetAllProgress, cycleTheme, themeMode, stepFontSize } =
+    useGuideState();
 
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [isDesktop, setIsDesktop] = useState(true);
-  const [collapsedParts, setCollapsedParts] = useState<Record<string, boolean>>(
-    {}
-  );
+  const [collapsedParts, setCollapsedParts] = useState<Record<string, boolean>>({});
   const [query, setQuery] = useState("");
   const [hits, setHits] = useState<SearchHit[] | null>(null);
   const [searching, setSearching] = useState(false);
@@ -68,20 +54,15 @@ export function GuideShell({
     ? pathname.slice("/chapters/".length)
     : null;
   const activeChapter = activeChapterId
-    ? chapters.find((c) => c.id === activeChapterId) ?? null
+    ? (chapters.find((c) => c.id === activeChapterId) ?? null)
     : null;
 
-  const tracked = useMemo(
-    () => chapters.filter((c) => c.kind !== "appendix"),
-    [chapters]
-  );
+  const tracked = useMemo(() => chapters.filter((c) => c.kind !== "appendix"), [chapters]);
   const doneCount = useMemo(
     () => tracked.filter((c) => Boolean(state.done[c.id])).length,
-    [tracked, state.done]
+    [tracked, state.done],
   );
-  const donePct = tracked.length
-    ? Math.round((100 * doneCount) / tracked.length)
-    : 0;
+  const donePct = tracked.length ? Math.round((100 * doneCount) / tracked.length) : 0;
 
   /* ---------------- environment + persisted chrome state ---------------- */
 
@@ -127,8 +108,8 @@ export function GuideShell({
     const focusables = () =>
       Array.from(
         node?.querySelectorAll<HTMLElement>(
-          'a[href], button:not([disabled]), input:not([disabled]), summary, [tabindex]:not([tabindex="-1"])'
-        ) ?? []
+          'a[href], button:not([disabled]), input:not([disabled]), summary, [tabindex]:not([tabindex="-1"])',
+        ) ?? [],
       ).filter((el) => el.offsetParent !== null);
 
     // Focus the first link rather than the search field, so opening the menu on
@@ -190,8 +171,7 @@ export function GuideShell({
     const onKeyDown = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement | null;
       const tag = target?.tagName ?? "";
-      const typing =
-        tag === "INPUT" || tag === "TEXTAREA" || target?.isContentEditable;
+      const typing = tag === "INPUT" || tag === "TEXTAREA" || target?.isContentEditable;
 
       if (event.key === "Escape") {
         setDrawerOpen(false);
@@ -207,8 +187,7 @@ export function GuideShell({
       if (typing) return;
 
       const isSlash = event.key === "/";
-      const isCmdK =
-        event.key.toLowerCase() === "k" && (event.metaKey || event.ctrlKey);
+      const isCmdK = event.key.toLowerCase() === "k" && (event.metaKey || event.ctrlKey);
       if (isSlash || isCmdK) {
         event.preventDefault();
         openPalette();
@@ -263,9 +242,7 @@ export function GuideShell({
     } else if (event.key === "Enter" && activeHit >= 0) {
       event.preventDefault();
       const hit = hits[activeHit];
-      router.push(
-        `/chapters/${hit.chapterId}${hit.anchor ? `#${hit.anchor}` : ""}`
-      );
+      router.push(`/chapters/${hit.chapterId}${hit.anchor ? `#${hit.anchor}` : ""}`);
     }
   };
 
@@ -281,10 +258,7 @@ export function GuideShell({
   const navExpanded = isDesktop ? sidebarOpen : drawerOpen;
 
   return (
-    <div
-      className="app-shell"
-      data-sidebar={sidebarOpen ? "open" : "closed"}
-    >
+    <div className="app-shell" data-sidebar={sidebarOpen ? "open" : "closed"}>
       {/* Mobile scrim */}
       {drawerOpen && (
         <div
@@ -312,15 +286,10 @@ export function GuideShell({
         } ${sidebarOpen ? "" : "lg:hidden"}`}
       >
         <div className="flex items-center gap-3 px-4 pt-4 pb-3.5">
-          <Link
-            href="/"
-            className="flex min-w-0 flex-1 items-center gap-2.5 text-[var(--g-ink)]"
-          >
+          <Link href="/" className="flex min-w-0 flex-1 items-center gap-2.5 text-[var(--g-ink)]">
             <RustMark />
             <span className="truncate">
-              <strong className="block text-[15px] font-bold tracking-tight">
-                Rust from Zero
-              </strong>
+              <strong className="block text-[15px] font-bold tracking-tight">Rust from Zero</strong>
               <small className="block text-xs text-[var(--g-ink3)]">
                 The complete hands-on guide
               </small>
@@ -353,7 +322,10 @@ export function GuideShell({
               placeholder="Search the whole guide"
               aria-label="Search the whole guide"
               title="Search the whole guide (press / or Ctrl-K)"
+              role="combobox"
+              aria-expanded={hits !== null}
               aria-controls="search-results"
+              aria-activedescendant={activeHit >= 0 ? `search-hit-${activeHit}` : undefined}
               autoComplete="off"
               spellCheck={false}
               className="h-9 w-full rounded-lg border border-[var(--g-line)] bg-[var(--g-surface)] pr-14 pl-9 text-[13px] text-[var(--g-ink)] shadow-card placeholder:text-[var(--g-ink3)] focus:border-[var(--g-accent)] focus:outline-none"
@@ -410,30 +382,26 @@ export function GuideShell({
           tabIndex={-1}
         >
           {hits !== null ? (
-            <div className="space-y-1">
-              {searching && (
-                <p className="px-2 py-2 text-xs text-[var(--g-ink3)]">
-                  Searching…
-                </p>
-              )}
+            <div className="space-y-1" role="listbox" aria-label="Search results">
+              {searching && <p className="px-2 py-2 text-xs text-[var(--g-ink3)]">Searching…</p>}
               {!searching && hits.length === 0 && (
                 <p className="px-2 py-3 text-xs leading-relaxed text-[var(--g-ink3)]">
-                  Nothing found for “{query}”. Try a single, shorter word — or
-                  look in the glossary.
+                  Nothing found for “{query}”. Try a single, shorter word — or look in the glossary.
                 </p>
               )}
               {!searching && hits.length > 0 && (
                 <p className="px-2 py-1 text-[11px] font-semibold tracking-wide text-[var(--g-ink3)] uppercase">
-                  {hits.length} {hits.length === 1 ? "match" : "matches"} · ↑↓ to
-                  move, Enter to open
+                  {hits.length} {hits.length === 1 ? "match" : "matches"} · ↑↓ to move, Enter to
+                  open
                 </p>
               )}
               {hits.map((hit, index) => (
                 <Link
                   key={`${hit.chapterId}-${hit.anchor}-${index}`}
-                  href={`/chapters/${hit.chapterId}${
-                    hit.anchor ? `#${hit.anchor}` : ""
-                  }`}
+                  id={`search-hit-${index}`}
+                  role="option"
+                  aria-selected={index === activeHit}
+                  href={`/chapters/${hit.chapterId}${hit.anchor ? `#${hit.anchor}` : ""}`}
                   onMouseEnter={() => setActiveHit(index)}
                   className={`block scroll-mt-2 rounded-lg px-2 py-1.5 transition-colors ${
                     index === activeHit
@@ -479,6 +447,7 @@ export function GuideShell({
                     <button
                       type="button"
                       aria-expanded={!isCollapsed}
+                      aria-controls={`part-list-${part.key}`}
                       onClick={() => togglePart(part.key)}
                       className="flex w-full items-center gap-1.5 rounded-lg px-2 py-1.5 text-left text-xs font-bold text-[var(--g-ink2)] hover:bg-[var(--g-line)]/40 hover:text-[var(--g-ink)]"
                     >
@@ -509,7 +478,7 @@ export function GuideShell({
                     </button>
 
                     {!isCollapsed && (
-                      <ol className="mt-0.5 space-y-0.5 pb-1.5 pl-3">
+                      <ol id={`part-list-${part.key}`} className="mt-0.5 space-y-0.5 pb-1.5 pl-3">
                         {list.map((c) => {
                           const isActive = c.id === activeChapterId;
                           const isDone = Boolean(state.done[c.id]);
@@ -533,9 +502,7 @@ export function GuideShell({
                                 <span className="min-w-[1.6rem] shrink-0 font-mono text-[11px] tabular-nums text-[var(--g-ink3)]">
                                   {c.num}
                                 </span>
-                                <span className="min-w-0 flex-1 truncate">
-                                  {c.short}
-                                </span>
+                                <span className="min-w-0 flex-1 truncate">{c.short}</span>
                                 {c.kind === "project" && (
                                   <Flag
                                     className="h-3 w-3 shrink-0 text-[var(--g-accent)]"
@@ -593,6 +560,12 @@ export function GuideShell({
             aria-label="Study tools"
             className="mb-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11.5px] font-semibold"
           >
+            <Link
+              href="/chapters"
+              className="text-[var(--g-ink2)] underline-offset-2 hover:text-[var(--g-accent)] hover:underline"
+            >
+              Chapters
+            </Link>
             <Link
               href="/progress"
               className="text-[var(--g-ink2)] underline-offset-2 hover:text-[var(--g-accent)] hover:underline"
@@ -666,9 +639,7 @@ export function GuideShell({
           <div className="min-w-0 flex-1 truncate font-sans text-xs sm:text-[13px]">
             {activeChapter ? (
               <span className="flex items-center gap-1.5 truncate text-[var(--g-ink3)]">
-                <span className="hidden truncate sm:inline">
-                  {activeChapter.partTitle}
-                </span>
+                <span className="hidden truncate sm:inline">{activeChapter.partTitle}</span>
                 <span className="hidden shrink-0 sm:inline" aria-hidden="true">
                   ›
                 </span>
@@ -683,13 +654,8 @@ export function GuideShell({
               </span>
             ) : (
               <span className="text-[var(--g-ink2)]">
-                <strong className="font-bold text-[var(--g-ink)]">
-                  Rust from Zero
-                </strong>
-                <span className="hidden sm:inline">
-                  {" "}
-                  · the complete hands-on guide
-                </span>
+                <strong className="font-bold text-[var(--g-ink)]">Rust from Zero</strong>
+                <span className="hidden sm:inline"> · the complete hands-on guide</span>
               </span>
             )}
           </div>
@@ -698,6 +664,8 @@ export function GuideShell({
             <button
               type="button"
               onClick={openPalette}
+              aria-haspopup="dialog"
+              aria-expanded={paletteOpen}
               aria-label="Search the guide"
               title="Search (press / or ⌘K)"
               className="grid h-9 w-9 place-items-center rounded-lg border border-[var(--g-line)] bg-[var(--g-surface)] text-[var(--g-ink2)] shadow-card hover:bg-[var(--g-sunken)] hover:text-[var(--g-ink)] md:hidden"
@@ -708,6 +676,8 @@ export function GuideShell({
             <button
               type="button"
               onClick={openPalette}
+              aria-haspopup="dialog"
+              aria-expanded={paletteOpen}
               title="Search (press / or ⌘K)"
               className="hidden h-9 items-center gap-2 rounded-lg border border-[var(--g-line)] bg-[var(--g-surface)] px-2.5 text-[12.5px] font-medium text-[var(--g-ink3)] shadow-card transition-colors hover:bg-[var(--g-sunken)] hover:text-[var(--g-ink)] md:flex"
             >
@@ -763,7 +733,6 @@ export function GuideShell({
               )}
             </button>
           </div>
-
         </header>
 
         <main id="main" className="app-main">
@@ -776,15 +745,10 @@ export function GuideShell({
   );
 }
 
-
 /** The gear-and-tick mark, drawn inline so it needs no network request. */
 function RustMark() {
   return (
-    <svg
-      className="h-8 w-8 shrink-0 text-[var(--g-accent)]"
-      viewBox="0 0 32 32"
-      aria-hidden="true"
-    >
+    <svg className="h-8 w-8 shrink-0 text-[var(--g-accent)]" viewBox="0 0 32 32" aria-hidden="true">
       <circle
         cx="16"
         cy="16"
@@ -794,14 +758,7 @@ function RustMark() {
         strokeWidth="5"
         strokeDasharray="4.32 4.32"
       />
-      <circle
-        cx="16"
-        cy="16"
-        r="8.4"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2.6"
-      />
+      <circle cx="16" cy="16" r="8.4" fill="none" stroke="currentColor" strokeWidth="2.6" />
       <path
         d="M11.5 16.2l3.2 3.2 5.8-6.4"
         fill="none"

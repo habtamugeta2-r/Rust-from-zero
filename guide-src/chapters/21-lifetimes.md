@@ -71,7 +71,7 @@ fn main() {
 a long sentence
 ```
 
-- `'a` is a **lifetime parameter**. The name starts with an apostrophe and is, by convention, a short lower-case word. It is declared in angle brackets after the function name, like a type parameter.
+- `'a` is a **[[lifetime]] parameter**. The name starts with an apostrophe and is, by convention, a short lower-case word. It is declared in angle brackets after the function name, like a type parameter.
 - `&'a str` is "a string slice that is valid for at least the lifetime `'a`".
 
 The signature now says: *there is some stretch of code `'a` during which both `a` and `b` are valid, and the returned reference is valid for that same stretch.* In practice: **the result must not be used after either of the two inputs has gone away.**
