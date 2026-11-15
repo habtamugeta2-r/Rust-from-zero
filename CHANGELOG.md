@@ -4,6 +4,45 @@ All notable changes to the guide are recorded here. The version number tracks
 the web application in `package.json`; the chapters themselves are content, and
 they change continuously.
 
+## 2.2.0 — the content integrity release
+
+The guide has 88 chapters, 221,636 words, 273 exercises and 347 quiz questions,
+and until now exactly one thing was checking them in CI: the parser. That meant
+the *rules* — British spelling, objectives at the top, a recap at the end, a
+quiz and exercises in between, links that point at something real — were held up
+by memory alone. A full content review found the prose in good shape and the
+guard-rail missing; this release adds the guard-rail.
+
+### Added
+
+- **Content lint** (`src/lib/content-lint.ts`), run by `npm run verify:content`
+  in CI. It fails the build on:
+  American spelling in prose, on `TODO`/`FIXME`/`TBD`/`WIP` left in visible
+  text, on a tracked chapter without three learning objectives, a `:::recap`, a
+  quiz or exercises, on a declared `@time` below 60% of that chapter's own
+  reading time, on duplicate `@title`/`@short`/`@id`, on a chapter that no other
+  chapter links to, and on a link to a chapter id or route the app does not
+  serve. It prints — without failing — glossary-link coverage, cross-link count
+  and the number of sentences over 55 words. Each rule was verified by injecting
+  the fault and watching the build fail with `file:line`.
+- **Route links.** `[label](/progress)` and `[label](/search)` in a chapter are
+  parsed as in-app navigation (`next/link`, same tab, no external-link arrow)
+  instead of being rendered as external links. The learning roadmap now points
+  at the progress dashboard and the search page from its “using this roadmap”
+  box.
+- `PLAN.md` and `CONTRIBUTING.md` document the three link forms and everything
+  the lint enforces.
+
+### Fixed
+
+- British spelling in five places that had drifted American:
+  `behaviour` (×2), `initialisation` (×2 — plus the C++ RAII quotation, which is
+  deliberately kept), `uninitialised` (×5), `optimisation` (×1), `licence` (×1).
+
+### Changed
+
+- Version 2.2.0.
+
 ## 2.1.0 — the wayfinding release
 
 2.0.0 fixed where things sit on the page. 2.1.0 is about being able to get to

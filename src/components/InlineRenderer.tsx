@@ -84,6 +84,16 @@ export function InlineRenderer({ nodes }: { nodes: InlineNode[] }) {
               </Link>
             );
           }
+          case "routeLink":
+            return (
+              <Link
+                key={i}
+                href={node.href}
+                className="font-medium text-[var(--g-accent)] underline decoration-[var(--g-accent)]/40 underline-offset-[3px] transition-colors hover:text-[var(--g-accent-hover)] hover:decoration-[var(--g-accent)]"
+              >
+                <InlineRenderer nodes={node.children} />
+              </Link>
+            );
           case "externalLink":
             return (
               <a

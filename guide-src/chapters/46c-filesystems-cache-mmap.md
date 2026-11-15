@@ -126,7 +126,7 @@ Look at how production Rust tools (`cargo`, `rustup`, editors, databases) guaran
 ```
 :::
 
-And how does `ext4` keep the *directory structure itself* from corrupting mid-`rename` or mid-`mkdir` if power cuts out? **Journaling ([[WAL]])**: before updating directory/inode/bitmap blocks in place, `ext4` writes a small commit record into its circular **JBD2 journal** (`ordered` mode writes file data *before* committing metadata so files never end up pointing to garbage uninitialized disk blocks!). Newer **Copy-on-Write (CoW)** file systems (`btrfs`, `ZFS`, `APFS`) never overwrite blocks in place at all—writing new blocks + updating the tree root atomically!
+And how does `ext4` keep the *directory structure itself* from corrupting mid-`rename` or mid-`mkdir` if power cuts out? **Journaling ([[WAL]])**: before updating directory/inode/bitmap blocks in place, `ext4` writes a small commit record into its circular **JBD2 journal** (`ordered` mode writes file data *before* committing metadata so files never end up pointing to garbage uninitialised disk blocks!). Newer **Copy-on-Write (CoW)** file systems (`btrfs`, `ZFS`, `APFS`) never overwrite blocks in place at all—writing new blocks + updating the tree root atomically!
 
 ## The Linux Page Cache: Why Unused RAM Is Cached Disk
 

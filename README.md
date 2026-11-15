@@ -151,7 +151,7 @@ print stylesheet that drops every piece of chrome.
 
 ```sh
 # Content & Next.js checks:
-npm run verify:content
+npm run verify:content # parser + content lint (style, structure, links, reading times)
 npm run verify:deploy   # no Node pin, lockfile version in sync
 npm run typecheck
 npm run build
@@ -171,6 +171,15 @@ python3 guide-src/tools/check.py serde web  # only chapters matching a substring
 python3 guide-src/tools/check.py --ext      # also cargo-check & cargo-test the crate examples
 python3 guide-src/tools/check.py --projects # rebuild & test all multi-file and Wasm/no_std projects
 ```
+
+`verify:content` is two gates: the parser refuses malformed chapters (unknown
+glossary term, exercise without a solution, link to a chapter that does not
+exist), and `src/lib/content-lint.ts` enforces the house style and teaching
+structure — British spelling, no `TODO`/`FIXME` in visible text, objectives +
+recap + quiz + exercises on every tracked chapter, declared reading times that
+agree with the prose, unique titles, an entry for every chapter in the link
+graph, and only the routes the app actually serves. It reports glossary-link
+coverage, cross-link count and long sentences without failing on them.
 
 CI verifies the Next.js build, `verify:content`, and `audit.py --strict` on
 every push, and **compiles and tests every verified Rust example and extracted

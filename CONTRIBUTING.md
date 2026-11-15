@@ -108,9 +108,22 @@ components, keep these rules or the layout will regress the way it did in 1.x:
    on open, `Esc` closes, focus returns to the trigger, and the page behind is
    scroll-locked. Add a control to `no-print` if it is chrome rather than prose.
 
+### Links and the content lint
+
+Cross-reference in one of three ways: `[label](#chapter-id)` for a chapter, `[label](#home)` for
+the landing page, `[label](/progress)` or `[label](/search)` for an app route. A label that reads
+“chapter 23” is renumbered automatically, so write the id in the target and let the number follow.
+
+`npm run verify:content` runs the parser *and* `src/lib/content-lint.ts`, which fails on: American
+spelling, a `TODO`/`FIXME`/`TBD` in visible text, a tracked chapter without three objectives, a
+recap, a quiz or exercises, a declared `@time` below 60% of the chapter's own reading time,
+duplicate titles or ids, a chapter no other chapter links to, and a link to a chapter id or route
+that does not exist. It prints the glossary-link coverage, the number of cross-links and the long
+sentences without failing on them.
+
 ## Before you open a pull request
 
-- [ ] `npm run verify:content`, `npm run verify:deploy`, `npm run typecheck`, and `npm run build` pass cleanly.
+- [ ] `npm run verify:content` (parser **and** content lint), `npm run verify:deploy`, `npm run typecheck`, and `npm run build` pass cleanly.
 - [ ] The layout still behaves at 375, 768, 1024, 1240 and 1440 px (see “Interface changes”).
 - [ ] `/`, `⌘K`, the palette and `/search?q=` all return the same hits, and `/progress`
       updates when a chapter, quiz or bookmark changes.

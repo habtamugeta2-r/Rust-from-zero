@@ -62,10 +62,25 @@ Blocks: ## h2, ### h3, lists, tables, ```lang flags, :::analogy|plain|compare|wa
 :::glossary (term :: definition) in 90-glossary.md. Inline: `code`, **bold**, *em*, [text](#chapter-id), [[term]], {{Key}}.
 `[chapter 99](#id)` link labels are renumbered automatically.
 
+**Links** — three forms, and nothing else:
+- `[label](#chapter-id)` — a chapter link. Use the id, never the number in the target; the visible
+  label is renumbered for you (`[chapter 99](#errors)` becomes “chapter 23”).
+- `[label](#home)` — the landing page. `home` is the only non-chapter name allowed after `#`.
+- `[label](/progress)`, `[label](/search)` — a route link: rendered with `next/link`, in the same
+  tab, no external-link arrow. Allowed routes are `/`, `/progress` and `/search`.
+- Anything else after `#` or a leading `/` is a `verify:content` error (a dead target, or a route
+  the app does not serve), and a plain `https://…` target is an external link opened in a new tab.
+
 ## Writing rules
 Audience: absolute beginners, plain short sentences, define every term at first use, analogy first, then example,
 then exercises (each with hint + explained solution) and a quiz. Compare with other languages in :::compare boxes.
 Every Rust example must pass tools/check.py.
+
+British spelling throughout (`behaviour`, `initialise`, `licence`). `npm run verify:content` enforces
+that plus the rest of the house style — see `../CONTRIBUTING.md` — and fails the build on any
+`TODO`/`FIXME`/`TBD` left in visible text, on a tracked chapter that loses its `@learn` list, recap,
+quiz or exercises, on a declared `@time` below 60% of the chapter's own reading time, on duplicate
+titles/ids, on a chapter nobody links to, and on a link to a chapter id or route that does not exist.
 
 ## Outline (file → id). [x] = written and checked
 welcome: [x] 00-start → start
