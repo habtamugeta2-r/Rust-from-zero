@@ -9,7 +9,7 @@
 A compiler that catches many mistakes is the first layer of quality. Rust's standard tools add more layers, and all of them come with the normal installation. Professional Rust projects run them on every change. Learning them early also makes you a better Rust programmer, because they explain what they find.
 
 :::plain rustfmt, Clippy, and the toolchain
-The three tools that keep a Rust codebase uniform are all one command away. **rustfmt** rewrites layout — line breaks, spacing, import order — so nobody argues about style and diffs stay small. **Clippy** is a few hundred lints beyond the compiler's, catching `&Vec<T>` parameters, redundant clones, `if let` chains that want `match`, and off-by-one iterator mistakes, with `#[allow(clippy::…)]` when you genuinely mean it. **cargo doc** builds the API documentation from your doc comments, and `cargo audit`/`cargo deny` check dependencies for known vulnerabilities and licence problems. Run them in CI with `-D warnings`, so a clean local run and a green build mean the same thing.
+The three tools that keep a Rust codebase uniform are all one command away. **rustfmt** rewrites layout — line breaks, spacing, import order — so nobody argues about style and diffs stay small. **[[Clippy]]** is a few hundred lints beyond the compiler's, catching `&Vec<T>` parameters, redundant clones, `if let` chains that want `match`, and off-by-one iterator mistakes, with `#[allow(clippy::…)]` when you genuinely mean it. **[[cargo]] doc** builds the API documentation from your doc comments, and `cargo audit`/`cargo deny` check dependencies for known vulnerabilities and licence problems. Run them in CI with `-D warnings`, so a clean local run and a green build mean the same thing.
 :::
 
 :::analogy A kitchen check before service
@@ -59,7 +59,7 @@ Nearly every Rust project uses the default style, which means that all Rust code
 
 ## Clippy: a reviewer that never tires
 
-**Clippy** is a **linter**: a tool that reads code and points out constructs that are legal but suspicious, slow, or more complicated than necessary. Such a check is called a **lint**. Clippy has more than 750 of them.
+**Clippy** is a **linter**: a tool that reads code and points out constructs that are legal but suspicious, slow, or more complicated than necessary. Such a check is called a **[[lint]]**. Clippy has more than 750 of them.
 
 Here is code that compiles without any complaint from the compiler:
 
@@ -312,7 +312,7 @@ A program is also everything it depends on.
 
 ## Continuous integration
 
-**Continuous integration**, or **CI**, means that a server runs all your checks automatically for every change pushed to the repository. Nobody can forget to run the tests, and a mistake is caught minutes after it is made. On GitHub, a file in the folder `.github/workflows/` is enough:
+**Continuous integration**, or **[[CI]]**, means that a server runs all your checks automatically for every change pushed to the repository. Nobody can forget to run the tests, and a mistake is caught minutes after it is made. On GitHub, a file in the folder `.github/workflows/` is enough:
 
 ```yaml
 # .github/workflows/ci.yml

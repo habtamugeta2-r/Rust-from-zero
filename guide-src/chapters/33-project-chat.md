@@ -1017,6 +1017,37 @@ This design is simple, and it has a cost: every task wakes up for every private 
 - Tests that wait for network data need timeouts.
 :::
 
+:::quiz Check your understanding
+? The chat room uses a broadcast channel. Why is broadcast the right shape for it?
++ Every subscriber should receive every message, which is exactly what broadcast does
+- A broadcast channel never fails, so the server cannot crash
+- Broadcast is the only channel Tokio provides
+- It lets one sender talk to one receiver only
+= A chat room is one-to-many: each message goes to every connected client. Broadcast delivers a copy to every subscriber, and each subscriber's own slow connection cannot hold up the others.
+
+? The names are kept behind a mutex, and the server never holds that mutex across an `.await`. Why is that rule important?
++ A mutex across an `.await` can block every other task, and the borrow checker will not allow it to be held
+- The mutex would be locked forever
+- Tokio forbids `Mutex` in async code
+- The names would be lost
+= Holding a lock across an `.await` means the task can be suspended while other tasks wait for the same lock, which can stall the whole runtime or deadlock it. The project's rule is to take the value out, drop the guard, and only then await.
+
+? In the session loop, `select!` waits for two things at once. What are they?
++ The next line from the client, and a message addressed to this client from the room
+- Two lines from the client
+- The client connection and the server process
+- A timer and a network read
+= A client session must react both to what the person types and to what other people say. `select!` waits for whichever arrives first and handles that branch, so neither side waits idly for the other.
+
+? The `serve` function takes a listener that is already bound to a port. What does that make possible?
++ The server can be tested on a free port, without racing for a fixed one
+- The listener can be used by two servers at once
+- The port number is written into the source code
+- The server can start without the operating system
+= Binding in the test and then handing the listener over means the test picks a free port, so two tests can run at the same time without one stealing the other's port.
+:::
+
+
 :::checklist
 - I built the server and the client, and chatted between two terminals.
 - All unit tests and integration tests pass with `cargo test`.

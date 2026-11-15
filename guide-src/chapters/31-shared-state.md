@@ -48,7 +48,7 @@ Like `Rc`, an `Arc` gives **read-only** access. Many threads reading the same da
 To *change* shared data, the threads must take turns. A **mutex** (from "mutual exclusion") makes sure that only one thread at a time can reach the data.
 
 :::plain Mutexes, atomics, and channels
-Shared mutation has three standard tools. A **mutex** (`Mutex<T>`) lets one thread at a time reach the data, and the lock's lifetime is a Rust guard, so forgetting to unlock is impossible. An **atomic** (`AtomicUsize`) updates a single number without a lock, and its `Ordering` says what other threads are allowed to observe. A **channel** (`mpsc`, `crossbeam`) avoids sharing entirely: one owner keeps the data and others send messages. In Rust the lock *owns* the data it guards, so the compiler prevents reading a `Mutex<T>`'s value without taking the lock — the class of bug that makes C++ shared state so error-prone is a type error here.
+Shared mutation has three standard tools. A **[[mutex]]** (`Mutex<T>`) lets one thread at a time reach the data, and the lock's lifetime is a Rust guard, so forgetting to unlock is impossible. An **atomic** (`AtomicUsize`) updates a single number without a lock, and its `Ordering` says what other threads are allowed to observe. A **channel** (`mpsc`, `crossbeam`) avoids sharing entirely: one owner keeps the data and others send messages. In Rust the lock *owns* the data it guards, so the compiler prevents reading a `Mutex<T>`'s value without taking the lock — the class of bug that makes C++ shared state so error-prone is a type error here.
 :::
 
 :::analogy A room with one key
@@ -166,7 +166,7 @@ In `results.lock().unwrap().push(value);` the guard is a temporary value. It is 
 
 ## Deadlock: waiting for ever
 
-Locks bring a new kind of bug. A **deadlock** occurs when threads wait for each other in a circle, so that none can ever continue.
+Locks bring a new kind of bug. A **[[deadlock]]** occurs when threads wait for each other in a circle, so that none can ever continue.
 
 :::analogy Two keys, two people
 Sara holds the key to room A and needs room B as well. Tomas holds the key to room B and needs room A as well. Each waits politely for the other to finish. They wait for ever.

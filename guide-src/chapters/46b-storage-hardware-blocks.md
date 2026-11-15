@@ -7,7 +7,7 @@
 @time 35
 @learn Contrast HDD mechanical seek latency with NAND Flash SSD pages/blocks and NVMe multi-queue PCIe lanes | Explain SSD FTL (Flash Translation Layer), write amplification, TRIM/discard, and wear leveling | Trace a block request through Linux blk-mq, DMA scatter-gather lists, and hardware NVMe submission/completion queues | Understand power-loss hazards (disk write caches, fsync barriers, checksums) for databases
 
-Every `File::write_all` and SQLite `COMMIT` eventually ends at physical storage silicon—a spinning magnetic platter (**HDD**) or solid-state **NAND Flash NVMe SSD** plugged directly into PCIe lanes.
+Every `File::write_all` and SQLite `COMMIT` eventually ends at physical storage silicon—a spinning magnetic platter (**HDD**) or solid-state **NAND Flash NVMe SSD** plugged directly into PCIe lanes. The file-system layer that sits on top of those blocks is in [file systems, the page cache and `mmap`](#filesystems-cache-mmap).
 
 Why does random 4 KiB I/O crawl at ~100 operations/sec on an HDD yet scream past **500,000+ IOPS** on an NVMe SSD? Why does overwriting 512 bytes on an SSD secretly force the drive controller to read, copy, and erase hundreds of kilobytes (**write amplification**)? And why can an SSD tell Linux `"write complete!"` while data still vanishes during a power failure unless `fsync` sends a flush barrier?
 
@@ -31,11 +31,11 @@ Why does random 4 KiB I/O crawl at ~100 operations/sec on an HDD yet scream past
 
 ## Inside NAND Flash: Why SSDs Need an Embedded OS (`FTL`)
 
-Every NVMe SSD hides a multi-core ARM processor and gigabytes of DRAM inside its own thumb-sized PCB running firmware called the **FTL (Flash Translation Layer)**:
+Every NVMe SSD hides a multi-core ARM processor and gigabytes of DRAM inside its own thumb-sized PCB running firmware called the **[[FTL]] (Flash Translation Layer)**:
 
 1. **Out-of-place updates (Pages vs Erase Blocks):** Because NAND cells cannot overwrite `0 -> 1` without resetting an entire **2–8 MiB erase block**, overwriting logical block `#42` causes the FTL to write the new 4 KiB page to a *fresh* physical NAND page, mark the old physical page stale, and update a hidden virtual-to-physical **LBA mapping table**!
 2. **Garbage Collection & [[write amplification]] (`WAF`):** When clean erase blocks run low, the FTL must read all live pages out of a dirty block, write them elsewhere, and erase the whole block—multiplying host writes by 2×–5× (**write amplification**). Appending sequentially (**WAL logs**, LSM-trees like RocksDB!) eliminates random overwrites and reduces write amplification sharply.
-3. **[[TRIM]] (`fstrim` / `BLKDISCARD`):** When you `std::fs::remove_file` a 10 GiB file, the OS only clears file-system pointers—the SSD still thinks all 10 GiB of old blocks are "live"! Sending **`TRIM`** tells the FTL those blocks are dead so SSD garbage collection stops copying deleted bytes forever.
+3. **[[TRIM]] (`fstrim` / `BLKDISCARD`):** When you `std::fs::remove_file` a 10 GiB file, the OS only clears file-system pointers (the inode rules are in [file systems](#filesystems-cache-mmap))—the SSD still thinks all 10 GiB of old blocks are "live"! Sending **`TRIM`** tells the FTL those blocks are dead so SSD garbage collection stops copying deleted bytes forever.
 4. **Wear Leveling:** Each Flash cell survives only ~1,000–3,000 program/erase cycles (TLC/QLC); the FTL rotates hot logical blocks across fresh physical silicon blocks automatically.
 
 ## Linux `blk-mq` & NVMe's 64,000 Lockless Hardware Queues

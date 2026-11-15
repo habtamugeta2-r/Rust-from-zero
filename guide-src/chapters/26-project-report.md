@@ -33,7 +33,7 @@ Coffee beans             87.50        12.3 %
 The project is a workout for closures and iterators, and it brings back structs, error handling, collections, lifetimes and tests.
 
 :::plain Data in, report out
-The report project is the classic shape of a data pipeline: **read** rows from a file, **parse** them into a typed record (`Result` per line, so bad rows become a count rather than a panic), **aggregate** with iterators into the numbers you need, and **format** the output with the width and alignment a human can scan. The `struct` and `enum` types do the validation, so the rest of the program never re-checks anything, and the formatting step is pure so it can be tested against a fixed string.
+The report project is the classic shape of a data pipeline. **Read** rows from a file, and **parse** them into a typed record (`Result` per line, so bad rows become a count rather than a panic). **Aggregate** with iterators into the numbers you need. Then **format** the output with the width and alignment a human can scan. The `struct` and `enum` types do the validation, so the rest of the program never re-checks anything. The formatting step is pure, so it can be tested against a fixed string.
 :::
 
 ## Step 0: plan the pipeline
@@ -741,6 +741,37 @@ The selection itself is one line: a sale is kept if `all` filters say yes. With 
 - Lifetimes let the summaries borrow names from the data, with no copies.
 - Functions that return data, and do not print, can be tested and reused for different displays.
 :::
+
+:::quiz Check your understanding
+? The project stores money as integer cents rather than as `f64` dollars. Why?
+- Because integers are faster to add
++ Because binary floating point cannot represent every decimal amount exactly, so sums can drift
+- Because `f64` cannot hold large numbers
+- Because the report prints amounts in cents
+= A tenth of a dollar has no exact `f64` representation, so adding such values accumulates rounding error. Integer cents make every sum exact; floats are kept for display values such as percentages.
+
+? A row that cannot be parsed does not stop the program. What does the project collect instead?
++ The problems, each with its line number, and then carries on with the good rows
+- Nothing: the program returns an empty report
+- The bad line, replaced with zeroes
+- An exception that the caller must catch
+= A report over real data should say what went wrong and still show the rest. Collecting the problems with line numbers keeps the damage visible without discarding the rows that parsed cleanly.
+
+? The grouping function takes a closure parameter, so one function serves several groupings. What is that called and what does it buy?
++ Monomorphisation: the compiler makes one copy per closure type, and you write the grouping logic once
+- Trait objects: the grouping is chosen at run time
+- Boxing: the closure is stored on the heap
+- Currying: the function takes two arguments
+= `revenue_by` is generic over a key function, so each call site instantiates its own copy. One body then covers "revenue by region", "revenue by product" and any other grouping you add later.
+
+? The summary functions return data instead of printing it. Why is that a deliberate decision?
++ Printing from a function cannot be captured in a test
+- The functions are easier to read without `println!` in them
+- Rust forbids printing from functions that return values
+- The compiler cannot optimise functions that print
+= A function that returns data can be checked by a test with a plain `assert_eq!`, and the same data can be printed as a table, written to JSON, or sent to a terminal. Printing inside the function would tie the summary to one output format.
+:::
+
 
 :::checklist
 - I built the report step by step and my output matches the one shown.

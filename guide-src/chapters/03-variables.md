@@ -38,7 +38,7 @@ There are two ways to put a variable into printed text:
 - **`{}`** with the value after the comma works for anything, including a calculation such as `50 * people`.
 
 :::plain Declare, initialise, assign, statement
-To **declare** a variable is to create it (with `let`). To **initialise** it is to give it its first value. To **assign** is to give a variable a value with `=`. In Rust, `=` does not mean "is equal to" as in maths. It means "store the value on the right under the name on the left". A complete instruction such as `let people = 3;` is called a **statement**.
+To **declare** a variable is to create it (with `let`). To **initialise** it is to give it its first value. To **assign** is to give a variable a value with `=`. In Rust, `=` does not mean "is equal to" as in maths. It means "store the value on the right under the name on the left". A complete instruction such as `let people = 3;` is called a **[[statement]]**.
 :::
 
 ## Variables do not change, unless you say so
@@ -56,7 +56,7 @@ fn main() {
 ```error auto
 ```
 
-In Rust a variable is **immutable** by default: once it has a value, the value cannot change. (*Immutable* means "cannot be changed". The opposite is *mutable*.) The compiler even tells you the fix: add the word `mut`.
+In Rust a variable is **[[immutable]]** by default: once it has a value, the value cannot change. (*Immutable* means "cannot be changed". The opposite is *mutable*.) The compiler even tells you the fix: add the word `mut`.
 
 ```rust run
 fn main() {
@@ -127,7 +127,7 @@ Take warnings seriously. A good habit is to keep your program free of them.
 
 ## A first look at types
 
-Every value in Rust has a **type**: what kind of value it is. `3` is a whole number, `"red"` is text. The compiler works out the type by itself from the value you write. This is called **type inference**. You can also write the type yourself after a colon:
+Every value in Rust has a **type**: what kind of value it is. `3` is a whole number, `"red"` is text. The compiler works out the type by itself from the value you write. This is called **[[type inference]]**. You can also write the type yourself after a colon:
 
 ```rust run
 fn main() {
@@ -187,7 +187,7 @@ fn main() {
 
 ## Scope: where a variable lives
 
-Curly brackets `{ }` create a **block**. A variable exists from the line where it is declared to the end of the block that contains it. That stretch of code is the variable's **scope**. When the block ends, the variable is gone.
+Curly brackets `{ }` create a **[[block]]**. A variable exists from the line where it is declared to the end of the block that contains it. That stretch of code is the variable's **[[scope]]**. When the block ends, the variable is gone.
 
 ```rust run
 fn main() {
@@ -261,7 +261,7 @@ In C, reading a variable before giving it a value is allowed and gives you whate
 
 ## Constants: values that are fixed forever
 
-Some values never change at all: the number of seconds in a minute, the maximum number of players in a game. For these, use a **constant**:
+Some values never change at all: the number of seconds in a minute, the maximum number of players in a game. For these, use a **[[constant]]**:
 
 ```rust run
 const SECONDS_PER_MINUTE: u32 = 60;

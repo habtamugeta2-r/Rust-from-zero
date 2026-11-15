@@ -9,7 +9,7 @@
 
 Why does the exact same `std::io::Write` trait write effortlessly to a terminal, an `ext4` file on disk, a Unix pipe (`cmd1 | cmd2`), a TCP socket, and `/dev/null`? Because Unix models every byte stream behind a tiny integer handle: a **[[file descriptor]] (FD)**!
 
-In this chapter we open the Linux kernel's three-table file descriptor diagram, trace what `dup2` / shell redirection (`> out.txt 2>&1`) actually rewires, and see how user-space buffering (`BufReader`, `LineWriter`, `BufWriter`) interacts with the kernel's buffer and disk cache.
+In this chapter we open the Linux kernel's three-table file descriptor diagram, trace what `dup2` / shell redirection (`> out.txt 2>&1`) actually rewires, and see how user-space buffering (`BufReader`, `LineWriter`, `BufWriter`) interacts with the kernel's buffer and disk cache. When one thread cannot afford to wait on a slow descriptor, [blocking, `epoll` and `io_uring`](#blocking-epoll-io-uring) shows the alternatives.
 
 :::analogy Coat-check claim tickets
 When you open a file, connect a TCP socket, or create a pipe, the kernel hands your process an integer coat-check ticket: **`3`**, **`4`**, **`5`**. Your code never receives a direct pointer to the kernel's inode or socket struct—every `read(fd, ...)` or `write(fd, ...)` passes back that ticket number, and the kernel looks up which file, pipe, or socket stands behind ticket `3` inside *your process's* private coat-check ledger.
@@ -44,11 +44,11 @@ Process A's FD Table       System-wide Open File Table         VFS Inodes / Obje
 That three-tier design explains three classic Unix behaviours immediately:
 1. **`dup` / `dup2` / `2>&1` shell redirection:** Redirecting `stderr` (`2`) to `stdout` (`1`) copies the pointer in FD slot `1` into FD slot `2`! Both FDs now share the exact same **Open File Description** (including the current byte **file offset**!), so alternating stdout and stderr writes never overwrite each other's offsets.
 2. **Fork inheritance:** Because a forked child inherits a copy of the parent's FD table pointing to the *same* Open File Description (until `CLOEXEC`), pipelines like `cargo build | head` pass FDs seamlessly across `execve`. Notice Rust opens files with **`O_CLOEXEC`** by default so private file descriptors don't leak accidentally into child subprocesses!
-3. **`refcount` and safe deletion:** Unlinking a file while an open `File` holds it removes the directory entry, yet the kernel preserves the inode and data blocks until the *last* process drops/closes its FD (`refcount == 0`).
+3. **`refcount` and safe deletion:** Unlinking a file while an open `File` holds it removes the directory entry, yet the kernel preserves the inode and data blocks until the *last* process drops/closes its FD (`refcount == 0`). The inode-and-dentry machinery behind that rule is in [file systems, the page cache and `mmap`](#filesystems-cache-mmap).
 
 ## Unix Pipes and Backpressure
 
-A **Unix pipe** (`pipe2()` syscall) allocates two FDs—`read_end` and `write_end`—connected to a **kernel ring buffer** (typically **64 KiB** on Linux):
+A **Unix pipe** (`pipe2()` syscall) allocates two FDs—`read_end` and `write_end`—connected to a **kernel ring buffer** (typically **64 KiB** on Linux). Pipes are also the classic way for a forked parent and child to talk to each other, which is the process half of [processes, threads and scheduling](#processes-threads-scheduling):
 
 - If the writer (`producer`) writes faster than the reader (`consumer`), the 64 KiB pipe buffer fills up, and the kernel puts the writer **to sleep** automatically (**backpressure**)—preventing unbounded memory growth.
 - If the reader closes `read_end`, the next `write()` on `write_end` triggers `SIGPIPE` / `EPIPE` (`BrokenPipe`), cleanly halting upstream stages like `yes | head -n 5`.

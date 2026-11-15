@@ -1981,6 +1981,37 @@ What this exercise shows:
 - What is hard to test, such as the current time, becomes easy when it is passed in.
 :::
 
+:::quiz Check your understanding
+? All SQL lives inside one repository type with a private pool. What does that buy the project?
++ The SQL is in one file, and each test can get a database of its own in an instant
+- The database runs faster
+- The queries are checked by the compiler
+- The client can send raw SQL
+= A repository is the only place that talks to the database, so the rules about uniqueness, counting and transactions live together. Because the pool is private, a test can build a fresh database without touching the real one.
+
+? The service has one error enum with an `IntoResponse` implementation. Why is that the shape of the error handling?
++ Every failure then gets a status code and a uniform JSON body, while internal details go to the log
+- The compiler then removes the error checks
+- The client receives the SQL error text
+- Errors are then impossible
+= One place decides how a failure is reported, so no handler can forget to answer with the right status or leak a database message to the client. The details stay in the log, where the operator can read them.
+
+? The rules layer lets the database enforce uniqueness instead of checking in Rust first. Why is that better?
++ A check followed by a separate insert leaves a gap in which two requests can both pass the check, so the constraint has to live in the database
+- The database is always faster than Rust code
+- Rust cannot compare strings
+- The check would need a network call
+= The check and the action are two steps, and another request can slip in between them. A unique constraint is decided by the database in one atomic step, so there is no window.
+
+? The tests hand a request straight to the router with `oneshot`. What does that avoid?
++ Opening a network port, so the whole request—from routing to SQL—can be tested in milliseconds
+- The need for a database
+- Testing the router
+- Writing assertions
+= `oneshot` turns a request into the same value the socket would have produced, so the router runs for real while the network stays out of the way.
+:::
+
+
 :::checklist
 - I built the service and created, followed, listed and deleted links with `curl`.
 - I opened a short link in a browser and landed on the long address.

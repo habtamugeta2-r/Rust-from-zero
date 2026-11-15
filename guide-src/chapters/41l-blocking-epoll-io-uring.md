@@ -11,7 +11,7 @@ Imagine building a chat or web server handling **50,000 simultaneous TCP clients
 
 If you spawn one OS thread per connection and call blocking `TcpStream::read()`, 50,000 × 2 MiB virtual stacks burns 100 GiB of stack reservations and forces tens of thousands of kernel scheduler transitions. Conversely, spinning in a `nonblocking` `loop` calling `read()` on all 50,000 sockets burns 100% CPU receiving `EAGAIN` 49,950 times!
 
-This is the **C10K / C10M problem**, and solving it cleanly produced Linux's **`epoll`** (which powers Tokio, `mio`, `nginx`, and `hyper`) and its modern successor, **`io_uring`**.
+This is the **C10K / C10M problem**, and solving it cleanly produced Linux's **`epoll`** (which powers Tokio, `mio`, `nginx`, and `hyper`) and its modern successor, **`io_uring`**. The descriptors being multiplexed are the ones described in [streams, file descriptors and buffering](#streams-fds-buffering).
 
 :::analogy Knocking on 50,000 doors vs a hotel front-desk buzzer
 - **Blocking thread-per-connection:** Hire 50,000 security guards, one standing asleep outside each room door (`read()`).
@@ -31,7 +31,7 @@ This is the **C10K / C10M problem**, and solving it cleanly produced Linux's **`
 
 ## Step 1: Non-blocking `O_NONBLOCK` and `WouldBlock` (`EAGAIN`)
 
-Before any multiplexer works, each socket is flipped into **non-blocking mode** (`stream.set_nonblocking(true)` in Rust, calling `fcntl(fd, F_SETFL, O_NONBLOCK)`). In non-blocking mode, `read()` **never puts the OS thread to sleep**:
+Before any multiplexer works, each socket is flipped into **non-blocking mode** (`stream.set_nonblocking(true)` in Rust, calling `fcntl(fd, F_SETFL, O_NONBLOCK)`). In non-blocking mode, `read()` **never puts the OS thread to sleep**: (the socket behind that file descriptor is in [TCP, UDP and kernel sockets](#tcp-udp-sockets-kernel))
 
 - If kernel receive buffers hold bytes right now, `read()` copies them immediately and returns `Ok(n)`.
 - If the socket receive buffer is empty, `read()` returns immediately with `-EAGAIN` -> `Err(io::ErrorKind::WouldBlock)`.

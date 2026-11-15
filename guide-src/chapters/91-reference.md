@@ -4,12 +4,13 @@
 @title Reference tables
 @short Reference tables
 @level all
+@time 10
 
 Tables to keep open while you write code: the words and signs of the language, the formatting codes, the traits you can derive, and a map of the standard library. Every example on this page was compiled and run.
 
 ## Keywords
 
-A **keyword** is a word that belongs to the language. You cannot use it as a name.
+A **[[keyword]]** is a word that belongs to the language. You cannot use it as a name.
 
 | Keyword | Meaning | Chapter |
 |---|---|---|
@@ -285,7 +286,7 @@ A common full set for a small value type is `#[derive(Debug, Clone, Copy, Partia
 
 ## A map of the standard library
 
-You reach everything with `use std::…`. The most used items need no `use` at all: they are in the **prelude**, which is in scope in every file. It contains `Option` and `Result` with their variants, `String`, `Vec`, `Box`, the traits `Clone`, `Copy`, `Drop`, `Default`, `Iterator`, `From`, `Into`, `TryFrom`, `TryInto`, `ToString`, `PartialEq`, `Ord` and their relatives, and the function `drop`.
+You reach everything with `use std::…`. The most used items need no `use` at all: they are in the **[[prelude]]**, which is in scope in every file. It contains `Option` and `Result` with their variants, `String`, `Vec`, `Box`, the traits `Clone`, `Copy`, `Drop`, `Default`, `Iterator`, `From`, `Into`, `TryFrom`, `TryInto`, `ToString`, `PartialEq`, `Ord` and their relatives, and the function `drop`.
 
 | Module | What is in it | Chapter |
 |---|---|---|

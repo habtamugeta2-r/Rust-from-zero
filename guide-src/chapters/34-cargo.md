@@ -352,7 +352,7 @@ Measure before and after each step, as with every other kind of performance work
 
 ## Workspaces
 
-A larger project is usually split into several packages: a library with the core logic, a command-line program, a web server, some tools. A **workspace** keeps them in one repository with one `Cargo.lock` and one `target` folder, so that they share dependencies and build results.
+A larger project is usually split into several packages: a library with the core logic, a command-line program, a web server, some tools. A **[[workspace]]** keeps them in one repository with one `Cargo.lock` and one `target` folder, so that they share dependencies and build results.
 
 ```text
 shop/

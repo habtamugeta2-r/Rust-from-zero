@@ -19,7 +19,7 @@ A program with a window cannot run in the playground, so the code blocks here ha
 :::
 
 :::plain Where Rust runs outside the terminal
-Rust's deployment targets reach well beyond a server process. **WebAssembly** compiles to a sandboxed bytecode that browsers and edge runtimes execute at near-native speed, which is how Rust powers Figma-class tools and Cloudflare Workers. **Leptos, Yew and Dioxus** build browser UIs in Rust and compile to Wasm. **Tauri** ships a Rust backend with a system webview as the front end, producing a desktop app a fraction of Electron's size. **egui, iced and Slint** render native windows without a webview at all. Each option is a trade of binary size, start-up time, and ecosystem maturity, and the survey's job is to tell you which trade fits which app.
+Rust's deployment targets reach well beyond a server process. **[[WebAssembly]]** compiles to a sandboxed bytecode that browsers and edge runtimes execute at near-native speed, which is how Rust powers Figma-class tools and Cloudflare Workers. **Leptos, Yew and Dioxus** build browser UIs in Rust and compile to Wasm. **Tauri** ships a Rust backend with a system webview as the front end, producing a desktop app a fraction of Electron's size. **egui, iced and Slint** render native windows without a webview at all. Each option is a trade of binary size, start-up time, and ecosystem maturity, and the survey's job is to tell you which trade fits which app.
 :::
 
 ## WebAssembly: Rust in the browser

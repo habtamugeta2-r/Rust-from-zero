@@ -51,7 +51,7 @@ Sara is 29 years old.
 Email: sara@example.com (active: true)
 ```
 
-- The `struct User { ... }` block **defines** a new type called `User`. Each line inside is a **field**: a name and a type. Type names are written in **CamelCase**: every word starts with a capital letter and there are no underscores.
+- The `struct User { ... }` block **defines** a new type called `User`. Each line inside is a **[[field]]**: a name and a type. Type names are written in **CamelCase**: every word starts with a capital letter and there are no underscores.
 - `User { name: ..., ... }` **creates** a value of that type. Such a value is called an **instance**. Every field must get a value. The order does not matter.
 - You read a field with a dot: `user.name`.
 
@@ -354,7 +354,7 @@ The borrow checker reads only the signature of `add_points`, and `&mut self` mea
 
 ### Associated functions: making new instances
 
-A function inside an `impl` block that has **no `self`** parameter is called an **associated function**. It belongs to the type, not to one instance, and is called with `::`. You have used one many times: `String::from`. The most common use is a function that builds a new instance, by convention called `new`.
+A function inside an `impl` block that has **no `self`** parameter is called an **[[associated function]]**. It belongs to the type, not to one instance, and is called with `::`. You have used one many times: `String::from`. The most common use is a function that builds a new instance, by convention called `new`.
 
 ```rust run
 # #![allow(dead_code)]
@@ -398,7 +398,7 @@ If you know Java, Python, C# or C++, a struct with an `impl` block looks like a 
 
 ## Tuple structs and unit structs
 
-A **tuple struct** has a name, but its fields do not. It is useful when names for the fields would add nothing:
+A **[[tuple]] struct** has a name, but its fields do not. It is useful when names for the fields would add nothing:
 
 ```rust run
 # #![allow(dead_code)]
@@ -420,7 +420,7 @@ Red part: 255
 Speed: 10.44 m/s
 ```
 
-`Meters` and `Seconds` both wrap an `f64`, yet they are **different types**. A function that expects `Meters` will not accept `Seconds`. Wrapping a simple value in its own type so that it cannot be mixed up with other values is called the **newtype pattern**. It turns "I passed the arguments in the wrong order" from a hidden bug into a compile error.
+`Meters` and `Seconds` both wrap an `f64`, yet they are **different types**. A function that expects `Meters` will not accept `Seconds`. Wrapping a simple value in its own type so that it cannot be mixed up with other values is called the **[[newtype]] pattern**. It turns "I passed the arguments in the wrong order" from a hidden bug into a compile error.
 
 :::details A famous bug that newtypes prevent
 In 1999 NASA lost the Mars Climate Orbiter, a spacecraft worth hundreds of millions of dollars. One piece of software produced numbers in pound-force seconds and another expected newton seconds. Both were plain numbers, so nothing complained. With distinct types for the two units, the compiler would have refused to build the program.

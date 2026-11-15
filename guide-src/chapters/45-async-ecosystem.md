@@ -1486,7 +1486,7 @@ That text is what `GET /metrics` returns. Prometheus (or Grafana Agent, or Victo
 
 ### Traces: one request, many services
 
-A **trace** follows a single request through the system. Each step is a **span**: a name, a start, an end, and the parent span it belongs to. Collect them and you can see, for one slow checkout, that 900 ms of 1,000 were spent in one database query — which no amount of grep on log lines will tell you.
+A **trace** follows a single request through the system. Each step is a **[[span]]**: a name, a start, an end, and the parent span it belongs to. Collect them and you can see, for one slow checkout, that 900 ms of 1,000 were spent in one database query — which no amount of grep on log lines will tell you.
 
 The vendor-neutral standard is **OpenTelemetry** (often shortened to OTel). The Rust crates are [`opentelemetry`](https://docs.rs/opentelemetry) for the API and SDK, [`opentelemetry-otlp`](https://docs.rs/opentelemetry-otlp) for the exporter, and [`tracing-opentelemetry`](https://docs.rs/tracing-opentelemetry) to connect the two worlds: your `tracing` spans become OTel spans, so you instrument once and export anywhere. The exporter speaks **OTLP** to a **collector** — a sidecar or a service — which forwards to Jaeger, Grafana Tempo, Honeycomb, or whatever the team already runs. That indirection is the point of the facade: you can change backend without touching a line of application code.
 

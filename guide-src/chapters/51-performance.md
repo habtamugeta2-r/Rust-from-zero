@@ -160,9 +160,9 @@ Timing the large steps by hand, as `measure` does, is the simplest way to find t
 
 ### A profiler
 
-For larger programs there are **profilers**. A profiler interrupts the running program several thousand times a second, and notes which function is running at that moment and which functions called it. Each note is a *sample*. A function that appears in many samples is one where the time goes.
+For larger programs there are **[[profilers|profiler]]**. A profiler interrupts the running program several thousand times a second, and notes which function is running at that moment and which functions called it. Each note is a *sample*. A function that appears in many samples is one where the time goes.
 
-The result is drawn as a **flame graph**. The tool `cargo flamegraph` does all of it in one step:
+The result is drawn as a **[[flame graph]]**. The tool `cargo flamegraph` does all of it in one step:
 
 ```sh
 cargo install flamegraph

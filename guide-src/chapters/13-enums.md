@@ -6,7 +6,7 @@
 @time 45
 @learn Define a type whose value is one of several named possibilities | Attach different data to each possibility | Handle every case safely with `match`, `if let` and `let … else` | Use `Option` instead of null, and explain why that prevents a whole class of crashes
 
-A struct says "a user has a name **and** an email **and** an age". Many things are better described with **or**: a traffic light is red *or* yellow *or* green. A payment is by cash *or* by card *or* by bank transfer. A search finds something *or* finds nothing. For "one of several possibilities" Rust has the **enum** (short for *enumeration*).
+A struct says "a user has a name **and** an email **and** an age". Many things are better described with **or**: a traffic light is red *or* yellow *or* green. A payment is by cash *or* by card *or* by bank transfer. A search finds something *or* finds nothing. For "one of several possibilities" Rust has the **[[enum]]** (short for *enumeration*).
 
 ## A simple enum
 
@@ -38,7 +38,7 @@ fn main() {
 East
 ```
 
-- `enum Direction { ... }` defines a new type. The possibilities inside are called **variants**.
+- `enum Direction { ... }` defines a new type. The possibilities inside are called **[[variants|variant]]**.
 - A value of type `Direction` is always exactly one of the four variants. You write a variant with the enum's name in front: `Direction::North`.
 - `match` looks at the value and runs the arm of the matching variant.
 
@@ -348,7 +348,7 @@ fn main() {
 
 ## `Result`: success or failure
 
-`Option` says "a value or nothing". Its sibling `Result` says "a value or an **error**". You met it in the guessing game:
+`Option` says "a value or nothing". Its sibling `Result` says "a value or an **[[error]]**". You met it in the guessing game:
 
 ```rust
 enum Result<T, E> {

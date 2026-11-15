@@ -9,10 +9,10 @@
 
 Notice something extraordinary if you run `ripgrep` across a 500 MB codebase twice in a row: the first scan might take `0.8 s`, and the second scan finishes in **`0.04 s`** (`20×` faster!) without changing a line of code. Why? Because Linux kept the entire codebase hot inside the **OS Page Cache**!
 
-In this chapter we climb up one layer from raw NVMe blocks to the **Linux VFS**, **`ext4` / CoW file systems (`btrfs`/`ZFS`/`APFS`)**, **crash-safe file replacement**, and **`mmap` memory-mapped files**.
+In this chapter we climb up one layer from raw NVMe blocks (the layer below is [storage hardware and NVMe](#storage-hardware-blocks)) to the **Linux VFS**, **`ext4` / CoW file systems (`btrfs`/`ZFS`/`APFS`)**, **crash-safe file replacement**, and **`mmap` memory-mapped files**. The descriptors that reach these files are the ones in [streams, file descriptors and buffering](#streams-fds-buffering).
 
 :::plain Paths, inodes, links, and the page cache
-A **path** is a name, not a file: the kernel walks each component through the directory cache until it reaches an **inode**, the record of one file's permissions, size, timestamps and disk extents. A **hard link** is a second name for the same inode (the `nlink` count says how many), while a **symbolic link** is a tiny file whose *content* is another path. Reads go through the **page cache**, so a second read of a `500 MB` tree costs DRAM bandwidth rather than NVMe latency, and `mmap` maps those same page-cache frames into your address space to avoid the copy — at the price of `unsafe`, because another process can change or truncate the file underneath you.
+A **path** is a name, not a file: the kernel walks each component through the directory cache until it reaches an **inode**, the record of one file's permissions, size, timestamps and disk extents. Those extents are the blocks the device underneath actually stores, so the layers meet at [block I/O and NVMe queues](#storage-hardware-blocks). A **hard link** is a second name for the same inode (the `nlink` count says how many), while a **symbolic link** is a tiny file whose *content* is another path. Reads go through the **page cache**, so a second read of a `500 MB` tree costs DRAM bandwidth rather than NVMe latency, and `mmap` maps those same page-cache frames into your address space to avoid the copy — at the price of `unsafe`, because another process can change or truncate the file underneath you.
 :::
 
 :::analogy A library catalog, reading table, and checkout slips

@@ -56,7 +56,7 @@ a dog called Rex
 a Volvo built in 2019
 ```
 
-- `trait Describe { ... }` defines the trait. Inside is a **method signature**: name, parameters and return type, ending with a semicolon and without a body. It says *what* a type must be able to do, not *how*.
+- `trait Describe { ... }` defines the trait. Inside is a **[[method]] signature**: name, parameters and return type, ending with a semicolon and without a body. It says *what* a type must be able to do, not *how*.
 - `impl Describe for Dog { ... }` **implements** the trait for a type: it supplies the body. The compiler checks that every required method is there and that the signatures match.
 
 A dog and a car have nothing else in common. They now share one ability.
@@ -470,9 +470,9 @@ circle with area 0.79
 total area 9.93
 ```
 
-- **`dyn Shape`** means "a value of some type that implements `Shape`, and which type is only known while the program runs". Such a value is called a **trait object**.
+- **`dyn Shape`** means "a value of some type that implements `Shape`, and which type is only known while the program runs". Such a value is called a **[[trait object]]**.
 - Different shapes have different sizes, so they cannot sit directly in a vector. **`Box::new(value)`** puts each value on the heap and keeps a pointer to it. All the pointers have the same size. [Chapter 32](#smart-pointers) covers `Box` in detail.
-- When `shape.area()` is called, the program looks up at run time which `area` belongs to this value. This is called **dynamic dispatch**. Generic code decides at compile time (**static dispatch**).
+- When `shape.area()` is called, the program looks up at run time which `area` belongs to this value. This is called **dynamic dispatch**. Generic code decides at compile time (**[[static dispatch]]**).
 
 | | Generics (`impl Trait`, `<T: Trait>`) | Trait objects (`dyn Trait`) |
 |---|---|---|

@@ -111,7 +111,7 @@ Notice that the lexer knows nothing about grammar or types yet: if you swap `fn`
 
 ## Stage 2: Parsing and the Abstract Syntax Tree (AST)
 
-The **parser** checks grammar rules and arranges flat tokens into a nested hierarchy called an **Abstract Syntax Tree** (**AST**). In Rust, macro invocations such as `println!(...)` are also expanded right here at the AST level before later analysis begins:
+The **parser** checks grammar rules and arranges flat tokens into a nested hierarchy called an **Abstract Syntax Tree** (**[[AST]]**). In Rust, macro invocations such as `println!(...)` are also expanded right here at the AST level before later analysis begins:
 
 ```text
 ItemFn("add")

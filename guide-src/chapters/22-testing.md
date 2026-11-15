@@ -6,7 +6,7 @@
 @time 45
 @learn Write tests and run them with `cargo test` | Check results with `assert!`, `assert_eq!` and `assert_ne!`, and read a failure report | Test that code panics or returns errors as intended | Organise unit tests, integration tests and documentation tests | Choose good test cases
 
-The compiler proves a lot about a Rust program: no dangling references, no missing cases, no mixed-up types. It cannot know what your program is *supposed* to do. A function that should add two numbers and subtracts them instead compiles perfectly. **Tests** close that gap: they are small pieces of code that run your code and check that the result is what you expect.
+The compiler proves a lot about a Rust program: no dangling references, no missing cases, no mixed-up types. It cannot know what your program is *supposed* to do. A function that should add two numbers and subtracts them instead compiles perfectly. **[[Tests|test]]** close that gap: they are small pieces of code that run your code and check that the result is what you expect.
 
 :::plain Tests as executable claims
 A **test** is a function marked `#[test]` that makes an assertion the machine checks for you: one behaviour, one `assert_eq!` or `assert!`, and a name that says what should be true. `cargo test` compiles the test harness, runs every test in parallel, and reports pass or fail; `#[should_panic]`, `assert!(x.is_err())` and `Result`-returning tests cover the failure paths. Unit tests live beside the code in `#[cfg(test)] mod tests`, integration tests live in `tests/` and use the crate as an outside user, and `cargo test -- --nocapture` is how you see a failing test's own output.

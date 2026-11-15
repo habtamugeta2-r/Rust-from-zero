@@ -7,7 +7,7 @@
 @time 35
 @learn Contrast Rust references, raw pointers, and dangling/aliased pointers at the machine level | Reproduce and recognise the classic memory safety bugs Rust rules out (UAF, double free, overflow, race) | Trace L1/L2/L3 CPU cache lines (64 bytes), spatial/temporal locality, and AoS vs SoA | Avoid false sharing across CPU cores with cache-line padding
 
-In the previous chapters you saw virtual memory pages (`4 KiB`) and heap allocators. Now drop one level closer to the silicon: **why does the exact arrangement of structs in RAM swing a Rust program's speed by 10×—and why do C and C++ suffer security vulnerabilities that Rust refuses to compile?**
+In the previous chapters you saw [virtual memory pages](#virtual-memory-address-spaces) (`4 KiB`) and [heap allocators](#allocators-heap-internals). Now drop one level closer to the silicon: **why does the exact arrangement of structs in RAM swing a Rust program's speed by 10×—and why do C and C++ suffer security vulnerabilities that Rust refuses to compile?**
 
 Both questions come down to how raw addresses behave in hardware.
 
@@ -32,7 +32,7 @@ At the CPU level, `&T`, `&mut T`, `*const T`, and `*mut T` all hold the exact sa
 - **`&T` / `&mut T`:** Valid, non-null, properly aligned, guaranteed not dangling, and `&mut T` is annotated `noalias` in LLVM IR—meaning no other live pointer reads or writes that memory while `&mut T` is active.
 - **`*const T` / `*mut T`:** Plain raw addresses. Creating one is safe; *dereferencing* it requires `unsafe` because the hardware will blindly try to read whatever sits at that address (or fault if unmapped).
 
-Consider how a dangling pointer arises when ownership rules aren't enforced. In C, returning `&local` returns a stack address that gets overwritten on the very next function call. In safe Rust, the borrow checker catches it at compile time; if you deliberately force it with raw pointers inside `unsafe`, you step directly into **Undefined Behaviour** (UB), where LLVM's optimiser assumes dangling/out-of-bounds/aliased writes never happen and aggressively deletes or reorders code around them.
+Consider how a dangling pointer arises when ownership rules aren't enforced. In C, returning `&local` returns a stack address that gets overwritten on the very next function call. In safe Rust, the borrow checker catches it at compile time; if you deliberately force it with raw pointers inside `unsafe`, you step directly into **Undefined Behaviour** (UB), where LLVM's optimiser assumes dangling/out-of-bounds/aliased writes never happen and aggressively deletes or reorders code around them. The compiler-side rules that make this tractable are in [the standard library internals](#rust-stdlib-internals).
 
 :::warn Undefined behaviour is an optimiser contract, not "whatever the CPU does"
 Beginners often think UB means "the CPU reads whatever random byte happens to sit there." Wrong! LLVM treats UB as **impossible**. If a branch exhibits UB (such as reading uninitialised memory or dereferencing a null pointer), LLVM may delete the entire surrounding `if` check, skip null guards written *before* the line, or miscompile loops completely.
@@ -158,11 +158,11 @@ aos[0].x=1.5, soa.xs[0]=1.5
 Count the cache lines loaded by `step_aos` vs `step_soa`:
 
 - **`ParticleAoS`** is `64` bytes per struct (`8 + 8 + 48`): every 64-byte cache line brings **1 particle's** `x` and `vx` along with 48 bytes of untouched `tag`.
-- **`ParticlesSoA`** packs `8` `f64` positions per 64-byte cache line and `8` `f64` velocities per line—**4× fewer cache misses** and easy **[[SIMD]]** vectorisation.
+- **`ParticlesSoA`** packs `8` `f64` positions per 64-byte cache line and `8` `f64` velocities per line—**4× fewer cache misses** and easy **[[SIMD]]** vectorisation, which [caches, coherency and SIMD](#cache-coherency-atomics-simd) takes apart.
 
 ## False sharing across CPU cores
 
-Cache lines also explain a notorious multi-threaded performance cliff called **false sharing**. Suppose Core 0 increments `counters[0]` (`AtomicU64`) while Core 1 increments `counters[1]` (`AtomicU64`) in a tight loop. Because both integers are 8 bytes wide and sit side-by-side inside the **exact same 64-byte cache line**, hardware cache coherency (**MESI** protocol) has to bounce exclusive ownership of that entire 64-byte line back and forth between Core 0 and Core 1 on every write!
+Cache lines also explain a notorious multi-threaded performance cliff called **false sharing**. Suppose Core 0 increments `counters[0]` (`AtomicU64`) while Core 1 increments `counters[1]` (`AtomicU64`) in a tight loop. Because both integers are 8 bytes wide and sit side-by-side inside the **exact same 64-byte cache line**, hardware cache coherency (**MESI** protocol) has to bounce exclusive ownership of that entire 64-byte line back and forth between Core 0 and Core 1 on every write! (The protocol and the store buffers behind it are in [caches, coherency and atomics](#cache-coherency-atomics-simd).)
 
 The fix in Rust is one attribute: `#[repr(align(64))]` (or `crossbeam_utils::CachePadded`), giving each core's counter its own 64-byte cache line:
 

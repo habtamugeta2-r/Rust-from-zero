@@ -979,7 +979,7 @@ fn upload_router() -> Router {
 
 ## Describing the API: OpenAPI
 
-Once anything but you can call the API — a front-end team, a mobile app, a customer — the question "what does this endpoint take?" needs an answer that is not a conversation. **OpenAPI** is that answer: a machine-readable description of every route, parameter, body and response, from which documentation pages, client SDKs and tests are generated.
+Once anything but you can call the API — a front-end team, a mobile app, a customer — the question "what does this endpoint take?" needs an answer that is not a conversation. **[[OpenAPI]]** is that answer: a machine-readable description of every route, parameter, body and response, from which documentation pages, client SDKs and tests are generated.
 
 Writing the description by hand guarantees it drifts. Two crates generate it from the code you already have:
 

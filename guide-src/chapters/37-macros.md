@@ -372,7 +372,7 @@ It prints to standard error, with the file, line and column of each call:
 
 ## Attributes
 
-An **attribute** is a note for the compiler, written as `#[...]` above an item. You have used several. Here are the ones that matter most:
+An **[[attribute]]** is a note for the compiler, written as `#[...]` above an item. You have used several. Here are the ones that matter most:
 
 | Attribute | Effect |
 |---|---|
@@ -419,7 +419,7 @@ Only one of the two functions exists in the compiled program. (On Windows, the f
 
 ## Procedural macros
 
-`macro_rules!` matches patterns. A **procedural macro** is more powerful: it is an ordinary Rust function that runs inside the compiler. It receives code as a stream of tokens, can analyse it in any way, and returns new code. There are three kinds:
+`macro_rules!` matches patterns. A **[[procedural macro]]** is more powerful: it is an ordinary Rust function that runs inside the compiler. It receives code as a stream of tokens, can analyse it in any way, and returns new code. There are three kinds:
 
 | Kind | Looks like | Examples |
 |---|---|---|

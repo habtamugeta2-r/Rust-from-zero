@@ -28,7 +28,7 @@ fn largest_i32(list: &[i32]) -> i32 {
 It works for `i32`. For a list of `f64` you would copy the function and change two words. For `char` you would copy it again. Three copies of the same logic mean three places to fix when you find a bug.
 
 :::plain Generics and monomorphisation in one paragraph
-A **generic** function or type is written once with a placeholder type parameter, `fn largest<T: PartialOrd>(list: &[T]) -> &T`, and works for every type that satisfies the stated **bounds**. The compiler generates a separate, specialised copy of the code for each concrete type used, which is **monomorphisation**: you pay nothing at run time, but the binary can grow. Bounds are what make generics safe — `T: PartialOrd` is the promise that `>` exists for `T`, so the body compiles once instead of failing per instantiation.
+A **generic** function or type is written once with a placeholder type parameter, `fn largest<T: PartialOrd>(list: &[T]) -> &T`, and works for every type that satisfies the stated **[[bounds|bound]]**. The compiler generates a separate, specialised copy of the code for each concrete type used, which is **monomorphisation**: you pay nothing at run time, but the binary can grow. Bounds are what make generics safe — `T: PartialOrd` is the promise that `>` exists for `T`, so the body compiles once instead of failing per instantiation.
 :::
 
 :::analogy A recipe with a blank
@@ -210,7 +210,7 @@ fn main() {
 0 0 42 42 [1, 4, 9, 16]
 ```
 
-The form `::<Type>` is nicknamed the **turbofish**, because `::<>` looks a little like a fish. It is handy in the middle of a chain of method calls, where there is no variable to annotate.
+The form `::<Type>` is nicknamed the **[[turbofish]]**, because `::<>` looks a little like a fish. It is handy in the middle of a chain of method calls, where there is no variable to annotate.
 
 ## Generics cost nothing at run time
 
@@ -227,7 +227,7 @@ The result: generic code runs exactly as fast as code written for one specific t
 
 ## Const generics: a number as a parameter
 
-A type parameter stands for a type. A **const generic** parameter stands for a *value* that is known at compile time. Its main use is the length of arrays:
+A type parameter stands for a type. A **[[const]] generic** parameter stands for a *value* that is known at compile time. Its main use is the length of arrays:
 
 ```rust run
 # #![allow(dead_code)]

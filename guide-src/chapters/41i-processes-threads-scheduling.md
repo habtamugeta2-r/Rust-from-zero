@@ -9,10 +9,10 @@
 
 Your computer has 4, 8, or 64 CPU cores, yet `ps aux` shows 300+ running processes and 2,000+ threads—a compiler, a terminal, a web server, a database, and dozens of kernel workers—all seemingly moving forward together.
 
-Who decides which thread gets a CPU core right now, how long it gets to keep it, what separates a **process** from a **thread** inside the Linux kernel, and why does switching between two threads from different processes cost far more than switching within the same process?
+Who decides which thread gets a CPU core right now, how long it gets to keep it, what separates a **process** from a **thread** inside the Linux kernel, and why does switching between two threads from different processes cost far more than switching within the same process? The kernel side of the `clone()` call that starts all of this is in [the kernel and system calls](#kernel-syscalls-processes).
 
 :::analogy Separate apartments vs roommates in one apartment
-Two **processes** live in separate locked apartments: each has its own private floor plan (`virtual address space / CR3`), its own key ring (`file descriptor table`), and its own mailbox (`signal handlers`). Two **threads** inside the same process are roommates sharing *one* apartment (`CR3`, heap, globals, open files), while each roommate keeps their own private bedroom desk (`registers`, `stack`, and `thread-local storage`).
+Two **processes** live in separate locked apartments: each has its own private floor plan (`virtual address space / CR3`), its own key ring (`file descriptor table`), and its own mailbox (`signal handlers`). Two **[[threads|thread]]** inside the same process are roommates sharing *one* apartment (`CR3`, heap, globals, open files), while each roommate keeps their own private bedroom desk (`registers`, `stack`, and `thread-local storage`).
 :::
 
 :::compare Process vs OS Thread vs Async Task (green future)
@@ -38,7 +38,7 @@ What distinguishes a child process from a new thread is simply **which bitmask f
 - **`fork()` (new process):** Calls `clone(SIGCHLD)`—creates a new `task_struct` with its **own [[copy-on-write]] virtual address space (`mm_struct`)**, its own copy of the **[[file descriptor]] table**, and its own `TGID` (Process ID = `PID`).
 - **`std::thread::spawn` / `pthread_create` (new OS thread):** Calls `clone(CLONE_VM | CLONE_FS | CLONE_FILES | CLONE_SIGHAND | CLONE_THREAD | CLONE_SETTLS)`—creates a new `task_struct` with its own kernel `TID` and user stack, while **sharing** the parent's `mm_struct` (virtual memory), `files_struct` (open files), signal dispositions, and `PID` (`TGID`).
 
-Look how cleanly that explains why two threads in one Rust process share the exact same heap (`Arc<Mutex<T>>`), same global `static`s, and same file descriptors—while two forked processes need IPC (pipes, sockets, or shared `mmap`) to communicate!
+Look how cleanly that explains why two threads in one Rust process share the exact same heap (`Arc<Mutex<T>>`), same global `static`s, and same file descriptors—while two forked processes need IPC (pipes, sockets, or shared `mmap`) to communicate! The user-space half of that story is [threads](#threads) and [shared state](#shared-state); the pipe-based IPC lives in [streams, file descriptors and buffering](#streams-fds-buffering).
 
 ## Process lifecycle: `fork()`, `execve()`, `wait()`, zombies & orphans
 

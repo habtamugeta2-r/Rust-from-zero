@@ -28,7 +28,7 @@ Because a `&str` carries a length as well as an address, programmers sometimes c
 A `String` is your own notebook. You can add pages, cross things out, or throw it away. A `&str` is a passage you marked with a highlighter in someone else's book: you can read exactly that passage, but the book is not yours, and the passage is only there as long as the book is.
 :::
 
-Text written in double quotes in your code, such as `"hello"`, is called a **string literal**. Its type is `&str`. The characters are stored inside the program file itself, so they are available for as long as the program runs.
+Text written in double quotes in your code, such as `"hello"`, is called a **[[string]] literal**. Its type is `&str`. The characters are stored inside the program file itself, so they are available for as long as the program runs.
 
 ```rust run
 fn main() {
@@ -78,7 +78,7 @@ The characters of a `String` live on the heap, in a buffer of a certain size (th
 
 ## Slices: borrowing a part
 
-A **slice** is a reference to a connected part of a sequence. For text you write the range of bytes you want inside square brackets:
+A **[[slice]]** is a reference to a connected part of a sequence. For text you write the range of bytes you want inside square brackets:
 
 :::stepper A string slice in memory
 ```rust
@@ -360,7 +360,7 @@ fn main() {
 [20, 30, 40] has 3 elements, the first is Some(20)
 ```
 
-A function that takes `&[i32]` works with arrays of any length, with vectors, and with parts of both. It is to lists what `&str` is to text. A **mutable slice**, `&mut [T]`, lets a function change the elements in place:
+A function that takes `&[i32]` works with arrays of any length, with vectors, and with parts of both. It is to lists what `&str` is to text. A **[[mutable]] slice**, `&mut [T]`, lets a function change the elements in place:
 
 ```rust run
 fn main() {

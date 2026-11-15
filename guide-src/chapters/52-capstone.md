@@ -1254,6 +1254,37 @@ ALTER TABLE books ADD COLUMN last_visited TEXT;
 - Migrations evolve the schema safely, and `build.rs` makes Cargo notice them.
 :::
 
+:::quiz Check your understanding
+? The web API and the command-line tool share one data model. What does that give the reader?
++ Both interfaces see the same books, so a change through one is visible through the other
+- The program compiles twice as fast
+- The CLI can call the HTTP routes
+- The database becomes optional
+= One model means one set of rules about what a book is. The two front ends are thin, and there is no second copy of the data to keep in step.
+
+? When does the project use `thiserror`, and when `anyhow`?
++ `thiserror` for the library's precise error enum, `anyhow` for the application's quick context
+- `thiserror` for the database, `anyhow` for the tests
+- `anyhow` for the library, `thiserror` for the binary
+- They are interchangeable
+= A library should tell its caller exactly which thing went wrong, so it defines an enum with `thiserror`. A binary that only prints a message can add context cheaply with `anyhow` and does not need a closed list of failures.
+
+? Settings and secrets come from environment variables, and a missing secret stops the program at the start. Why fail at the start rather than at the first request?
++ The failure happens while nothing is half-done, and the message names the missing variable
+- Environment variables are faster to read
+- Rust cannot read a file at run time
+- The program cannot start without a database
+= Starting up is the one moment when no work has been done yet, so a configuration mistake costs nothing. Later, the same mistake would arrive in the middle of a request.
+
+? Each test gets its own in-memory database and hands requests straight to the router. Why is that arrangement safe?
++ The tests share no state, so they can run in any order and in parallel
+- The tests skip the SQL layer
+- The tests run without a router
+- The tests are shorter
+= A separate database per test removes the interference that makes a test suite flaky: one test cannot see another's rows, and the order does not matter.
+:::
+
+
 :::checklist
 - I built the library and used both `library add` / `library list` and the web API with `curl`.
 - The same book appears in the CLI output and in the JSON from `/books`.

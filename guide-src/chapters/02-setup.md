@@ -59,7 +59,7 @@ The `$` only marks "type this line". Do not type the `$` itself. Lines without a
 
 ## Installing Rust
 
-Rust is installed with a small tool called **rustup**. It downloads the compiler, keeps it up to date, and can remove it again cleanly.
+Rust is installed with a small tool called **[[rustup]]**. It downloads the compiler, keeps it up to date, and can remove it again cleanly.
 
 ### On Windows
 
@@ -105,7 +105,7 @@ In many languages you must choose and combine separate tools: one to build, one 
 
 ### Three channels of Rust
 
-`rustup` can keep more than one version of Rust, called a **toolchain**. New Rust comes out on three channels:
+`rustup` can keep more than one version of Rust, called a **[[toolchain]]**. New Rust comes out on three channels:
 
 - **stable** — the version this guide targets. It is tested, and code that compiles on it keeps compiling on every future stable version. Start here.
 - **beta** — the next stable version, frozen and being tested. Useful for checking that your code will work on it before it becomes official.
@@ -162,7 +162,7 @@ Imagine handing a friend a kit to assemble a shelf. You do not hand them a sack 
 :::
 
 :::details A binary and a library
-A Rust project has two flavours. A **binary** is a program that runs: it has a `main` function, its code lives in `src/main.rs`, and building it gives you a file you can execute. A **library** is a set of functions and types that other projects call: it has no `main`, its code lives in `src/lib.rs`, and other programs use it by name from their own `Cargo.toml`. When a library is published, people call it a **crate**. `cargo new` gives you a binary by default; `cargo new mylib --lib` asks for a library instead, and a project can hold both at once — a binary that uses the library beside it. Almost everything useful in Rust is written as a library that some binary calls.
+A Rust project has two flavours. A **[[binary]]** is a program that runs: it has a `main` function, its code lives in `src/main.rs`, and building it gives you a file you can execute. A **[[library]]** is a set of functions and types that other projects call: it has no `main`, its code lives in `src/lib.rs`, and other programs use it by name from their own `Cargo.toml`. When a library is published, people call it a **[[crate]]**. `cargo new` gives you a binary by default; `cargo new mylib --lib` asks for a library instead, and a project can hold both at once — a binary that uses the library beside it. Almost everything useful in Rust is written as a library that some binary calls.
 :::
 
 Rust source files end in `.rs`. Cargo already wrote a small program into `src/main.rs`:
@@ -290,7 +290,7 @@ $ which rustc cargo objdump readelf nm ldd strace ltrace gdb lldb perf
 If a tool such as `strace` or `gdb` is missing on Ubuntu/Debian, you can add the standard suite later with `sudo apt install build-essential binutils gdb strace ltrace`. Even before installing extra tools, `rustc`, `cargo`, `objdump`, `readelf`, `nm`, and `/proc` give you plenty to examine right away.
 
 :::plain Debug and release
-A **debug build** (the default) compiles quickly but runs slowly, and it contains extra information that helps you find bugs. A **release build** (`--release`) takes longer to compile because the compiler works hard to make the program fast. Use debug while you develop and release for the final program. The speed difference can be ten times or more.
+A **[[debug build]]** (the default) compiles quickly but runs slowly, and it contains extra information that helps you find bugs. A **[[release build]]** (`--release`) takes longer to compile because the compiler works hard to make the program fast. Use debug while you develop and release for the final program. The speed difference can be ten times or more.
 :::
 
 ## When something goes wrong

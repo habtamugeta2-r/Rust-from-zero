@@ -20,7 +20,7 @@ A company puts people into departments: sales, accounting, the workshop. Each de
 | **Crate** | One unit that the compiler translates as a whole. It is either a **binary crate** (a program with `fn main`) or a **library crate** (code for other programs to use) | `src/main.rs` and everything it pulls in |
 | **Module** | A named group of items (functions, structs, enums, constants, other modules) inside a crate | new in this chapter |
 
-A package contains one or more crates. Most contain one. A crate contains a tree of modules. The file where the compiler starts (`src/main.rs` for a program, `src/lib.rs` for a library) is called the **crate root**.
+A [[package]] contains one or more crates. Most contain one. A crate contains a tree of modules. The file where the compiler starts (`src/main.rs` for a program, `src/lib.rs` for a library) is called the **crate root**.
 
 ## Modules and privacy
 
@@ -71,7 +71,7 @@ fn main() {
 ```
 
 :::key Why private by default?
-Whatever is public is a promise: other code may depend on it, so changing it can break that code. Whatever is private can be rewritten freely. By making privacy the default, Rust keeps your promises few and deliberate. The set of public items of a module or crate is called its **API** (application programming interface): the "front desk" that others talk to.
+Whatever is public is a promise: other code may depend on it, so changing it can break that code. Whatever is private can be rewritten freely. By making privacy the default, Rust keeps your promises few and deliberate. The set of public items of a module or crate is called its **[[API]]** (application programming interface): the "front desk" that others talk to.
 :::
 
 ### Privacy for structs and enums
@@ -420,7 +420,7 @@ After `cargo add rand` has written that line into `Cargo.toml`, the crate's name
 
 :::compare Module systems in other languages
 - **Python and JavaScript:** every file is automatically a module, and the files import each other. Rust is different: files become part of the crate only through `mod` declarations, which form one tree from the crate root.
-- **Java and C#:** `package` or `namespace` lines at the top of each file group classes, and `public`/`private` control visibility per class and per member. Rust's privacy boundary is the **module**, not the type: all code in the same module can see each other's private items.
+- **Java and C#:** `package` or `namespace` lines at the top of each file group classes, and `public`/`private` control visibility per class and per member. Rust's privacy boundary is the **[[module]]**, not the type: all code in the same module can see each other's private items.
 - **C and C++:** the public face of a file is written a second time in a *header file*, which is copied into every file that uses it. Rust needs no headers. The `pub` keyword in the one and only source file says what is public.
 :::
 

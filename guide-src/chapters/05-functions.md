@@ -9,7 +9,7 @@
 So far all your code lived inside `main`. That stops working as programs grow. A **[[function]]** is a group of instructions with a name. You write the instructions once and then run them from anywhere by using the name. Functions are the main tool for keeping a program readable.
 
 :::plain Parameters, arguments, and return values in one paragraph
-A **function** is a named block of work with a list of inputs (**parameters**) and one output (the **return value**, which is `()` — nothing — if you do not name one). The values you pass in are the **arguments**, and they must match the parameter types exactly. Inside, `return` or a final expression produces the result, and the compiler checks every call site, so a wrong number or wrong type of argument is a compile error rather than a surprise at run time.
+A **function** is a named block of work with a list of inputs (**[[parameters|parameter]]**) and one output (the **[[return value]]**, which is `()` — nothing — if you do not name one). The values you pass in are the **arguments**, and they must match the parameter types exactly. Inside, `return` or a final expression produces the result, and the compiler checks every call site, so a wrong number or wrong type of argument is a compile error rather than a surprise at run time.
 :::
 
 :::analogy A function is a machine with a slot and a tray
@@ -65,7 +65,7 @@ Hello, Tomas!
 The area is 12.
 ```
 
-The names in the brackets of the definition (`name`, `width`, `height`) are **parameters**: variables that receive their value when the function is called. The values you pass in the call (`"Sara"`, `4`, `3`) are **arguments**. They are matched by position: the first argument goes to the first parameter.
+The names in the brackets of the definition (`name`, `width`, `height`) are **parameters**: variables that receive their value when the function is called. The values you pass in the call (`"Sara"`, `4`, `3`) are **[[arguments|argument]]**. They are matched by position: the first argument goes to the first parameter.
 
 **Every parameter must have its type written out.** Inside a function the compiler works types out for you, but at the border of a function it wants a clear promise. That promise also makes error messages short and local: if you call `print_area("four", 3)`, the error points at exactly that call.
 
@@ -93,7 +93,7 @@ Twice the area is 24.
 - The call `area(4, 3)` is replaced by the returned value, so you can store it or calculate with it.
 - Look closely at the body: `width * height` has **no semicolon**. In Rust, the value of the last line of a function is its return value, if that line has no semicolon.
 
-The first line of a function, such as `fn area(width: u32, height: u32) -> u32`, is called its **signature**. It tells you everything you need in order to use the function: its name, what goes in, and what comes out.
+The first line of a function, such as `fn area(width: u32, height: u32) -> u32`, is called its **[[signature]]**. It tells you everything you need in order to use the function: its name, what goes in, and what comes out.
 
 ## Statements and expressions
 
@@ -186,7 +186,7 @@ In main: 5
 
 ## Documenting a function
 
-A comment that starts with three slashes, `///`, is a **documentation comment**. It describes the thing that follows it. Rust's tools collect these comments and build a website from them: run `cargo doc --open` in a project to see it. Your editor also shows them when you point at a function name.
+A comment that starts with three slashes, `///`, is a **[[documentation comment]]**. It describes the thing that follows it. Rust's tools collect these comments and build a website from them: run `cargo doc --open` in a project to see it. Your editor also shows them when you point at a function name.
 
 ```rust run
 /// Returns the area of a rectangle.

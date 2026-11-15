@@ -114,7 +114,7 @@ Mnemonic:     lea       eax,      [rdi+rsi] ret
 Meaning:      [opcode]  [ModR/M]  [SIB]     [return]
 ```
 
-To a RAM chip, `0x8d 0x04 0x37 0xc3` is just four bytes—indistinguishable from a four-byte string or the integer `0xc337048d`. What makes the CPU execute them as instructions is simply that the **program counter (`RIP`)** points at their address and the **control unit** fetches them into the **instruction register**! (When you read about **buffer overflows** and **W^X memory protection** in Part IV, you will see why keeping writable data pages non-executable is critical for security.)
+To a RAM chip, `0x8d 0x04 0x37 0xc3` is four bytes—indistinguishable from a four-byte string or the integer `0xc337048d`. What makes the CPU execute them as instructions is that the **program counter (`RIP`)** points at their address and the **control unit** fetches them into the **instruction register**! (When you read about **buffer overflows** and **[[W^X]] memory protection** in Part IV, you will see why keeping writable data pages non-executable is critical for security.)
 
 ## Following the ten-stage lens: inspecting raw byte representations in Rust
 

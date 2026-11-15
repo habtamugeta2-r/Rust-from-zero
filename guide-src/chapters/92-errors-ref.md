@@ -4,6 +4,7 @@
 @title Compiler errors and how to repair them
 @short Compiler errors
 @level all
+@time 10
 
 The Rust compiler refuses many programs, and it explains itself better than most compilers. This page lists the errors that you will meet most often. Each entry has a small program that produces the error, the real message, the reason, and the usual repairs. Use the search box with the error code, for example `E0382`.
 
