@@ -82,17 +82,21 @@ function emptyState(): SavedState {
   return { done: {}, saved: {}, quiz: {}, bookmarks: {} };
 }
 
-function normaliseQuiz(raw: unknown): Record<string, Record<string, QuizAnswer>> {
-  if (!raw || typeof raw !== "object") return {};
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+export function normaliseQuiz(raw: unknown): Record<string, Record<string, QuizAnswer>> {
+  if (!isPlainObject(raw)) return {};
   const out: Record<string, Record<string, QuizAnswer>> = {};
-  for (const [quizId, answers] of Object.entries(raw as Record<string, unknown>)) {
-    if (!answers || typeof answers !== "object") continue;
+  for (const [quizId, answers] of Object.entries(raw)) {
+    if (!isPlainObject(answers)) continue;
     const clean: Record<string, QuizAnswer> = {};
-    for (const [qIndex, value] of Object.entries(answers as Record<string, unknown>)) {
+    for (const [qIndex, value] of Object.entries(answers)) {
       if (typeof value === "number") {
         // 2.0 stored the bare option index; correctness was not recorded then.
         clean[qIndex] = { picked: value };
-      } else if (value && typeof value === "object") {
+      } else if (isPlainObject(value)) {
         const answer = value as Partial<QuizAnswer>;
         if (typeof answer.picked === "number") {
           clean[qIndex] = {
@@ -107,13 +111,13 @@ function normaliseQuiz(raw: unknown): Record<string, Record<string, QuizAnswer>>
   return out;
 }
 
-function normaliseState(raw: unknown): SavedState {
-  const s = (raw && typeof raw === "object" ? raw : {}) as Partial<SavedState>;
+export function normaliseState(raw: unknown): SavedState {
+  const s = (isPlainObject(raw) ? raw : {}) as Partial<SavedState>;
   return {
-    done: s.done && typeof s.done === "object" ? s.done : {},
-    saved: s.saved && typeof s.saved === "object" ? s.saved : {},
+    done: isPlainObject(s.done) ? s.done : {},
+    saved: isPlainObject(s.saved) ? s.saved : {},
     quiz: normaliseQuiz(s.quiz),
-    bookmarks: s.bookmarks && typeof s.bookmarks === "object" ? s.bookmarks : {},
+    bookmarks: isPlainObject(s.bookmarks) ? s.bookmarks : {},
     last: typeof s.last === "string" ? s.last : undefined,
     theme: s.theme === "dark" || s.theme === "light" || s.theme === "system" ? s.theme : undefined,
     fs: typeof s.fs === "number" ? s.fs : undefined,

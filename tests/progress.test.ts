@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
+  bookmarkedChapters,
   bucketChapters,
   buildChapterProgress,
   hasProgress,
@@ -12,6 +13,7 @@ import {
   type ChapterMeta,
   type ProgressState,
 } from "../src/lib/progress";
+import { normaliseState } from "../src/components/GuideStateProvider";
 
 const META: ChapterMeta = {
   id: "vars",
@@ -49,13 +51,28 @@ test("progress: partial work scores the units it earned", () => {
   assert.equal(row.bookmarked, true);
 });
 
+test("progress: incorrect quiz answers do not count toward completion", () => {
+  const row = buildChapterProgress(META, {
+    ...EMPTY,
+    quiz: { "vars-q1": { "0": { picked: 1, correct: false } } },
+  });
+  assert.equal(row.quizAnswered, 1);
+  assert.equal(row.quizCorrect, 0);
+  assert.equal(row.pct, 0);
+
+  const totals = summariseProgress([row]);
+  assert.equal(totals.questionsAnswered, 1);
+  assert.equal(totals.questionsCorrect, 0);
+  assert.equal(totals.pct, 0);
+});
+
 test("progress: a finished chapter is at 100%", () => {
   const state: ProgressState = {
     done: { vars: 1 },
     quiz: {
       "vars-q1": {
         "0": { picked: 0, correct: true },
-        "1": { picked: 2, correct: false },
+        "1": { picked: 2, correct: true },
       },
     },
     saved: { "vars-x1": 1, "vars-x2": 1 },
@@ -63,10 +80,45 @@ test("progress: a finished chapter is at 100%", () => {
   };
   const row = buildChapterProgress(META, state);
   assert.equal(row.pct, 100);
+  const buckets = bucketChapters([row]);
+  assert.equal(buckets.completed.length, 1);
+  assert.equal(buckets.completed[0].id, "vars");
+  assert.equal(buckets.started.length, 0);
   const totals = summariseProgress([row]);
   assert.equal(totals.pct, 100);
-  assert.equal(totals.accuracy, 50);
+  assert.equal(totals.accuracy, 100);
   assert.equal(totals.minutesRead, 25);
+});
+
+test("progress: appendix bookmarks stay visible without affecting course completion", () => {
+  const appendix: ChapterMeta = {
+    ...META,
+    id: "glossary",
+    num: "A",
+    title: "Glossary",
+    short: "Glossary",
+    partTitle: "Appendices",
+    kind: "appendix",
+    quizzes: [],
+    exercises: [],
+  };
+  const row = buildChapterProgress(appendix, {
+    ...EMPTY,
+    bookmarks: { glossary: 1 },
+  });
+
+  assert.deepEqual(
+    bookmarkedChapters([row]).map((chapter) => chapter.id),
+    ["glossary"],
+  );
+  assert.equal(summariseProgress([row]).chaptersTotal, 0);
+  assert.equal(summariseProgress([row]).bookmarksTotal, 1);
+  assert.equal(nextChapter([row]), null);
+  assert.deepEqual(bucketChapters([row]), {
+    completed: [],
+    started: [],
+    untouched: [],
+  });
 });
 
 test("progress: totals with no answers give null accuracy", () => {
@@ -74,7 +126,8 @@ test("progress: totals with no answers give null accuracy", () => {
   assert.equal(totals.accuracy, null);
   assert.equal(totals.pct, 0);
   assert.equal(nextChapter([buildChapterProgress(META, EMPTY)])?.id, "vars");
-  const { started, untouched } = bucketChapters([buildChapterProgress(META, EMPTY)]);
+  const { completed, started, untouched } = bucketChapters([buildChapterProgress(META, EMPTY)]);
+  assert.equal(completed.length, 0);
   assert.equal(started.length, 0);
   assert.equal(untouched.length, 1);
 });
@@ -139,6 +192,61 @@ test("progress: invalid exports are rejected with a reason", () => {
       }),
     ).ok,
     false,
+  );
+});
+
+test("progress: exports reject invalid indices, non-integer settings, zero markers and arrays", () => {
+  const wrap = (state: unknown) =>
+    JSON.stringify({
+      format: "rust-from-zero-progress",
+      version: 1,
+      state,
+    });
+  const invalidStates = [
+    { quiz: { "vars-q1": { "0": { picked: -1 } } } },
+    { quiz: { "vars-q1": { "0": { picked: 1.5 } } } },
+    { quiz: { "vars-q1": { "-1": { picked: 0 } } } },
+    { quiz: [] },
+    { done: [] },
+    { saved: { "vars-x1": 0 } },
+    { bookmarks: { vars: -1 } },
+    { done: { vars: 1.5 } },
+    { fs: 18.5 },
+    { fs: "18" },
+  ];
+  for (const state of invalidStates) {
+    assert.equal(parseProgressExport(wrap(state)).ok, false, JSON.stringify(state));
+  }
+
+  const valid = parseProgressExport(
+    wrap({ quiz: { "vars-q1": { "0": { picked: 0, correct: true } } }, fs: 18 }),
+  );
+  assert.ok(valid.ok);
+  assert.equal(valid.state.quiz["vars-q1"]["0"].picked, 0);
+  assert.equal(valid.state.fs, 18);
+});
+
+test("progress: local storage normalisation ignores arrays masquerading as state maps", () => {
+  assert.deepEqual(normaliseState([]), {
+    done: {},
+    saved: {},
+    quiz: {},
+    bookmarks: {},
+    last: undefined,
+    theme: undefined,
+    fs: undefined,
+  });
+  assert.deepEqual(
+    normaliseState({ done: ["vars"], saved: ["vars-x1"], quiz: [], bookmarks: ["vars"] }),
+    {
+      done: {},
+      saved: {},
+      quiz: {},
+      bookmarks: {},
+      last: undefined,
+      theme: undefined,
+      fs: undefined,
+    },
   );
 });
 

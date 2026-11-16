@@ -137,7 +137,7 @@ export function buildChapterProgress(meta: ChapterMeta, state: ProgressState): C
   const done = Boolean(state.done[meta.id]);
 
   const units = 1 + quizTotal + exerciseTotal;
-  const earned = (done ? 1 : 0) + Math.min(quizAnswered, quizTotal) + exerciseSolved;
+  const earned = (done ? 1 : 0) + Math.min(quizCorrect, quizTotal) + exerciseSolved;
 
   return {
     id: meta.id,
@@ -160,15 +160,16 @@ export function buildChapterProgress(meta: ChapterMeta, state: ProgressState): C
 }
 
 export function summariseProgress(rows: ChapterProgress[]): ProgressTotals {
+  const trackedRows = rows.filter((row) => row.kind !== "appendix");
   const totals: ProgressTotals = {
-    chaptersTotal: rows.length,
+    chaptersTotal: trackedRows.length,
     chaptersDone: 0,
     questionsTotal: 0,
     questionsAnswered: 0,
     questionsCorrect: 0,
     exercisesTotal: 0,
     exercisesSolved: 0,
-    bookmarksTotal: 0,
+    bookmarksTotal: rows.filter((row) => row.bookmarked).length,
     minutesRead: 0,
     minutesTotal: 0,
     pct: 0,
@@ -178,7 +179,7 @@ export function summariseProgress(rows: ChapterProgress[]): ProgressTotals {
   let units = 0;
   let earned = 0;
 
-  for (const row of rows) {
+  for (const row of trackedRows) {
     if (row.done) {
       totals.chaptersDone += 1;
       totals.minutesRead += row.minutes;
@@ -189,10 +190,9 @@ export function summariseProgress(rows: ChapterProgress[]): ProgressTotals {
     totals.exercisesTotal += row.exerciseTotal;
     totals.exercisesSolved += row.exerciseSolved;
     totals.minutesTotal += row.minutes;
-    if (row.bookmarked) totals.bookmarksTotal += 1;
 
     units += 1 + row.quizTotal + row.exerciseTotal;
-    earned += (row.done ? 1 : 0) + row.quizAnswered + row.exerciseSolved;
+    earned += (row.done ? 1 : 0) + row.quizCorrect + row.exerciseSolved;
   }
 
   totals.pct = ratio(earned, units);
@@ -206,7 +206,7 @@ export function summariseProgress(rows: ChapterProgress[]): ProgressTotals {
 
 /** The chapter to read next: the first unfinished one, in curriculum order. */
 export function nextChapter(rows: ChapterProgress[]): ChapterProgress | null {
-  return rows.find((row) => !row.done) ?? null;
+  return rows.find((row) => row.kind !== "appendix" && !row.done) ?? null;
 }
 
 // ---- progress export / import ---------------------------------------------
@@ -259,13 +259,28 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }
 
+function isValidStateKey(key: string): boolean {
+  return (
+    key.length > 0 &&
+    key.length <= 200 &&
+    key !== "__proto__" &&
+    key !== "constructor" &&
+    key !== "prototype"
+  );
+}
+
+function isNonNegativeInteger(value: unknown): value is number {
+  return typeof value === "number" && Number.isSafeInteger(value) && value >= 0;
+}
+
 function numberRecord(value: unknown, field: string): Record<string, number> {
   if (value === undefined) return {};
   if (!isRecord(value)) throw new Error(`“${field}” must be an object`);
   const out: Record<string, number> = {};
   for (const [key, entry] of Object.entries(value)) {
-    if (typeof entry !== "number" || !Number.isFinite(entry)) {
-      throw new Error(`“${field}.${key}” must be a number`);
+    if (!isValidStateKey(key)) throw new Error(`“${field}” contains an invalid key`);
+    if (typeof entry !== "number" || !Number.isSafeInteger(entry) || entry <= 0) {
+      throw new Error(`“${field}.${key}” must be a positive integer`);
     }
     out[key] = entry;
   }
@@ -277,13 +292,25 @@ function quizRecord(value: unknown): Record<string, Record<string, StoredQuizAns
   if (!isRecord(value)) throw new Error("“quiz” must be an object");
   const out: Record<string, Record<string, StoredQuizAnswer>> = {};
   for (const [quizId, answers] of Object.entries(value)) {
+    if (!isValidStateKey(quizId)) throw new Error("“quiz” contains an invalid key");
     if (!isRecord(answers)) throw new Error(`“quiz.${quizId}” must be an object`);
     const clean: Record<string, StoredQuizAnswer> = {};
     for (const [index, answer] of Object.entries(answers)) {
+      const questionIndex = Number(index);
+      if (!/^(0|[1-9]\d*)$/.test(index) || !Number.isSafeInteger(questionIndex)) {
+        throw new Error(`“quiz.${quizId}.${index}” is not a valid question index`);
+      }
+
       if (typeof answer === "number") {
         // 2.0.0 stored the bare option index, before correctness was kept.
+        if (!isNonNegativeInteger(answer)) {
+          throw new Error(`“quiz.${quizId}.${index}” has an invalid option index`);
+        }
         clean[index] = { picked: answer };
-      } else if (isRecord(answer) && typeof answer.picked === "number") {
+      } else if (isRecord(answer) && isNonNegativeInteger(answer.picked)) {
+        if (answer.correct !== undefined && typeof answer.correct !== "boolean") {
+          throw new Error(`“quiz.${quizId}.${index}.correct” must be a boolean`);
+        }
         clean[index] = {
           picked: answer.picked,
           correct: typeof answer.correct === "boolean" ? answer.correct : undefined,
@@ -317,6 +344,15 @@ export function parseProgressExport(text: string): ProgressImportResult {
       throw new Error(`Export version ${String(raw.version)} is not supported here.`);
     }
     if (!isRecord(raw.state)) throw new Error("The export has no “state” object.");
+    if (
+      raw.state.fs !== undefined &&
+      (typeof raw.state.fs !== "number" ||
+        !Number.isSafeInteger(raw.state.fs) ||
+        raw.state.fs < 15 ||
+        raw.state.fs > 24)
+    ) {
+      throw new Error("“fs” must be an integer between 15 and 24");
+    }
     const state: ExportableProgressState = {
       done: numberRecord(raw.state.done, "done"),
       quiz: quizRecord(raw.state.quiz),
@@ -327,10 +363,7 @@ export function parseProgressExport(text: string): ProgressImportResult {
         raw.state.theme === "light" || raw.state.theme === "dark" || raw.state.theme === "system"
           ? raw.state.theme
           : undefined,
-      fs:
-        typeof raw.state.fs === "number" && raw.state.fs >= 15 && raw.state.fs <= 24
-          ? raw.state.fs
-          : undefined,
+      fs: typeof raw.state.fs === "number" ? raw.state.fs : undefined,
     };
     return {
       ok: true,
@@ -390,15 +423,18 @@ export function bookmarkedChapters(rows: ChapterProgress[]): ChapterProgress[] {
  * finished, started, untouched. `started` is anything with partial work.
  */
 export function bucketChapters(rows: ChapterProgress[]): {
+  completed: ChapterProgress[];
   started: ChapterProgress[];
   untouched: ChapterProgress[];
 } {
+  const completed: ChapterProgress[] = [];
   const started: ChapterProgress[] = [];
   const untouched: ChapterProgress[] = [];
   for (const row of rows) {
-    if (row.done) continue;
-    if (row.pct > 0) started.push(row);
+    if (row.kind === "appendix") continue;
+    if (row.done) completed.push(row);
+    else if (row.quizAnswered > 0 || row.pct > 0) started.push(row);
     else untouched.push(row);
   }
-  return { started, untouched };
+  return { completed, started, untouched };
 }
