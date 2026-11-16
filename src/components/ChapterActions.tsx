@@ -71,7 +71,7 @@ export function ChapterActions({
           type="button"
           aria-pressed={isDone}
           onClick={onToggle}
-          className={`inline-flex min-h-11 items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors ${
+          className={`inline-flex min-h-10 cursor-pointer items-center gap-2 rounded-well px-4 py-2 text-sm font-semibold transition-colors ${
             isDone
               ? "border border-emerald-500/70 bg-transparent text-emerald-800 hover:bg-emerald-100/60 dark:border-emerald-700 dark:text-emerald-200 dark:hover:bg-emerald-950/40"
               : "bg-[var(--g-accent)] text-[var(--g-on-accent)] hover:bg-[var(--g-accent-hover)]"

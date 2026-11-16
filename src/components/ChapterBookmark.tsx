@@ -38,10 +38,10 @@ export function ChapterBookmark({
             : "Bookmarked — it is on your progress page."
         );
       }}
-      className={`no-print inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 font-sans text-[11px] font-semibold transition-colors ${
+      className={`no-print inline-flex cursor-pointer items-center gap-1.5 rounded-full border px-2.5 py-1 font-sans text-[11px] font-semibold transition-colors ${
         bookmarked
           ? "border-[var(--g-accent)]/50 bg-[var(--g-accent-soft)] text-[var(--g-accent)]"
-          : "border-[var(--g-line2)] text-[var(--g-ink3)] hover:border-[var(--g-accent)] hover:text-[var(--g-accent)]"
+          : "border-[var(--g-line2)] bg-[var(--g-surface)] text-[var(--g-ink3)] hover:border-[var(--g-accent)] hover:text-[var(--g-accent)]"
       }`}
     >
       <Bookmark

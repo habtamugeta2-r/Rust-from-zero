@@ -7,6 +7,7 @@ import {
   BookMarked,
   Bookmark,
   Check,
+  ChevronRight,
   CircleDot,
   Clock,
   Download,
@@ -152,7 +153,7 @@ export function ProgressDashboard({ chapters }: { chapters: ChapterMeta[] }) {
         <section aria-labelledby="up-next">
           <h2
             id="up-next"
-            className="mb-3 font-sans text-xs font-bold tracking-wider text-[var(--g-ink3)] uppercase"
+            className="mb-3 font-mono text-[11px] font-semibold tracking-[0.08em] text-[var(--g-ink3)] uppercase"
           >
             {nothingYet ? "Start here" : "Continue"}
           </h2>
@@ -160,7 +161,7 @@ export function ProgressDashboard({ chapters }: { chapters: ChapterMeta[] }) {
             href={`/chapters/${upNext.id}`}
             className="group flex items-center gap-4 rounded-card border border-[var(--g-line2)] bg-[var(--g-surface)] p-4 shadow-card transition-colors hover:border-[var(--g-accent)] sm:p-5"
           >
-            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-[var(--g-accent-soft)] font-mono text-sm font-bold text-[var(--g-accent)]">
+            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-well bg-[var(--g-accent-soft)] font-mono text-sm font-bold text-[var(--g-accent)]">
               {upNext.num}
             </span>
             <span className="min-w-0 flex-1">
@@ -189,11 +190,13 @@ export function ProgressDashboard({ chapters }: { chapters: ChapterMeta[] }) {
         <div className="mb-3 flex items-center justify-between gap-3">
           <h2
             id="bookmarks"
-            className="font-sans text-xs font-bold tracking-wider text-[var(--g-ink3)] uppercase"
+            className="font-mono text-[11px] font-semibold tracking-[0.08em] text-[var(--g-ink3)] uppercase"
           >
             Bookmarks
           </h2>
-          <span className="font-sans text-xs text-[var(--g-ink3)]">{marks.length}</span>
+          <span className="font-mono text-xs text-[var(--g-ink3)] tabular-nums">
+            {marks.length}
+          </span>
         </div>
         {marks.length === 0 ? (
           <p className="rounded-card border border-dashed border-[var(--g-line2)] px-4 py-6 text-center font-sans text-sm text-[var(--g-ink3)]">
@@ -238,16 +241,22 @@ export function ProgressDashboard({ chapters }: { chapters: ChapterMeta[] }) {
 
       {/* Completed chapters stay available as a browsable, collapsible list. */}
       {completed.length > 0 && (
-        <details className="group">
-          <summary className="flex cursor-pointer list-none items-center gap-2 font-sans text-xs font-bold tracking-wider text-[var(--g-ink3)] uppercase hover:text-[var(--g-ink)]">
+        <details className="group rounded-card border border-[var(--g-line)] bg-[var(--g-surface)] px-4 py-3 shadow-card">
+          <summary className="flex cursor-pointer list-none items-center gap-2 font-mono text-[11px] font-semibold tracking-[0.08em] text-[var(--g-ink2)] uppercase hover:text-[var(--g-ink)]">
+            <ChevronRight
+              className="h-3.5 w-3.5 text-[var(--g-ink3)] transition-transform group-open:rotate-90"
+              aria-hidden="true"
+            />
             <Check
               className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400"
               aria-hidden="true"
             />
-            Completed chapters
-            <span className="font-medium normal-case">({completed.length})</span>
+            <span>Completed chapters</span>
+            <span className="ml-auto font-mono text-[11px] font-medium text-[var(--g-ink3)] tabular-nums">
+              {completed.length}
+            </span>
           </summary>
-          <ul className="mt-3 space-y-2">
+          <ul className="mt-3 space-y-2 border-t border-[var(--g-line)] pt-3">
             {completed.map((row) => (
               <ChapterRow
                 key={row.id}
@@ -265,7 +274,7 @@ export function ProgressDashboard({ chapters }: { chapters: ChapterMeta[] }) {
         <section aria-labelledby="in-progress">
           <h2
             id="in-progress"
-            className="mb-3 font-sans text-xs font-bold tracking-wider text-[var(--g-ink3)] uppercase"
+            className="mb-3 font-mono text-[11px] font-semibold tracking-[0.08em] text-[var(--g-ink3)] uppercase"
           >
             In progress
           </h2>
@@ -284,13 +293,19 @@ export function ProgressDashboard({ chapters }: { chapters: ChapterMeta[] }) {
 
       {/* Not started */}
       {untouched.length > 0 && (
-        <details className="group">
-          <summary className="flex cursor-pointer list-none items-center gap-2 font-sans text-xs font-bold tracking-wider text-[var(--g-ink3)] uppercase hover:text-[var(--g-ink)]">
-            <CircleDot className="h-3.5 w-3.5" aria-hidden="true" />
-            Not started yet
-            <span className="font-medium normal-case">({untouched.length})</span>
+        <details className="group rounded-card border border-[var(--g-line)] bg-[var(--g-surface)] px-4 py-3 shadow-card">
+          <summary className="flex cursor-pointer list-none items-center gap-2 font-mono text-[11px] font-semibold tracking-[0.08em] text-[var(--g-ink2)] uppercase hover:text-[var(--g-ink)]">
+            <ChevronRight
+              className="h-3.5 w-3.5 text-[var(--g-ink3)] transition-transform group-open:rotate-90"
+              aria-hidden="true"
+            />
+            <CircleDot className="h-3.5 w-3.5 text-[var(--g-ink3)]" aria-hidden="true" />
+            <span>Not started yet</span>
+            <span className="ml-auto font-mono text-[11px] font-medium text-[var(--g-ink3)] tabular-nums">
+              {untouched.length}
+            </span>
           </summary>
-          <ul className="mt-3 space-y-2">
+          <ul className="mt-3 space-y-2 border-t border-[var(--g-line)] pt-3">
             {untouched.map((row) => (
               <ChapterRow
                 key={row.id}
@@ -306,71 +321,73 @@ export function ProgressDashboard({ chapters }: { chapters: ChapterMeta[] }) {
       {/* Housekeeping */}
       <section
         aria-labelledby="storage"
-        className="rounded-card border border-[var(--g-line)] bg-[var(--g-sunken)] p-4 font-sans"
+        className="rounded-card border border-[var(--g-line)] bg-[var(--g-sunken)] p-5 font-sans"
       >
-        <h2 id="storage" className="text-[13px] font-bold text-[var(--g-ink)]">
-          {persistent ? "Saved in this browser" : "Session-only progress"}
-        </h2>
-        <p className="mt-1 text-xs leading-relaxed text-[var(--g-ink3)]">
-          {persistent
-            ? "Progress, quiz answers, solved exercises and bookmarks are stored locally in this browser. Nothing is uploaded."
-            : "This browser is blocking local storage, so progress disappears when you close the tab."}
-        </p>
-        <p className="mt-2 text-xs leading-relaxed text-[var(--g-ink3)]">
-          Moving to another machine or browser? Export your progress as a JSON file and import it
-          there. The file holds your finished chapters, quiz answers, solved exercises, bookmarks,
-          theme and text size. An import is checked before it is applied, and when this browser
-          already holds progress you choose whether to replace it or merge the two.
-        </p>
-        <div className="mt-3 flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            onClick={exportProgress}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--g-line2)] bg-[var(--g-surface)] px-3 py-1.5 text-xs font-semibold text-[var(--g-ink2)] transition-colors hover:border-[var(--g-accent)] hover:text-[var(--g-accent)]"
-          >
-            <Download className="h-3.5 w-3.5" aria-hidden="true" />
-            Export progress
-          </button>
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--g-line2)] bg-[var(--g-surface)] px-3 py-1.5 text-xs font-semibold text-[var(--g-ink2)] transition-colors hover:border-[var(--g-accent)] hover:text-[var(--g-accent)]"
-          >
-            <Upload className="h-3.5 w-3.5" aria-hidden="true" />
-            Import progress
-          </button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="application/json,.json"
-            aria-label="Choose a progress export file to import"
-            className="sr-only"
-            onChange={(event) => {
-              void onImportFile(event.target.files?.[0]);
-              event.target.value = "";
-            }}
-          />
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="max-w-xl">
+            <h2 id="storage" className="text-[14px] font-bold text-[var(--g-ink)]">
+              {persistent ? "Saved in this browser" : "Session-only progress"}
+            </h2>
+            <p className="mt-1 text-xs leading-relaxed text-[var(--g-ink2)]">
+              {persistent
+                ? "Progress, quiz answers, solved exercises and bookmarks are stored locally in this browser. Nothing is uploaded."
+                : "This browser is blocking local storage, so progress disappears when you close the tab."}
+            </p>
+            <p className="mt-2 text-xs leading-relaxed text-[var(--g-ink3)]">
+              Moving to another machine or browser? Export your progress as JSON and import it
+              there. Existing local progress is never overwritten without asking.
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={exportProgress}
+              className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-[var(--g-line2)] bg-[var(--g-surface)] px-3 py-1.5 text-xs font-semibold text-[var(--g-ink2)] shadow-card transition-colors hover:border-[var(--g-accent)] hover:text-[var(--g-accent)]"
+            >
+              <Download className="h-3.5 w-3.5" aria-hidden="true" />
+              Export progress
+            </button>
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-[var(--g-line2)] bg-[var(--g-surface)] px-3 py-1.5 text-xs font-semibold text-[var(--g-ink2)] shadow-card transition-colors hover:border-[var(--g-accent)] hover:text-[var(--g-accent)]"
+            >
+              <Upload className="h-3.5 w-3.5" aria-hidden="true" />
+              Import progress
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="application/json,.json"
+              aria-label="Choose a progress export file to import"
+              className="sr-only"
+              onChange={(event) => {
+                void onImportFile(event.target.files?.[0]);
+                event.target.value = "";
+              }}
+            />
+          </div>
         </div>
         {importError && (
-          <p role="alert" className="mt-2 text-xs font-medium text-red-700">
+          <p role="alert" className="mt-3 text-xs font-medium text-red-700 dark:text-red-400">
             Import stopped: {importError} Nothing was changed.
           </p>
         )}
         {pendingImport && (
-          <div className="mt-3 rounded-xl border border-[var(--g-line2)] bg-[var(--g-surface)] p-3">
+          <div className="mt-3 rounded-well border border-[var(--g-line2)] bg-[var(--g-surface)] p-3.5">
             <p className="text-xs leading-relaxed text-[var(--g-ink2)]">
               This browser already holds progress. Replace it with the imported file, or merge the
               two? Merging keeps everything already here and adds anything the file has that this
               browser lacks.
             </p>
-            <div className="mt-2 flex flex-wrap gap-2">
+            <div className="mt-2.5 flex flex-wrap gap-2">
               <button
                 type="button"
                 onClick={() => {
                   importProgress(pendingImport, "replace");
                   setPendingImport(null);
                 }}
-                className="rounded-lg bg-red-700 px-3 py-1.5 text-xs font-bold text-white hover:bg-red-800"
+                className="cursor-pointer rounded-lg bg-red-700 px-3 py-1.5 text-xs font-bold text-white hover:bg-red-800"
               >
                 Replace my progress
               </button>
@@ -380,21 +397,21 @@ export function ProgressDashboard({ chapters }: { chapters: ChapterMeta[] }) {
                   importProgress(pendingImport, "merge");
                   setPendingImport(null);
                 }}
-                className="rounded-lg border border-[var(--g-line2)] px-3 py-1.5 text-xs font-semibold text-[var(--g-ink2)] hover:text-[var(--g-ink)]"
+                className="cursor-pointer rounded-lg border border-[var(--g-line2)] px-3 py-1.5 text-xs font-semibold text-[var(--g-ink2)] hover:text-[var(--g-ink)]"
               >
                 Merge the two
               </button>
               <button
                 type="button"
                 onClick={() => setPendingImport(null)}
-                className="rounded-lg border border-[var(--g-line2)] px-3 py-1.5 text-xs font-semibold text-[var(--g-ink2)] hover:text-[var(--g-ink)]"
+                className="cursor-pointer rounded-lg border border-[var(--g-line2)] px-3 py-1.5 text-xs font-semibold text-[var(--g-ink2)] hover:text-[var(--g-ink)]"
               >
                 Cancel
               </button>
             </div>
           </div>
         )}
-        <div className="mt-3 flex flex-wrap items-center gap-2">
+        <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-[var(--g-line)] pt-3.5">
           {confirmReset ? (
             <>
               <button
@@ -403,14 +420,14 @@ export function ProgressDashboard({ chapters }: { chapters: ChapterMeta[] }) {
                   resetAllProgress();
                   setConfirmReset(false);
                 }}
-                className="rounded-lg bg-red-700 px-3 py-1.5 text-xs font-bold text-white hover:bg-red-800"
+                className="cursor-pointer rounded-lg bg-red-700 px-3 py-1.5 text-xs font-bold text-white hover:bg-red-800"
               >
                 Yes, erase progress
               </button>
               <button
                 type="button"
                 onClick={() => setConfirmReset(false)}
-                className="rounded-lg border border-[var(--g-line2)] px-3 py-1.5 text-xs font-semibold text-[var(--g-ink2)] hover:text-[var(--g-ink)]"
+                className="cursor-pointer rounded-lg border border-[var(--g-line2)] px-3 py-1.5 text-xs font-semibold text-[var(--g-ink2)] hover:text-[var(--g-ink)]"
               >
                 Cancel
               </button>
@@ -420,7 +437,7 @@ export function ProgressDashboard({ chapters }: { chapters: ChapterMeta[] }) {
             <button
               type="button"
               onClick={() => setConfirmReset(true)}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--g-line2)] bg-[var(--g-surface)] px-3 py-1.5 text-xs font-semibold text-[var(--g-ink2)] transition-colors hover:border-[var(--g-accent)] hover:text-[var(--g-accent)]"
+              className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-[var(--g-line2)] bg-[var(--g-surface)] px-3 py-1.5 text-xs font-semibold text-[var(--g-ink2)] transition-colors hover:border-red-400 hover:text-red-700 dark:hover:text-red-400"
             >
               <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
               Reset progress

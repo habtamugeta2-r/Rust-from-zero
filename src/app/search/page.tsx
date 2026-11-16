@@ -150,7 +150,7 @@ export default async function SearchPage({
                             <span className="mt-0.5 block text-[14px] leading-relaxed text-[var(--g-ink3)]">
                               {hit.before}
                               {hit.match && (
-                                <mark className="rounded bg-amber-300/60 px-0.5 text-[#33291c] dark:bg-amber-500/30 dark:text-amber-100">
+                                <mark className="rounded bg-[var(--g-accent-soft)] px-1 font-semibold text-[var(--g-accent)]">
                                   {hit.match}
                                 </mark>
                               )}

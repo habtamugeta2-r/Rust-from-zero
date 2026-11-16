@@ -2,7 +2,7 @@ import React from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { ArrowLeft, ArrowRight, CheckCircle2, Clock, Flag } from "lucide-react";
+import { ArrowLeft, ArrowRight, CheckCircle2, ChevronRight, Clock, Flag } from "lucide-react";
 import { ChapterActions } from "@/components/ChapterActions";
 import { ChapterBookmark } from "@/components/ChapterBookmark";
 import { BlockList } from "@/components/ChapterBody";
@@ -67,23 +67,30 @@ export default async function ChapterPage({ params }: { params: Promise<{ id: st
         <article className="chapter-article">
           {/* Breadcrumb (visible + mirrors the BreadcrumbList schema) */}
           <nav aria-label="Breadcrumb" className="mb-5 font-sans text-xs text-[var(--g-ink3)]">
-            <ol className="flex flex-wrap items-center gap-x-1.5 gap-y-1">
+            <ol className="flex flex-wrap items-center gap-x-1 gap-y-1">
               <li>
-                <Link href="/" className="hover:text-[var(--g-accent)]">
+                <Link href="/" className="transition-colors hover:text-[var(--g-accent)]">
                   Learn Rust
                 </Link>
               </li>
-              <li aria-hidden="true">/</li>
+              <li aria-hidden="true">
+                <ChevronRight className="h-3 w-3 text-[var(--g-line2)]" />
+              </li>
               <li className="max-w-full truncate">
                 <Link
                   href={partHref(chapter.partTitle)}
-                  className="hover:text-[var(--g-accent)] hover:underline"
+                  className="transition-colors hover:text-[var(--g-accent)] hover:underline"
                 >
                   {chapter.partTitle}
                 </Link>
               </li>
-              <li aria-hidden="true">/</li>
-              <li className="max-w-full truncate text-[var(--g-ink2)]" aria-current="page">
+              <li aria-hidden="true">
+                <ChevronRight className="h-3 w-3 text-[var(--g-line2)]" />
+              </li>
+              <li
+                className="max-w-full truncate font-medium text-[var(--g-ink2)]"
+                aria-current="page"
+              >
                 {chapter.short}
               </li>
             </ol>
@@ -93,23 +100,25 @@ export default async function ChapterPage({ params }: { params: Promise<{ id: st
           <header id="chapter-top" className="mb-9 border-b border-[var(--g-line)] pb-7">
             <div className="flex flex-wrap items-center gap-x-3 gap-y-2 font-sans text-xs font-semibold">
               <span className="chapter-eyebrow">{eyebrow}</span>
-              <span className="hidden text-[var(--g-ink3)] sm:inline">{chapter.partTitle}</span>
+              <span className="hidden text-[var(--g-ink3)] font-medium sm:inline">
+                {chapter.partTitle}
+              </span>
               <ChapterTocTrigger headings={chapter.headings} />
               <ChapterBookmark chapterId={chapter.id} title={chapter.title} />
               {chapter.time > 0 && (
-                <span className="ml-auto inline-flex items-center gap-1.5 text-[var(--g-ink3)]">
+                <span className="ml-auto inline-flex items-center gap-1.5 font-mono text-[11.5px] font-medium text-[var(--g-ink3)]">
                   <Clock className="h-3.5 w-3.5" aria-hidden="true" />~{chapter.time} min
                 </span>
               )}
             </div>
 
-            <h1 className="chapter-title mt-5 font-sans text-[34px] leading-[1.12] font-semibold tracking-[-0.045em] text-balance text-[var(--g-ink)] sm:text-[46px]">
+            <h1 className="chapter-title mt-4 font-sans text-[34px] leading-[1.12] font-semibold tracking-[-0.032em] text-balance text-[var(--g-ink)] sm:text-[44px]">
               {chapter.title}
             </h1>
 
             {chapter.learnNodes.length > 0 && (
               <div className="chapter-objectives mt-7 font-sans">
-                <div className="mb-3 text-[11px] font-bold tracking-[0.08em] text-[var(--g-ink3)] uppercase">
+                <div className="mb-3 font-mono text-[11px] font-semibold tracking-[0.08em] text-[var(--g-ink3)] uppercase">
                   In this chapter you will learn
                 </div>
                 <ul className="chapter-objectives-list grid gap-x-6 gap-y-2 text-sm leading-relaxed text-[var(--g-ink2)] sm:grid-cols-2">
@@ -217,20 +226,26 @@ function ChapterStepLink({
         />
       )}
       <div className="min-w-0">
-        <div className="flex items-center gap-1.5 text-[11px] font-semibold tracking-wider text-[var(--g-ink3)] uppercase">
+        <div
+          className={`flex items-center gap-1.5 font-mono text-[11px] font-semibold tracking-wider text-[var(--g-ink3)] uppercase ${
+            isNext ? "justify-end" : ""
+          }`}
+        >
           {chapter?.kind === "project" && (
             <Flag className="h-3 w-3 text-[var(--g-accent)]" aria-hidden="true" />
           )}
           {heading}
         </div>
-        <div className="mt-0.5 line-clamp-2 text-sm font-bold text-[var(--g-ink)]">{name}</div>
+        <div className="mt-1 line-clamp-2 text-[14.5px] font-semibold text-[var(--g-ink)] transition-colors group-hover:text-[var(--g-accent)]">
+          {name}
+        </div>
         {chapter && chapter.time > 0 && (
-          <div className="mt-0.5 text-[11.5px] font-medium text-[var(--g-ink3)]">
+          <div className="mt-0.5 font-mono text-[11px] font-medium text-[var(--g-ink3)]">
             ~{chapter.time} min
           </div>
         )}
         {isNext && chapter?.learn?.[0] && (
-          <div className="mt-1 line-clamp-2 text-[11.5px] leading-snug font-medium text-[var(--g-ink2)]">
+          <div className="mt-1.5 line-clamp-2 text-[12px] leading-snug text-[var(--g-ink2)]">
             You will learn: {plainObjective(chapter.learn[0])}
           </div>
         )}

@@ -6,40 +6,27 @@ import {
   Check,
   ChevronDown,
   ChevronRight,
-  CircleDot,
+  Crosshair,
   Flag,
   FoldVertical,
-  Hash,
   HelpCircle,
   KeyRound,
   ListChecks,
+  Loader2,
   Pencil,
-  UnfoldVertical,
 } from "lucide-react";
 import type { ContentNode, ContentNodeKind, NavigationChapter, PartMeta } from "@/lib/guide-types";
-import {
-  contentKindCounts,
-  countContentNodes,
-  findContentPath,
-  flattenContentTree,
-  headingItemsFromTree,
-} from "@/lib/content-tree";
+import { findContentPath, flattenContentTree, headingItemsFromTree } from "@/lib/content-tree";
 import { useActiveHeading } from "./use-active-heading";
 
 /**
- * The sidebar as a content map, not a page list.
+ * The sidebar curriculum & chapter outline tree.
  *
- * Three levels of graph live here: a part holds its chapters, a chapter
- * holds its sections (`##`), and a section holds its subsections (`###`)
- * and key content blocks (a `####` detail, a `:::key` idea, an exercise, a
- * quiz, a checklist, a recap). Every node deep-links to its anchor in the
- * chapter, branches collapse independently, and the branch containing the
- * section being read opens — and highlights — on its own.
- *
- * Expansion state is an explicit override map layered over those defaults,
- * so “expand all”, a reader's own collapses, and the scroll-spy's
- * auto-reveal never fight each other, and the map a reader arranged
- * survives a reload.
+ * Three levels of hierarchy live here: a part holds its chapters, a chapter
+ * holds its sections (`##`), and a section holds its subsections (`###`) and
+ * key blocks (exercises, quizzes, key ideas, checklists, recaps). Every node
+ * deep-links to its anchor, branches collapse independently, and the branch
+ * containing the section currently being read opens and highlights on its own.
  */
 
 const TREE_KEY = "rust-guide-content-tree-v1";
@@ -55,25 +42,22 @@ const KIND_LABEL: Record<ContentNodeKind, string> = {
   checklist: "Checklist",
 };
 
-function KindIcon({ kind, className }: { kind: ContentNodeKind; className?: string }) {
-  const cls = className ?? "h-3.5 w-3.5";
+/** Only highlight interactive / special landmarks with icons so sections stay crisp and readable. */
+function NodeGlyph({ kind }: { kind: ContentNodeKind }) {
   switch (kind) {
-    case "section":
-      return <Hash className={`${cls} text-[var(--g-accent-2)]`} aria-hidden="true" />;
-    case "subsection":
-      return <Hash className={`${cls} text-[var(--g-ink3)]`} aria-hidden="true" />;
-    case "detail":
-      return <CircleDot className={`${cls} text-[var(--g-ink3)]`} aria-hidden="true" />;
     case "key":
-      return <KeyRound className={`${cls} text-[var(--g-accent)]`} aria-hidden="true" />;
-    case "recap":
-      return <ListChecks className={`${cls} text-[var(--g-accent-2)]`} aria-hidden="true" />;
+      return <KeyRound className="h-3 w-3 shrink-0 text-[var(--g-accent)]" aria-hidden="true" />;
     case "exercise":
-      return <Pencil className={`${cls} text-[var(--g-accent-2)]`} aria-hidden="true" />;
+      return <Pencil className="h-3 w-3 shrink-0 text-[var(--g-accent-2)]" aria-hidden="true" />;
     case "quiz":
-      return <HelpCircle className={`${cls} text-[var(--g-accent)]`} aria-hidden="true" />;
+      return <HelpCircle className="h-3 w-3 shrink-0 text-[var(--g-accent)]" aria-hidden="true" />;
+    case "recap":
     case "checklist":
-      return <Check className={`${cls} text-[var(--g-accent-2)]`} aria-hidden="true" />;
+      return (
+        <ListChecks className="h-3 w-3 shrink-0 text-[var(--g-accent-2)]" aria-hidden="true" />
+      );
+    default:
+      return null;
   }
 }
 
@@ -85,18 +69,11 @@ function nodeKey(chapterId: string, nodeId: string) {
   return `node:${chapterId}:${nodeId}`;
 }
 
-/** “6 sections · 2 key ideas · 3 exercises” for an expanded chapter. */
-function chapterCaption(chapter: NavigationChapter): string {
-  const counts = contentKindCounts(chapter.outline ?? []);
-  const bits: string[] = [];
-  if (counts.section)
-    bits.push(`${counts.section} ${counts.section === 1 ? "section" : "sections"}`);
-  const points = counts.detail + counts.key;
-  if (points) bits.push(`${points} key ${points === 1 ? "point" : "points"}`);
-  if (counts.exercise)
-    bits.push(`${counts.exercise} ${counts.exercise === 1 ? "exercise" : "exercises"}`);
-  if (counts.quiz) bits.push(`${counts.quiz} ${counts.quiz === 1 ? "quiz" : "quizzes"}`);
-  return bits.join(" · ");
+function compactPartBadge(part: PartMeta): string | null {
+  if (part.partLabel) return part.partLabel.replace(/^Part\s+/i, "");
+  if (part.key === "def") return "D";
+  if (part.key === "app") return "A";
+  return null;
 }
 
 export function ContentTree({
@@ -104,14 +81,15 @@ export function ContentTree({
   chapters,
   activeChapterId,
   done,
+  loadingOutlines,
   onNavigate,
   onRequestOutline,
 }: {
   parts: PartMeta[];
   chapters: NavigationChapter[];
   activeChapterId: string | null;
-  /** Completion timestamps per chapter id, as kept by GuideStateProvider. */
   done: Record<string, number>;
+  loadingOutlines?: Record<string, boolean>;
   onNavigate: () => void;
   onRequestOutline: (chapterId: string) => void;
 }) {
@@ -125,7 +103,6 @@ export function ContentTree({
     [chapters, activeChapterId],
   );
 
-  /* Scroll-spy over the active chapter's headings, shared with the rail. */
   const headingItems = useMemo(
     () => (activeChapter ? headingItemsFromTree(activeChapter.outline ?? []) : []),
     [activeChapter],
@@ -140,12 +117,7 @@ export function ContentTree({
   );
   const activePathIds = useMemo(() => new Set(activePath.map((n) => n.id)), [activePath]);
 
-  const totalNodes = useMemo(
-    () => chapters.reduce((sum, c) => sum + countContentNodes(c.outline ?? []), 0),
-    [chapters],
-  );
-
-  /* ---------------- persisted map state ---------------- */
+  /* ---------------- persisted tree state ---------------- */
 
   useEffect(() => {
     try {
@@ -159,7 +131,7 @@ export function ContentTree({
         if (parsed.expanded) setExpanded(parsed.expanded);
       }
     } catch {
-      /* private mode: the defaults below still give a working map */
+      /* private mode: defaults still give a working tree */
     }
     restored.current = true;
   }, []);
@@ -173,8 +145,7 @@ export function ContentTree({
     }
   }, [collapsedParts, expanded]);
 
-  /* Keep the branch being read visible inside the sidebar pane. Adjusting
-     the pane's own scrollTop (never the page's) mirrors ChapterRail. */
+  /* Keep the section currently being read visible inside the sidebar pane. */
   useEffect(() => {
     if (!activeHeadingId || !navRef.current) return;
     const el = navRef.current.querySelector<HTMLElement>(
@@ -184,7 +155,7 @@ export function ContentTree({
     if (!el || !pane) return;
     const paneRect = pane.getBoundingClientRect();
     const itemRect = el.getBoundingClientRect();
-    const pad = 8;
+    const pad = 12;
     if (itemRect.top < paneRect.top + pad) {
       pane.scrollTop -= paneRect.top + pad - itemRect.top;
     } else if (itemRect.bottom > paneRect.bottom - pad) {
@@ -202,7 +173,6 @@ export function ContentTree({
   const isNodeExpanded = (chapterId: string, node: ContentNode) => {
     const key = nodeKey(chapterId, node.id);
     if (key in expanded) return expanded[key];
-    // Default: only the trail to the section being read is open.
     return chapterId === activeChapterId && activePathIds.has(node.id);
   };
 
@@ -218,27 +188,41 @@ export function ContentTree({
       [nodeKey(chapterId, node.id)]: !isNodeExpanded(chapterId, node),
     }));
 
-  const setAll = (open: boolean) => {
+  const collapseAllOutlines = () => {
     setExpanded((prev) => {
       const next = { ...prev };
       for (const chapter of chapters) {
-        const outline = chapter.outline ?? [];
-        if (outline.length > 0) next[chapterKey(chapter.id)] = open;
-        for (const { node } of flattenContentTree(outline)) {
-          if (node.children.length > 0) next[nodeKey(chapter.id, node.id)] = open;
+        next[chapterKey(chapter.id)] = false;
+        for (const { node } of flattenContentTree(chapter.outline ?? [])) {
+          if (node.children.length > 0) next[nodeKey(chapter.id, node.id)] = false;
         }
       }
       return next;
     });
   };
 
+  const revealActiveChapter = () => {
+    if (!activeChapter) return;
+    setCollapsedParts((prev) => ({ ...prev, [activeChapter.part]: false }));
+    setExpanded((prev) => ({ ...prev, [chapterKey(activeChapter.id)]: true }));
+    requestAnimationFrame(() => {
+      const target =
+        (activeHeadingId &&
+          navRef.current?.querySelector<HTMLElement>(
+            `[data-content-anchor="${activeHeadingId}"]`,
+          )) ||
+        navRef.current?.querySelector<HTMLElement>(`[data-chapter-row="${activeChapter.id}"]`);
+      const pane = target?.closest<HTMLElement>("[data-scroll-pane]");
+      if (!target || !pane) return;
+      const paneRect = pane.getBoundingClientRect();
+      const itemRect = target.getBoundingClientRect();
+      pane.scrollTop += itemRect.top - paneRect.top - paneRect.height / 3;
+    });
+  };
+
   const togglePart = (key: string) => setCollapsedParts((prev) => ({ ...prev, [key]: !prev[key] }));
 
-  /* A node click on the chapter already being read: close the drawer
-     first, then jump — the drawer's scroll lock would otherwise swallow
-     the anchor scroll (the same dance ChapterTocTrigger does). */
   const onNodeClick = (event: React.MouseEvent, chapterId: string, nodeId: string) => {
-    // Let new-tab / new-window clicks behave like any other link.
     if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey)
       return;
     onNavigate();
@@ -261,13 +245,14 @@ export function ContentTree({
     const isCurrent =
       chapter.id === activeChapterId && node.id === activeHeadingId && node.id !== "";
     const panelId = `ctree-${chapter.id}-${node.id}`;
-    const descendants = hasChildren ? countContentNodes(node.children) : 0;
 
     return (
       <li key={node.id || node.label}>
         <div
-          className={`flex items-center gap-1 rounded-lg pr-1 transition-colors ${
-            isCurrent ? "bg-[var(--g-accent-soft)]" : "hover:bg-[var(--g-surface)]"
+          className={`flex items-center gap-0.5 rounded-md pr-1.5 transition-colors ${
+            isCurrent
+              ? "bg-[var(--g-accent-soft)] text-[var(--g-accent)]"
+              : "hover:bg-[var(--g-surface)]"
           }`}
         >
           {hasChildren ? (
@@ -277,7 +262,7 @@ export function ContentTree({
               aria-expanded={open}
               aria-controls={panelId}
               aria-label={`${open ? "Collapse" : "Expand"} “${node.label}”`}
-              className="grid h-6 w-5 shrink-0 place-items-center rounded text-[var(--g-ink3)] hover:text-[var(--g-ink)]"
+              className="grid h-6 w-4 shrink-0 cursor-pointer place-items-center rounded text-[var(--g-ink3)] hover:text-[var(--g-ink)]"
             >
               {open ? (
                 <ChevronDown className="h-3 w-3" aria-hidden="true" />
@@ -286,7 +271,7 @@ export function ContentTree({
               )}
             </button>
           ) : (
-            <span className="w-5 shrink-0" aria-hidden="true" />
+            <span className="w-2 shrink-0" aria-hidden="true" />
           )}
 
           <Link
@@ -294,30 +279,22 @@ export function ContentTree({
             onClick={(event) => onNodeClick(event, chapter.id, node.id)}
             data-content-anchor={node.id || undefined}
             aria-current={isCurrent ? "location" : undefined}
-            title={`${KIND_LABEL[node.kind]} in ${chapter.short}: ${node.label}`}
+            title={`${KIND_LABEL[node.kind]}: ${node.label}`}
             className={`flex min-w-0 flex-1 items-center gap-1.5 py-[5px] leading-snug ${
-              node.kind === "section"
-                ? "text-[12.5px] font-semibold text-[var(--g-ink)]"
-                : node.kind === "subsection"
-                  ? "text-[12px] font-medium text-[var(--g-ink2)]"
-                  : "text-[11.5px] text-[var(--g-ink2)]"
-            } ${isCurrent ? "font-semibold text-[var(--g-accent)]" : ""}`}
+              isCurrent
+                ? "font-semibold text-[var(--g-accent)]"
+                : node.kind === "section"
+                  ? "text-[12.5px] font-medium text-[var(--g-ink)]"
+                  : "text-[12px] text-[var(--g-ink2)] hover:text-[var(--g-ink)]"
+            }`}
           >
-            <KindIcon kind={node.kind} className="h-3 w-3 shrink-0" />
+            <NodeGlyph kind={node.kind} />
             <span className="min-w-0 flex-1 truncate">{node.label}</span>
-            {hasChildren && (
-              <span
-                className="shrink-0 text-[10px] font-medium text-[var(--g-ink3)] tabular-nums"
-                title={`${descendants} nested ${descendants === 1 ? "topic" : "topics"}`}
-              >
-                {descendants}
-              </span>
-            )}
           </Link>
         </div>
 
         {open && (
-          <ol id={panelId} className="content-tree-children">
+          <ol id={panelId} className="content-tree-children mt-0.5 space-y-0.5">
             {node.children.map((child) => renderNode(chapter, child, depth + 1))}
           </ol>
         )}
@@ -326,54 +303,33 @@ export function ContentTree({
   };
 
   return (
-    <nav ref={navRef} aria-label="Content map" className="space-y-1">
-      {/* Map header: what this is, how big the graph is, bulk controls. */}
-      <div className="px-2 pt-1 pb-2">
-        <div className="flex items-baseline justify-between gap-2">
-          <p className="text-[11px] font-bold tracking-[0.09em] text-[var(--g-ink3)] uppercase">
-            Content map
-          </p>
-          <span className="text-[10.5px] font-medium text-[var(--g-ink3)] tabular-nums">
-            {chapters.length} chapters · {totalNodes} topics
-          </span>
-        </div>
-        <div className="mt-1.5 flex items-center gap-1.5">
+    <nav ref={navRef} aria-label="Content map" className="space-y-2">
+      {/* Compact, calm map header */}
+      <div className="flex items-center justify-between gap-2 px-2 pt-1 pb-0.5">
+        <p className="font-mono text-[10.5px] font-semibold tracking-[0.09em] text-[var(--g-ink3)] uppercase">
+          Curriculum
+        </p>
+        <div className="flex items-center gap-1">
+          {activeChapter && (
+            <button
+              type="button"
+              onClick={revealActiveChapter}
+              title="Jump to current chapter"
+              className="inline-flex cursor-pointer items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-medium text-[var(--g-ink3)] transition-colors hover:bg-[var(--g-surface)] hover:text-[var(--g-accent)]"
+            >
+              <Crosshair className="h-3 w-3" aria-hidden="true" />
+              <span>Current</span>
+            </button>
+          )}
           <button
             type="button"
-            onClick={() => setAll(true)}
-            className="inline-flex items-center gap-1 rounded-md border border-[var(--g-line)] bg-[var(--g-surface)] px-2 py-1 text-[10.5px] font-semibold text-[var(--g-ink2)] hover:text-[var(--g-accent)]"
-          >
-            <UnfoldVertical className="h-3 w-3" aria-hidden="true" />
-            Expand all
-          </button>
-          <button
-            type="button"
-            onClick={() => setAll(false)}
-            className="inline-flex items-center gap-1 rounded-md border border-[var(--g-line)] bg-[var(--g-surface)] px-2 py-1 text-[10.5px] font-semibold text-[var(--g-ink2)] hover:text-[var(--g-accent)]"
+            onClick={collapseAllOutlines}
+            title="Collapse expanded chapter outlines"
+            className="inline-flex cursor-pointer items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-medium text-[var(--g-ink3)] transition-colors hover:bg-[var(--g-surface)] hover:text-[var(--g-ink)]"
           >
             <FoldVertical className="h-3 w-3" aria-hidden="true" />
-            Collapse all
+            <span>Collapse</span>
           </button>
-        </div>
-        <div
-          className="mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-[10px] text-[var(--g-ink3)]"
-          aria-hidden="true"
-        >
-          <span className="inline-flex items-center gap-0.5">
-            <Hash className="h-2.5 w-2.5" /> section
-          </span>
-          <span className="inline-flex items-center gap-0.5">
-            <CircleDot className="h-2.5 w-2.5" /> key point
-          </span>
-          <span className="inline-flex items-center gap-0.5">
-            <KeyRound className="h-2.5 w-2.5" /> key idea
-          </span>
-          <span className="inline-flex items-center gap-0.5">
-            <Pencil className="h-2.5 w-2.5" /> exercise
-          </span>
-          <span className="inline-flex items-center gap-0.5">
-            <HelpCircle className="h-2.5 w-2.5" /> quiz
-          </span>
         </div>
       </div>
 
@@ -382,44 +338,67 @@ export function ContentTree({
         if (list.length === 0) return null;
         const isCollapsed = Boolean(collapsedParts[part.key]);
         const pDone = list.filter((c) => Boolean(done[c.id])).length;
+        const allPartDone = part.key !== "app" && part.key !== "welcome" && pDone === list.length;
+        const hasActiveChapter = activeChapter?.part === part.key;
+        const badge = compactPartBadge(part);
 
         return (
-          <div key={part.key}>
+          <div key={part.key} className="space-y-0.5">
             <button
               type="button"
               aria-expanded={!isCollapsed}
               aria-controls={`part-list-${part.key}`}
               onClick={() => togglePart(part.key)}
-              className="flex w-full items-center gap-1.5 rounded-lg px-2 py-1.5 text-left text-xs font-bold text-[var(--g-ink2)] hover:bg-[var(--g-line)]/40 hover:text-[var(--g-ink)]"
+              title={part.partTitle}
+              className={`group flex w-full cursor-pointer items-center gap-1.5 rounded-lg px-2 py-1.5 text-left transition-colors ${
+                hasActiveChapter
+                  ? "text-[var(--g-ink)] hover:bg-[var(--g-surface)]"
+                  : "text-[var(--g-ink2)] hover:bg-[var(--g-surface)]/70 hover:text-[var(--g-ink)]"
+              }`}
             >
               {isCollapsed ? (
                 <ChevronRight
-                  className="h-3.5 w-3.5 shrink-0 text-[var(--g-ink3)]"
+                  className="h-3.5 w-3.5 shrink-0 text-[var(--g-ink3)] transition-colors group-hover:text-[var(--g-ink)]"
                   aria-hidden="true"
                 />
               ) : (
                 <ChevronDown
-                  className="h-3.5 w-3.5 shrink-0 text-[var(--g-ink3)]"
+                  className="h-3.5 w-3.5 shrink-0 text-[var(--g-ink3)] transition-colors group-hover:text-[var(--g-ink)]"
                   aria-hidden="true"
                 />
               )}
-              <span className="min-w-0 flex-1 truncate">
-                {part.partLabel && (
-                  <span className="mr-1.5 text-[10.5px] tracking-wider text-[var(--g-ink3)] uppercase">
-                    {part.partLabel}
-                  </span>
-                )}
+
+              {badge && (
+                <span
+                  className={`inline-flex h-[18px] min-w-[20px] shrink-0 items-center justify-center rounded px-1 font-mono text-[10px] font-semibold tabular-nums ${
+                    hasActiveChapter
+                      ? "bg-[var(--g-accent-soft)] text-[var(--g-accent)]"
+                      : "bg-[var(--g-line)]/70 text-[var(--g-ink3)]"
+                  }`}
+                >
+                  {badge}
+                </span>
+              )}
+
+              <span className="min-w-0 flex-1 truncate text-[12px] font-semibold tracking-[-0.01em]">
                 {part.title}
               </span>
+
               {part.key !== "app" && (
-                <span className="text-[11px] font-medium text-[var(--g-ink3)] tabular-nums">
+                <span
+                  className={`shrink-0 font-mono text-[10.5px] tabular-nums ${
+                    allPartDone
+                      ? "font-semibold text-emerald-700 dark:text-emerald-400"
+                      : "text-[var(--g-ink3)]"
+                  }`}
+                >
                   {pDone}/{list.length}
                 </span>
               )}
             </button>
 
             {!isCollapsed && (
-              <ol id={`part-list-${part.key}`} className="mt-0.5 space-y-0.5 pb-1.5 pl-3">
+              <ol id={`part-list-${part.key}`} className="space-y-0.5 pb-1 pl-1.5">
                 {list.map((chapter) => {
                   const isActive = chapter.id === activeChapterId;
                   const isDone = Boolean(done[chapter.id]);
@@ -427,25 +406,27 @@ export function ContentTree({
                   const outlineNodes = outline ?? [];
                   const hasOutline = outlineNodes.length > 0;
                   const needsOutline = outline === undefined;
-                  const canExpand = hasOutline || needsOutline;
-                  const open = hasOutline && isChapterExpanded(chapter);
+                  const wantOpen = isChapterExpanded(chapter);
+                  const open = hasOutline && wantOpen;
+                  const loadingOutline = Boolean(loadingOutlines?.[chapter.id]);
                   const panelId = `ctree-${chapter.id}`;
-                  const caption = open ? chapterCaption(chapter) : "";
 
                   return (
                     <li key={chapter.id}>
                       <div
-                        className={`relative flex items-center gap-0.5 rounded-lg pr-1 transition-colors ${
+                        data-chapter-row={chapter.id}
+                        className={`relative flex items-center gap-0.5 rounded-lg pr-1.5 transition-colors ${
                           isActive ? "bg-[var(--g-accent-soft)]" : "hover:bg-[var(--g-surface)]"
                         }`}
                       >
                         {isActive && (
                           <span
                             aria-hidden="true"
-                            className="absolute top-1.5 bottom-1.5 -left-2 w-[3px] rounded-full bg-[var(--g-accent)]"
+                            className="absolute top-1.5 bottom-1.5 left-0 w-[2.5px] rounded-full bg-[var(--g-accent)]"
                           />
                         )}
-                        {canExpand ? (
+
+                        {hasOutline || needsOutline ? (
                           <button
                             type="button"
                             onClick={() => {
@@ -464,40 +445,35 @@ export function ContentTree({
                             aria-label={`${
                               needsOutline ? "Load" : open ? "Collapse" : "Expand"
                             } contents of “${chapter.short}”`}
-                            className="grid h-7 w-5 shrink-0 place-items-center rounded text-[var(--g-ink3)] hover:text-[var(--g-ink)]"
+                            className="ml-0.5 grid h-7 w-5 shrink-0 cursor-pointer place-items-center rounded text-[var(--g-ink3)] hover:text-[var(--g-ink)]"
                           >
-                            {open ? (
+                            {loadingOutline ? (
+                              <Loader2 className="h-3 w-3 animate-spin" aria-hidden="true" />
+                            ) : open ? (
                               <ChevronDown className="h-3.5 w-3.5" aria-hidden="true" />
                             ) : (
                               <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />
                             )}
                           </button>
                         ) : (
-                          <span className="w-5 shrink-0" aria-hidden="true" />
+                          <span className="ml-0.5 w-5 shrink-0" aria-hidden="true" />
                         )}
 
                         <Link
                           href={`/chapters/${chapter.id}`}
                           onClick={onNavigate}
                           aria-current={isActive ? "page" : undefined}
+                          title={chapter.title}
                           className={`flex min-w-0 flex-1 items-center gap-2 py-1.5 text-[13px] leading-snug ${
                             isActive
                               ? "font-semibold text-[var(--g-accent)]"
                               : "text-[var(--g-ink2)] hover:text-[var(--g-ink)]"
                           }`}
                         >
-                          <span className="min-w-[1.6rem] shrink-0 font-mono text-[11px] tabular-nums text-[var(--g-ink3)]">
+                          <span className="min-w-[1.5rem] shrink-0 font-mono text-[11px] tabular-nums text-[var(--g-ink3)]">
                             {chapter.num}
                           </span>
                           <span className="min-w-0 flex-1 truncate">{chapter.short}</span>
-                          {hasOutline && (
-                            <span
-                              className="shrink-0 text-[10px] font-medium text-[var(--g-ink3)] tabular-nums"
-                              title={`${countContentNodes(outlineNodes)} topics inside this chapter`}
-                            >
-                              {countContentNodes(outlineNodes)}
-                            </span>
-                          )}
                           {chapter.kind === "project" && (
                             <Flag
                               className="h-3 w-3 shrink-0 text-[var(--g-accent)]"
@@ -515,12 +491,7 @@ export function ContentTree({
 
                       {open && (
                         <div id={panelId}>
-                          {caption && (
-                            <p className="pt-0.5 pb-1 pl-6 text-[10.5px] font-medium text-[var(--g-ink3)]">
-                              {caption}
-                            </p>
-                          )}
-                          <ol className="content-tree-children content-tree-chapter">
+                          <ol className="content-tree-children content-tree-chapter space-y-0.5">
                             {outlineNodes.map((node) => renderNode(chapter, node, 1))}
                           </ol>
                         </div>

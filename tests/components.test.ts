@@ -14,6 +14,7 @@ import { GuideFigure } from "../src/components/GuideFigure";
 import { GuideStateProvider } from "../src/components/GuideStateProvider";
 import { InlineRenderer } from "../src/components/InlineRenderer";
 import { LandingMobileNav } from "../src/components/LandingMobileNav";
+import { LandingShowcase } from "../src/components/LandingShowcase";
 import { MemoryStepper } from "../src/components/MemoryStepper";
 import { QuizWidget } from "../src/components/QuizWidget";
 import { loadGuide } from "../src/lib/guide-parser";
@@ -30,6 +31,16 @@ test("component: mobile landing navigation exposes all core destinations", () =>
   for (const href of ["/chapters", "/chapters/roadmap", "/progress", "/chapters/start"]) {
     assert.ok(html.includes(`href="${href}"`), `missing ${href}`);
   }
+});
+
+test("component: LandingShowcase renders accessible diagram tabs with light and dark SVG plates", () => {
+  const html = renderToStaticMarkup(React.createElement(LandingShowcase));
+  assert.match(html, /role="tablist"/);
+  assert.match(html, /role="tab"/);
+  assert.match(html, /role="tabpanel"/);
+  assert.ok(html.includes('src="/images/ownership-move.svg"'));
+  assert.ok(html.includes('src="/images/ownership-move-dark.svg"'));
+  assert.ok(html.includes('href="/chapters/ownership"'));
 });
 
 test("component: GuideFigure renders light and dark SVG plates plus lightbox", () => {
