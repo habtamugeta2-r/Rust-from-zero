@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { contentSecurityPolicy } from "./src/lib/security-headers";
 
 const SECURITY_HEADERS = [
   { key: "X-Content-Type-Options", value: "nosniff" },
@@ -9,8 +10,7 @@ const SECURITY_HEADERS = [
   },
   {
     key: "Content-Security-Policy",
-    value:
-      "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://play.rust-lang.org; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'",
+    value: contentSecurityPolicy(process.env.NODE_ENV === "development"),
   },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
   {

@@ -6,8 +6,11 @@ import { usePathname } from "next/navigation";
 import { Menu, Monitor, Moon, Search, Sun, X } from "lucide-react";
 import type { ContentNode, NavigationChapter, PartMeta } from "@/lib/guide-types";
 import { themeHint, themeLabel } from "@/lib/theme";
+import { partHref } from "@/lib/navigation";
 import { CommandPalette } from "./CommandPalette";
 import { ContentTree } from "./ContentTree";
+import { LandingMobileNav } from "./LandingMobileNav";
+import { TextSizeControls } from "./TextSizeControls";
 import { useGuideState } from "./GuideStateProvider";
 
 const SIDEBAR_KEY = "rust-guide-sidebar";
@@ -22,8 +25,7 @@ export function GuideShell({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  const { state, persistent, resetAllProgress, cycleTheme, themeMode, stepFontSize } =
-    useGuideState();
+  const { state, persistent, resetAllProgress, cycleTheme, themeMode } = useGuideState();
 
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -229,6 +231,60 @@ export function GuideShell({
     );
   }
 
+  if (pathname === "/") {
+    return (
+      <div className="landing-shell">
+        <header className="landing-header no-print">
+          <div className="landing-header-inner">
+            <Link href="/" className="landing-brand" aria-label="Rust from Zero home">
+              <RustMark />
+              <span>
+                Rust <span className="landing-brand-light">from Zero</span>
+              </span>
+            </Link>
+            <nav aria-label="Main navigation" className="landing-nav">
+              <Link href="/chapters">The curriculum</Link>
+              <Link href="/chapters/roadmap">Learning roadmap</Link>
+              <Link href="/progress">Your progress</Link>
+            </nav>
+            <div className="landing-header-actions">
+              <button
+                type="button"
+                onClick={openPalette}
+                aria-label="Search the guide"
+                title="Search the guide"
+                className="landing-icon-button"
+              >
+                <Search className="h-[18px] w-[18px]" aria-hidden="true" />
+              </button>
+              <button
+                type="button"
+                onClick={cycleTheme}
+                aria-label={`Theme: ${themeLabel(themeMode)}. ${themeHint(themeMode)}`}
+                title={`Theme: ${themeLabel(themeMode)} — ${themeHint(themeMode)}`}
+                className="landing-icon-button"
+              >
+                {themeMode === "system" ? (
+                  <Monitor className="h-[18px] w-[18px]" aria-hidden="true" />
+                ) : themeMode === "dark" ? (
+                  <Moon className="h-[18px] w-[18px]" aria-hidden="true" />
+                ) : (
+                  <Sun className="h-[18px] w-[18px]" aria-hidden="true" />
+                )}
+              </button>
+              <Link href="/chapters/start" className="landing-header-cta">
+                Start learning <span aria-hidden="true">↗</span>
+              </Link>
+              <LandingMobileNav />
+            </div>
+          </div>
+        </header>
+        <main id="main">{children}</main>
+        <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
+      </div>
+    );
+  }
+
   return (
     <div className="app-shell" data-sidebar={sidebarOpen ? "open" : "closed"}>
       {/* Mobile scrim */}
@@ -332,29 +388,7 @@ export function GuideShell({
         <div className="border-t border-[var(--g-line)] px-4 py-3 text-[11.5px] text-[var(--g-ink3)]">
           <div className="mb-2 flex items-center justify-between gap-2 lg:hidden">
             <span className="font-medium text-[var(--g-ink2)]">Text size</span>
-            <div
-              role="group"
-              aria-label="Text size"
-              className="flex items-center overflow-hidden rounded-lg border border-[var(--g-line)] bg-[var(--g-surface)]"
-            >
-              <button
-                type="button"
-                onClick={() => stepFontSize(-1)}
-                aria-label="Smaller text"
-                className="grid h-8 w-9 place-items-center text-[11px] font-bold text-[var(--g-ink2)] hover:bg-[var(--g-sunken)] hover:text-[var(--g-ink)]"
-              >
-                A−
-              </button>
-              <div className="h-5 w-px bg-[var(--g-line)]" aria-hidden="true" />
-              <button
-                type="button"
-                onClick={() => stepFontSize(1)}
-                aria-label="Larger text"
-                className="grid h-8 w-9 place-items-center text-[13px] font-bold text-[var(--g-ink2)] hover:bg-[var(--g-sunken)] hover:text-[var(--g-ink)]"
-              >
-                A+
-              </button>
-            </div>
+            <TextSizeControls />
           </div>
           <nav
             aria-label="Study tools"
@@ -438,20 +472,34 @@ export function GuideShell({
 
           <div className="min-w-0 flex-1 truncate font-sans text-xs sm:text-[13px]">
             {activeChapter ? (
-              <span className="flex items-center gap-1.5 truncate text-[var(--g-ink3)]">
-                <span className="hidden truncate sm:inline">{activeChapter.partTitle}</span>
+              <nav
+                aria-label="Chapter location"
+                className="flex min-w-0 items-center gap-1.5 text-[var(--g-ink3)]"
+              >
+                <Link
+                  href={partHref(activeChapter.partTitle)}
+                  title={`Browse ${activeChapter.partTitle}`}
+                  className="hidden min-w-0 max-w-[50%] truncate hover:text-[var(--g-accent)] hover:underline sm:block"
+                >
+                  {activeChapter.partTitle}
+                </Link>
                 <span className="hidden shrink-0 sm:inline" aria-hidden="true">
                   ›
                 </span>
-                <strong className="truncate font-semibold text-[var(--g-ink)]">
+                <Link
+                  href={`/chapters/${activeChapter.id}#chapter-top`}
+                  title={`Back to the start of ${activeChapter.title}`}
+                  aria-current="page"
+                  className="min-w-0 truncate font-semibold text-[var(--g-ink)] hover:text-[var(--g-accent)] hover:underline"
+                >
                   {activeChapter.kind === "appendix"
                     ? `Appendix ${activeChapter.num} · `
                     : activeChapter.num !== "0"
                       ? `${activeChapter.num} · `
                       : ""}
                   {activeChapter.title}
-                </strong>
-              </span>
+                </Link>
+              </nav>
             ) : (
               <span className="text-[var(--g-ink2)]">
                 <strong className="font-bold text-[var(--g-ink)]">Rust from Zero</strong>
@@ -491,31 +539,7 @@ export function GuideShell({
               </kbd>
             </button>
 
-            <div
-              className="hidden items-center overflow-hidden rounded-lg border border-[var(--g-line)] bg-[var(--g-surface)] shadow-card sm:flex"
-              role="group"
-              aria-label="Text size"
-            >
-              <button
-                type="button"
-                onClick={() => stepFontSize(-1)}
-                aria-label="Smaller text"
-                title="Smaller text"
-                className="grid h-9 w-9 place-items-center text-[11px] font-bold text-[var(--g-ink2)] transition-colors hover:bg-[var(--g-sunken)] hover:text-[var(--g-ink)]"
-              >
-                A−
-              </button>
-              <div className="h-5 w-px bg-[var(--g-line)]" aria-hidden="true" />
-              <button
-                type="button"
-                onClick={() => stepFontSize(1)}
-                aria-label="Larger text"
-                title="Larger text"
-                className="grid h-9 w-9 place-items-center text-[13px] font-bold text-[var(--g-ink2)] transition-colors hover:bg-[var(--g-sunken)] hover:text-[var(--g-ink)]"
-              >
-                A+
-              </button>
-            </div>
+            <TextSizeControls />
 
             <button
               type="button"
@@ -545,28 +569,7 @@ export function GuideShell({
   );
 }
 
-/** The gear-and-tick mark, drawn inline so it needs no network request. */
+/** Shared brand mark used on the landing page and in the guide. */
 function RustMark() {
-  return (
-    <svg className="h-8 w-8 shrink-0 text-[var(--g-accent)]" viewBox="0 0 32 32" aria-hidden="true">
-      <circle
-        cx="16"
-        cy="16"
-        r="11"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="5"
-        strokeDasharray="4.32 4.32"
-      />
-      <circle cx="16" cy="16" r="8.4" fill="none" stroke="currentColor" strokeWidth="2.6" />
-      <path
-        d="M11.5 16.2l3.2 3.2 5.8-6.4"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2.4"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
+  return <span className="landing-brand-mark shrink-0" aria-hidden="true" />;
 }

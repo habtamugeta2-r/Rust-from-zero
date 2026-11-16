@@ -32,17 +32,14 @@ export default async function SearchPage({
 
   return (
     <div className="mx-auto w-full max-w-[var(--page-max)] px-5 py-10 sm:px-8 lg:py-14">
-      <p className="font-sans text-[11px] font-bold tracking-[0.09em] text-[var(--g-ink3)] uppercase">
-        Search
-      </p>
-      <h1 className="mt-2 font-sans text-[30px] font-bold tracking-tight text-balance text-[var(--g-ink)] sm:text-[36px]">
-        Find anything in the guide
-      </h1>
-      <p className="mt-2 max-w-2xl font-sans text-[15px] leading-relaxed text-pretty text-[var(--g-ink2)]">
-        Every heading, paragraph and explanation is indexed across{" "}
-        {guide.stats.trackedChapters} chapters — {guide.searchIndex.length}{" "}
-        entries in total.
-      </p>
+      <header className="guide-page-intro">
+        <p className="guide-page-eyebrow">THE GUIDE <span> / </span> SEARCH</p>
+        <h1>Find what you <em>need.</em></h1>
+        <p>
+          Search {guide.searchIndex.length} entries across {guide.stats.trackedChapters} chapters,
+          from concepts and explanations to code examples.
+        </p>
+      </header>
 
       <form
         action="/search"
@@ -74,7 +71,7 @@ export default async function SearchPage({
         </label>
         <button
           type="submit"
-          className="inline-flex h-11 shrink-0 items-center gap-2 rounded-well bg-[var(--g-accent)] px-4 font-sans text-sm font-bold text-white shadow-card transition-colors hover:bg-[var(--g-accent-hover)]"
+          className="inline-flex h-11 shrink-0 items-center gap-2 rounded-well bg-[var(--g-accent)] px-4 font-sans text-sm font-bold text-[var(--g-on-accent)] shadow-card transition-colors hover:bg-[var(--g-accent-hover)]"
         >
           Search
         </button>

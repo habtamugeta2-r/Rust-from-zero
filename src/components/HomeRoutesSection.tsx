@@ -73,7 +73,7 @@ export function HomeRoutesSection({
               onClick={() => setActiveRouteId(rt.id)}
               className={`rounded-full border px-4 py-1.5 text-[13px] font-semibold transition-colors ${
                 isOn
-                  ? "border-[var(--g-accent)] bg-[var(--g-accent)] text-white shadow-card"
+                  ? "border-[var(--g-accent)] bg-[var(--g-accent)] text-[var(--g-on-accent)] shadow-card"
                   : "border-[var(--g-line2)] bg-[var(--g-surface)] text-[var(--g-ink2)] shadow-card hover:border-[var(--g-accent)] hover:text-[var(--g-ink)]"
               }`}
             >

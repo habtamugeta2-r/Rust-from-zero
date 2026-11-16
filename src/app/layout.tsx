@@ -1,10 +1,12 @@
 import type { Metadata, Viewport } from "next";
+import Script from "next/script";
 import { GuideShell } from "@/components/GuideShell";
 import { GuideStateProvider } from "@/components/GuideStateProvider";
 import { loadGuide } from "@/lib/guide-parser";
 import { websiteJsonLd } from "@/lib/seo";
 import "./globals.css";
 import { SITE_URL } from "@/lib/site";
+import { THEME_INIT_SCRIPT } from "@/lib/theme";
 
 /**
  * Counts come from the chapters themselves, so adding a chapter or an exercise
@@ -53,13 +55,6 @@ export const viewport: Viewport = {
   ],
 };
 
-/**
- * Runs before first paint so a reader who chose dark never sees a light flash.
- * "system" is the default, and it is resolved here rather than in React so the
- * first frame is already correct on a statically cached page.
- */
-const THEME_INIT_SCRIPT = `(function(){try{var raw=localStorage.getItem("rust-guide-v1");var d=raw?JSON.parse(raw):null;var mode=(d&&(d.theme==="dark"||d.theme==="light"||d.theme==="system"))?d.theme:"system";var theme=mode==="system"?(window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"):mode;document.documentElement.classList.toggle("dark",theme==="dark");document.documentElement.setAttribute("data-theme",theme);document.documentElement.setAttribute("data-theme-mode",mode);if(d&&typeof d.fs==="number"&&d.fs>=15&&d.fs<=24){document.documentElement.style.setProperty("--guide-fs",d.fs+"px");}}catch(e){}})();`;
-
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -95,9 +90,8 @@ export default function RootLayout({
   ];
 
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" data-scroll-behavior="smooth" suppressHydrationWarning>
       <head>
-        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
         {jsonLd.map((obj, i) => (
           <script
             key={i}
@@ -109,9 +103,14 @@ export default function RootLayout({
         ))}
       </head>
       <body className="antialiased">
+        <Script
+          id="theme-init"
+          strategy="beforeInteractive"
+          dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }}
+        />
         <a
           href="#main"
-          className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:rounded-lg focus:bg-[var(--g-accent)] focus:px-4 focus:py-2 focus:text-sm focus:font-bold focus:text-white"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:rounded-lg focus:bg-[var(--g-accent)] focus:px-4 focus:py-2 focus:text-sm focus:font-bold focus:text-[var(--g-on-accent)]"
         >
           Skip to content
         </a>

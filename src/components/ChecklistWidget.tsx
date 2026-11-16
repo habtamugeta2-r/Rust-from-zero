@@ -24,7 +24,7 @@ export function ChecklistWidget({
         const checked = Boolean(state.saved[item.id]);
         return (
           <li key={item.id} className="list-none">
-            <label className="flex cursor-pointer items-start gap-3 font-sans text-[15.5px] leading-snug">
+            <label data-reading-checklist className="flex cursor-pointer items-start gap-3 font-sans text-[15.5px] leading-snug">
               <input
                 type="checkbox"
                 checked={checked}

@@ -2,10 +2,11 @@
 
 import React, { useMemo } from "react";
 import Link from "next/link";
-import { Bookmark, Check, Clock } from "lucide-react";
+import { ArrowRight, Bookmark, Check, Clock } from "lucide-react";
 import { useGuideState } from "./GuideStateProvider";
 import { buildChapterProgress, type ChapterMeta, type ChapterProgress } from "@/lib/progress";
 import { LEVEL_LABELS } from "@/lib/guide-config";
+import { partAnchor } from "@/lib/navigation";
 
 const KIND_LABELS: Record<ChapterMeta["kind"], string> = {
   chapter: "Chapter",
@@ -37,27 +38,22 @@ export function ChaptersIndex({ chapters }: { chapters: ChapterMeta[] }) {
   }, [chapters, state]);
 
   return (
-    <div className="space-y-10">
+    <div className="curriculum-groups">
       {groups.map((group) => (
-        <section key={group.partTitle} aria-labelledby={`part-${slug(group.partTitle)}`}>
-          <h2
-            id={`part-${slug(group.partTitle)}`}
-            className="mb-3 font-sans text-xs font-bold tracking-wider text-[var(--g-ink3)] uppercase"
-          >
-            {group.partTitle}
-          </h2>
-          <ul className="space-y-2">
+        <section key={group.partTitle} aria-labelledby={partAnchor(group.partTitle)}>
+          <div className="curriculum-group-heading">
+            <h2 id={partAnchor(group.partTitle)}>{group.partTitle}</h2>
+            <span>
+              {group.items.length} {group.items.length === 1 ? "entry" : "entries"}
+            </span>
+          </div>
+          <ul className="curriculum-list">
             {group.items.map((row) => (
               <li key={row.id}>
-                <Link
-                  href={`/chapters/${row.id}`}
-                  className="group flex items-center gap-3 rounded-xl border border-[var(--g-line)] bg-[var(--g-surface)] px-3.5 py-3 shadow-card transition-colors hover:border-[var(--g-accent)]"
-                >
-                  <span className="w-9 shrink-0 font-mono text-[11px] text-[var(--g-ink3)]">
-                    {row.num}
-                  </span>
+                <Link href={`/chapters/${row.id}`} className="curriculum-row group">
+                  <span className="curriculum-row-number">{row.num}</span>
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate font-sans text-[13.5px] font-semibold text-[var(--g-ink)]">
+                    <span className="block font-sans text-[15px] font-semibold text-[var(--g-ink)]">
                       {row.title}
                     </span>
                     <span className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1 font-sans text-[11.5px] text-[var(--g-ink3)]">
@@ -110,6 +106,7 @@ export function ChaptersIndex({ chapters }: { chapters: ChapterMeta[] }) {
                           ? `${row.pct}%`
                           : "Not started"}
                   </span>
+                  <ArrowRight className="curriculum-row-arrow" aria-hidden="true" />
                 </Link>
               </li>
             ))}
@@ -118,11 +115,4 @@ export function ChaptersIndex({ chapters }: { chapters: ChapterMeta[] }) {
       ))}
     </div>
   );
-}
-
-function slug(text: string): string {
-  return text
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "");
 }

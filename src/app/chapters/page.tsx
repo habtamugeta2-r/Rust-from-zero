@@ -21,18 +21,19 @@ export default function ChaptersPage() {
   const chapters: ChapterMeta[] = guide.chapters.map(collectChapterMeta);
 
   return (
-    <div className="mx-auto w-full max-w-[var(--page-max)] px-5 py-10 sm:px-8 lg:py-14">
-      <p className="font-sans text-[11px] font-bold tracking-[0.09em] text-[var(--g-ink3)] uppercase">
-        Chapter index
-      </p>
-      <h1 className="mt-2 font-sans text-[30px] font-bold tracking-tight text-balance text-[var(--g-ink)] sm:text-[36px]">
-        Chapters
-      </h1>
-      <p className="mt-3 max-w-[var(--measure)] font-sans text-[15px] leading-relaxed text-[var(--g-ink2)]">
-        {guide.stats.totalChapters} chapters and appendices in reading order, grouped by part. Each
-        entry shows its kind, level and declared reading time; the badge on the right is your own
-        state, kept in this browser.
-      </p>
+    <div className="guide-index-page mx-auto w-full max-w-[var(--page-max)] px-5 py-10 sm:px-8 lg:py-14">
+      <header className="guide-page-intro">
+        <p className="guide-page-eyebrow">
+          THE CURRICULUM <span> / </span> YOUR LEARNING LIBRARY
+        </p>
+        <h1>
+          Find your next <em>chapter.</em>
+        </h1>
+        <p>
+          Explore {guide.stats.totalChapters} chapters and appendices, from the fundamentals to
+          real-world Rust. Follow the sequence or jump into a topic that interests you.
+        </p>
+      </header>
       <div className="mt-8">
         <ChaptersIndex chapters={chapters} />
       </div>

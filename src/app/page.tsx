@@ -1,171 +1,200 @@
 import React from "react";
 import Link from "next/link";
-import { BadgeCheck } from "lucide-react";
-import { GuideSearchButton } from "@/components/GuideSearchButton";
+import { ArrowDown, ArrowRight, BookOpen, Braces, Layers3 } from "lucide-react";
 import { HeroRunner } from "@/components/HeroRunner";
 import { HomeContinueButton } from "@/components/HomeContinueButton";
-import { GuideFigure } from "@/components/GuideFigure";
 import { HomeRoutesSection } from "@/components/HomeRoutesSection";
 import { loadGuide } from "@/lib/guide-parser";
 import { courseJsonLd } from "@/lib/seo";
 
 export default function HomePage() {
-  const guide = loadGuide();
-  const { stats, parts, routes, summaries } = guide;
-
-  const steps = [
-    {
-      n: "01",
-      title: "Read",
-      body: (
-        <>
-          Every idea starts with an everyday comparison. Every technical word is explained the first
-          time it appears, and again in the{" "}
-          <Link
-            href="/chapters/glossary"
-            className="font-medium text-[var(--g-accent)] underline decoration-[var(--g-accent)]/40"
-          >
-            glossary
-          </Link>
-          .
-        </>
-      ),
-    },
-    {
-      n: "02",
-      title: "Run",
-      body: (
-        <>
-          {stats.codeBlocks} code listings, and every Rust program among them compiled and run with
-          the real Rust compiler. Press <strong className="text-[var(--g-ink)]">Run</strong> on a
-          complete example to execute it right here and see the result below — or{" "}
-          <strong className="text-[var(--g-ink)]">Edit</strong> to tweak and re-run it in place.
-        </>
-      ),
-    },
-    {
-      n: "03",
-      title: "Practise",
-      body: (
-        <>
-          Guided exercises, practice tasks and challenges follow every concept, each with a hint and
-          a fully explained solution. Quizzes give instant feedback.
-        </>
-      ),
-    },
-    {
-      n: "04",
-      title: "Build",
-      body: (
-        <>
-          Projects at every milestone: a game, a to-do app, a search tool, a report generator, a
-          chat server, a command-line tool, a web API with a database, a Linux systems inspector,
-          and a capstone.
-        </>
-      ),
-    },
-  ];
+  const { stats, parts, routes, summaries } = loadGuide();
 
   return (
-    <div className="mx-auto w-full max-w-[var(--page-max)] px-5 py-10 sm:px-8 lg:py-14">
+    <div className="landing-page">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
           __html: JSON.stringify(courseJsonLd(parts, summaries)).replace(/</g, "\\u003c"),
         }}
       />
-      {/* Hero */}
-      <section className="grid items-center gap-10 lg:grid-cols-[1.25fr_0.95fr] lg:gap-14 2xl:gap-20">
-        <div>
-          <div className="flex flex-wrap items-center gap-2">
-            <p className="inline-flex items-center gap-2 rounded-full border border-[var(--g-line)] bg-[var(--g-surface)] px-3.5 py-1.5 font-sans text-xs font-semibold text-[var(--g-ink2)] shadow-card">
-              <BadgeCheck className="h-3.5 w-3.5 text-[var(--g-accent)]" />
-              Self-study course · Rust 2024 edition · tested on Rust 1.100
-            </p>
-            <GuideSearchButton chapters={stats.trackedChapters} />
-          </div>
 
-          <h1 className="mt-5 font-sans text-[40px] leading-[1.08] font-bold tracking-[-0.02em] text-balance text-[var(--g-ink)] sm:text-[52px] 2xl:text-[58px]">
-            Learn Rust from zero.
-            <br />
-            <span className="bg-gradient-to-r from-[var(--g-accent)] to-[var(--g-accent-2)] bg-clip-text text-transparent">
-              Understand the whole machine.
-            </span>
-          </h1>
-
-          <p className="mt-5 max-w-xl font-sans text-[16.5px] leading-relaxed text-pretty text-[var(--g-ink2)] sm:text-[17px]">
-            A complete guide to computer systems, Rust internals, and real-world software—starting
-            from absolute zero. Follow the full journey from transistors, binary, and CPU registers
-            through compilation, memory organisation, operating systems, I/O, networking, and
-            storage up to concurrent services and Linux systems tools. Explore the{" "}
-            <Link
-              href="/chapters/roadmap"
-              className="font-medium text-[var(--g-accent)] underline decoration-[var(--g-accent)]/40 underline-offset-4"
-            >
-              Complete Learning Roadmap
-            </Link>{" "}
-            or jump straight into Chapter 1.
+      <section className="landing-hero landing-container">
+        <div className="landing-hero-copy">
+          <p className="landing-eyebrow">
+            <span /> A HANDS-ON GUIDE TO RUST
           </p>
-
+          <h1>
+            Understand more.
+            <br />
+            <em>Build better.</em>
+          </h1>
+          <p className="landing-hero-description">
+            Learn Rust from the ground up, and discover how your code works beneath the surface. A
+            practical guide for curious minds, from your first program to real-world projects.
+          </p>
           <HomeContinueButton chapters={summaries} />
-
-          <dl className="mt-10 grid grid-cols-2 gap-x-4 gap-y-6 border-t border-[var(--g-line)] pt-6 font-sans sm:grid-cols-4">
-            {[
-              [String(stats.trackedChapters), "chapters"],
-              [String(stats.exercises), "exercises with solutions"],
-              [String(stats.questions), "quiz questions"],
-              [String(stats.projects), "hands-on projects"],
-            ].map(([num, label]) => (
-              <div key={label} className="flex flex-col">
-                <dt className="order-2 mt-1.5 text-[13px] text-[var(--g-ink3)]">{label}</dt>
-                <dd className="order-1 text-[28px] leading-none font-bold tracking-tight tabular-nums text-[var(--g-ink)]">
-                  {num}
-                </dd>
-              </div>
-            ))}
-          </dl>
+          <div className="landing-hero-note">
+            <span className="landing-note-line" /> FREE TO EXPLORE <span>·</span> LEARN AT YOUR OWN
+            PACE
+          </div>
         </div>
-
-        {/* Hero visual: interactive editor + live terminal */}
-        <HeroRunner trackedChapters={stats.trackedChapters} />
+        <div className="landing-hero-visual">
+          <div className="landing-visual-top">
+            <span>YOUR FIRST PROGRAM</span>
+            <span>01 / 01</span>
+          </div>
+          <HeroRunner trackedChapters={stats.trackedChapters} />
+          <div className="landing-visual-bottom">
+            <span>WRITE IT. RUN IT. UNDERSTAND IT.</span>
+            <span>↗</span>
+          </div>
+        </div>
+        <a className="landing-scroll" href="#approach">
+          <ArrowDown size={15} aria-hidden="true" /> SCROLL TO EXPLORE
+        </a>
       </section>
 
-      {/* The journey, in one picture */}
-      <div className="mt-14">
-        <GuideFigure
-          src="/images/end-to-end-trace.svg"
-          alt="Diagram of the end-to-end journey: write, compile, load, execute, ask the kernel, see output"
-          caption="Every chapter opens one layer of this picture — compiler, linker, loader, CPU, memory, kernel, terminal — and teaches the Rust that lives there."
-        />
-      </div>
-
-      {/* How this guide works */}
-      <section className="mt-20">
-        <h2 className="font-sans text-[24px] font-bold tracking-tight text-balance text-[var(--g-ink)] sm:text-[26px]">
-          How this guide works
-        </h2>
-        <div className="mt-7 grid gap-x-6 gap-y-8 sm:grid-cols-2 lg:grid-cols-4">
-          {steps.map((s) => (
-            <div key={s.n} className="group border-t-2 border-[var(--g-line)] pt-4">
-              <div className="flex items-baseline justify-between font-sans">
-                <span className="text-[13px] font-bold tabular-nums text-[var(--g-accent)]">
-                  {s.n}
-                </span>
-                <span className="h-px w-8 bg-[var(--g-accent)]/50" />
-              </div>
-              <h3 className="mt-2.5 font-sans text-[17px] font-bold text-[var(--g-ink)]">
-                {s.title}
-              </h3>
-              <p className="mt-1.5 font-sans text-sm leading-relaxed text-[var(--g-ink2)]">
-                {s.body}
-              </p>
+      <section className="landing-stats" aria-label="Course at a glance">
+        <div className="landing-container landing-stats-inner">
+          <p>
+            AN ENTIRE WORLD
+            <br />
+            <strong>TO EXPLORE.</strong>
+          </p>
+          {[
+            [stats.trackedChapters, "chapters"],
+            [stats.exercises, "solved exercises"],
+            [stats.questions, "quiz questions"],
+            [stats.projects, "hands-on projects"],
+          ].map(([number, label]) => (
+            <div className="landing-stat" key={label}>
+              <strong>{number}</strong>
+              <span>{label}</span>
             </div>
           ))}
         </div>
       </section>
 
-      {/* Interactive Learning Path */}
-      <HomeRoutesSection parts={parts} routes={routes} chapters={summaries} />
+      <section id="approach" className="landing-container landing-approach">
+        <div className="landing-section-heading">
+          <div>
+            <p className="landing-eyebrow">
+              <span /> THE APPROACH
+            </p>
+            <h2>
+              Learn the language.
+              <br />
+              <em>See the bigger picture.</em>
+            </h2>
+          </div>
+          <p>
+            Good software starts with understanding. This guide connects the concepts to the code,
+            one thoughtful step at a time.
+          </p>
+        </div>
+        <div className="landing-feature-grid">
+          <article>
+            <div className="landing-feature-icon">
+              <BookOpen size={21} />
+            </div>
+            <span className="landing-feature-number">01 / THE FOUNDATIONS</span>
+            <h3>Start with clarity.</h3>
+            <p>
+              Build your understanding with plain-language explanations, visual examples, and a pace
+              that works for you.
+            </p>
+          </article>
+          <article>
+            <div className="landing-feature-icon">
+              <Braces size={21} />
+            </div>
+            <span className="landing-feature-number">02 / THE PRACTICE</span>
+            <h3>Learn by doing.</h3>
+            <p>
+              Run real Rust code, work through exercises, and turn new ideas into skills you can
+              actually use.
+            </p>
+          </article>
+          <article>
+            <div className="landing-feature-icon">
+              <Layers3 size={21} />
+            </div>
+            <span className="landing-feature-number">03 / THE BIG PICTURE</span>
+            <h3>Go beneath the code.</h3>
+            <p>
+              Explore memory, operating systems, networking, and the machinery that makes your
+              programs run.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section className="landing-curriculum">
+        <div className="landing-container landing-curriculum-inner">
+          <div>
+            <p className="landing-eyebrow">
+              <span /> YOUR PATH FORWARD
+            </p>
+            <h2>
+              From first steps
+              <br />
+              <em>to what&apos;s next.</em>
+            </h2>
+            <p>
+              Follow the guide from beginning to end, or find the chapters that match what you want
+              to build. Your progress stays saved in your browser.
+            </p>
+            <Link href="/chapters" className="landing-text-link">
+              Explore the curriculum <ArrowRight size={17} />
+            </Link>
+          </div>
+          <div className="landing-path-list">
+            <Link href="/chapters/start">
+              <span>01</span>
+              <strong>Start with the essentials</strong>
+              <ArrowRight size={18} />
+            </Link>
+            <Link href="/chapters/roadmap">
+              <span>02</span>
+              <strong>Find your learning path</strong>
+              <ArrowRight size={18} />
+            </Link>
+            <Link href="/progress">
+              <span>03</span>
+              <strong>Track your progress</strong>
+              <ArrowRight size={18} />
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      <div className="landing-container landing-routes">
+        <details>
+          <summary>
+            Explore the interactive learning paths <span>+</span>
+          </summary>
+          <HomeRoutesSection parts={parts} routes={routes} chapters={summaries} />
+        </details>
+      </div>
+      <footer className="landing-footer">
+        <div className="landing-container">
+          <strong>
+            Rust from Zero<span>.</span>
+          </strong>
+          <p>A little curiosity goes a long way.</p>
+          <Link href="/chapters/start">
+            Let&apos;s get started <ArrowRight size={16} />
+          </Link>
+        </div>
+        <div className="landing-container landing-attribution">
+          <a href="https://github.com/rust-lang/rust-artwork/tree/master/logo">Rust logo</a> by the
+          Rust Project, used under{" "}
+          <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>; recolored and used
+          as a browser icon. Rust from Zero is an independent guide and is not endorsed by the Rust
+          Project.
+        </div>
+      </footer>
     </div>
   );
 }

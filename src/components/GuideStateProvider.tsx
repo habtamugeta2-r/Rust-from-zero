@@ -147,6 +147,9 @@ export function GuideStateProvider({ children }: { children: React.ReactNode }) 
   const [themeMode, setThemeModeState] = useState<ThemeMode>("system");
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [fontSize, setFontSize] = useState<number>(18);
+  const fontSizeRef = useRef(18);
+  const hydratedRef = useRef(false);
+  const pendingUpdates = useRef<Array<(prev: SavedState) => SavedState>>([]);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const [tip, setTip] = useState<TipState | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -171,6 +174,18 @@ export function GuideStateProvider({ children }: { children: React.ReactNode }) 
       canPersist = false;
     }
 
+    const pending = pendingUpdates.current;
+    pendingUpdates.current = [];
+    loaded = pending.reduce((current, update) => update(current), loaded);
+    hydratedRef.current = true;
+    if (canPersist && pending.length > 0) {
+      try {
+        window.localStorage.setItem(STORAGE_KEY, JSON.stringify(loaded));
+      } catch {
+        canPersist = false;
+      }
+    }
+
     const resolvedMode: ThemeMode = loaded.theme ?? "system";
     const resolvedFs = loaded.fs && loaded.fs >= 15 && loaded.fs <= 24 ? loaded.fs : 18;
 
@@ -178,12 +193,17 @@ export function GuideStateProvider({ children }: { children: React.ReactNode }) 
     setState(loaded);
     setThemeModeState(resolvedMode);
     setTheme(applyTheme(resolvedMode));
+    fontSizeRef.current = resolvedFs;
     setFontSize(resolvedFs);
     document.documentElement.style.setProperty("--guide-fs", `${resolvedFs}px`);
   }, []);
 
   const persistState = useCallback(
     (updater: (prev: SavedState) => SavedState) => {
+      if (!hydratedRef.current) {
+        pendingUpdates.current.push(updater);
+        return;
+      }
       setState((prev) => {
         const next = updater(prev);
         if (persistent) {
@@ -308,6 +328,7 @@ export function GuideStateProvider({ children }: { children: React.ReactNode }) 
         finalState.fs && finalState.fs >= 15 && finalState.fs <= 24 ? finalState.fs : 18;
       setThemeModeState(mode2);
       setTheme(applyTheme(mode2));
+      fontSizeRef.current = resolvedFs;
       setFontSize(resolvedFs);
       document.documentElement.style.setProperty("--guide-fs", `${resolvedFs}px`);
       showToast(
@@ -350,16 +371,17 @@ export function GuideStateProvider({ children }: { children: React.ReactNode }) 
 
   const stepFontSize = useCallback(
     (delta: number) => {
-      const next = Math.min(24, Math.max(15, fontSize + delta));
-      if (next === fontSize) {
+      const next = Math.min(24, Math.max(15, fontSizeRef.current + delta));
+      if (next === fontSizeRef.current) {
         showToast(delta > 0 ? "That is the largest text size." : "That is the smallest text size.");
         return;
       }
+      fontSizeRef.current = next;
       setFontSize(next);
       document.documentElement.style.setProperty("--guide-fs", `${next}px`);
       persistState((prev) => ({ ...prev, fs: next }));
     },
-    [fontSize, persistState, showToast],
+    [persistState, showToast],
   );
 
   const keepGlossaryTipOpen = useCallback(() => {

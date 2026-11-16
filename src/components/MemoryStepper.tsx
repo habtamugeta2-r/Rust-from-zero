@@ -114,7 +114,7 @@ export function MemoryStepper({
             type="button"
             onClick={() => setStepIdx(isLast ? 0 : stepIdx + 1)}
             aria-label={isLast ? "Start over from step 1" : "Next step"}
-            className="inline-flex min-h-9 items-center gap-1 rounded-lg bg-[var(--g-accent)] px-3 py-1 text-xs font-semibold text-white transition-colors hover:bg-[var(--g-accent-hover)]"
+            className="inline-flex min-h-9 items-center gap-1 rounded-lg bg-[var(--g-accent)] px-3 py-1 text-xs font-semibold text-[var(--g-on-accent)] transition-colors hover:bg-[var(--g-accent-hover)]"
           >
             {isLast ? (
               <>

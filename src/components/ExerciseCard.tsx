@@ -53,7 +53,7 @@ export function ExerciseCard({
         <div className="space-y-2 border-t border-[var(--g-line)] bg-[var(--g-bg)]/50 px-4 py-3 font-sans text-[15px] sm:px-5">
           {hint && (
             <details className="group rounded-xl border border-[var(--g-line)] bg-[var(--g-surface)] px-4 py-2.5">
-              <summary className="flex cursor-pointer list-none items-center gap-2 py-0.5 font-semibold text-[var(--g-ink2)] hover:text-[var(--g-accent)]">
+              <summary data-reading-summary className="flex cursor-pointer list-none items-center gap-2 py-0.5 font-semibold text-[var(--g-ink2)] hover:text-[var(--g-accent)]">
                 <Lightbulb className="h-4 w-4 text-amber-500" aria-hidden="true" />
                 <span>Need a hint?</span>
                 <ChevronDown
@@ -68,7 +68,7 @@ export function ExerciseCard({
           )}
           {solution && (
             <details className="group rounded-xl border border-[var(--g-line)] bg-[var(--g-surface)] px-4 py-2.5">
-              <summary className="flex cursor-pointer list-none items-center gap-2 py-0.5 font-semibold text-[var(--g-ink2)] hover:text-[var(--g-accent)]">
+              <summary data-reading-summary className="flex cursor-pointer list-none items-center gap-2 py-0.5 font-semibold text-[var(--g-ink2)] hover:text-[var(--g-accent)]">
                 <CheckCircle2
                   className="h-4 w-4 text-emerald-600 dark:text-emerald-400"
                   aria-hidden="true"

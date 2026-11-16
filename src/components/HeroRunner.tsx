@@ -179,7 +179,7 @@ export function HeroRunner({ trackedChapters }: { trackedChapters: number }) {
                   : "Compile and run — output appears in the Terminal below"
               }
               aria-label={isRunning ? "Stop running this example" : "Run this example in the guide"}
-              className="inline-flex cursor-pointer items-center gap-1.5 rounded-md bg-[var(--g-accent)] px-3 py-1 text-[11.5px] font-bold text-white transition-colors hover:bg-[var(--g-accent-hover)]"
+              className="inline-flex cursor-pointer items-center gap-1.5 rounded-md bg-[var(--g-accent)] px-3 py-1 text-[11.5px] font-bold text-[var(--g-on-accent)] transition-colors hover:bg-[var(--g-accent-hover)]"
             >
               {isRunning ? (
                 <>
