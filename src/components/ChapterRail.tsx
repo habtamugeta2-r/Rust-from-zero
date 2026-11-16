@@ -69,10 +69,10 @@ export function ChapterRail({ headings }: { headings: HeadingItem[] }) {
   return (
     <div className="flex max-h-[inherit] flex-col">
       <div className="mb-3 flex items-center justify-between gap-2">
-        <p className="font-sans text-[11px] font-bold tracking-[0.09em] text-[var(--g-ink3)] uppercase">
+        <p className="font-mono text-[10.5px] font-semibold tracking-[0.09em] text-[var(--g-ink3)] uppercase">
           On this page
         </p>
-        <span className="font-sans text-[11px] font-semibold text-[var(--g-ink3)] tabular-nums">
+        <span className="font-mono text-[11px] font-semibold text-[var(--g-ink3)] tabular-nums">
           {Math.round(pct)}%
         </span>
       </div>
@@ -93,11 +93,11 @@ export function ChapterRail({ headings }: { headings: HeadingItem[] }) {
                   href={`#${heading.id}`}
                   data-toc-id={heading.id}
                   aria-current={isOn ? "location" : undefined}
-                  className={`relative block border-l-2 py-[7px] pr-2 text-[12.5px] leading-snug transition-colors ${
-                    heading.level === 3 ? "pl-6 text-[12px]" : "pl-3"
+                  className={`relative block rounded-r-md border-l-2 py-[6px] pr-2 text-[12.5px] leading-snug transition-colors ${
+                    heading.level === 3 ? "pl-5 text-[12px]" : "pl-3"
                   } ${
                     isOn
-                      ? "border-[var(--g-accent)] font-semibold text-[var(--g-accent)]"
+                      ? "border-[var(--g-accent)] bg-[var(--g-accent-soft)]/55 font-semibold text-[var(--g-accent)]"
                       : "border-[var(--g-line)] text-[var(--g-ink3)] hover:border-[var(--g-line2)] hover:text-[var(--g-ink)]"
                   }`}
                 >
@@ -114,7 +114,7 @@ export function ChapterRail({ headings }: { headings: HeadingItem[] }) {
         <button
           type="button"
           onClick={scrollToTop}
-          className={`inline-flex items-center gap-1.5 rounded-md px-2 py-1 font-sans text-[12px] font-semibold text-[var(--g-ink3)] transition-opacity hover:bg-[var(--g-sunken)] hover:text-[var(--g-ink)] ${
+          className={`inline-flex cursor-pointer items-center gap-1.5 rounded-md px-2 py-1 font-sans text-[12px] font-semibold text-[var(--g-ink3)] transition-opacity hover:bg-[var(--g-sunken)] hover:text-[var(--g-ink)] ${
             showTop ? "opacity-100" : "pointer-events-none opacity-0"
           }`}
           tabIndex={showTop ? 0 : -1}

@@ -107,7 +107,7 @@ async function renderBlock(
       return (
         <blockquote
           key={key}
-          className="my-5 border-l-4 border-[var(--g-line2)] pl-5 text-[var(--g-ink2)] italic"
+          className="my-5 rounded-r-well border-l-[3px] border-[var(--g-line2)] bg-[var(--g-sunken)]/55 py-2.5 pr-4 pl-5 text-[var(--g-ink2)] italic [&>*:first-child]:mt-0 [&>*:last-child]:mb-0"
         >
           <BlockList blocks={block.blocks} />
         </blockquote>

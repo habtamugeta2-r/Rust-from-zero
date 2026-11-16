@@ -123,7 +123,7 @@ export function QuizWidget({
                       disabled={isAnswered}
                       aria-describedby={isAnswered ? promptId : undefined}
                       onClick={() => setQuizAnswer(quizId, q.index, oi, opt.correct)}
-                      className={`flex w-full items-start gap-3 rounded-lg border px-3.5 py-2.5 text-left font-sans text-[15px] leading-relaxed transition-colors ${cls} disabled:cursor-default`}
+                      className={`flex w-full cursor-pointer items-start gap-3 rounded-well border px-3.5 py-2.5 text-left font-sans text-[15px] leading-relaxed transition-colors ${cls} disabled:cursor-default`}
                     >
                       <span
                         aria-hidden="true"

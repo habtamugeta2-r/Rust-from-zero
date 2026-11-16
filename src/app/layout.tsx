@@ -50,8 +50,8 @@ export const viewport: Viewport = {
   // the same light/dark choice as the stylesheet.
   colorScheme: "light dark",
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f7f5f1" },
-    { media: "(prefers-color-scheme: dark)", color: "#141311" },
+    { media: "(prefers-color-scheme: light)", color: "#f7f6f2" },
+    { media: "(prefers-color-scheme: dark)", color: "#121918" },
   ],
 };
 

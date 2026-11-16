@@ -10,6 +10,7 @@ import {
   Pencil,
   Play,
   RotateCcw,
+  Terminal as TerminalIcon,
 } from "lucide-react";
 import { executeRustCode, formatRunDuration, type RunOutput } from "@/lib/rust-runner";
 import { applyTabIndent, DiagnosticPre } from "./CodeBlockActions";
@@ -23,7 +24,7 @@ type HeroRunState =
 /**
  * Live interactive `src/main.rs` + `Terminal` pair on the home page, so readers
  * can run and edit their very first Rust snippet right on arrival and see the
- * output appear directly inside the Terminal card below.
+ * output appear directly inside the Terminal pane below.
  */
 export function HeroRunner({ trackedChapters }: { trackedChapters: number }) {
   const initialCode = `fn main() {\n    let learner = "you";\n    let chapters = ${trackedChapters};\n\n    println!("Hello, {learner}!");\n    println!("{chapters} chapters to go.");\n}`;
@@ -129,14 +130,17 @@ export function HeroRunner({ trackedChapters }: { trackedChapters: number }) {
     <div
       role="region"
       aria-label="Interactive Rust example"
-      className="space-y-4 font-mono text-[13px]"
+      className="overflow-hidden rounded-[10px] border border-[var(--g-line2)] font-mono text-[13px] shadow-card dark:border-[var(--g-editor-line)]"
     >
-      {/* Editor card */}
-      <div className="overflow-hidden rounded-card border border-[#2c2820] bg-[#191713] text-[#e8e3d8] shadow-pop">
-        <div className="flex flex-wrap items-center gap-2 border-b border-[#2c2820] bg-[#211e19] px-4 py-2 font-sans text-[12px] text-[#8f887a]">
-          <span className="font-mono font-semibold text-[#c5beb0]">src/main.rs</span>
-          <span className="rounded-md bg-[#2c2820] px-2 py-0.5 text-[11px] font-semibold text-[#a89f8f]">
-            Rust · 2024
+      {/* Editor pane */}
+      <div className="bg-[var(--g-editor-bg)] text-[#e5ece8]">
+        <div className="flex flex-wrap items-center gap-2 border-b border-[var(--g-editor-line)] bg-[var(--g-editor-head)] px-3.5 py-2.5 font-sans text-[12px] text-[#9ab0a7]">
+          <span className="flex items-center gap-2">
+            <span className="h-2 w-2 rounded-full bg-[#ea7642]" aria-hidden="true" />
+            <span className="font-mono font-semibold text-[#e5ece8]">src/main.rs</span>
+          </span>
+          <span className="rounded bg-white/8 px-2 py-0.5 font-mono text-[10.5px] font-medium text-[#adc0b8]">
+            Rust 2024
           </span>
 
           <span className="no-print ml-auto flex items-center gap-1.5">
@@ -146,7 +150,7 @@ export function HeroRunner({ trackedChapters }: { trackedChapters: number }) {
                 onClick={handleReset}
                 title="Restore original code"
                 aria-label="Restore original example"
-                className="inline-flex cursor-pointer items-center gap-1 rounded-md border border-[#3a342a] bg-[#27231d] px-2 py-1 text-[11.5px] font-semibold text-[#c5beb0] transition-colors hover:border-[var(--g-accent)] hover:text-white"
+                className="inline-flex cursor-pointer items-center gap-1 rounded-md border border-[#324441] bg-[#1e2c2a] px-2 py-1 text-[11.5px] font-semibold text-[#c5d4cd] transition-colors hover:border-[#ea7642] hover:text-white"
               >
                 <RotateCcw className="h-3 w-3" aria-hidden="true" />
                 <span>Reset</span>
@@ -162,8 +166,8 @@ export function HeroRunner({ trackedChapters }: { trackedChapters: number }) {
               aria-label={isEditing ? "Finish editing code" : "Edit this code"}
               className={`inline-flex cursor-pointer items-center gap-1 rounded-md border px-2.5 py-1 text-[11.5px] font-semibold transition-colors ${
                 isEditing
-                  ? "border-[#e9743e] bg-[#39231a] text-[#f59a6e]"
-                  : "border-[#3a342a] bg-[#27231d] text-[#c5beb0] hover:border-[#e9743e] hover:text-white"
+                  ? "border-[#ea7642] bg-[#36221a] text-[#f59a6e]"
+                  : "border-[#324441] bg-[#1e2c2a] text-[#c5d4cd] hover:border-[#ea7642] hover:text-white"
               }`}
             >
               <Pencil className="h-3 w-3" aria-hidden="true" />
@@ -179,7 +183,7 @@ export function HeroRunner({ trackedChapters }: { trackedChapters: number }) {
                   : "Compile and run — output appears in the Terminal below"
               }
               aria-label={isRunning ? "Stop running this example" : "Run this example in the guide"}
-              className="inline-flex cursor-pointer items-center gap-1.5 rounded-md bg-[var(--g-accent)] px-3 py-1 text-[11.5px] font-bold text-[var(--g-on-accent)] transition-colors hover:bg-[var(--g-accent-hover)]"
+              className="inline-flex cursor-pointer items-center gap-1.5 rounded-md bg-[#ea7642] px-3 py-1 text-[11.5px] font-bold text-[#141817] transition-colors hover:bg-[#f48a59]"
             >
               {isRunning ? (
                 <>
@@ -209,34 +213,34 @@ export function HeroRunner({ trackedChapters }: { trackedChapters: number }) {
               autoCorrect="off"
               wrap="off"
               aria-label="Edit src/main.rs"
-              className="block w-full resize-y overflow-x-auto border-0 bg-transparent p-4 font-mono text-[13px] leading-[1.7] text-[#e8e3d8] [tab-size:4] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#e9743e] focus-visible:ring-inset"
+              className="block w-full resize-y overflow-x-auto border-0 bg-transparent p-4 font-mono text-[13px] leading-[1.72] text-[#e5ece8] [tab-size:4] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#ea7642] focus-visible:ring-inset"
             />
-            <div className="no-print border-t border-[#2c2820] bg-[#211e19]/80 px-4 py-1.5 font-sans text-[11px] text-[#9b9384]">
+            <div className="no-print border-t border-[var(--g-editor-line)] bg-[var(--g-editor-head)]/80 px-4 py-1.5 font-sans text-[11px] text-[#96aba2]">
               Ctrl+Enter (or ⌘↵) to run · Tab indents · Esc done
             </div>
           </div>
         ) : isModified ? (
-          <pre className="m-0 overflow-x-auto p-4 leading-[1.7] [tab-size:4]">
+          <pre className="m-0 overflow-x-auto p-4 leading-[1.72] [tab-size:4]">
             <code>{code}</code>
           </pre>
         ) : (
-          <pre className="m-0 overflow-x-auto p-4 leading-[1.7]">
+          <pre className="m-0 overflow-x-auto px-4 py-4 leading-[1.72]">
             <code>
-              <span className="text-[#f47067]">fn</span>{" "}
-              <span className="text-[#dcbdfb]">main</span>() {"{\n"}
+              <span className="text-[#f47c6a]">fn</span>{" "}
+              <span className="text-[#d4bfff]">main</span>() {"{\n"}
               {"    "}
-              <span className="text-[#f47067]">let</span> learner ={" "}
-              <span className="text-[#87d7a8]">{'"you"'}</span>;{"\n"}
+              <span className="text-[#f47c6a]">let</span> learner ={" "}
+              <span className="text-[#7ee0b4]">{'"you"'}</span>;{"\n"}
               {"    "}
-              <span className="text-[#f47067]">let</span> chapters ={" "}
-              <span className="text-[#f2cc60]">{trackedChapters}</span>;{"\n\n"}
+              <span className="text-[#f47c6a]">let</span> chapters ={" "}
+              <span className="text-[#f3cf70]">{trackedChapters}</span>;{"\n\n"}
               {"    "}
-              <span className="text-[#61afef]">println!</span>(
-              <span className="text-[#87d7a8]">{'"Hello, {learner}!"'}</span>
+              <span className="text-[#7bc3f5]">println!</span>(
+              <span className="text-[#7ee0b4]">{'"Hello, {learner}!"'}</span>
               );{"\n"}
               {"    "}
-              <span className="text-[#61afef]">println!</span>(
-              <span className="text-[#87d7a8]">
+              <span className="text-[#7bc3f5]">println!</span>(
+              <span className="text-[#7ee0b4]">
                 {'"'}
                 {"{chapters} chapters to go."}
                 {'"'}
@@ -247,15 +251,18 @@ export function HeroRunner({ trackedChapters }: { trackedChapters: number }) {
         )}
       </div>
 
-      {/* Live Terminal output directly below */}
+      {/* Integrated live Terminal pane directly below */}
       <div
         role="status"
         aria-live="polite"
         aria-busy={isRunning}
-        className="overflow-hidden rounded-card border border-[var(--g-line)] bg-[var(--g-surface)] shadow-card"
+        className="border-t border-[var(--g-editor-line)] bg-[var(--g-surface)]"
       >
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--g-line)] bg-[var(--g-sunken)] px-4 py-2 font-sans text-xs">
-          <span className="font-semibold text-[var(--g-ink3)]">Terminal</span>
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--g-line)] bg-[var(--g-sunken)] px-3.5 py-2 font-sans text-xs">
+          <span className="inline-flex items-center gap-1.5 font-semibold text-[var(--g-ink2)]">
+            <TerminalIcon className="h-3.5 w-3.5 text-[var(--g-ink3)]" aria-hidden="true" />
+            <span>Terminal</span>
+          </span>
 
           {isRunning ? (
             <span className="inline-flex items-center gap-1.5 font-medium text-[var(--g-ink2)]">
@@ -300,7 +307,9 @@ export function HeroRunner({ trackedChapters }: { trackedChapters: number }) {
                 · {formatRunDuration(output.durationMs)}
               </span>
             </span>
-          ) : null}
+          ) : (
+            <span className="font-mono text-[11px] text-[var(--g-ink3)]">sample output</span>
+          )}
         </div>
 
         {state.status === "error" ? (
