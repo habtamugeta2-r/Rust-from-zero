@@ -49,7 +49,6 @@ interface TipState {
 interface GuideContextValue {
   state: SavedState;
   persistent: boolean;
-  glossary: Record<string, GlossaryTipItem>;
   toggleDone: (chapterId: string) => void;
   toggleBookmark: (chapterId: string) => void;
   setSaved: (key: string, checked: boolean) => void;
@@ -72,7 +71,8 @@ interface GuideContextValue {
   stepFontSize: (delta: number) => void;
   showToast: (msg: string) => void;
   showGlossaryTip: (key: string, target: HTMLElement) => void;
-  hideGlossaryTip: () => void;
+  hideGlossaryTip: (immediate?: boolean) => void;
+  keepGlossaryTipOpen: () => void;
   activeTipKey: string | null;
 }
 
@@ -137,13 +137,7 @@ function applyTheme(mode: ThemeMode) {
   return resolved;
 }
 
-export function GuideStateProvider({
-  glossary,
-  children,
-}: {
-  glossary: Record<string, GlossaryTipItem>;
-  children: React.ReactNode;
-}) {
+export function GuideStateProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<SavedState>(emptyState);
   const [persistent, setPersistent] = useState(true);
   const [themeMode, setThemeModeState] = useState<ThemeMode>("system");
@@ -152,6 +146,10 @@ export function GuideStateProvider({
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const [tip, setTip] = useState<TipState | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const tipCloseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const tipRequestToken = useRef(0);
+  const glossaryCache = useRef<Record<string, GlossaryTipItem>>({});
+  const glossaryRequests = useRef(new Map<string, Promise<GlossaryTipItem | null>>());
 
   // Hydrate saved state cleanly after mount
   useEffect(() => {
@@ -360,10 +358,35 @@ export function GuideStateProvider({
     [fontSize, persistState, showToast],
   );
 
-  const showGlossaryTip = useCallback(
-    (key: string, target: HTMLElement) => {
-      const entry = glossary[key];
-      if (!entry) return;
+  const keepGlossaryTipOpen = useCallback(() => {
+    if (tipCloseTimer.current) clearTimeout(tipCloseTimer.current);
+    tipCloseTimer.current = null;
+  }, []);
+
+  const hideGlossaryTip = useCallback((immediate = false) => {
+    if (tipCloseTimer.current) clearTimeout(tipCloseTimer.current);
+    if (immediate) {
+      tipCloseTimer.current = null;
+      tipRequestToken.current += 1;
+      setTip(null);
+      return;
+    }
+    tipCloseTimer.current = setTimeout(() => {
+      tipCloseTimer.current = null;
+      tipRequestToken.current += 1;
+      setTip(null);
+    }, 150);
+  }, []);
+
+  const showGlossaryTip = useCallback((key: string, target: HTMLElement) => {
+    if (tipCloseTimer.current) clearTimeout(tipCloseTimer.current);
+    tipCloseTimer.current = null;
+    const token = ++tipRequestToken.current;
+
+    const show = (entry: GlossaryTipItem) => {
+      if (token !== tipRequestToken.current || !target.isConnected) return;
+      if (!target.matches(":hover") && target !== document.activeElement) return;
+
       const r = target.getBoundingClientRect();
       const vw = document.documentElement.clientWidth;
       // The tooltip is 20rem wide but never wider than the viewport; clamp by
@@ -373,19 +396,48 @@ export function GuideStateProvider({
       const centre = r.left + r.width / 2;
       const x = Math.min(Math.max(16 + half, centre), vw - 16 - half);
       const above = r.bottom + 180 > window.innerHeight && r.top > 180;
-      const y = above ? r.top - 8 : r.bottom + 8;
+      // The transparent eight-pixel padding on the tooltip bridges this visual
+      // gap, keeping the pointer inside one hover region while crossing it.
+      const y = above ? r.top : r.bottom;
       setTip({ entry, x, y, above });
-    },
-    [glossary],
-  );
+    };
 
-  const hideGlossaryTip = useCallback(() => setTip(null), []);
+    const cached = glossaryCache.current[key];
+    if (cached) {
+      show(cached);
+      return;
+    }
+
+    let request = glossaryRequests.current.get(key);
+    if (!request) {
+      request = fetch(`/api/glossary?term=${encodeURIComponent(key)}`, {
+        headers: { Accept: "application/json" },
+      })
+        .then(async (response) => {
+          if (!response.ok) return null;
+          const payload = (await response.json()) as { term?: GlossaryTipItem };
+          if (!payload.term || payload.term.key !== key) return null;
+          glossaryCache.current[key] = payload.term;
+          return payload.term;
+        })
+        .catch(() => null);
+      glossaryRequests.current.set(key, request);
+      void request.finally(() => {
+        if (glossaryRequests.current.get(key) === request) {
+          glossaryRequests.current.delete(key);
+        }
+      });
+    }
+    void request.then((entry) => {
+      if (entry) show(entry);
+    });
+  }, []);
 
   useEffect(() => {
     if (!tip) return;
-    const onScroll = () => setTip(null);
+    const onScroll = () => hideGlossaryTip(true);
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setTip(null);
+      if (e.key === "Escape") hideGlossaryTip(true);
     };
     // Tapping anywhere outside the definition should dismiss it, which is what
     // people expect on a touch screen where there is no mouseleave.
@@ -393,7 +445,7 @@ export function GuideStateProvider({
       const target = e.target as HTMLElement | null;
       if (target?.closest('[role="tooltip"]')) return;
       if (target?.closest("[data-glossary-term]")) return;
-      setTip(null);
+      hideGlossaryTip(true);
     };
     window.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("keydown", onKey);
@@ -403,13 +455,12 @@ export function GuideStateProvider({
       window.removeEventListener("keydown", onKey);
       document.removeEventListener("pointerdown", onPointerDown);
     };
-  }, [tip]);
+  }, [tip, hideGlossaryTip]);
 
   const value = useMemo<GuideContextValue>(
     () => ({
       state,
       persistent,
-      glossary,
       toggleDone,
       toggleBookmark,
       setSaved,
@@ -427,12 +478,12 @@ export function GuideStateProvider({
       showToast,
       showGlossaryTip,
       hideGlossaryTip,
+      keepGlossaryTipOpen,
       activeTipKey: tip?.entry.key ?? null,
     }),
     [
       state,
       persistent,
-      glossary,
       toggleDone,
       toggleBookmark,
       setSaved,
@@ -450,6 +501,7 @@ export function GuideStateProvider({
       showToast,
       showGlossaryTip,
       hideGlossaryTip,
+      keepGlossaryTipOpen,
       tip,
     ],
   );
@@ -460,28 +512,47 @@ export function GuideStateProvider({
 
       {tip && (
         <div
+          id="glossary-tooltip"
           role="tooltip"
           style={{
             left: `${tip.x}px`,
             top: `${tip.y}px`,
             transform: tip.above ? "translate(-50%, -100%)" : "translate(-50%, 0)",
           }}
-          className="no-print fixed z-50 w-80 max-w-[calc(100vw-2rem)] rounded-well border border-[var(--g-line2)] bg-[var(--g-surface)] p-3.5 text-sm shadow-pop"
-          onMouseLeave={hideGlossaryTip}
+          className="no-print fixed z-50 w-80 max-w-[calc(100vw-2rem)] text-sm"
+          onMouseEnter={keepGlossaryTipOpen}
+          onMouseLeave={() => hideGlossaryTip()}
+          onFocusCapture={keepGlossaryTipOpen}
+          onBlurCapture={(event) => {
+            const next = event.relatedTarget;
+            if (
+              next instanceof HTMLElement &&
+              (next.closest('[role="tooltip"]') || next.closest("[data-glossary-term]"))
+            ) {
+              return;
+            }
+            hideGlossaryTip();
+          }}
         >
-          <div className="mb-1 flex items-center justify-between gap-2">
-            <span className="font-semibold text-[var(--g-accent)]">{tip.entry.term}</span>
-            <Link
-              href="/chapters/glossary"
-              onClick={hideGlossaryTip}
-              className="text-xs font-medium text-[var(--g-ink3)] hover:text-[var(--g-accent)]"
-            >
-              Glossary →
-            </Link>
+          <div className={tip.above ? "pb-2" : "pt-2"}>
+            <div className="rounded-well border border-[var(--g-line2)] bg-[var(--g-surface)] p-3.5 shadow-pop">
+              <div className="mb-1 flex items-center justify-between gap-2">
+                <span className="font-semibold text-[var(--g-accent)]">{tip.entry.term}</span>
+                <Link
+                  href="/chapters/glossary"
+                  data-glossary-tooltip-link={tip.entry.key}
+                  onFocus={keepGlossaryTipOpen}
+                  onClick={() => hideGlossaryTip(true)}
+                  className="text-xs font-medium text-[var(--g-ink3)] hover:text-[var(--g-accent)]"
+                >
+                  Glossary →
+                </Link>
+              </div>
+              <p className="text-[13.5px] leading-relaxed text-[var(--g-ink2)]">
+                {tip.entry.definitionPlain}
+              </p>
+            </div>
           </div>
-          <p className="text-[13.5px] leading-relaxed text-[var(--g-ink2)]">
-            {tip.entry.definitionPlain}
-          </p>
         </div>
       )}
 

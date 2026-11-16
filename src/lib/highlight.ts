@@ -1,6 +1,6 @@
-import { createHighlighter, type Highlighter } from "shiki";
+import { createHighlighter, type BundledLanguage, type Highlighter } from "shiki";
 
-const SHIKI_LANG_MAP: Record<string, string> = {
+const SHIKI_LANG_MAP: Record<string, BundledLanguage> = {
   rust: "rust",
   toml: "toml",
   c: "c",
@@ -114,6 +114,33 @@ function highlightCompilerError(code: string): string {
   return `<pre class="code-pre"><code>${lines.join("\n")}</code></pre>`;
 }
 
+const TOKEN_CLASS_MAP: Record<string, string> = {
+  "#D73A49|#F97583": "s1",
+  "#6F42C1|#B392F0": "s2",
+  "#032F62|#9ECBFF": "s3",
+  "#005CC5|#79B8FF": "s4",
+  "#6A737D|#6A737D": "s5",
+  "#22863A|#85E89D": "s6",
+  "#E36209|#FFAB70": "s7",
+};
+
+function renderTokenSpan(light: string | undefined, dark: string | undefined, content: string): string {
+  const escaped = escHtml(content);
+  const l = light?.toUpperCase();
+  const d = dark?.toUpperCase();
+  if ((!l && !d) || (l === "#24292E" && d === "#E1E4E8")) {
+    return escaped;
+  }
+  const cls = l && d ? TOKEN_CLASS_MAP[`${l}|${d}`] : undefined;
+  if (cls) {
+    return `<span class="${cls}">${escaped}</span>`;
+  }
+  const styleParts: string[] = [];
+  if (light) styleParts.push(`--shiki-light:${light}`);
+  if (dark) styleParts.push(`--shiki-dark:${dark}`);
+  return `<span style="${styleParts.join(";")}">${escaped}</span>`;
+}
+
 export async function highlightCode(code: string, lang: string): Promise<string> {
   if (lang === "sh") return highlightShell(code);
   if (lang === "error") return highlightCompilerError(code);
@@ -122,7 +149,7 @@ export async function highlightCode(code: string, lang: string): Promise<string>
     return `<pre class="code-pre"><code>${escHtml(code)}</code></pre>`;
   }
   const h = await getHighlighter();
-  return h.codeToHtml(code, {
+  const tokens = h.codeToTokens(code, {
     lang: shikiLang,
     themes: {
       light: "github-light",
@@ -130,6 +157,14 @@ export async function highlightCode(code: string, lang: string): Promise<string>
     },
     defaultColor: false,
   });
+  const lines = tokens.tokens.map((lineTokens) =>
+    lineTokens
+      .map((tok) =>
+        renderTokenSpan(tok.htmlStyle?.["--shiki-light"], tok.htmlStyle?.["--shiki-dark"], tok.content)
+      )
+      .join("")
+  );
+  return `<pre class="shiki"><code>${lines.join("\n")}</code></pre>`;
 }
 
 export async function highlightRustLines(code: string): Promise<string[]> {
@@ -144,16 +179,9 @@ export async function highlightRustLines(code: string): Promise<string[]> {
   });
   return tokens.tokens.map((lineTokens) =>
     lineTokens
-      .map((tok) => {
-        const light = tok.htmlStyle?.["--shiki-light"];
-        const dark = tok.htmlStyle?.["--shiki-dark"];
-        const styleParts: string[] = [];
-        if (light) styleParts.push(`--shiki-light:${light}`);
-        if (dark) styleParts.push(`--shiki-dark:${dark}`);
-        const styleAttr =
-          styleParts.length > 0 ? ` style="${styleParts.join(";")}"` : "";
-        return `<span${styleAttr}>${escHtml(tok.content)}</span>`;
-      })
+      .map((tok) =>
+        renderTokenSpan(tok.htmlStyle?.["--shiki-light"], tok.htmlStyle?.["--shiki-dark"], tok.content)
+      )
       .join("")
   );
 }

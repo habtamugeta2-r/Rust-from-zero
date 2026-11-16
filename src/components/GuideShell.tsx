@@ -4,7 +4,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Menu, Monitor, Moon, Search, Sun, X } from "lucide-react";
-import type { ChapterSummary, PartMeta, SearchHit } from "@/lib/guide-types";
+import type { ContentNode, NavigationChapter, PartMeta, SearchHit } from "@/lib/guide-types";
 import { themeHint, themeLabel } from "@/lib/theme";
 import { CommandPalette } from "./CommandPalette";
 import { ContentTree } from "./ContentTree";
@@ -18,7 +18,7 @@ export function GuideShell({
   children,
 }: {
   parts: PartMeta[];
-  chapters: ChapterSummary[];
+  chapters: NavigationChapter[];
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
@@ -38,6 +38,36 @@ export function GuideShell({
 
   const searchRef = useRef<HTMLInputElement>(null);
   const drawerRef = useRef<HTMLElement>(null);
+  const [loadedOutlines, setLoadedOutlines] = useState<Record<string, ContentNode[]>>({});
+  const outlineRequests = useRef(new Set<string>());
+
+  const requestOutline = useCallback((chapterId: string) => {
+    if (outlineRequests.current.has(chapterId)) return;
+    outlineRequests.current.add(chapterId);
+    void fetch(`/api/outlines?chapter=${encodeURIComponent(chapterId)}`, {
+      headers: { Accept: "application/json" },
+    })
+      .then(async (response) => {
+        if (!response.ok) throw new Error(`outline request failed: ${response.status}`);
+        return (await response.json()) as { chapter: string; outline: ContentNode[] };
+      })
+      .then((payload) => {
+        if (payload.chapter !== chapterId || !Array.isArray(payload.outline)) {
+          throw new Error("invalid outline response");
+        }
+        setLoadedOutlines((current) => ({ ...current, [chapterId]: payload.outline }));
+      })
+      .catch(() => outlineRequests.current.delete(chapterId));
+  }, []);
+
+  const chaptersForTree = useMemo(
+    () =>
+      chapters.map((chapter) => ({
+        ...chapter,
+        outline: loadedOutlines[chapter.id] ?? chapter.outline,
+      })),
+    [chapters, loadedOutlines],
+  );
 
   const activeChapterId = pathname.startsWith("/chapters/")
     ? pathname.slice("/chapters/".length)
@@ -45,6 +75,16 @@ export function GuideShell({
   const activeChapter = activeChapterId
     ? (chapters.find((c) => c.id === activeChapterId) ?? null)
     : null;
+  const isKnownRoute =
+    pathname === "/" ||
+    pathname === "/chapters" ||
+    pathname === "/progress" ||
+    pathname === "/search" ||
+    activeChapter !== null;
+
+  useEffect(() => {
+    if (activeChapter) requestOutline(activeChapter.id);
+  }, [activeChapter, requestOutline]);
 
   const tracked = useMemo(() => chapters.filter((c) => c.kind !== "appendix"), [chapters]);
   const doneCount = useMemo(
@@ -242,6 +282,16 @@ export function GuideShell({
 
   const navExpanded = isDesktop ? sidebarOpen : drawerOpen;
 
+  // A missing route does not need to hydrate the course navigation tree,
+  // command palette or reading controls. Keep its static fallback lightweight.
+  if (!isKnownRoute) {
+    return (
+      <main id="main" className="min-h-screen">
+        {children}
+      </main>
+    );
+  }
+
   return (
     <div className="app-shell" data-sidebar={sidebarOpen ? "open" : "closed"}>
       {/* Mobile scrim */}
@@ -422,10 +472,11 @@ export function GuideShell({
           ) : (
             <ContentTree
               parts={parts}
-              chapters={chapters}
+              chapters={chaptersForTree}
               activeChapterId={activeChapterId}
               done={state.done}
               onNavigate={() => setDrawerOpen(false)}
+              onRequestOutline={requestOutline}
             />
           )}
         </div>

@@ -1,8 +1,6 @@
-"use client";
-
 import React from "react";
 import { CheckCircle2, ChevronDown, Lightbulb, Pencil } from "lucide-react";
-import { useGuideState } from "./GuideStateProvider";
+import { ExerciseDoneToggle } from "./ExerciseDoneToggle";
 
 const KIND_LABELS: Record<"guided" | "practice" | "challenge", string> = {
   guided: "Guided exercise",
@@ -31,17 +29,10 @@ export function ExerciseCard({
   hint?: React.ReactNode;
   solution?: React.ReactNode;
 }) {
-  const { state, setSaved } = useGuideState();
-  const isDone = Boolean(state.saved[exerciseId]);
-
   return (
     <div
       id={exerciseId}
-      className={`my-7 overflow-hidden rounded-card border transition-colors ${
-        isDone
-          ? "border-emerald-400/70 bg-[var(--g-surface)] dark:border-emerald-800/70"
-          : "border-[var(--g-line)] bg-[var(--g-surface)]"
-      } shadow-card`}
+      className="my-7 overflow-hidden rounded-card border border-[var(--g-line)] bg-[var(--g-surface)] shadow-card"
     >
       <div className="flex flex-wrap items-center gap-2.5 border-b border-[var(--g-line)] bg-[var(--g-sunken)] px-4 py-3 font-sans sm:px-5">
         <span
@@ -51,15 +42,7 @@ export function ExerciseCard({
           {KIND_LABELS[kind]}
         </span>
         <span className="text-[15px] font-bold tracking-tight text-[var(--g-ink)]">{title}</span>
-        <label className="no-print ml-auto flex cursor-pointer items-center gap-1.5 text-xs font-semibold text-[var(--g-ink2)] select-none">
-          <input
-            type="checkbox"
-            checked={isDone}
-            onChange={(e) => setSaved(exerciseId, e.target.checked)}
-            className="h-4 w-4 rounded accent-[var(--g-accent)]"
-          />
-          <span>{isDone ? "Done" : "Mark done"}</span>
-        </label>
+        <ExerciseDoneToggle exerciseId={exerciseId} />
       </div>
 
       <div className="px-4 py-4 [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 sm:px-5">
