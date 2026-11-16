@@ -42,8 +42,8 @@ type Item = ActionItem | HitItem;
 /**
  * The single search surface for the whole guide.
  *
- * Opens from the header button, the sidebar field, the home-page button, or the
- * `/` and ⌘K / Ctrl-K shortcuts. Search results and navigation actions live in
+ * Opens from the header button, the home-page button, or the `/` and ⌘K /
+ * Ctrl-K shortcuts. Search results and navigation actions live in
  * one list so a reader can type a word *or* jump straight to a page without
  * deciding which box to use first.
  */
@@ -90,7 +90,7 @@ export function CommandPalette({
       {
         kind: "action",
         id: "continue",
-        label: state.last ? "Continue where you left off" : "Start at chapter 1",
+        label: state.last ? "Continue where you left off" : "Start at chapter 0",
         hint: state.last ? state.last : "start",
         icon: BookOpen,
         run: () => go(lastChapter),
@@ -289,7 +289,14 @@ export function CommandPalette({
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Search chapters, sections and terms…"
+            role="combobox"
             aria-label="Search the guide"
+            aria-autocomplete="list"
+            aria-expanded={open}
+            aria-controls="palette-listbox"
+            aria-activedescendant={
+              activeItem ? `palette-option-${activeItem.id}` : undefined
+            }
             aria-describedby="palette-hint"
             autoComplete="off"
             autoCorrect="off"
@@ -315,6 +322,8 @@ export function CommandPalette({
         </p>
 
         <ul
+          id="palette-listbox"
+          role="listbox"
           className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-2"
           aria-label={q.length >= 2 ? "Search results" : "Quick links"}
         >
@@ -340,7 +349,12 @@ export function CommandPalette({
             if (item.kind === "hit") {
               const { hit } = item;
               return (
-                <li key={item.id}>
+                <li
+                  key={item.id}
+                  id={`palette-option-${item.id}`}
+                  role="option"
+                  aria-selected={isActive}
+                >
                   <Link
                     ref={(node) => {
                       itemRefs.current[index] = node;
@@ -350,6 +364,7 @@ export function CommandPalette({
                     }`}
                     onClick={close}
                     onMouseMove={() => setActive(index)}
+                    tabIndex={-1}
                     className={shared}
                   >
                     <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded bg-[var(--g-surface)] font-mono text-[10px] font-bold text-[var(--g-ink3)] ring-1 ring-[var(--g-line2)]">
@@ -383,7 +398,12 @@ export function CommandPalette({
 
             const Icon = item.icon;
             return (
-              <li key={item.id}>
+              <li
+                key={item.id}
+                id={`palette-option-${item.id}`}
+                role="option"
+                aria-selected={isActive}
+              >
                 <button
                   ref={(node) => {
                     itemRefs.current[index] = node;
@@ -391,6 +411,7 @@ export function CommandPalette({
                   type="button"
                   onClick={item.run}
                   onMouseMove={() => setActive(index)}
+                  tabIndex={-1}
                   className={shared}
                 >
                   <span className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded bg-[var(--g-surface)] text-[var(--g-ink2)] ring-1 ring-[var(--g-line2)]">
