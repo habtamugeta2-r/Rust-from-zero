@@ -4,7 +4,7 @@
 @title The Operating System Kernel, Privilege Rings & System Calls
 @short Kernel, rings & system calls
 @level intermediate
-@time 35
+@time 25
 @learn Contrast Ring 3 / EL0 user mode with Ring 0 / EL1 kernel mode | Trace the x86-64 syscall instruction (and ARM64 svc #0) step by step including R10 vs RCX | Explain why vDSO turns clock_gettime() into a fast user-space read | Call standard-library and libc OS wrappers cleanly and observe syscall costs
 
 A user-space program requests many privileged services from the **operating system kernel**: opening files, creating processes, using sockets and mapping memory. A system call is a controlled entry into the kernel for such a request. Hardware protection prevents ordinary user-space code from directly changing kernel page tables or executing privileged instructions; the kernel mediates access to devices and shared resources.
@@ -53,6 +53,8 @@ Clobbered by CPU  caller-saved                RCX = user return RIP, R11 = user 
 :::
 
 Look closely at **Row 4 (`R10` instead of `RCX`)**. When the CPU executes `syscall`, the hardware saves the user return address (`RIP`) into **`RCX`** and the user flags (`RFLAGS`) into **`R11`**. It flips Current Privilege Level (`CPL`) from `3` to `0`, and switches to the kernel's entry trampoline (`entry_SYSCALL_64`). It saves all user registers onto the kernel stack, and runs `sys_write()` (or whichever syscall index `RAX` names). It then restores the user registers, and executes **`sysretq`** to drop back to Ring 3!
+
+![Diagram of a Linux syscall round trip from Ring 3 user space through the CPU privilege gate to Ring 0 kernel space and back](/images/privilege-rings-syscall.svg "Crossing from user space to the kernel saves RIP and RFLAGS in hardware registers, runs the kernel handler at Ring 0, and returns via sysretq.")
 
 ## Why syscalls cost ~50–300+ nanoseconds (and how `vDSO` cheats)
 
@@ -151,29 +153,29 @@ The x86-64 `syscall` instruction uses **`RCX`** to save the next user-space inst
 :::quiz Check your understanding
 ? Why can user-space Rust code not jump straight to an internal kernel helper function using a normal `call` instruction?
 - Rust forbids calling C functions without `extern "C"`
-+ Page-table supervisor bits and privilege-level hardware (`Ring 3` vs `Ring 0`) trigger a hardware fault unless entered through a controlled gate like `syscall`
 - ASLR hides the kernel from user space completely
++ Page-table supervisor bits and privilege-level hardware (`Ring 3` vs `Ring 0`) trigger a hardware fault unless entered through a controlled gate like `syscall`
 - Kernel functions use 128-bit registers
 = Hardware protection keeps Ring 0 kernel pages unreadable/unexecutable from Ring 3; only controlled traps (`syscall` / interrupts) elevate privilege to fixed entry handlers.
 
 ? In the Linux x86-64 `syscall` ABI, which register holds the syscall number at entry and the return code (or `-errno`) on exit?
 - `RDI`
-+ `RAX`
-- `R10`
 - `RSP`
+- `R10`
++ `RAX`
 = `RAX` carries the syscall index into the kernel dispatch table and returns either the non-negative result or negated `-errno`.
 
 ? How does `std::time::Instant::now()` on modern Linux usually run in ~15 ns without trapping into Ring 0?
-- It estimates elapsed time by counting `loop` iterations
 + It calls a kernel-provided function mapped into user space via the read-only `[vdso]` page
+- It estimates elapsed time by counting `loop` iterations
 - It caches the startup time from `auxv`
 - The compiler evaluates `Instant::now()` at compile time
 = Linux's `[vdso]` maps live read-only timing pages directly into every process so `clock_gettime` completes safely in Ring 3.
 
 ? If a `sys_read` call returns `-11` (`-EAGAIN`) in `RAX`, how does Rust's `std::fs` or `std::net` surface it?
 - By panicking immediately
-+ As `Err(io::Error)` with `ErrorKind::WouldBlock`
 - As `Ok(0)` meaning EOF
++ As `Err(io::Error)` with `ErrorKind::WouldBlock`
 - By blocking the entire OS thread inside `libc`
 = Negative return values `-1..-4095` translate to POSIX `errno` (`EAGAIN` = 11 -> `ErrorKind::WouldBlock`).
 :::

@@ -1,9 +1,9 @@
 @id memory-layout
-@part p3
+@part p3c
 @title How data sits in memory
 @short Memory layout
 @level advanced
-@time 45
+@time 40
 @learn Find the size and alignment of any type | Explain padding and why field order matters | Control layout with `repr` attributes | Describe how enums, `Option`, references and trait objects are stored | Reason about the cost of allocations, indirection and cache misses
 
 [The memory chapter](#memory) introduced the stack and the heap. Here we look at the size, alignment and layout of individual Rust values. This helps explain padding, performance and the data layouts used at FFI or binary-file boundaries. Rust's default layout is not a stable external format, so the chapter distinguishes what you can measure on a build from what you may rely on across builds.
@@ -104,6 +104,8 @@ fn main() {
 ```
 
 **By default, Rust reorders the fields** to keep the padding small. That is why `Mixed` needs 8 bytes and not 12. The order in which you write the fields does not affect the size, and you should not rely on any particular order in memory.
+
+![Diagram comparing repr(C) 12-byte padded struct layout against Rust's default 8-byte reordered layout](/images/struct-layout-padding.svg "Reordering fields from largest alignment to smallest eliminates internal gaps and shrinks the struct from 12 bytes to 8.")
 
 With **`#[repr(C)]`**, the fields are stored in the order written, as a C compiler does it. Then the order matters, and sorting the fields from the largest alignment to the smallest gives the tightest result.
 
@@ -430,7 +432,7 @@ fn main() {
 8080
 ```
 
-Do not copy a struct's memory straight into a file or onto the network. The padding bytes, the field order and the byte order all depend on the compiler and the machine. Convert each field explicitly, or use a serialisation crate ([chapter 78](#serde)).
+Do not copy a struct's memory straight into a file or onto the network. The padding bytes, the field order and the byte order all depend on the compiler and the machine. Convert each field explicitly, or use a serialisation crate ([chapter 45](#serde)).
 
 ## Leaks are safe
 
@@ -451,7 +453,7 @@ fn main() {
 [1, 2, 3, 4]
 ```
 
-`Box::leak` is sometimes useful: it turns a heap value into a `'static` reference for data that should live until the program ends. `mem::forget` discards a value without running its destructor. A cycle of `Rc` pointers leaks too, as you saw in [chapter 32](#smart-pointers). A leak wastes memory, but it cannot corrupt anything, which is why Rust counts it as safe.
+`Box::leak` is sometimes useful: it turns a heap value into a `'static` reference for data that should live until the program ends. `mem::forget` discards a value without running its destructor. A cycle of `Rc` pointers leaks too, as you saw in [chapter 35](#smart-pointers). A leak wastes memory, but it cannot corrupt anything, which is why Rust counts it as safe.
 
 :::compare Layout in other languages
 - **C and C++** give you the same control and the same costs. C never reorders fields, so C programmers sort them by hand.
@@ -471,22 +473,22 @@ fn main() {
 
 :::quiz Check your understanding
 ? A `#[repr(C)]` struct has the fields `a: u8, b: u64, c: u8`, in that order. What is its size?
-- 10
-- 16
 + 24
+- 16
+- 10
 - 17
 = `a` takes 1 byte, then 7 bytes of padding so that `b` starts at offset 8. `b` takes 8. `c` takes 1, and 7 more bytes round the size up to a multiple of 8. Ordered as `b, a, c`, it would need 16.
 
 ? Why is `size_of::<Option<Box<u32>>>()` the same as `size_of::<Box<u32>>()`?
 - `Option` never needs extra space
-+ A `Box` is never a null pointer, so the bit pattern zero is free to stand for `None`
 - The compiler removes the `Option`
++ A `Box` is never a null pointer, so the bit pattern zero is free to stand for `None`
 - A `Box` already contains a tag
 = This is the niche optimisation. For a type with no spare bit pattern, such as `u32`, the `Option` does need more space.
 
 ? What does a `&[u64]` consist of?
-- Only an address
 + An address and the number of elements
+- Only an address
 - An address, a length and a capacity
 - The elements themselves
 = A slice reference is a fat pointer. Capacity belongs to the owning `Vec`, not to a borrowed view.
@@ -494,14 +496,14 @@ fn main() {
 ? Which of these is usually the most expensive single operation?
 - Adding two `u64`
 - Copying a `String`'s 24 bytes when it is moved
-+ A heap allocation
 - Reading a local variable
++ A heap allocation
 = Allocating involves the memory allocator's bookkeeping. Moves and arithmetic are a few machine instructions.
 
 ? Why can iterating over a `Vec<T>` be much faster than over a linked list with the same elements?
-- A `Vec` uses less memory per element
-- Linked lists are checked for errors
 + The elements of a `Vec` are next to each other, so the processor's cache is used well. List nodes can be scattered over the heap
+- Linked lists are checked for errors
+- A `Vec` uses less memory per element
 - Iterators are not available for lists
 = Memory arrives in blocks of 64 bytes. Neighbouring elements share a block and come almost for free. Scattered nodes each cost a slow fetch.
 :::

@@ -1,9 +1,9 @@
 @id rust-stdlib-internals
-@part p3
+@part p3c
 @title Rust standard library and compiler internals
 @short Stdlib and compiler internals
 @level advanced
-@time 65
+@time 30
 @learn Trace the exact memory layouts of Vec, String, Box, Rc, and Option in std | Explain how niche optimisation eliminates enum tag bytes | Describe how UnsafeCell, NonNull, ManuallyDrop, and MaybeUninit work inside core and alloc | Explain drop flags, MIR drop elaboration, pointer provenance, and compiler miscompilation from UB
 
 Earlier chapters used `Vec<T>`, `String`, `Option<T>`, `Box<T>`, `Rc<T>` and `RefCell<T>`. Their behaviour comes from standard-library implementations, compiler-supported language features and allocation routines—not special CPU instructions for each type. This chapter opens those implementations and shows where the compiler's guarantees rely on library code and documented invariants.
@@ -98,7 +98,7 @@ Notice line 6: `Option<bool>` takes just **1 byte** (`0 = Some(false)`, `1 = Som
 
 ## `UnsafeCell<T>`: the one true door to interior mutability
 
-Remember from Part II that `rustc` emits **`noalias`** and **`readonly`** hints to LLVM for shared `&T` references: if you pass `&T` to a function, LLVM assumes the bytes behind `&T` will **never mutate** during that borrow, and may cache them in a register across calls!
+Remember from Part 2 that `rustc` emits **`noalias`** and **`readonly`** hints to LLVM for shared `&T` references: if you pass `&T` to a function, LLVM assumes the bytes behind `&T` will **never mutate** during that borrow, and may cache them in a register across calls!
 
 That creates a puzzle: how do `Cell<T>`, `RefCell<T>`, `Mutex<T>`, and `AtomicU64` mutate memory while holding only `&self`?
 
@@ -234,16 +234,16 @@ In C++, moving a `std::vector` leaves behind a valid "empty" shell whose destruc
 
 ? Why does `alloc::vec::Vec<()>` allocate zero bytes from the OS heap even when you push a million `()` items?
 - Because `Vec<()>` stores elements inside `.rodata`
-+ Because `()` is a zero-sized type (ZST); `RawVec` sets capacity to `usize::MAX` and stores only the `len` counter on the stack
 - Because Rust forbids vectors of unit values
++ Because `()` is a zero-sized type (ZST); `RawVec` sets capacity to `usize::MAX` and stores only the `len` counter on the stack
 - Because `()` fits inside the 8-byte alignment padding of `len`
 = Pushing zero-sized elements requires no heap memory per element—only incrementing `len`!
 
 ? What is `MaybeUninit<T>` designed to prevent in low-level `unsafe` Rust?
 - Heap fragmentation across threads
-+ Reading or dropping uninitialised bytes as a typed value (which causes UB for types with invalid bit patterns like `bool` or `&T`)
-- Stack overflow during deep recursion
 - Dynamic linking failures in `ld-linux.so`
+- Stack overflow during deep recursion
++ Reading or dropping uninitialised bytes as a typed value (which causes UB for types with invalid bit patterns like `bool` or `&T`)
 = `MaybeUninit<T>` informs the compiler that its backing bytes might not yet hold a valid `T` and skips implicit drops until explicitly assumed initialised.
 :::
 

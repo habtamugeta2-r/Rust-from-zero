@@ -3,7 +3,7 @@
 @title Performance: measure first, then improve
 @short Performance
 @level intermediate
-@time 90
+@time 55
 @learn Follow the three rules: measure a release build, find where the time goes, change one thing at a time | Compare whole programs with hyperfine and single functions with criterion | Read a flame graph | Count allocations and remove the needless ones | Recognise the common causes of slow programs: the algorithm, allocations, unbuffered files, hashing | Tell a real difference between two measurements from noise | Decide when a program is fast enough
 
 Rust gives you native compilation and control over many performance-relevant choices, but it does not make every program fast by default. Algorithms, allocation patterns, I/O and workload all matter. A sound first step is to define what "fast enough" means, measure a release build, and optimise only after you know where time is spent.
@@ -14,7 +14,7 @@ When that day comes, this chapter gives you a method. It has three rules, and th
 2. **Find out where the time goes** before you change anything.
 3. **Change one thing, and measure again.**
 
-[Chapter 40](#idioms) asked you to write the clear version first and to optimise only what a measurement points at. Here is how to get that measurement.
+[Chapter 43](#idioms) asked you to write the clear version first and to optimise only what a measurement points at. Here is how to get that measurement.
 
 :::plain Measure, then change one thing
 Performance work is a loop, not a list of tricks: **measure** with a release build (debug builds are `10–100×` slower and meaningless for timing), find the actual bottleneck with `perf` or `cargo flamegraph`, change **one** thing, and measure again. The usual suspects are allocations (a `String` per line), unnecessary copies (`&Vec<T>` arguments), the wrong data structure (a `Vec` scan where a `HashSet` belongs), unbuffered I/O, and the default hasher. The usual non-answer is guessing: the line that *looks* slow is regularly not the one that is, which is why `Instant::now()` around two implementations settles arguments faster than any opinion.
@@ -113,7 +113,7 @@ count the words    83.9 ms    2000012 allocations
 
 The function `measure` is the watch. It runs a piece of work, and prints how long that took and how often it asked for memory on the heap.
 
-The count of allocations comes from the first lines of the program. `#[global_allocator]` replaces the part of the program that hands out heap memory. Our `Counting` passes every request on to `System`, the normal allocator, and adds one to a counter on the way. The counter is an atomic number from [chapter 56](#shared-state), because any thread may ask for memory. Implementing `GlobalAlloc` needs the word `unsafe` ([chapter 36](#unsafe)): the compiler cannot check that an allocator returns valid memory. Here that duty is passed straight on to `System`. When a `String` or a `Vec` grows into a larger buffer, that counts as an allocation too.
+The count of allocations comes from the first lines of the program. `#[global_allocator]` replaces the part of the program that hands out heap memory. Our `Counting` passes every request on to `System`, the normal allocator, and adds one to a counter on the way. The counter is an atomic number from [chapter 61](#shared-state), because any thread may ask for memory. Implementing `GlobalAlloc` needs the word `unsafe` ([chapter 39](#unsafe)): the compiler cannot check that an allocator returns valid memory. Here that duty is passed straight on to `System`. When a `String` or a `Vec` grows into a larger buffer, that counts as an allocation too.
 
 ## Rule 1: measure a release build
 
@@ -500,7 +500,7 @@ The terminal is a file as well. `println!` passes every line on at once. Printin
 
 ### Hashing, and idle cores
 
-The standard `HashMap` uses a hash function that is built to withstand attackers: people who choose keys on purpose so that a server gets slow. That safety costs time. When strangers have no control over the keys, a simpler hash function is a fair exchange. The crate `rustc-hash` offers `FxHashMap`, which the Rust compiler itself uses. And with Rayon ([chapter 60](#async-ecosystem)), the counting can use all cores:
+The standard `HashMap` uses a hash function that is built to withstand attackers: people who choose keys on purpose so that a server gets slow. That safety costs time. When strangers have no control over the keys, a simpler hash function is a fair exchange. The crate `rustc-hash` offers `FxHashMap`, which the Rust compiler itself uses. And with Rayon ([chapter 65](#async-ecosystem)), the counting can use all cores:
 
 ```toml
 [dependencies]
@@ -648,7 +648,7 @@ The debug build tells a different story. There, the indexed loop needs 22,000 na
 
 ### The layout of the data
 
-Processors are much faster with data that lies close together in memory. [Chapter 38](#memory-layout) measured it: summing one field took 14 ms in an array of large structs, and 3.5 ms when that field had an array of its own. The same effect decides between collections. Here are the times for adding up two million numbers:
+Processors are much faster with data that lies close together in memory. [Chapter 41](#memory-layout) measured it: summing one field took 14 ms in an array of large structs, and 3.5 ms when that field had an array of its own. The same effect decides between collections. Here are the times for adding up two million numbers:
 
 | The numbers are stored in | Time |
 |---|---|
@@ -672,7 +672,7 @@ A few more techniques come up in every discussion of fast Rust. Each of them mat
 
 ## Settings of the compiler
 
-[Chapter 70](#cargo) presented the settings of the release profile. Two of them, and one flag for the compiler, are meant to make code faster:
+[Chapter 32](#cargo) presented the settings of the release profile. Two of them, and one flag for the compiler, are meant to make code faster:
 
 ```toml file=Cargo.toml
 [profile.release]
@@ -709,7 +709,7 @@ Run the same program twice and you get two different times. Other programs, the 
 
 You have seen noise in this chapter already. The function `make_text` took 106.8 ms in the first listing and 104.3 ms in the second one, and nothing had changed.
 
-The benchmark library **criterion** ([chapter 72](#testing-strategies)) does this reasoning for you. It remembers the last measurement of every benchmark. Here is its report for the counting function, after the change from `String` keys to `&str` keys:
+The benchmark library **criterion** ([chapter 34](#testing-strategies)) does this reasoning for you. It remembers the last measurement of every benchmark. Here is its report for the counting function, after the change from `String` keys to `&str` keys:
 
 ```text nosoft
 count 100k words        time:   [2.3309 ms 2.3681 ms 2.4165 ms]
@@ -761,7 +761,7 @@ criterion_group!(benches, bench_count);
 criterion_main!(benches);
 ```
 
-The setup in `Cargo.toml` is the one from [chapter 72](#testing-strategies). The benchmark uses 100,000 words instead of two million, because criterion calls the function many hundred times.
+The setup in `Cargo.toml` is the one from [chapter 34](#testing-strategies). The benchmark uses 100,000 words instead of two million, because criterion calls the function many hundred times.
 :::
 
 ### Work that disappears
@@ -791,7 +791,7 @@ plain:     333333833333500000 in 86ns
 black_box: 333333833333500000 in 71ns
 ```
 
-A million multiplications and additions in 86 nanoseconds would be more than ten thousand operations per nanosecond. No processor can do that. The compiler has recognised the pattern and replaced the whole loop with a formula for the sum of squares, so no loop runs at all. `black_box` ([chapter 72](#testing-strategies)) hides the limit from the optimiser, and it does not help here, because the formula works for any limit. (The debug build of the same program needs 6 milliseconds.)
+A million multiplications and additions in 86 nanoseconds would be more than ten thousand operations per nanosecond. No processor can do that. The compiler has recognised the pattern and replaced the whole loop with a formula for the sum of squares, so no loop runs at all. `black_box` ([chapter 34](#testing-strategies)) hides the limit from the optimiser, and it does not help here, because the formula works for any limit. (The debug build of the same program needs 6 milliseconds.)
 
 There is a second trap in these numbers. Reading the clock takes time too: a measurement with nothing at all between its start and its end shows 50 to 90 nanoseconds on the same machine. So the program above measured mostly its own clock. Never time anything that short with `Instant`. Let criterion repeat it a million times.
 
@@ -801,7 +801,7 @@ The program is honestly this fast, and nothing is wrong with it. But if the ques
 
 Optimised code is usually longer and harder to change than the first, simple version. Every step in this chapter added a constraint: a map that borrows from the text, a capacity that must be estimated, a second hash function to know about. So decide what "fast enough" means *before* you start: "the report appears within one second", "the server answers a thousand requests per second". Stop when the goal is reached. Time that you spend beyond it buys nothing that anybody will notice.
 
-And if a measurement shows that only `unsafe` code can reach the goal, [chapter 36](#unsafe) applies: a small block, behind a safe function, with a comment that says why it is correct, and with the benchmark that justifies it.
+And if a measurement shows that only `unsafe` code can reach the goal, [chapter 39](#unsafe) applies: a small block, behind a safe function, with a comment that says why it is correct, and with the benchmark that justifies it.
 
 :::compare Performance work in other languages
 In Python or JavaScript, making code faster often means leaving the language: the hot loop moves into NumPy, into C, or into Rust. In Java, Go and C#, much of the effort goes into producing less garbage for the collector. That is the same hunt for allocations as in this chapter, with less control over the result. C and C++ offer the same toolbox as Rust: release builds, profilers, flame graphs. The difference is the risk. Restructuring C++ code for speed can introduce memory errors that show up months later. In Rust, the borrow checker reviews every such change. The map with `&str` keys in this chapter is an example: in C, such a map full of pointers into another buffer would be a classic source of bugs, and here the compiler guarantees that the text outlives the map.
@@ -822,8 +822,8 @@ In Python or JavaScript, making code faster often means leaving the language: th
 ? A friend says: "My Rust program is slower than the same program in Python." What do you ask first?
 - Which version of Python it was
 - How many cores the machine has
-+ Whether the Rust program was built with `--release`
 - Whether the program uses `unsafe`
++ Whether the Rust program was built with `--release`
 = A debug build is not optimised. In this chapter, the release build of the word counter was 4.3 times faster than the debug build, and the small loop over two slices was thirty times faster.
 
 ? A program reads a file, parses it, and writes a report. It is too slow. What is the best first step?
@@ -835,8 +835,8 @@ In Python or JavaScript, making code faster often means leaving the language: th
 
 ? Why was counting with `HashMap<&str, u32>` twice as fast as with `HashMap<String, u32>`?
 - `&str` keys are compared faster
-- The map with `&str` keys has fewer entries
 + The `String` version allocated a new `String` for each of the two million words
+- The map with `&str` keys has fewer entries
 - Borrowed keys get a faster hash function
 = Both maps hold the same 5,000 keys, and they hash and compare the same bytes. The difference is two million allocations against twelve.
 
@@ -850,15 +850,15 @@ In Python or JavaScript, making code faster often means leaving the language: th
 ? Two builds of a program are measured with hyperfine: 188.8 ms ± 10.7 ms and 182.4 ms ± 8.8 ms. What can you conclude?
 - The second build is 3.4 % faster
 - The second build is better, because its `±` is smaller
-+ Nothing yet: the difference is smaller than the variation between runs
 - The measurement is broken
++ Nothing yet: the difference is smaller than the variation between runs
 = Six milliseconds of difference mean little when single runs vary by ten. More runs on a quieter machine could settle it. Until then there is no result.
 
 ? A benchmark reports that a loop over one million elements takes 90 nanoseconds. What is the most likely explanation?
 - The processor is very fast
 - The loop ran on several cores
-+ The optimiser removed or replaced the loop, so the measurement did not measure it
 - The clock of the machine is wrong
++ The optimiser removed or replaced the loop, so the measurement did not measure it
 = Ninety nanoseconds are a few hundred steps of the processor, far too few for a million rounds. A result that looks too good usually means that the work was optimised away.
 :::
 

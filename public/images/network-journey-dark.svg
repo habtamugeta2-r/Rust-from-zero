@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 470" role="img" aria-labelledby="t d">
+  <title id="t">The journey of one web request, layer by layer</title>
+  <desc id="d">DNS finds the address, TCP opens a reliable pipe, TLS encrypts it, and HTTP carries the request inside — each layer wrapped by the one below.</desc>
+  <rect width="1200" height="470" rx="24" fill="#1C1A17"/>
+  <rect x="1" y="1" width="1198" height="468" rx="23" fill="none" stroke="#2D2A24" stroke-width="2"/>
+  <text x="48" y="58" font-family="system-ui, sans-serif" font-size="24" font-weight="700" fill="#ECE7DD">One request, four journeys stacked</text>
+  <text x="48" y="86" font-family="system-ui, sans-serif" font-size="15" fill="#A49B88">Each layer trusts the one below it and knows nothing of the ones above.</text>
+  <defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#E9743E"/></marker></defs>
+  <g font-family="system-ui, sans-serif" text-anchor="middle">
+    <rect x="48" y="140" width="230" height="120" rx="14" fill="#39231A" stroke="#E9743E" stroke-width="2"/>
+    <text x="163" y="182" font-size="18" font-weight="700" fill="#ECE7DD">1 · DNS</text>
+    <text x="163" y="210" font-size="13.5" fill="#A49B88">example.com →</text>
+    <text x="163" y="232" font-family="ui-monospace, monospace" font-size="13.5" fill="#C2BBAF">93.184.216.34</text>
+    <rect x="338" y="140" width="230" height="120" rx="14" fill="#181613" stroke="#3E3930" stroke-width="2"/>
+    <text x="453" y="182" font-size="18" font-weight="700" fill="#ECE7DD">2 · TCP</text>
+    <text x="453" y="210" font-size="13.5" fill="#A49B88">SYN · SYN-ACK · ACK</text>
+    <text x="453" y="232" font-size="13.5" fill="#C2BBAF">a reliable, ordered pipe</text>
+    <rect x="628" y="140" width="230" height="120" rx="14" fill="#132B3A" stroke="#38BDF8" stroke-width="2"/>
+    <text x="743" y="182" font-size="18" font-weight="700" fill="#ECE7DD">3 · TLS 1.3</text>
+    <text x="743" y="210" font-size="13.5" fill="#38BDF8">keys agreed, pipe sealed</text>
+    <text x="743" y="232" font-size="13.5" fill="#C2BBAF">nobody in between can read</text>
+    <rect x="918" y="140" width="234" height="120" rx="14" fill="#12322E" stroke="#2DD4BF" stroke-width="2"/>
+    <text x="1035" y="182" font-size="18" font-weight="700" fill="#ECE7DD">4 · HTTP</text>
+    <text x="1035" y="210" font-family="ui-monospace, monospace" font-size="13.5" fill="#2DD4BF">GET /hello</text>
+    <text x="1035" y="232" font-size="13.5" fill="#C2BBAF">the answer rides back</text>
+  </g>
+  <g stroke="#E9743E" stroke-width="2.5">
+    <line x1="282" y1="200" x2="332" y2="200" marker-end="url(#ar)"/>
+    <line x1="572" y1="200" x2="622" y2="200" marker-end="url(#ar)"/>
+    <line x1="862" y1="200" x2="912" y2="200" marker-end="url(#ar)"/>
+  </g>
+  <g font-family="system-ui, sans-serif" font-size="14.5">
+    <rect x="48" y="306" width="1104" height="56" rx="12" fill="#11100E" stroke="#3E3930" stroke-width="1.5"/>
+    <text x="72" y="341" fill="#A49B88">On the wire it nests:  <tspan font-family="ui-monospace, monospace" fill="#ECE7DD">Ethernet [ IP [ TCP [ TLS [ HTTP ] ] ] ]</tspan></text>
+    <text x="48" y="412" font-size="14" font-style="italic" fill="#A49B88">Your Rust program writes the innermost layer. The kernel, the network card and the internet carry the rest.</text>
+  </g>
+</svg>

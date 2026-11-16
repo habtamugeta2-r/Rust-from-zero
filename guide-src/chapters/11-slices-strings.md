@@ -3,7 +3,7 @@
 @title Strings and slices
 @short Strings and slices
 @level beginner
-@time 45
+@time 40
 @learn Explain the difference between `String` and `&str` and choose the right one | Build, grow and combine text | Borrow a part of a text or a list with a slice | Work correctly with text in any language of the world | Use the most common text methods
 
 A name typed by a user, a line read from a file, and a fixed label may all look like text, but they have different ownership needs. Rust's `String` owns a growable UTF-8 buffer; `&str` is a borrowed view into text stored elsewhere. This chapter shows how to choose between them and work safely with slices.
@@ -423,16 +423,16 @@ The full list is in the [reference appendix](#reference).
 
 :::quiz Check your understanding
 ? What is the type of `"hello"` written directly in the code?
-- `String`
 + `&str`
+- `String`
 - `char`
 - `[char; 5]`
 = A string literal is a string slice, `&str`. Its characters are stored in the program itself. To get an owned `String`, call `.to_string()` or `String::from`.
 
 ? What does `"ሰላም".len()` return, and why?
 - 3, because there are three characters
-+ 9, because `len` counts bytes and each of these characters takes 3 bytes in UTF-8
 - 6, because each character takes 2 bytes
++ 9, because `len` counts bytes and each of these characters takes 3 bytes in UTF-8
 - It does not compile
 = `.len()` is the number of bytes. For the number of characters, use `.chars().count()`.
 
@@ -445,15 +445,15 @@ The full list is in the [reference appendix](#reference).
 
 ? Why does Rust not allow `text[0]` on a string?
 - Strings are stored on the heap
-- Strings are immutable
 + Characters have different sizes in UTF-8, so byte 0 may be only a part of a character, and Rust will not guess what you mean
+- Strings are immutable
 - It is allowed, but only for `String`
 = Indexing would have to return either a byte, which is often not a character, or do a slow search for the right character. Rust makes you choose with `.bytes()` or `.chars()`.
 
 ? After `let c = a + &b;` where `a` and `b` are `String`s, which variables can still be used?
-- `a`, `b` and `c`
-- Only `c`
 + `b` and `c`
+- Only `c`
+- `a`, `b` and `c`
 - `a` and `c`
 = `+` moves the left operand `a` into the result and only borrows `b`. To keep everything, write `format!("{a}{b}")`.
 :::

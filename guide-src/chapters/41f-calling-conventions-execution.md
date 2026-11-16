@@ -4,7 +4,7 @@
 @title Stack Frames, Calling Conventions & How Rust Actually Executes
 @short Stack frames & calling ABI
 @level intermediate
-@time 35
+@time 30
 @learn Trace System V AMD64 and AAPCS64 (ARM64) register passing rules | Distinguish caller-saved (volatile) vs callee-saved (non-volatile) registers across calls | Follow stack alignment (16 bytes), prologues/epilogues, red zones, and leaf-function optimisations | Understand Rust's default ABI vs #[repr(C)] / extern "C" and how ? / Option / Vec lower to machine instructions
 
 When Rust calls `compute(1, 2, 3, 4, 5, 6, 7)`, the compiler follows a calling convention: rules for passing arguments, returning values and preserving registers. Those rules vary by target and ABI; some values travel in registers and others in memory. This chapter compares Rust's native convention with `extern "C"` and traces a call from source to machine instructions.
@@ -199,7 +199,7 @@ depth 3: &local_marker = 0x7ffe6490a278 (frame step = -96 bytes)
 depth 4: &local_marker = 0x7ffe6490a218 (frame step = -96 bytes)
 ```
 
-Every recursive step subtracts a fixed multiple of 16 bytes from `RSP`. Because Linux gives the main thread an `8 MiB` stack (`2 MiB` for spawned threads), recursing ~100,000 frames deep without a base case drives `RSP` straight into the unmapped **[[guard page]]** below `[stack]`. The MMU raises a hardware `SIGSEGV` fault; Rust's signal handler (running on the separate `sigaltstack` installed before `main` in [Chapter 44](#program-loading-startup)) catches that fault and prints `thread 'main' has overflowed its stack` cleanly.
+Every recursive step subtracts a fixed multiple of 16 bytes from `RSP`. Because Linux gives the main thread an `8 MiB` stack (`2 MiB` for spawned threads), recursing ~100,000 frames deep without a base case drives `RSP` straight into the unmapped **[[guard page]]** below `[stack]`. The MMU raises a hardware `SIGSEGV` fault; Rust's signal handler (running on the separate `sigaltstack` installed before `main` in [Chapter 49](#program-loading-startup)) catches that fault and prints `thread 'main' has overflowed its stack` cleanly.
 
 ## Stack unwinding (`Drop` + `.eh_frame`) and `exit_group`
 
@@ -264,30 +264,30 @@ If the loop counter lived in caller-saved `RCX`, the caller would have to `push 
 
 :::quiz Check your understanding
 ? Under System V AMD64 (Linux x86-64), how is an `&str` slice (`16` bytes: `ptr` + `len`) passed as the first argument to a function?
-- Always spilled onto the stack at `[rsp+8]`
 + In two registers: `RDI` (pointer) and `RSI` (length)
+- Always spilled onto the stack at `[rsp+8]`
 - Inside `XMM0`
 - Heap-allocated inside a `Box`
 = System V AMD64 passes up to 16-byte structs and fat pointers across two consecutive integer registers (`RDI` and `RSI`).
 
 ? What is the key difference between caller-saved (`RAX`, `RDI`, `RSI`, `RCX`) and callee-saved (`RBX`, `RBP`, `R12..R15`) registers?
 - Callee-saved registers are wider (128 bits)
-+ A called function may freely overwrite caller-saved registers, whereas it must save and restore any callee-saved register it modifies
 - Caller-saved registers can only hold floats
++ A called function may freely overwrite caller-saved registers, whereas it must save and restore any callee-saved register it modifies
 - Only the OS kernel may modify callee-saved registers
 = Callers preserve important live values across calls in callee-saved registers (or stack slots) while using caller-saved registers for arguments and temporary scratch work.
 
 ? Why must OS kernels compile with red-zone disabled (`-mno-red-zone`), unlike normal Linux user-space code?
 - Kernels have no stack pointer
-+ Hardware interrupts push exception frames directly at `RSP`, overwriting the 128 bytes below `RSP`
-- Red zones only work on 32-bit CPUs
 - `rustc` forbids red zones in `no_std`
+- Red zones only work on 32-bit CPUs
++ Hardware interrupts push exception frames directly at `RSP`, overwriting the 128 bytes below `RSP`
 = User-space signal delivery respects the 128-byte red zone, whereas asynchronous CPU hardware exceptions push state directly at `RSP`.
 
 ? Why is `Option<NonZeroU64>` 8 bytes while `Option<u64>` is 16 bytes?
 - `NonZeroU64` uses 32-bit integers internally
-+ Every `u64` bit pattern is valid in `u64`, forcing a separate tag byte + padding (`16` bytes), while `0` is forbidden in `NonZeroU64` and serves as the zero-cost `None` niche
-- `Option<NonZeroU64>` allocates its tag on the heap
 - `Option<u64>` aligns to 16-byte cache lines
+- `Option<NonZeroU64>` allocates its tag on the heap
++ Every `u64` bit pattern is valid in `u64`, forcing a separate tag byte + padding (`16` bytes), while `0` is forbidden in `NonZeroU64` and serves as the zero-cost `None` niche
 = Niche optimisation reuses invalid bit patterns (`0` for non-zero integers, references, and `NonNull`) to eliminate tag storage completely.
 :::

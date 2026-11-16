@@ -1,9 +1,9 @@
 @id errors
-@part p3
+@part p3b
 @title Error handling
 @short Error handling
 @level intermediate
-@time 55
+@time 40
 @learn Tell apart errors a program should recover from and bugs that should stop it | Return, handle and pass on errors with `Result` and the `?` operator | Read and write files | Define your own error type | Choose between `panic!`, `Option` and `Result`, and compare `anyhow`, `thiserror`, `eyre` and `miette`
 
 Files can be missing, input can be malformed, and network requests can fail. These are expected outcomes a program may need to handle, not necessarily bugs. Rust commonly represents recoverable failures as `Result` values returned from functions. The type makes the possibility visible, and the compiler warns when a `Result` is discarded without being handled.
@@ -66,7 +66,7 @@ Other macros that panic, useful while a program is under construction:
 
 ## `Result`: an error as a value
 
-A function that can fail in a normal way returns `Result<T, E>`: either `Ok(value)` with a value of type `T`, or `Err(error)` with an error of type `E`.
+A function that can fail in a normal way returns a [[Result|result]] (`Result<T, E>`): either `Ok(value)` with a value of type `T`, or `Err(error)` with an error of type `E`.
 
 ```rust run
 use std::fs;
@@ -461,7 +461,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 volume is 55
 ```
 
-Read `Box<dyn Error>` as "some error, I do not say which". `?` converts every error type into it, and even a plain text becomes an error with `.into()`. ([Chapter 32](#smart-pointers) explains `Box` and `dyn`.) The price is that the caller can no longer easily `match` on the kind of error.
+Read `Box<dyn Error>` as "some error, I do not say which". `?` converts every error type into it, and even a plain text becomes an error with `.into()`. ([Chapter 35](#smart-pointers) explains `Box` and `dyn`.) The price is that the caller can no longer easily `match` on the kind of error.
 
 The crate **`anyhow`** is a more comfortable version of the same idea, and is what most applications use. It adds `context`, which attaches a description of *what the program was trying to do*:
 
@@ -699,8 +699,8 @@ Avoid patterns that throw an error away without a decision: `let _ = risky();`, 
 ? What does the `?` operator do when the value before it is an `Err`?
 - It panics
 - It replaces the error with a default value
-+ It returns the error from the current function to the caller
 - It ignores the error and continues
++ It returns the error from the current function to the caller
 = `?` unwraps an `Ok`, and on an `Err` it returns early with that error, converting it with `From` if needed.
 
 ? Which of these situations calls for a `Result` and not a panic?
@@ -724,8 +724,8 @@ fn main() {
 
 ? What is the job of `impl From<io::Error> for MyError`?
 - It prints the error
-+ It tells Rust how to turn an `io::Error` into a `MyError`, which lets `?` do the conversion automatically
 - It makes `MyError` a panic
++ It tells Rust how to turn an `io::Error` into a `MyError`, which lets `?` do the conversion automatically
 - It is needed for `match`
 = `?` calls `From::from` on the error before returning it. With this implementation, a function returning `Result<_, MyError>` can use `?` on I/O operations.
 
@@ -892,5 +892,5 @@ error: unknown state '2'
 
 `save` ends with `fs::write(path, text)` without `?` or `Ok`: the call already returns exactly the `Result<(), io::Error>` that the function must return. In `load`, three different kinds of problem (an I/O error, a missing separator, a bad flag) all travel through the same `Box<dyn Error>`. `ok_or` is the bridge from `Option` to `Result` that lets `?` work on the result of `split_once`.
 
-The format breaks if a title contains a line break. Real programs use a standard format such as JSON for this, with the `serde` crate ([chapter 78](#serde)).
+The format breaks if a title contains a line break. Real programs use a standard format such as JSON for this, with the `serde` crate ([chapter 45](#serde)).
 :::

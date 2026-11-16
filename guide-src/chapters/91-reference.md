@@ -4,7 +4,7 @@
 @title Reference tables
 @short Reference tables
 @level all
-@time 10
+@time 15
 
 This appendix collects lookup tables for Rust syntax, formatting, derivable traits and standard-library modules. Use it as a reference while working through examples; consult the linked chapters for explanations and context. Compiler output is included where it is part of the reference material.
 
@@ -192,7 +192,7 @@ For more than a few flags, the crate `bitflags` gives them a type of their own, 
 | `"text"` | a `&str`. `\n`, `\t`, `\\`, `\"` and `\u{…}` work inside |
 | `r"C:\temp"`, `r#"say "hi""#` | a raw string: backslashes (and, with `#`, quotation marks) mean themselves |
 | `b"bytes"` | a byte string: `&[u8; 5]` |
-| `c"text"` | a C string, with a zero byte at the end: `&CStr` ([chapter 37](#ffi)) |
+| `c"text"` | a C string, with a zero byte at the end: `&CStr` ([chapter 40](#ffi)) |
 | `(1, "a")`, `()` | a tuple; the empty tuple, called "unit" |
 | `[1, 2, 3]`, `[0; 8]` | an array; an array of eight zeros |
 
@@ -258,7 +258,7 @@ fn main() {
 | `Hash` | use as a key in a `HashMap` or `HashSet` | needs `Eq`. Equal values must have equal hashes, which the derived versions guarantee |
 | `Default` | `Type::default()` and `..Default::default()` | numbers become 0, text empty, `bool` false, `Option` `None`. For an enum, mark one variant with `#[default]` |
 
-A common full set for a small value type is `#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Default)]`. Crates add more: `Serialize` and `Deserialize` from serde ([chapter 78](#serde)), `Error` from thiserror ([chapter 23](#errors)), `Parser` from clap ([chapter 73](#cli)).
+A common full set for a small value type is `#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Default)]`. Crates add more: `Serialize` and `Deserialize` from serde ([chapter 45](#serde)), `Error` from thiserror ([chapter 23](#errors)), `Parser` from clap ([chapter 75](#cli)).
 
 ## `Option` and `Result`: which method?
 
@@ -282,7 +282,7 @@ A common full set for a small value type is `#[derive(Debug, Clone, Copy, Partia
 | `Option<Result<T, E>>` | `Result<Option<T>, E>` | `transpose()` |
 | many `Result<T, E>` | one `Result<Vec<T>, E>` | `collect()` ([chapter 30](#iterators)) |
 
-[Chapter 40](#idioms) shows these in use.
+[Chapter 43](#idioms) shows these in use.
 
 ## A map of the standard library
 
@@ -342,7 +342,7 @@ Without an operating system, a program uses `core` (everything that needs neithe
 
 ## HTTP status codes
 
-HTTP status codes are part of every web service, and the numbers matter to clients. The ones a Rust web service sends, in practice ([chapter 64](#web)):
+HTTP status codes are part of every web service, and the numbers matter to clients. The ones a Rust web service sends, in practice ([chapter 69](#web)):
 
 | Code | Name | Meaning | When a server sends it |
 |---|---|---|---|
@@ -372,7 +372,7 @@ The full list, with the official definitions, is in [RFC 9110](https://www.rfc-e
 
 ## Computer Systems & Linux Internals Quick Reference
 
-Quick lookup tables for [Part I](#hardware-architecture), [Part II](#compilation-pipeline), [Part IV–VIII](#virtual-memory-address-spaces), and [the Linux Systems Lab](#linux-systems-lab):
+Quick lookup tables for [Part 1](#hardware-architecture), [Part 2](#compilation-pipeline), [Parts 6–10](#virtual-memory-address-spaces), and [the Linux Systems Lab](#linux-systems-lab):
 
 ### Calling Conventions & Linux `syscall` Registers
 
@@ -406,9 +406,9 @@ Quick lookup tables for [Part I](#hardware-architecture), [Part II](#compilation
 - The basic types, with sizes and ranges: [chapter 9](#types).
 - All patterns: [chapter 19](#patterns).
 - The most used iterator methods: [chapter 30](#iterators).
-- Which smart pointer for which job: [chapter 32](#smart-pointers).
-- Naming rules: [chapter 40](#idioms).
-- The Cargo commands: [chapter 70](#cargo).
+- Which smart pointer for which job: [chapter 35](#smart-pointers).
+- Naming rules: [chapter 43](#idioms).
+- The Cargo commands: [chapter 32](#cargo).
 - The common compiler errors and their repairs: [the errors appendix](#errors-ref).
 
 ## Authoritative and current sources

@@ -4,7 +4,7 @@
 @title Project: a chat server
 @short Project: chat server
 @level advanced
-@time 150
+@time 95
 @learn Design a small network protocol and a concurrent server for it | Run one async task per client and connect the tasks with a broadcast channel | Wait for two things at once with `select!` | Guarantee clean-up with `Drop` | Test a network server automatically
 
 In this project you build a small networked chat service. Several clients can connect, choose names and exchange messages through the server. You will also write a client and an integration test that starts the server and checks a conversation between simulated users. The project makes concurrency, message framing and error handling concrete.
@@ -67,7 +67,7 @@ A text protocol can be tried out by hand and read by eye, which makes mistakes e
 - **A broadcast channel is the room.** Tokio's `broadcast` channel delivers every message to *every* receiver. A task that wants to say something sends into the channel, and each task holds a receiver.
 - **A shared set of names** makes sure no two members have the same name, and answers `/who`.
 
-Notice how little is shared. Messages travel through a channel, as recommended in [chapter 56](#shared-state). The only data behind a lock is the set of names, and it is locked for an instant at a time.
+Notice how little is shared. Messages travel through a channel, as recommended in [chapter 61](#shared-state). The only data behind a lock is the set of names, and it is locked for an instant at a time.
 
 ### The files
 
@@ -159,7 +159,7 @@ impl Shared {
 
 A name must be acceptable and must be free. Taking a name has a counterpart that is easy to forget: the name must be given back when the member leaves, **whichever way** they leave. They may type `/quit`, close the window, lose their connection, or the server may hit an error while writing to them.
 
-Rust has a tool that makes forgetting impossible: `Drop`, from [chapter 32](#smart-pointers). A `Member` value represents a registered name. When it is dropped, for any reason, the name is released.
+Rust has a tool that makes forgetting impossible: `Drop`, from [chapter 35](#smart-pointers). A `Member` value represents a registered name. When it is dropped, for any reason, the name is released.
 
 ```rust
 impl Shared {
@@ -217,7 +217,7 @@ fn check_name(name: &str) -> Result<(), String> {
 - In `rename`, the new name is inserted before the old one is removed, so the member never stands without a name. `std::mem::replace(&mut a, b)` puts `b` into `a` and returns the old content of `a`. Here it stores the new name and hands back the old one for the announcement.
 - `drop` uses `if let Ok(...)` and not `unwrap()`. A destructor should never panic: it may be running *because* of a panic, and a second panic at that moment ends the whole program.
 
-The only way to get a `Member` is `join`, and losing a `Member` always frees the name. The set of names and the set of living `Member` values cannot disagree. This is the idea of [chapter 34](#type-system) again: a value whose existence proves a fact.
+The only way to get a `Member` is `join`, and losing a `Member` always frees the name. The set of names and the set of living `Member` values cannot disagree. This is the idea of [chapter 37](#type-system) again: a value whose existence proves a fact.
 
 ## Step 3: understand the input
 
@@ -852,12 +852,12 @@ Worth noticing in the design:
 - **Failures are contained.** An error in one session ends one task.
 - **Clean-up cannot be skipped**, because it lives in `Drop`.
 
-A server for the real world needs more. It should limit the length of a line (a client that sends gigabytes without a line break would fill the memory), limit how fast a client may send, encrypt the connections with TLS, and identify users with passwords. Those layers are explored in [Part X](#dns-http-tls-trace).
+A server for the real world needs more. It should limit the length of a line (a client that sends gigabytes without a line break would fill the memory), limit how fast a client may send, encrypt the connections with TLS, and identify users with passwords. Those layers are explored in [Part 12](#dns-http-tls-trace).
 
 :::details When one server becomes several
 This chat server holds every room in one process. That is the right design for thousands of users, and it stops working when you need two servers behind a load balancer: a message sent to server A never reaches the clients connected to server B.
 
-The usual next step is to make the servers **stateless** and move the shared state out: room membership and message history into a database, and the live fan-out through a message broker — each server subscribes to `room.*` and delivers to its own clients ([chapter 60](#async-ecosystem) covers the brokers). Redis pub/sub is the smallest version of this; NATS is the next.
+The usual next step is to make the servers **stateless** and move the shared state out: room membership and message history into a database, and the live fan-out through a message broker — each server subscribes to `room.*` and delivers to its own clients ([chapter 65](#async-ecosystem) covers the brokers). Redis pub/sub is the smallest version of this; NATS is the next.
 
 Beyond that the questions stop being about Rust and start being about distributed systems, and they have names worth recognising before you meet them in an incident report:
 
@@ -1019,30 +1019,30 @@ This design is simple, and it has a cost: every task wakes up for every private 
 
 :::quiz Check your understanding
 ? The chat room uses a broadcast channel. Why is broadcast the right shape for it?
-+ Every subscriber should receive every message, which is exactly what broadcast does
+- It lets one sender talk to one receiver only
 - A broadcast channel never fails, so the server cannot crash
 - Broadcast is the only channel Tokio provides
-- It lets one sender talk to one receiver only
++ Every subscriber should receive every message, which is exactly what broadcast does
 = A chat room is one-to-many: each message goes to every connected client. Broadcast delivers a copy to every subscriber, and each subscriber's own slow connection cannot hold up the others.
 
 ? The names are kept behind a mutex, and the server never holds that mutex across an `.await`. Why is that rule important?
-+ A mutex across an `.await` can block every other task, and the borrow checker will not allow it to be held
 - The mutex would be locked forever
++ A mutex across an `.await` can block every other task, and the borrow checker will not allow it to be held
 - Tokio forbids `Mutex` in async code
 - The names would be lost
 = Holding a lock across an `.await` means the task can be suspended while other tasks wait for the same lock, which can stall the whole runtime or deadlock it. The project's rule is to take the value out, drop the guard, and only then await.
 
 ? In the session loop, `select!` waits for two things at once. What are they?
-+ The next line from the client, and a message addressed to this client from the room
 - Two lines from the client
++ The next line from the client, and a message addressed to this client from the room
 - The client connection and the server process
 - A timer and a network read
 = A client session must react both to what the person types and to what other people say. `select!` waits for whichever arrives first and handles that branch, so neither side waits idly for the other.
 
 ? The `serve` function takes a listener that is already bound to a port. What does that make possible?
-+ The server can be tested on a free port, without racing for a fixed one
-- The listener can be used by two servers at once
 - The port number is written into the source code
+- The listener can be used by two servers at once
++ The server can be tested on a free port, without racing for a fixed one
 - The server can start without the operating system
 = Binding in the test and then handing the listener over means the test picks a free port, so two tests can run at the same time without one stealing the other's port.
 :::
@@ -1059,4 +1059,4 @@ This design is simple, and it has a cost: every task wakes up for every private 
 - I added private messages.
 :::
 
-You have built a concurrent async chat server with tasks, channels, and shared state, and you know how Rust keeps multi-core execution safe. Next, [Concurrency in practice](#async-ecosystem) scales these primitives with Rayon and Tokio middleware before Part X dives into the network stack itself.
+You have built a concurrent async chat server with tasks, channels, and shared state, and you know how Rust keeps multi-core execution safe. Next, [Concurrency in practice](#async-ecosystem) scales these primitives with Rayon and Tokio middleware before Part 12 dives into the network stack itself.

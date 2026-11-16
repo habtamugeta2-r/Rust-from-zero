@@ -1,9 +1,9 @@
 @id serde
-@part p13
+@part p3c
 @title Data formats with Serde: JSON, TOML and more
 @short Serde and data formats
 @level intermediate
-@time 50
+@time 45
 @learn Explain what serialisation is | Convert your structs and enums to and from JSON with `derive` | Control the result with Serde attributes | Read configuration from TOML and handle data of unknown shape | Validate data while it is being read
 
 Programs often need to save values, send them over a network or load configuration. They convert structured values to a representation such as JSON, then parse that representation back into values. Serde provides Rust traits and derives for these conversions; the format and validation rules still need to match the application's expectations.
@@ -133,7 +133,7 @@ error: invalid value: integer `300`, expected u8 at line 1 column 27
 error: EOF while parsing an object at line 1 column 26
 ```
 
-A wrong type, a missing field, a number too big for a `u8`, and a missing brace are all caught. This is "parse, don't validate" from [chapter 34](#type-system), for free: once you hold a `User`, the data has the right shape, and the rest of the program needs no checks. In languages where JSON becomes a loose dictionary, such mistakes surface later, somewhere deep in the program.
+A wrong type, a missing field, a number too big for a `u8`, and a missing brace are all caught. This is "parse, don't validate" from [chapter 37](#type-system), for free: once you hold a `User`, the data has the right shape, and the rest of the program needs no checks. In languages where JSON becomes a loose dictionary, such mistakes surface later, somewhere deep in the program.
 
 ## Shaping the output with attributes
 
@@ -599,7 +599,7 @@ Serde's error message names the problem but not always its address: on a deep co
 :::
 
 :::recap
-- Serialisation turns values into bytes in some format, and deserialisation turns them back.
+- [[Serialisation|serialisation]] turns values into bytes in some format, and [[deserialisation]] turns them back.
 - `#[derive(Serialize, Deserialize)]` makes a type work with every format Serde supports.
 - `serde_json::to_string`, `to_string_pretty` and `from_str` convert to and from JSON. Errors name the problem and its position.
 - Attributes adjust names (`rename`, `rename_all`), fill gaps (`default`), omit fields (`skip…`) and choose the enum representation (`tag`).
@@ -611,9 +611,9 @@ Serde's error message names the problem but not always its address: on a deep co
 :::quiz Check your understanding
 ? What do you have to add to a struct so that it can be written as JSON and read back?
 - Implement a method `to_json`
-+ `#[derive(Serialize, Deserialize)]`, with the `serde` crate and its `derive` feature
-- Nothing. All structs can be serialised
 - `#[derive(Json)]`
+- Nothing. All structs can be serialised
++ `#[derive(Serialize, Deserialize)]`, with the `serde` crate and its `derive` feature
 = The two derives generate implementations of Serde's traits. Any format crate can then convert the type.
 
 ? The JSON `{"name": "Sara"}` is deserialised into `struct User { name: String, age: u8 }`. What happens?
@@ -626,8 +626,8 @@ Serde's error message names the problem but not always its address: on a deep co
 ? Which attribute makes the Rust field `user_name` appear as `userName` in JSON, for all fields of the struct?
 - `#[serde(default)]`
 - `#[serde(flatten)]`
-+ `#[serde(rename_all = "camelCase")]`
 - `#[serde(tag = "camelCase")]`
++ `#[serde(rename_all = "camelCase")]`
 = `rename_all` converts every field name to the given style. `rename` does it for a single field.
 
 ? What does `#[serde(tag = "type")]` on an enum do?
@@ -638,8 +638,8 @@ Serde's error message names the problem but not always its address: on a deep co
 = This is the internally tagged representation: `{"type": "login", "user": "sara"}`.
 
 ? When is `serde_json::Value` the right tool, and not a struct?
-- Always. Structs are slower
 + When the structure of the data is not known in advance, or only a small part of it is needed
+- Always. Structs are slower
 - When the JSON is very large
 - When the data contains numbers
 = `Value` can hold anything, at the price of checking kinds by hand. Known structures are better served by structs.
@@ -805,7 +805,7 @@ true
 {"kind":"join","user":"lena"}
 ```
 
-The enum is the protocol's specification in code. An unknown kind is rejected at the border, and the `match` must handle every kind that exists. When a fourth message kind is added to the enum, the compiler leads you to every place that needs to deal with it. This is how the chat server of [chapter 59](#project-chat) would look with a JSON protocol.
+The enum is the protocol's specification in code. An unknown kind is rejected at the border, and the `match` must handle every kind that exists. When a fourth message kind is added to the enum, the compiler leads you to every place that needs to deal with it. This is how the chat server of [chapter 64](#project-chat) would look with a JSON protocol.
 :::
 
 :::exercise challenge Save the to-do list as JSON

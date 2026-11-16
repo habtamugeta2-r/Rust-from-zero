@@ -1,9 +1,9 @@
 @id iterators
-@part p3
+@part p3b
 @title Iterators: processing data step by step
 @short Iterators
 @level intermediate
-@time 60
+@time 40
 @learn Explain what an iterator is and how `for` uses it | Build processing pipelines with `map`, `filter` and other adapters | Finish a pipeline with `collect`, `sum`, `fold`, `find` and friends | Understand laziness and why iterator chains are as fast as loops | Write your own iterator
 
 Many tasks process a collection one element at a time: filter values, transform them, add them up or find a match. A `for` loop is one clear way to do this. Rust's **iterators** offer another way to compose those steps, often without a temporary collection; the compiler can optimise many iterator chains, but performance should be measured for the workload that matters.
@@ -36,7 +36,7 @@ fn main() {
 The second version reads like a description of the result: take the numbers, keep the even ones, square each, sum them. There is no variable that changes, no index, and nothing to get off by one.
 
 :::plain Iterators and laziness in one paragraph
-An **iterator** produces a sequence of values one at a time through `next()`, and everything else in the chapter is built on that one method. **Adapters** such as `map`, `filter` and `take` are lazy: they build a new iterator and do no work until something consumes it. A **consumer** such as `collect`, `sum` or `for_each` drives the chain to the end. Because the whole pipeline compiles into one loop over the source, an iterator chain is as fast as hand-written indexing — usually faster, since the compiler can drop bounds checks it has already proven unnecessary.
+An **iterator** produces a sequence of values one at a time through `next()`, and everything else in the chapter is built on that one method. **Adapters** such as `map`, `filter` and `take` are [[lazy]]: they build a new iterator and do no work until something consumes it. A **consumer** such as `collect`, `sum` or `for_each` drives the chain to the end. Because the whole pipeline compiles into one loop over the source, an iterator chain is as fast as hand-written indexing — usually faster, since the compiler can drop bounds checks it has already proven unnecessary.
 :::
 
 :::analogy An assembly line
@@ -556,7 +556,7 @@ always rising: true
 | combine into one value | `fold`, `reduce` |
 | look at the next item without taking it | `peekable()` and then `peek()` |
 
-The crate **`itertools`** adds many more, such as `sorted`, `group_by`, `join`, `unique` and `tuple_windows`. You will meet it in [chapter 77](#crates).
+The crate **`itertools`** adds many more, such as `sorted`, `group_by`, `join`, `unique` and `tuple_windows`. You will meet it in [chapter 44](#crates).
 
 :::compare Iterators in other languages
 - **Python** has the same idea in generators and comprehensions: `sum(n*n for n in numbers if n % 2 == 0)`. They are lazy too, but each step costs interpreter time.
@@ -583,16 +583,16 @@ Rust's version combines the pleasant pipeline style with the speed of a hand-wri
 [1, 2, 3].iter().map(|n| println!("{n}"));
 ```
 - `1 2 3` on separate lines
-- `3 2 1`
 + Nothing. `map` is lazy, and no consumer asks for items
+- `3 2 1`
 - An error message at run time
 = Adapters only describe work. Without a consumer such as `collect`, `count` or a `for` loop, no item is ever produced. The compiler warns about the unused iterator.
 
 ? Which call gives ownership of the elements of a `Vec<String>`?
 - `v.iter()`
 - `v.iter_mut()`
-+ `v.into_iter()`
 - `v.len()`
++ `v.into_iter()`
 = `into_iter` consumes the vector and yields each `String` by value. `iter` yields `&String` and `iter_mut` yields `&mut String`.
 
 ? What is the result of `(1..=4).filter(|n| n % 2 == 0).map(|n| n * 10).collect::<Vec<i32>>()`?
@@ -604,16 +604,16 @@ Rust's version combines the pleasant pipeline style with the speed of a hand-wri
 
 ? What does collecting an iterator of `Result<i32, E>` into `Result<Vec<i32>, E>` do when one item is an `Err`?
 - It skips that item
-- It panics
 + The whole result is that `Err`
+- It panics
 - It puts 0 in its place
 = Collecting into a `Result` succeeds only if every item is `Ok`. Otherwise it stops and returns the first error.
 
 ? You implement `Iterator` for your own struct. Which method must you write?
-- `map`
++ `next`
 - `collect`
 - `iter`
-+ `next`
+- `map`
 = `next` is the only required method. All adapters and consumers are default methods built on it.
 :::
 

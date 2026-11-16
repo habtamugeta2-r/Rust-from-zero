@@ -379,23 +379,23 @@ if x > 10 {
     println!("small");
 }
 ```
-+ `big`
-- `big` and `medium`
 - `medium`
+- `big` and `medium`
++ `big`
 - `small`
 = Only the first true condition runs. `x > 5` is also true, but it is never tested, because the branch above it already matched.
 
 ? What does `continue` do inside a loop?
-- It ends the loop
-- It ends the program
 + It skips the rest of the current round and starts the next one
+- It ends the program
+- It ends the loop
 - It restarts the loop from the first round
 = `continue` jumps to the next round. `break` is the one that ends the loop.
 
 ? Why does `let size = if n > 100 { "large" };` not compile?
 - `if` cannot be used with `let`
-+ There is no `else`, so `size` would have no value when the condition is false
 - Text cannot be stored in a variable
++ There is no `else`, so `size` would have no value when the condition is false
 - The condition needs brackets
 = When `if` is used as a value, every case must produce a value of the same type. Without `else`, the "false" case produces nothing.
 :::

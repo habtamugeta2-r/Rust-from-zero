@@ -4,7 +4,7 @@
 @title Multi-Core Cache Coherency, Memory Ordering & SIMD Parallelism
 @short Cache coherency, atomics & SIMD
 @level intermediate
-@time 35
+@time 30
 @learn Explain MESI cache coherency and why hardware store buffers reorder reads/writes across cores | Contrast x86-64 TSO vs ARM64 weak memory ordering and Rust Ordering (Relaxed/Acquire/Release/SeqCst) | Trace how RMW atomics compile to lock xadd/cmpxchg on x86 vs LL/SC or LSE on ARM64 | Understand data-level parallelism with SIMD registers (SSE/AVX2/NEON) and Rust auto-vectorisation
 
 Modern processors can do work in parallel in more than one way. Multiple cores can run separate threads, while SIMD instructions process several data lanes in one instruction. Cache coherence helps cores keep cached copies consistent; memory ordering rules constrain which writes another core may observe and when. The exact cache protocol, vector width and performance depend on the processor and workload. This chapter connects those hardware mechanisms to Rust atomics and SIMD; the programming-level foundations are in [threads](#threads) and [shared state](#shared-state), while [pointers, safety and caches](#pointers-safety-caches) introduces cache-line layout.
@@ -187,15 +187,15 @@ By declaring 4 independent partial sums `[0.0; 4]`, you both give LLVM permissio
 
 :::recap
 - **MESI coherency** keeps shared 64-byte cache lines consistent across cores, while hardware **store buffers** and **weak ARM64 reordering** explain why `std::sync::atomic::Ordering` exists.
-- **`Release` / `Acquire`** is the essential happens-before synchronization pair across all architectures (zero extra fences on x86-64 TSO!); **`Relaxed`** suffices for standalone counters.
+- **`Release` / `Acquire`** is the essential happens-before synchronisation pair across all architectures (zero extra fences on x86-64 TSO!); **`Relaxed`** suffices for standalone counters.
 - **Rust's `&mut` exclusivity (`noalias`) + iterator slices** unlock aggressive **SIMD auto-vectorisation** (`SSE2`/`AVX2`/`NEON`), processing 4–16 elements per instruction.
 :::
 
 :::quiz Check your understanding
 ? Why do CPU cores place a FIFO **Store Buffer** between the execution units and L1d cache?
 - To encrypt RAM contents
-+ So a core can continue executing subsequent instructions without stalling while waiting for MESI invalidation messages to reach all other cores
 - To run SIMD vector math
++ So a core can continue executing subsequent instructions without stalling while waiting for MESI invalidation messages to reach all other cores
 - To handle page faults in Ring 3
 = Store buffers hide inter-core cache-coherency invalidation latency, creating the Store-Load reordering behaviour even on x86-64 TSO.
 
@@ -208,8 +208,8 @@ By declaring 4 independent partial sums `[0.0; 4]`, you both give LLVM permissio
 
 ? Which Rust guarantee specifically helps LLVM auto-vectorise `add_slices(dst: &mut [u32], src: &[u32])` better than C pointers?
 - Reference counting via `Arc`
-+ Borrowing forbids `&mut [u32]` (`dst`) from aliasing `&[u32]` (`src`), giving LLVM automatic `noalias` guarantees to load and store vector lanes safely
 - `Drop` frees arrays before vectorising
++ Borrowing forbids `&mut [u32]` (`dst`) from aliasing `&[u32]` (`src`), giving LLVM automatic `noalias` guarantees to load and store vector lanes safely
 - `unsafe` disables bounds checks globally
 = C compilers often refuse to SIMD-vectorise pointer loops out of fear that `dst` and `src` overlap in RAM; Rust's borrow rules guarantee non-aliasing statically.
 

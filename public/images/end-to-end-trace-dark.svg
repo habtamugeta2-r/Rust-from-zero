@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 470" role="img" aria-labelledby="t d">
+  <title id="t">The end-to-end journey of a Rust program</title>
+  <desc id="d">Six stages: write, compile, load, execute, call the kernel, and print — from source code to characters on a terminal.</desc>
+  <rect width="1200" height="470" rx="24" fill="#1C1A17"/>
+  <rect x="1" y="1" width="1198" height="468" rx="23" fill="none" stroke="#2D2A24" stroke-width="2"/>
+  <text x="48" y="58" font-family="system-ui, sans-serif" font-size="24" font-weight="700" fill="#ECE7DD">One program, every layer of the machine</text>
+  <text x="48" y="86" font-family="system-ui, sans-serif" font-size="15" fill="#A49B88">The whole guide follows this journey, one layer at a time.</text>
+  <defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#E9743E"/></marker></defs>
+  <g font-family="system-ui, sans-serif" text-anchor="middle">
+    <circle cx="118" cy="176" r="17" fill="#E9743E"/><text x="118" y="182" font-size="15" font-weight="700" fill="#141311">1</text>
+    <rect x="48" y="204" width="140" height="86" rx="14" fill="#39231A" stroke="#E9743E" stroke-width="2"/>
+    <text x="118" y="242" font-size="16" font-weight="700" fill="#ECE7DD">Write</text><text x="118" y="266" font-size="12.5" fill="#A49B88">main.rs</text>
+    <circle cx="298" cy="176" r="17" fill="#E9743E"/><text x="298" y="182" font-size="15" font-weight="700" fill="#141311">2</text>
+    <rect x="228" y="204" width="140" height="86" rx="14" fill="#181613" stroke="#3E3930" stroke-width="2"/>
+    <text x="298" y="242" font-size="16" font-weight="700" fill="#ECE7DD">Compile</text><text x="298" y="266" font-size="12.5" fill="#A49B88">rustc + LLVM</text>
+    <circle cx="478" cy="176" r="17" fill="#E9743E"/><text x="478" y="182" font-size="15" font-weight="700" fill="#141311">3</text>
+    <rect x="408" y="204" width="140" height="86" rx="14" fill="#181613" stroke="#3E3930" stroke-width="2"/>
+    <text x="478" y="242" font-size="16" font-weight="700" fill="#ECE7DD">Load</text><text x="478" y="266" font-size="12.5" fill="#A49B88">execve · ELF</text>
+    <circle cx="658" cy="176" r="17" fill="#2DD4BF"/><text x="658" y="182" font-size="15" font-weight="700" fill="#141311">4</text>
+    <rect x="588" y="204" width="140" height="86" rx="14" fill="#12322E" stroke="#2DD4BF" stroke-width="2"/>
+    <text x="658" y="242" font-size="16" font-weight="700" fill="#ECE7DD">Execute</text><text x="658" y="266" font-size="12.5" fill="#2DD4BF">CPU · stack · heap</text>
+    <circle cx="838" cy="176" r="17" fill="#38BDF8"/><text x="838" y="182" font-size="15" font-weight="700" fill="#141311">5</text>
+    <rect x="768" y="204" width="140" height="86" rx="14" fill="#132B3A" stroke="#38BDF8" stroke-width="2"/>
+    <text x="838" y="242" font-size="16" font-weight="700" fill="#ECE7DD">Ask the kernel</text><text x="838" y="266" font-size="12.5" fill="#38BDF8">write() syscall</text>
+    <circle cx="1018" cy="176" r="17" fill="#3E3930"/><text x="1018" y="182" font-size="15" font-weight="700" fill="#ECE7DD">6</text>
+    <rect x="948" y="204" width="204" height="86" rx="14" fill="#11100E" stroke="#3E3930" stroke-width="1.5"/>
+    <text x="1050" y="242" font-size="16" font-weight="700" fill="#ECE7DD">See it</text><text x="1050" y="266" font-family="ui-monospace, monospace" font-size="12.5" fill="#A49B88">Hello, you!</text>
+  </g>
+  <g stroke="#E9743E" stroke-width="2.5">
+    <line x1="192" y1="247" x2="222" y2="247" marker-end="url(#ar)"/><line x1="372" y1="247" x2="402" y2="247" marker-end="url(#ar)"/><line x1="552" y1="247" x2="582" y2="247" marker-end="url(#ar)"/><line x1="732" y1="247" x2="762" y2="247" marker-end="url(#ar)"/><line x1="912" y1="247" x2="942" y2="247" marker-end="url(#ar)"/>
+  </g>
+  <g font-family="system-ui, sans-serif" font-size="13.5">
+    <rect x="48" y="340" width="1104" height="52" rx="12" fill="#232019" stroke="#2D2A24"/>
+    <text x="72" y="372" fill="#C2BBAF">Layers you will meet:  <tspan font-weight="700" fill="#ECE7DD">compiler → linker → loader → CPU → memory → kernel → terminal</tspan></text>
+  </g>
+  <text x="600" y="432" font-family="system-ui, sans-serif" font-size="14" font-style="italic" fill="#A49B88" text-anchor="middle">Nothing is magic. Every step can be opened, named, and tested.</text>
+</svg>

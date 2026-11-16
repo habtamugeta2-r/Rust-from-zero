@@ -4,8 +4,8 @@
 @title End-to-End Execution Trace: From Rust Source to Hardware
 @short End-to-end 10-layer trace
 @level intermediate
-@time 35
-@learn Trace two real lines of Rust across all 10 layers of the computing stack | Follow String::from("Habtamu") through MIR, LLVM IR, ELF .rodata, malloc, and Heap RAM | Follow println!("{}", name) through format_args, StdoutLock buffering, write(1, ...) syscall, kernel VFS/TTY, and terminal pixels | Connect every concept from Parts I through V into one unified mental model
+@time 30
+@learn Trace two real lines of Rust across all 10 layers of the computing stack | Follow String::from("Habtamu") through MIR, LLVM IR, ELF .rodata, malloc, and Heap RAM | Follow println!("{}", name) through format_args, StdoutLock buffering, write(1, ...) syscall, kernel VFS/TTY, and terminal pixels | Connect every concept from Parts 1 through 7 into one unified mental model
 
 This chapter brings several earlier threads together. You have met hardware and binary data, followed Rust through [compiler stages](#compilation-pipeline), and studied [ownership](#ownership), [memory layout](#memory-layout) and [process startup](#program-loading-startup). Now trace one small program across those layers—from source code through compilation and loading to the instructions and system interactions involved while it runs.
 
@@ -192,23 +192,23 @@ Match read-only code, read-only constants, dynamic mutable allocations, local fr
 = String literals are baked into `.rodata` at compile time and mapped read-only (`r--p`) when the program starts.
 
 ? Does `println!("{}", name)` allocate on the heap for formatting in normal cases?
-- Yes, it always allocates a temporary `String`
 + No: `format_args!` builds a stack-allocated `Arguments` struct pointing directly to static pieces in `.rodata` and `&name`, writing into `Stdout`'s reusable `LineWriter` buffer
+- Yes, it always allocates a temporary `String`
 - Yes, one `malloc` per `{}` placeholder
 - Only on Windows
 = Unlike `format!`, `println!` avoids intermediate heap allocations by streaming straight through `core::fmt::Arguments`.
 
 ? What privilege boundary does `println!` cross when `LineWriter` encounters `\n` and calls `write(1, ...)`?
 - L1 cache to L2 cache
-+ Ring 3 (user space) to Ring 0 (kernel space) via the `syscall` instruction
-- `.rodata` to `.text`
 - `core` crate to `alloc` crate
+- `.rodata` to `.text`
++ Ring 3 (user space) to Ring 0 (kernel space) via the `syscall` instruction
 = Writing to file descriptor `1` requires kernel privileges, triggered via the `syscall` instruction (`rax = 1` on Linux x86-64).
 
 ? What cleans up `name`'s 7-byte heap buffer at the end of `main()`?
 - The Linux kernel garbage collector
 - A background reference-counting thread
-+ Compiler-inserted `drop_in_place::<String>` (elaborated in MIR), which calls `System::dealloc` -> `free()`
 - Nothing, because `main()` is exiting anyway
++ Compiler-inserted `drop_in_place::<String>` (elaborated in MIR), which calls `System::dealloc` -> `free()`
 = Rust statically elaborates `Drop` calls before returning from `main()`, invoking `dealloc` with `Layout(7, 1)`.
 :::

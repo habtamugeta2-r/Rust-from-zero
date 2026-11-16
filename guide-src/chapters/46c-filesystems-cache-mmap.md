@@ -4,7 +4,7 @@
 @title File Systems, the Page Cache, Journaling & Memory-Mapped I/O
 @short File systems, page cache & mmap
 @level intermediate
-@time 35
+@time 30
 @learn Trace Linux VFS path resolution (/data/app.db -> dentries -> inodes -> ext4 extents) | Explain hard links vs symlinks, directory atomicity (rename() crash-safe file updates!), and file-system journaling | Understand how the Linux Page Cache makes repeated file reads 1,000x faster via DRAM | Contrast read()/write() syscalls with mmap() (zero-copy file mapping, SIGBUS hazards, and Rust safety limits)
 
 A file scan may finish faster on a second run because recently read data can remain in the operating system's **page cache**. That is not guaranteed: the result depends on file size, available memory, competing work and storage. This chapter explains how Linux caches file data, how file-system metadata describes it, and how `mmap` exposes file contents through a process's address space.
@@ -15,7 +15,7 @@ In this chapter we climb up one layer from raw NVMe blocks (the layer below is [
 A **path** is a name, not a file: the kernel walks each component through the directory cache until it reaches an **inode**, the record of one file's permissions, size, timestamps and disk extents. Those extents are the blocks the device underneath actually stores, so the layers meet at [block I/O and NVMe queues](#storage-hardware-blocks). A **hard link** is a second name for the same inode (the `nlink` count says how many), while a **symbolic link** is a tiny file whose *content* is another path. Reads go through the **page cache**, so a second read of a `500 MB` tree costs DRAM bandwidth rather than NVMe latency, and `mmap` maps those same page-cache frames into your address space to avoid the copy — at the price of `unsafe`, because another process can change or truncate the file underneath you.
 :::
 
-:::analogy A library catalog, reading table, and checkout slips
+:::analogy A library catalogue, reading table, and checkout slips
 - **Directories (`dentry`)** are name-to-number index cards mapping `"notes.txt"` -> **Inode `#8821`** (a file can even appear on two cards at once—a **hard link**!).
 - **Inodes** hold permissions, size, timestamps, and the map of **disk extents** (where the bytes live on SSD), *not* the filename!
 - The **OS Page Cache** is the huge reading table in the library lobby: once a book comes off the warehouse shelf (SSD), it stays open on the table in fast DRAM (`~80 ns`) for anyone else reading the same file!
@@ -137,7 +137,7 @@ Look at `free -h` on any busy Linux server: `buff/cache` routinely occupies giga
 
 ## `mmap`: Zero-Copy Speed & Why `Mmap` Is `unsafe` in Rust
 
-Notice how `libc.so.6` and your own compiled executable loaded in Part V: **`mmap()`** maps file pages directly into your process's virtual address space (`CR3`). When you read byte `idx` of a memory-mapped file:
+Notice how `libc.so.6` and your own compiled executable loaded in Part 7: **`mmap()`** maps file pages directly into your process's virtual address space (`CR3`). When you read byte `idx` of a memory-mapped file:
 - If the 4 KiB page is already in the OS **Page Cache**, the MMU points your virtual address straight at that exact physical RAM frame—**zero kernel copy, zero `read()` syscall, shared cleanly across processes!**
 - If missing, a **major page fault** pulls that 4 KiB page from NVMe on demand!
 
@@ -236,22 +236,22 @@ Recall how POSIX `rename()` actually works inside a file system: does it copy by
 
 ? Why must the temporary file used for atomic `fs::rename` live in the **same directory/filesystem** as the destination file?
 - `std::fs::rename` only accepts hidden dotfiles starting with `.`
-+ `rename()` atomically updates a directory pointer to an existing inode within one filesystem; crossing filesystems (`/tmp` -> `/home`) fails with `EXDEV`
 - Otherwise `fs::write` cannot flush buffers
++ `rename()` atomically updates a directory pointer to an existing inode within one filesystem; crossing filesystems (`/tmp` -> `/home`) fails with `EXDEV`
 - Linux denies permissions in `/tmp`
 = Same-filesystem `rename()` is an atomic O(1) metadata swap, not a byte copy.
 
 ? Why is creating a `&[u8]` slice directly over a memory-mapped file (`memmap2::Mmap`) marked `unsafe` in Rust?
-- `mmap` allocates memory slower than `malloc`
 + If another process writes to or truncates the mapped file underneath, Rust's `&[u8]` mutates behind a shared borrow (UB) or crashes with `SIGBUS`
+- `mmap` allocates memory slower than `malloc`
 - `mmap` bypasses virtual memory addresses
 - `mmap` cannot read UTF-8 strings
 = The OS cannot stop external processes from modifying or shrinking mapped files while Rust assumes `&[u8]` is immutable and valid.
 
 ? When `free -h` on Linux shows `0` MB completely free because `buff/cache` holds 12 GB, what happens when a Rust app calls `Vec::with_capacity(4 GiB)` and writes to it?
 - The app crashes immediately with Out-Of-Memory
-+ The kernel immediately reclaims clean Page Cache frames in microseconds to back the application's new memory
 - Every file on disk is deleted
++ The kernel immediately reclaims clean Page Cache frames in microseconds to back the application's new memory
 - The app swaps directly to HDD
 = Clean Page Cache RAM is opportunistically borrowed idle memory that Linux hands back immediately on demand.
 :::

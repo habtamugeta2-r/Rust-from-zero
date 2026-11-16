@@ -4,7 +4,7 @@
 @title Async Internals: State Machines, Pinning & Work-Stealing Runtimes
 @short Async internals & Pin
 @level intermediate
-@time 35
+@time 30
 @learn Hand-desugar an async fn into a Poll state-machine enum matching what rustc emits | Explain why borrows held across .await create self-referential structs requiring Pin<&mut T> | Trace Tokio's multi-threaded work-stealing scheduler, LIFO slot, cooperative budget, and mio epoll parking | Connect Arc's Release/Acquire fence pattern, lock convoys, and lock-free CAS hazards to concurrent scaling
 
 An `async fn` creates a future: a value that stores the state needed to resume the function when it is polled. The compiler generates a state machine for that future, but it does not by itself choose a runtime or guarantee that no allocation occurs. An executor decides when to poll tasks and how to wait for external events; Tokio, for example, uses its scheduler and operating-system facilities to do that work. This chapter opens those layers and distinguishes the language machinery from the runtime's choices.
@@ -184,7 +184,7 @@ task-A: Ready!
 executor retired task-A
 ```
 
-Every production executor—Tokio, `smol`, `embassy` on bare-metal microcontrollers—is built around this exact loop. The only difference in Tokio is that instead of `Countdown` calling `wake_by_ref()` immediately, Tokio hands that `Waker` to its [[epoll]] / timer reactor ([Chapter 51](#blocking-epoll-io-uring)), which calls `wake()` milliseconds later when a network packet or timer fires.
+Every production executor—Tokio, `smol`, `embassy` on bare-metal microcontrollers—is built around this exact loop. The only difference in Tokio is that instead of `Countdown` calling `wake_by_ref()` immediately, Tokio hands that `Waker` to its [[epoll]] / timer reactor ([Chapter 56](#blocking-epoll-io-uring)), which calls `wake()` milliseconds later when a network packet or timer fires.
 
 ## Why `Pin<&mut T>` exists: Self-Referential Futures
 
@@ -263,7 +263,7 @@ Now you can see why holding `std::sync::MutexGuard` or `Rc<T>` across an `.await
 
 ## Lock-free atomics & `Arc`'s `Release` / `Acquire` drop fence
 
-Remember from Part VIII why `Arc::clone` and `Arc::drop` perform a subtle dance under the hood:
+Remember from Part 10 why `Arc::clone` and `Arc::drop` perform a subtle dance under the hood:
 - **`Arc::clone`:** `strong.fetch_add(1, Ordering::Relaxed)`—incrementing the counter doesn't publish any writes yet, so `Relaxed` works cleanly!
 - **`Arc::drop`:** Calls `strong.fetch_sub(1, Ordering::Release)`. Only the **last** thread that sees old count `== 1` executes **`std::sync::atomic::fence(Ordering::Acquire)`** *before* running `Drop::drop` on `T`! That single `Release` on every decrement + `Acquire` fence on the *final* decrement guarantees that every write performed by *any* former `Arc` owner becomes 100% visible to the winning destructor thread before memory is freed!
 
@@ -319,30 +319,30 @@ Think about cache locality (L1d hot messages) vs two tasks ping-ponging each oth
 
 :::quiz Check your understanding
 ? Why does `Pin<&mut T>` exist in async Rust?
-- To allocate every integer on the heap
 + To prevent safe code from moving a suspended self-referential `!Unpin` future in memory after it stored pointers into its own struct fields across an `.await`
+- To allocate every integer on the heap
 - To make async futures automatically `Send + Sync`
 - To bypass the Linux `epoll` loop
 = Moving a self-referential struct via bitwise `memcpy` would leave its internal pointers pointing to the old stale address; `Pin` guarantees address stability for `!Unpin` types.
 
 ? Why must a `std::sync::MutexGuard` be dropped BEFORE an `.await` inside a `tokio::spawn` task?
 - `MutexGuard` uses `io_uring` internally
-+ Locals alive across `.await` become fields of the generated future state machine, and `MutexGuard` is `!Send` (plus blocking across `.await` deadlocks worker threads!)
-- Rust forbids locking mutexes inside async functions altogether
 - `MutexGuard` allocates 2 MiB per `.await`
+- Rust forbids locking mutexes inside async functions altogether
++ Locals alive across `.await` become fields of the generated future state machine, and `MutexGuard` is `!Send` (plus blocking across `.await` deadlocks worker threads!)
 = Keeping a `!Send` guard live across `.await` infects the future state machine with `!Send` and blocks the executor thread.
 
 ? How does Tokio avoid global lock contention when 16 CPU cores spawn thousands of tasks per second?
 - It runs all tasks on 1 thread
-+ Each worker maintains a private local run queue and LIFO slot, only touching global queues or stealing work from siblings when local work runs dry
-- It allocates a separate process per task
 - It uses `spin_loop` on a global `Mutex<Vec>`
+- It allocates a separate process per task
++ Each worker maintains a private local run queue and LIFO slot, only touching global queues or stealing work from siblings when local work runs dry
 = Per-worker local run queues and work stealing keep scheduling local to the active core with minimal cross-core contention.
 
 ? When an `Arc<T>` is dropped, why does `Arc::drop` use `Ordering::Release` on `fetch_sub` paired with an `Acquire` fence on the final `1 -> 0` transition?
-- To make `Arc::clone` slower
 + To guarantee all mutations made through previous `Arc` owners happen-before the winning last thread runs `T::drop`
+- To make `Arc::clone` slower
 - Because `Arc` uses `Pin` internally
 - To prevent integer overflow
-= Synchronizing `Release` across all drops with a final `Acquire` fence before destruction prevents memory reclamation races across CPU cores.
+= Synchronising `Release` across all drops with a final `Acquire` fence before destruction prevents memory reclamation races across CPU cores.
 :::

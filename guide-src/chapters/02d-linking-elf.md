@@ -3,7 +3,7 @@
 @title Object files, linking, and ELF executables
 @short Linking and ELF binaries
 @level intermediate
-@time 50
+@time 30
 @learn Explain what lives inside an object file (.o) and why it cannot run by itself | Distinguish static linking (.a, .rlib) from dynamic linking (.so, PLT/GOT) | Read the structure of an ELF executable: ELF header, sections (.text, .rodata, .data, .bss), and program headers | Inspect real compiled programs using readelf, objdump, nm, and ldd
 
 A source file can refer to functions and data defined elsewhere, including in the standard library. The compiler emits object code and references that still need to be resolved; the **linker** combines the required pieces and records how they fit together. On Linux, a common executable format is **ELF** (Executable and Linkable Format), which also describes information the operating system needs to load a program. The exact call path and linking choices depend on the target and build.
@@ -155,9 +155,9 @@ Notice `/proc/self/exe` is a Linux kernel link pointing straight to the running 
 :::quiz Check your understanding
 ? Which ELF section holds string literals like `"Habtamu"` and read-only constant tables?
 - `.text`
-+ `.rodata`
-- `.bss`
 - `.plt`
+- `.bss`
++ `.rodata`
 = `.rodata` stores read-only constant data, separated from writable `.data` and executable `.text`.
 
 ? Why does a large zero-initialised static array (`static BUF: [u8; 1_000_000] = [0; 1_000_000];`) barely increase the size of the compiled file on disk?
@@ -176,9 +176,9 @@ Notice `/proc/self/exe` is a Linux kernel link pointing straight to the running 
 
 ? Why does `rustc` mangle symbol names before putting them into object files?
 - To stop users from reading source files
-+ Because module paths, impl blocks, and monomorphised generics create distinct functions that share short Rust names, while object-file symbol tables require flat unique names
-- Because ELF magic numbers forbid lowercase ASCII letters
 - To speed up keyboard input
+- Because ELF magic numbers forbid lowercase ASCII letters
++ Because module paths, impl blocks, and monomorphised generics create distinct functions that share short Rust names, while object-file symbol tables require flat unique names
 = Name mangling encodes crate, module, and concrete generic types into unique ASCII linker identifiers that `nm -C` can demangle back into readable paths.
 :::
 

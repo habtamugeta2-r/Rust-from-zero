@@ -3,10 +3,10 @@
 @title Inside the machine: CPU, registers, ALU, memory, and buses
 @short Inside computer hardware
 @level beginner
-@time 35
+@time 30
 @learn Explain what hardware and software are and how they interact | Name the main parts inside a CPU: control unit, ALU, registers, and clock | Contrast SRAM caches, DRAM main memory, ROM firmware, SSDs, and HDDs | Describe how address, data, and control buses move bytes through one instruction cycle
 
-A running program is not an idea floating above the machine: its instructions and data are represented by physical states in memory and processor circuits. Following one instruction through the CPU, registers and memory gives a concrete starting point for later topics such as pointers, caches and system calls.
+A running program is not an idea floating above the machine: its [[instructions|instruction]] and data are represented by physical states in memory and processor circuits. Following one instruction through the CPU, registers and memory gives a concrete starting point for later topics such as pointers, caches and system calls.
 
 ## Starting point: hardware and software
 
@@ -99,7 +99,7 @@ From inside Rust, memory looks like one flat numbered street of bytes. Underneat
 ## Following the ten-stage lens on a single addition
 
 :::note How to read the short Rust previews in Chapters 2 and 3
-You have **not** learned Rust syntax yet—[Chapter 4](#setup) installs Rust from scratch, and [Part III](#variables) teaches every word (`fn`, `let`, `for`, `if`) step by step. For now, treat these tiny programs as live lab demonstrations: read the `//` comments and watch what the hardware does with the numbers!
+You have **not** learned Rust syntax yet—[Chapter 4](#setup) installs Rust from scratch, and [Part 3](#variables) teaches every word (`fn`, `let`, `for`, `if`) step by step. For now, treat these tiny programs as live lab demonstrations: read the `//` comments and watch what the hardware does with the numbers!
 :::
 
 Suppose we want to add two numbers (`10 + 32`) on a computer. Watch how the layers connect:
@@ -172,8 +172,8 @@ MemAvailable:    6412100 kB
 
 :::quiz Check your understanding
 ? Which CPU component is responsible for performing integer addition and bitwise comparisons?
-- The program counter
 + The arithmetic logic unit (ALU)
+- The program counter
 - The address bus
 - The solid-state drive
 = The ALU performs arithmetic (`+`, `-`) and logical/comparison operations on operands held in registers.
@@ -186,15 +186,15 @@ MemAvailable:    6412100 kB
 = Main RAM is far slower than CPU clock speeds; small SRAM caches close to the core keep hot instructions and data immediately available.
 
 ? Why must a running program live in RAM rather than staying only on an SSD?
-+ The CPU's instruction fetch and register load/store units directly address cached/main memory over the memory bus, not SSD flash blocks
-- SSDs can only hold text files, not machine code
 - SSDs erase their contents as soon as the computer finishes booting
+- SSDs can only hold text files, not machine code
++ The CPU's instruction fetch and register load/store units directly address cached/main memory over the memory bus, not SSD flash blocks
 - The ALU reads bytes directly from the keyboard instead of storage
 = Persistent storage (SSD/HDD) holds files across power-offs, but the OS must load executable code and active data into RAM before the CPU can execute them.
 
 ? What do the three conceptual bus channels carry during a memory read?
-- Registers, opcodes, and stack frames
 + The target address (address bus), timing/read-write signals (control bus), and the returned bytes (data bus)
+- Registers, opcodes, and stack frames
 - Source code, assembly, and linking symbols
 - IP packets, Ethernet frames, and disk sectors
 = Every memory transfer specifies *where* (address bus), *what action* (control bus), and moves the actual payload bytes (data bus).

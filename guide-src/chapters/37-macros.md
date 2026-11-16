@@ -1,9 +1,9 @@
 @id macros
-@part p3
+@part p3c
 @title Macros: code that writes code
 @short Macros
 @level advanced
-@time 60
+@time 45
 @learn Explain what a macro is and how it differs from a function | Write declarative macros with `macro_rules!`, including repetition | Use the built-in macros and the common attributes | Describe the three kinds of procedural macros and write a simple derive macro | Decide when a macro is the right tool
 
 The `!` in `println!` marks a macro invocation. Unlike an ordinary function call, a macro expands into code during compilation. Rust has declarative macros, procedural macros and compiler-provided derives; this chapter explains how to recognise them and how to define a declarative macro for a repeated pattern.
@@ -384,7 +384,7 @@ An **[[attribute]]** is a note for the compiler, written as `#[...]` above an it
 | `#[deprecated(note = "use new_name")]` | warn everyone who still uses this item |
 | `#[inline]` | suggest that the compiler pastes the function's body into its callers |
 | `#[non_exhaustive]` | users of this enum or struct must allow for additions in future versions |
-| `#[repr(C)]` | lay out the data as a C compiler would ([chapter 38](#memory-layout)) |
+| `#[repr(C)]` | lay out the data as a C compiler would ([chapter 41](#memory-layout)) |
 | `#[macro_export]` | make a `macro_rules!` macro usable from other crates |
 
 An attribute with an exclamation mark, `#![...]`, applies to the whole enclosing file or crate. It goes at the very top.
@@ -581,9 +581,9 @@ Macros have real costs. Error messages point into expanded code and can be hard 
 :::quiz Check your understanding
 ? When does a macro do its work?
 - While the program runs
-+ At compile time, before the program is built
-- When the program is installed
 - Only in debug builds
+- When the program is installed
++ At compile time, before the program is built
 = A macro is expanded into ordinary code by the compiler. The running program contains only the result.
 
 ? What does `$( $x:expr ),*` match?
@@ -595,21 +595,21 @@ Macros have real costs. Error messages point into expanded code and can be hard 
 
 ? Given `macro_rules! twice { ($x:expr) => { $x * 2 }; }`, what is `twice!(1 + 4)`?
 - 9, because it becomes `1 + 4 * 2`
-+ 10, because `$x` is treated as one whole expression
-- A compile error
 - 8
+- A compile error
++ 10, because `$x` is treated as one whole expression
 = A matched `expr` stays one unit. Rust's macros do not substitute raw text, unlike the C preprocessor.
 
 ? Which of these can a function **not** do, so that a macro is needed?
 - Return two values
 - Take a closure as an argument
-+ Accept any number of arguments of different types, as `println!` does
 - Work with several types
++ Accept any number of arguments of different types, as `println!` does
 = Functions have a fixed parameter list. Generics cover "several types", and tuples cover "two values".
 
 ? What kind of macro is `#[derive(Serialize)]`?
-- A declarative macro written with `macro_rules!`
 + A procedural derive macro
+- A declarative macro written with `macro_rules!`
 - A function-like macro
 - It is not a macro
 = Derive macros are procedural macros that receive the definition of a struct or enum and generate additional code for it.

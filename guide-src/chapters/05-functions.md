@@ -3,7 +3,7 @@
 @title Functions: naming a piece of work
 @short Functions
 @level beginner
-@time 25
+@time 30
 @learn Write your own functions and call them | Pass values into a function and get a result back | Explain the difference between a statement and an expression | Document a function with comments that tools can read
 
 As a program grows, repeating the same steps makes changes harder and hides the shape of the task. A **[[function]]** gives a named operation its own inputs and result. You can call it from places where it is in scope, and read the surrounding code in terms of what the function does rather than how each step works.
@@ -218,7 +218,7 @@ Two things that other languages allow will surprise you, and they are missing on
 :::
 
 :::details Under the hood: `call`, `ret`, and inlining
-When one function calls another without optimisation, the CPU executes a **`call`** instruction that pushes the return address onto the stack and jumps to the target function's bytes in `.text`; **`ret`** pops that address back into the instruction pointer (`RIP`). Small parameters travel directly in CPU registers (`edi`, `esi`, ... on x86-64; `w0`, `w1`, ... on ARM64), and small return values return in `eax` (`w0`). In release builds, LLVM frequently **inlines** short functions right into their caller, removing the call overhead altogether (examined closely in Part V).
+When one function calls another without optimisation, the CPU executes a **`call`** instruction that pushes the return address onto the stack and jumps to the target function's bytes in `.text`; **`ret`** pops that address back into the instruction pointer (`RIP`). Small parameters travel directly in CPU registers (`edi`, `esi`, ... on x86-64; `w0`, `w1`, ... on ARM64), and small return values return in `eax` (`w0`). In release builds, LLVM frequently **inlines** short functions right into their caller, removing the call overhead altogether (examined closely in Part 7).
 :::
 
 :::recap
@@ -239,21 +239,21 @@ fn mystery(a: i32) -> i32 {
 }
 ```
 - Nothing, because there is no `return`
-- `a * 2`
 + `b + 1`, the last expression without a semicolon
+- `a * 2`
 - It does not compile
 = The value of the final expression is returned automatically. With `a` = 5 the result is 11.
 
 ? Which one is a statement, not an expression?
-- `3 + 4`
-- `area(2, 5)`
 + `let total = 3 + 4;`
+- `area(2, 5)`
+- `3 + 4`
 - `{ 3 + 4 }`
 = A `let` line does something (it creates a variable) but produces no value. The other three all produce a value.
 
 ? Why must parameter types be written in a function signature?
-- Because the compiler cannot work out types at all
 + Because the signature is a clear promise between the function and its callers, which keeps errors local and code readable
+- Because the compiler cannot work out types at all
 - Because parameters are always numbers
 - Because functions run faster with types
 = The compiler infers types inside function bodies, but signatures are fixed contracts. You can understand how to use a function from its signature alone.
@@ -261,8 +261,8 @@ fn mystery(a: i32) -> i32 {
 ? Why does returning a value usually make a function easier to reuse?
 - Because a function can print only once
 - Because return values are stored on the stack automatically
-+ Because the caller can decide what to do with the result and combine it with other work
 - Because printing values is faster than computing them
++ Because the caller can decide what to do with the result and combine it with other work
 = A function that returns a value can be used in expressions, assigned to variables, or tested. That makes it composable.
 :::
 

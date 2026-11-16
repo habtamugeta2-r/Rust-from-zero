@@ -6,7 +6,7 @@
 @time 40
 @learn State the three rules of ownership | Explain what a move is and why the old variable can no longer be used | Decide when to move, when to clone, and which types are copied automatically | Follow ownership as values go into functions and come back out
 
-A library needs to know who is responsible for each copy of a book and when it can be returned to the shelves. A program also needs clear responsibility for the values it uses. Rust calls this rule system **ownership**: it lets ordinary values be cleaned up without a tracing garbage collector. The examples below show how moving a value changes which part of the program owns it.
+A library needs to know who is responsible for each [[copy]] of a book and when it can be returned to the shelves. A program also needs clear responsibility for the values it uses. Rust calls this rule system **ownership**: it lets ordinary values be cleaned up without a tracing garbage collector. The examples below show how moving a value changes which part of the program owns it.
 
 ## The three rules
 
@@ -256,7 +256,7 @@ one two
 :::
 
 :::details Dropping a value early
-A value is normally dropped at the end of its scope. To drop it sooner, pass it to the function `drop`. It takes ownership of its argument and does nothing else, so the value's life ends right there.
+A value is normally [[dropped|drop]] at the end of its scope. To drop it sooner, pass it to the function `drop`. It takes ownership of its argument and does nothing else, so the value's life ends right there.
 
 ```rust run
 fn main() {
@@ -326,8 +326,8 @@ fn main() {
 }
 fn consume(text: String) {}
 ```
-- At the end of `main`
 + At the end of `consume`, when its parameter `text` goes out of scope
+- At the end of `main`
 - When `println!` runs
 - Never
 = The call moves the `String` into `text`. `consume` is now the owner, and the value is dropped when `text` goes out of scope at the end of that function.
@@ -335,8 +335,8 @@ fn consume(text: String) {}
 ? What does `.clone()` do for a `String`?
 - It creates a second owner for the same heap data
 - It moves the text
-+ It allocates new heap memory and copies the characters, giving an independent second text
 - It converts the `String` into a `Copy` type
++ It allocates new heap memory and copies the characters, giving an independent second text
 = After a clone there are two separate texts, each with its own owner. Changing or dropping one does not affect the other.
 :::
 

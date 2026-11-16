@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 470" role="img" aria-labelledby="t d">
+  <title id="t">Three Linux I/O models: blocking, epoll, and io_uring</title>
+  <desc id="d">Blocking read sleeps the thread per request; epoll multiplexes readiness across many sockets using syscalls; io_uring shares submission and completion ring buffers in memory to batch disk and network I/O.</desc>
+  <rect width="1200" height="470" rx="24" fill="#FCFBF8"/>
+  <rect x="1" y="1" width="1198" height="468" rx="23" fill="none" stroke="#E5E0D5" stroke-width="2"/>
+  <text x="48" y="58" font-family="system-ui, sans-serif" font-size="24" font-weight="700" fill="#1C1915">Blocking I/O vs epoll vs io_uring</text>
+  <text x="48" y="86" font-family="system-ui, sans-serif" font-size="15" fill="#6F6659">Moving from one thread per waiting file descriptor toward shared user/kernel completion queues.</text>
+  <g font-family="system-ui, sans-serif">
+    <rect x="48" y="130" width="344" height="258" rx="16" fill="#F7E8DE" stroke="#BC4114" stroke-width="2"/>
+    <text x="74" y="166" font-size="14" font-weight="700" letter-spacing="1.5" fill="#BC4114">1 · BLOCKING READ()</text>
+    <rect x="74" y="186" width="292" height="58" rx="10" fill="#FFFFFF" stroke="#BC4114"/>
+    <text x="220" y="212" text-anchor="middle" font-family="ui-monospace, monospace" font-size="14" font-weight="700" fill="#1C1915">read(fd, buf)</text>
+    <text x="220" y="232" text-anchor="middle" font-size="12.5" fill="#6F6659">thread sleeps in kernel</text>
+    <rect x="74" y="260" width="292" height="58" rx="10" fill="#FFFFFF" stroke="#D2CABB"/>
+    <text x="220" y="286" text-anchor="middle" font-size="13.5" font-weight="700" fill="#1C1915">1 thread = 1 waiting FD</text>
+    <text x="220" y="306" text-anchor="middle" font-size="12.5" fill="#6F6659">wakes when data arrives</text>
+    <text x="74" y="356" font-size="13.5" fill="#45403A">Simple, but 10k sockets need 10k threads.</text>
+
+    <rect x="428" y="130" width="344" height="258" rx="16" fill="#EAF1F8" stroke="#0369A1" stroke-width="2"/>
+    <text x="454" y="166" font-size="14" font-weight="700" letter-spacing="1.5" fill="#0369A1">2 · EPOLL (READINESS)</text>
+    <rect x="454" y="186" width="292" height="58" rx="10" fill="#FFFFFF" stroke="#0369A1"/>
+    <text x="600" y="212" text-anchor="middle" font-family="ui-monospace, monospace" font-size="14" font-weight="700" fill="#1C1915">epoll_wait(epfd)</text>
+    <text x="600" y="232" text-anchor="middle" font-size="12.5" fill="#0369A1">returns list of ready sockets</text>
+    <rect x="454" y="260" width="292" height="58" rx="10" fill="#FFFFFF" stroke="#D2CABB"/>
+    <text x="600" y="286" text-anchor="middle" font-family="ui-monospace, monospace" font-size="13.5" font-weight="700" fill="#1C1915">then read(fd) per socket</text>
+    <text x="600" y="306" text-anchor="middle" font-size="12.5" fill="#6F6659">Tokio/mio · sockets only (not disk)</text>
+    <text x="454" y="356" font-size="13.5" fill="#45403A">Handles 100k sockets on a few threads.</text>
+
+    <rect x="808" y="130" width="344" height="258" rx="16" fill="#E6F2F0" stroke="#0F766E" stroke-width="2"/>
+    <text x="834" y="166" font-size="14" font-weight="700" letter-spacing="1.5" fill="#0F766E">3 · IO_URING (COMPLETION)</text>
+    <rect x="834" y="186" width="292" height="58" rx="10" fill="#FFFFFF" stroke="#0F766E"/>
+    <text x="980" y="212" text-anchor="middle" font-family="ui-monospace, monospace" font-size="14" font-weight="700" fill="#1C1915">SQ ring (mmap) → Kernel</text>
+    <text x="980" y="232" text-anchor="middle" font-size="12.5" fill="#0F766E">batched reads, writes, accepts</text>
+    <rect x="834" y="260" width="292" height="58" rx="10" fill="#FFFFFF" stroke="#0F766E"/>
+    <text x="980" y="286" text-anchor="middle" font-family="ui-monospace, monospace" font-size="13.5" font-weight="700" fill="#1C1915">Kernel → CQ ring (mmap)</text>
+    <text x="980" y="306" text-anchor="middle" font-size="12.5" fill="#0F766E">finished bytes for disk &amp; network</text>
+    <text x="834" y="356" font-size="13.5" fill="#45403A">Batched or zero syscalls via shared rings.</text>
+
+    <rect x="48" y="406" width="1104" height="40" rx="10" fill="#F3F0E9" stroke="#E5E0D5"/>
+    <text x="72" y="431" font-size="14" fill="#45403A">Rust's <tspan font-family="ui-monospace, monospace" font-weight="700" fill="#1C1915">std::fs</tspan> uses blocking syscalls; <tspan font-weight="700" fill="#0369A1">Tokio</tspan> uses <tspan font-weight="700" fill="#0369A1">epoll</tspan> + a blocking file pool; <tspan font-weight="700" fill="#0F766E">tokio-uring</tspan> uses <tspan font-weight="700" fill="#0F766E">io_uring</tspan>.</text>
+  </g>
+</svg>

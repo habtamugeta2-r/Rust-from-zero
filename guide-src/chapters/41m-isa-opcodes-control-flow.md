@@ -4,7 +4,7 @@
 @title Instruction Sets, Encoding, Registers & Branching Hardware
 @short ISA, opcodes & control flow
 @level intermediate
-@time 35
+@time 25
 @learn Contrast CISC (x86-64) variable-length encoding with RISC (ARM64/RISC-V) fixed 32-bit encoding | Trace the fetch-decode-execute cycle, status flags (ZF/CF/SF/OF), and addressing modes | Follow how Rust loops, bounds checks, and match arms lower to branches, jump tables, and cmov | Recognise how branchless conditional moves eliminate unpredictable jumps
 
 For a native build, the compiler lowers Rust constructs into instructions for a target instruction set. The instruction encodings differ: x86-64 uses variable-length instructions, while AArch64 instructions have a fixed 4-byte encoding. Other targets, including RISC-V, have their own rules. The emitted instructions depend on the target and build options; this chapter compares these encodings and traces examples from Rust to machine code, building on [assembly and machine code](#assembly-machine-code) and [linking and ELF](#linking-elf).
@@ -31,7 +31,7 @@ How does silicon decode raw bytes into ALU arithmetic and branches, and why does
 An **[[ISA]]** (*Instruction Set Architecture*, like x86-64 or ARM64) is the public contract between software and silicon: which registers exist and what each binary **[[opcode]]** means. Inside modern x86-64 chips, complex multi-byte instructions are cracked by hardware decoders into tiny internal RISC-like steps called **micro-ops (µops)** so the execution engine inside can run fast and wide.
 :::
 
-Recall the `compute` function we disassembled in [Chapter 45](#calling-conventions-execution) (`pub extern "C" fn compute(a..g) -> i32`, returning `(a + b) + f + g`):
+Recall the `compute` function we disassembled in [Chapter 50](#calling-conventions-execution) (`pub extern "C" fn compute(a..g) -> i32`, returning `(a + b) + f + g`):
 
 ```asm
 1280: 01 f7                add    edi, esi
@@ -160,29 +160,29 @@ The single hardware `add` instruction sets **both `CF` (Carry Flag, unsigned ove
 :::quiz Check your understanding
 ? What is the primary trade-off between x86-64's variable-length encoding and ARM64's fixed 32-bit encoding?
 - ARM64 cannot execute floating-point math
-+ Fixed 32-bit opcodes make parallel instruction decoding vastly simpler in hardware, whereas variable-length 1–15 byte opcodes pack common instructions slightly smaller at the cost of complex decoder logic
 - Variable-length opcodes disable L1 cache
++ Fixed 32-bit opcodes make parallel instruction decoding vastly simpler in hardware, whereas variable-length 1–15 byte opcodes pack common instructions slightly smaller at the cost of complex decoder logic
 - x86-64 has 64 general-purpose registers while ARM64 has 8
 = Fixed-width RISC decoding lets ARM64 decode many instructions per cycle effortlessly, whereas x86-64 relies on heavy decoders and µop caches.
 
 ? Why do compilers emit `lea rax, [rdi + rdi*2]` instead of multiplying by `3` with `imul`?
-- `imul` crashes on unsigned integers
 + `lea` executes `x + 2*x` in 1 cycle on the address-generation unit without clobbering `RFLAGS`
+- `imul` crashes on unsigned integers
 - `lea` reads the result from RAM
 - `imul` only works in debug builds
 = Abusing `lea`'s `base + index*scale` hardware computes `x*2, x*3, x*5, x*9` cleanly in a single cycle.
 
 ? Why would compiling a `match` on `1`, `500`, and `10_000_000` into a flat jump table be disastrous?
-- Jump tables only work on `bool`
 + A contiguous flat jump table would waste tens of megabytes of `.rodata` on unused slots
+- Jump tables only work on `bool`
 - `jump` instructions cannot use `.rodata`
 - ARM64 forbids jump tables
 = Jump tables require dense, narrow value ranges; sparse cases lower to conditional comparisons or binary search trees.
 
 ? When does LLVM prefer emitting `cmov` (conditional move) instead of `jne` / `je`?
 - Whenever a `match` has 50 arms
-+ For tiny, side-effect-free `if/else` assignments where a branch misprediction would cost far more than evaluating both tiny expressions in registers
 - Only inside `unsafe` blocks
++ For tiny, side-effect-free `if/else` assignments where a branch misprediction would cost far more than evaluating both tiny expressions in registers
 - Whenever calling a kernel `syscall`
 = `cmov` trades one extra register instruction to eliminate unpredictable conditional branches completely.
 :::

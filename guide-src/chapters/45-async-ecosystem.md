@@ -3,7 +3,7 @@
 @title Concurrency in practice: Rayon, Tokio, streams, HTTP clients and tower
 @short Rayon, Tokio, HTTP clients, tower
 @level advanced
-@time 80
+@time 75
 @learn Use all processor cores for a computation with Rayon | Set up a Tokio runtime, run heavy work beside it, and shut it down cleanly | Process values that arrive over time with streams | Call web APIs with async reqwest or blocking ureq | Add timeouts and limits with tower layers
 
 Earlier chapters introduced concurrency primitives such as threads, locks, channels and futures. Applications often use libraries that build on these pieces, but choosing a crate depends on the task and its trade-offs. This chapter tours selected tools for parallel computation, asynchronous I/O, streams, HTTP clients and middleware, and shows where each fits.
@@ -81,7 +81,7 @@ true
 
 ### How much faster?
 
-In [chapter 55](#threads) you counted the primes below three million with two hand-made threads. It took 0.51 seconds on one thread and 0.32 seconds on two, because the upper half of the numbers is more work than the lower half. With Rayon, the whole program is this line:
+In [chapter 60](#threads) you counted the primes below three million with two hand-made threads. It took 0.51 seconds on one thread and 0.32 seconds on two, because the upper half of the numbers is more work than the lower half. With Rayon, the whole program is this line:
 
 ```rust
 let primes = (0..3_000_000u64).into_par_iter().filter(|&n| is_prime(n)).count();
@@ -255,7 +255,7 @@ So measure before and after, with `--release`.
 
 ## Tokio in practice
 
-[Chapter 57](#async) introduced async programming with Tokio: tasks, `join!`, `select!`, channels and timeouts. Here are three things that every real service needs in addition.
+[Chapter 62](#async) introduced async programming with Tokio: tasks, `join!`, `select!`, channels and timeouts. Here are three things that every real service needs in addition.
 
 ### Choosing and building the runtime
 
@@ -312,7 +312,7 @@ All three run many tasks on a few threads, and all three follow the same golden 
 
 ### Heavy work beside async tasks
 
-The golden rule of [chapter 57](#async) was: never block the runtime. A calculation that takes 50 milliseconds holds up every other task on that worker thread. There are two ways to move it out of the way:
+The golden rule of [chapter 62](#async) was: never block the runtime. A calculation that takes 50 milliseconds holds up every other task on that worker thread. There are two ways to move it out of the way:
 
 ```rust ext run
 use tokio::sync::oneshot;
@@ -564,7 +564,7 @@ Choose between the three dynamic concurrency tools like this:
 | `FuturesUnordered` | Polled cooperatively inside the current task | Can borrow local data; no `Send` needed | Drops all inner futures when dropped |
 | `.map(f).buffer_unordered(n)` | Polled inside the current task with concurrency cap `n` | Driven lazily as you pull from the stream | Stops polling remaining items when dropped |
 
-You can also implement `futures::Stream` on your own wrapper type by projecting `Pin<&mut Self>` with `pin-project-lite` ([chapter 57](#async)):
+You can also implement `futures::Stream` on your own wrapper type by projecting `Pin<&mut Self>` with `pin-project-lite` ([chapter 62](#async)):
 
 ```rust
 use std::pin::Pin;
@@ -656,7 +656,7 @@ serde = { version = "1.0.229", features = ["derive"] }
 
 ### A practice server
 
-The examples need a server to talk to. So that they work without an internet connection and always give the same answers, each example starts a tiny server inside the same program, with the function below. It uses Axum, which is covered in [Web servers with Axum](#web) in Part X, so there is no need to understand it yet. In the examples that follow, this function is part of the program but is not printed again.
+The examples need a server to talk to. So that they work without an internet connection and always give the same answers, each example starts a tiny server inside the same program, with the function below. It uses Axum, which is covered in [Web servers with Axum](#web) in Part 12, so there is no need to understand it yet. In the examples that follow, this function is part of the program but is not printed again.
 
 ```rust
 /// Starts a small practice server inside this program and returns its address.
@@ -1356,7 +1356,7 @@ async fn main() -> Result<(), BoxError> {
 requests seen: 3
 ```
 
-The `Service` trait has two methods. `poll_ready` says whether the service can accept a request now. `call` takes the request and returns a future. `Count<S>` is generic over the inner service `S`, so it wraps any service at all. That is all there is to middleware: a struct that holds the next service, does something, and passes the request on. For simple cases, Axum offers a shorter way with an async function, as [chapter 64](#web) shows.
+The `Service` trait has two methods. `poll_ready` says whether the service can accept a request now. `call` takes the request and returns a future. `Count<S>` is generic over the inner service `S`, so it wraps any service at all. That is all there is to middleware: a struct that holds the next service, does something, and passes the request on. For simple cases, Axum offers a shorter way with an async function, as [chapter 69](#web) shows.
 :::
 
 ## gRPC services with `tonic`
@@ -1442,7 +1442,7 @@ Any log system — Loki, Elasticsearch, CloudWatch, Datadog, `jq` on a file — 
 
 In Rust the crate for this is [`tracing`](https://docs.rs/tracing), the crate the [observability chapter](#observability) builds on: an *event* is a log line, a *span* is a named region of work with fields attached, and every event inside that region inherits them. It is the same crate for logs and traces, which is why the ecosystem settled on it. The subscriber decides the format:
 
-- `tracing_subscriber::fmt()` prints human-readable lines, as in [chapter 69](#project-api);
+- `tracing_subscriber::fmt()` prints human-readable lines, as in [chapter 74](#project-api);
 - `tracing_subscriber::fmt().json()` prints one JSON object per line — the production format;
 - `EnvFilter` reads `RUST_LOG`, so you can raise the level of one dependency at run time without rebuilding: `RUST_LOG=info,my_crate=debug,sqlx=warn`.
 
@@ -1505,7 +1505,7 @@ Two tiny endpoints, with different meanings, and both needed by every orchestrat
 | `GET /health` | Is the process alive and serving HTTP? | `200` with `{"status":"ok"}` | Restart me |
 | `GET /ready` | Can it do useful work right now? | `200` when dependencies answer, `503` otherwise | Send me no traffic yet |
 
-`/health` must not touch the database. A liveness probe that fails because the database is down will restart a healthy process in a loop and make the outage worse. `/ready` is where the dependency checks belong: it returns `503` while the connection pool is still connecting after start-up, so the load balancer holds traffic back. [Chapter 69](#project-api) already has the first of the two; in Kubernetes they are `livenessProbe` and `readinessProbe`, and the handler patterns are those of [chapter 64](#web).
+`/health` must not touch the database. A liveness probe that fails because the database is down will restart a healthy process in a loop and make the outage worse. `/ready` is where the dependency checks belong: it returns `503` while the connection pool is still connecting after start-up, so the load balancer holds traffic back. [Chapter 74](#project-api) already has the first of the two; in Kubernetes they are `livenessProbe` and `readinessProbe`, and the handler patterns are those of [chapter 69](#web).
 
 ### Request ids: one string that makes support possible
 
@@ -1525,7 +1525,7 @@ Give every incoming request an id, put it in the log lines of that request, and 
 :::
 
 :::tip Start with three lines of output
-A brand-new service does not need a full observability stack. It needs: one structured log line per request, one counter of failures, and a `/health` route. Those three take an hour and cover most incidents. Add traces when there is more than one service, and dashboards when someone asks a question twice. For complete Rust code wiring `tracing-subscriber` JSON logs, OpenTelemetry OTLP export, `metrics-exporter-prometheus`, and `/health/live` vs `/health/ready`, see [chapter 65](#observability).
+A brand-new service does not need a full observability stack. It needs: one structured log line per request, one counter of failures, and a `/health` route. Those three take an hour and cover most incidents. Add traces when there is more than one service, and dashboards when someone asks a question twice. For complete Rust code wiring `tracing-subscriber` JSON logs, OpenTelemetry OTLP export, `metrics-exporter-prometheus`, and `/health/live` vs `/health/ready`, see [chapter 70](#observability).
 :::
 
 ## More crates for networking
@@ -1581,7 +1581,7 @@ The four things a queue buys you:
 
 So the practical answer is: **assume every message can arrive twice, and make the handler idempotent.** An idempotent handler produces the same result whether it runs once or five times. Three ways to get there:
 
-1. **An idempotency key** — the message carries a unique id; the handler records ids it has seen (a unique index in the database is enough) and returns early on a repeat.
+1. **An [[idempotency]] key** — the message carries a unique id; the handler records ids it has seen (a unique index in the database is enough) and returns early on a repeat.
 2. **Make the operation naturally idempotent** — `UPDATE accounts SET balance = 120` is idempotent; `UPDATE accounts SET balance = balance + 10` is not.
 3. **A transactional outbox** — write the business row *and* the outgoing message in one database transaction, then a relay publishes it. This is how you avoid "the order was saved but the message was lost", which is the failure people forget.
 
@@ -1603,7 +1603,7 @@ One rule of thumb: **start with the simplest thing that can lose a message safel
 docker run --rm -p 4222:4222 nats:latest -js     # NATS with JetStream on localhost:4222
 ```
 
-Then a producer publishes to `jobs.titles` and a worker subscribes with a queue group, so two copies of the worker split the messages instead of both receiving each one. The worker's shape is the same as any async task from [chapter 57](#async): a loop, a `CancellationToken` for graceful shutdown, and an idempotent handler:
+Then a producer publishes to `jobs.titles` and a worker subscribes with a queue group, so two copies of the worker split the messages instead of both receiving each one. The worker's shape is the same as any async task from [chapter 62](#async): a loop, a `CancellationToken` for graceful shutdown, and an idempotent handler:
 
 ```rust file=src/worker.rs
 use futures::StreamExt;
@@ -1630,7 +1630,7 @@ async fn run_nats_worker(client: async_nats::Client, stop: CancellationToken) ->
 ```
 
 :::details The architecture, in one paragraph
-Take the URL shortener from [chapter 69](#project-api). Creating a short link is fast: validate, insert, return. Fetching the title of the target page is slow and can fail, so it does not belong in the request. Instead the handler inserts the row and publishes `link.created {id}`, and returns. A worker consumes that topic, fetches the page with `reqwest`, and writes the title back. If the fetch fails, the message is retried with backoff and finally parked in a dead-letter queue that a human reads weekly. The API is now fast and independent of the internet; the title appears a second later. That is the whole pattern, and it is the same one behind thumbnails, e-mails, invoices and search indexing.
+Take the URL shortener from [chapter 74](#project-api). Creating a short link is fast: validate, insert, return. Fetching the title of the target page is slow and can fail, so it does not belong in the request. Instead the handler inserts the row and publishes `link.created {id}`, and returns. A worker consumes that topic, fetches the page with `reqwest`, and writes the title back. If the fetch fails, the message is retried with backoff and finally parked in a dead-letter queue that a human reads weekly. The API is now fast and independent of the internet; the title appears a second later. That is the whole pattern, and it is the same one behind thumbnails, e-mails, invoices and search indexing.
 :::
 
 :::tip The byte buffer you will meet everywhere
@@ -1679,31 +1679,31 @@ You will meet the type in compiler messages before you meet it in documentation 
 = Parallel iterators have the same adaptors as ordinary ones. Rayon splits the work and combines the results.
 
 ? Why did Rayon count the primes faster than two hand-made threads that each took half of the range?
-- Rayon uses more threads than there are cores
-- Rayon has a faster prime test
 + Work stealing: a thread that runs out of work takes pieces from the other, so uneven work is balanced
+- Rayon has a faster prime test
+- Rayon uses more threads than there are cores
 - Rayon skips some numbers
 = The upper half of the range is more work. Fixed halves leave one thread idle at the end. Rayon keeps splitting and sharing.
 
 ? A parallel `for_each` closure does `total += n` on a captured variable. What happens?
 - The result is sometimes wrong
-- The program panics
 + It does not compile: the closure would be `FnMut`, and Rayon requires `Fn + Send + Sync`
+- The program panics
 - Rayon adds a lock automatically
 = The data race is rejected at compile time. Use `.sum()`, an atomic, or a `Mutex`.
 
 ? What does `stream::iter(urls).map(fetch).buffer_unordered(5)` do?
 - It fetches the URLs one after the other, in groups of five
-+ It keeps up to five fetches running at the same time, and yields each result as soon as it is ready
-- It fetches only the first five URLs
 - It starts five threads
+- It fetches only the first five URLs
++ It keeps up to five fetches running at the same time, and yields each result as soon as it is ready
 = `map` creates the futures lazily, and `buffer_unordered(5)` drives at most five of them at once. No extra threads are involved.
 
 ? A reqwest call `client.get(url).send().await` returns `Ok(response)`. What do you know?
 - The request succeeded with status 200
-+ Only that the server answered. The status may still be 404 or 500
-- The body has been downloaded and is valid JSON
 - The connection was encrypted
+- The body has been downloaded and is valid JSON
++ Only that the server answered. The status may still be 404 or 500
 = An HTTP error status is a normal response. Check `status()`, or use `error_for_status()`.
 
 ? A user reports that one request took 30 seconds. Which signal do you open first, and why?
@@ -1715,9 +1715,9 @@ You will meet the type in compiler messages before you meet it in documentation 
 
 ? Your worker handles `order.created` from a queue advertised as "at least once". What must the handler do?
 - Nothing special; the broker guarantees one delivery
-+ Be idempotent, because the same message can arrive twice after a crash
-- Ack before doing the work, to avoid duplicates
 - Store the message and process it in a batch
+- Ack before doing the work, to avoid duplicates
++ Be idempotent, because the same message can arrive twice after a crash
 = At-least-once means "never lost, possibly repeated". Acking before the work turns a duplicate into a *lost* message, which is worse: the work never happens and the broker thinks it did.
 :::
 
@@ -1791,7 +1791,7 @@ fn main() {
 177
 ```
 
-`par_chunks_mut` hands each thread its own rows. The slices do not overlap, so several threads may write at the same time, and the borrow checker can see that this is safe. Image processing fits Rayon well: a real photo has millions of pixels, and each row can be handled alone. For an image this small, of course, the sequential version would be faster.
+`par_chunks_mut` hands each thread its own rows. The slices do not overlap, so several threads may write at the same time, and the borrow checker can see that this is safe. Image processing fits Rayon well: a real photo has millions of pixels, and each row can be handled alone. For an image this small, the sequential version is still faster.
 :::
 
 :::exercise practice Try again

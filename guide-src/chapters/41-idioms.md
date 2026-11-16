@@ -1,9 +1,9 @@
 @id idioms
-@part p3
+@part p3c
 @title Idiomatic Rust: patterns and habits
 @short Idioms and patterns
 @level advanced
-@time 55
+@time 45
 @learn Follow Rust's naming and API conventions | Replace verbose `match` code with `Option` and `Result` combinators | Design function signatures that are flexible for callers | Apply the builder, newtype, RAII guard and state-machine patterns | Recognise and avoid common anti-patterns
 
 Code can be correct yet unfamiliar to people who work in the language. A common, well-understood way of expressing an idea is called **[[idiomatic]]**. Rust idioms help readers recognise intent and use standard-library conventions; they are guidance, not a guarantee that code is correct or faster.
@@ -324,7 +324,7 @@ true 3
 
 ### Return owned values, or borrow from the input
 
-A function returns either a new owned value, or a reference into one of its arguments. It cannot return a reference to something it created. When both cases occur, `Cow` covers them ([chapter 32](#smart-pointers)). For sequences, returning `impl Iterator<Item = T>` lets the caller decide whether to collect:
+A function returns either a new owned value, or a reference into one of its arguments. It cannot return a reference to something it created. When both cases occur, `Cow` covers them ([chapter 35](#smart-pointers)). For sequences, returning `impl Iterator<Item = T>` lets the caller decide whether to collect:
 
 ```rust run
 fn even_squares(limit: u32) -> impl Iterator<Item = u32> {
@@ -527,7 +527,7 @@ fn main() {
 Green Yellow Flashing Flashing Red Green 
 ```
 
-Matching on the pair `(state, event)` turns the transition table into code that looks like the table. `next` is a pure function, so every transition is trivially testable.
+Matching on the pair `(state, event)` turns the transition table into code that looks like the table. `next` is a pure function, so every transition is easy to test.
 
 ### Functional core, imperative shell
 
@@ -640,7 +640,7 @@ false
 
 **Indexing where an iterator would do**, and **collecting where it is not needed**. `v.iter().map(f).collect::<Vec<_>>().iter().sum()` builds a list only to throw it away. Chain the adapters and consume once.
 
-**`unsafe` or clever tricks for speed, without a measurement.** Write the clear version first. Measure. Optimise the part that the measurement points at ([chapter 74](#performance)).
+**`unsafe` or clever tricks for speed, without a measurement.** Write the clear version first. Measure. Optimise the part that the measurement points at ([chapter 76](#performance)).
 
 **Fighting the language.** If a design needs many lifetimes, many `RefCell`s, or parent pointers everywhere, it is probably a translation of a design from another language. Step back and ask who should own the data.
 
@@ -659,7 +659,7 @@ When you publish a type for others to use, go through this list. It is condensed
 - It is `Send` and `Sync` where possible.
 - Enums and structs that may grow are marked `#[non_exhaustive]`.
 
-Two tools enforce most idioms automatically. **`rustfmt`** formats code in the standard style, and **Clippy** knows several hundred idioms and suggests the better form with an explanation ([chapter 71](#quality-tools) covers both in detail). Running `cargo clippy` on your own code is one of the fastest ways to learn idiomatic Rust.
+Two tools enforce most idioms automatically. **`rustfmt`** formats code in the standard style, and **Clippy** knows several hundred idioms and suggests the better form with an explanation ([chapter 33](#quality-tools) covers both in detail). Running `cargo clippy` on your own code is one of the fastest ways to learn idiomatic Rust.
 
 :::compare Design patterns from other languages
 Many classic object-oriented design patterns exist to work around a missing language feature, and shrink in Rust:
@@ -687,23 +687,23 @@ Many classic object-oriented design patterns exist to work around a missing lang
 :::quiz Check your understanding
 ? By convention, what does a method named `as_bytes` promise?
 - It creates a new, owned copy
-+ It gives a cheap borrowed view of the same data
 - It consumes the value
++ It gives a cheap borrowed view of the same data
 - It may fail
 = `as_` conversions are free views that borrow. `to_` creates something new, and `into_` consumes `self`.
 
 ? Why is `fn count(words: &[String])` a better signature than `fn count(words: &Vec<String>)`?
-- It is faster
-- `&Vec` is not allowed as a parameter
 + A slice also accepts arrays and parts of vectors, and a `&Vec<String>` converts to it automatically
+- `&Vec` is not allowed as a parameter
+- It is faster
 - A slice copies the data
 = The function only reads a sequence. Asking for the slice makes it usable in more situations at no cost.
 
 ? Which expression gives the length of the name, or 0 if there is none, for `name: Option<&str>`?
 - `name.len()`
 - `name.unwrap().len()`
-+ `name.map(|n| n.len()).unwrap_or(0)`
 - `name.and_then(|n| n.len())`
++ `name.map(|n| n.len()).unwrap_or(0)`
 = `map` transforms the value inside the `Option`, and `unwrap_or` supplies the fallback. `unwrap` would panic for `None`, and `and_then` needs a closure that returns an `Option`.
 
 ? Why should a `match` on your own enum usually list all variants, and not end with `_ => {}`?
@@ -714,8 +714,8 @@ Many classic object-oriented design patterns exist to work around a missing lang
 = Exhaustiveness checking is one of Rust's best maintenance tools. A wildcard arm switches it off for that `match`.
 
 ? What problem does the builder pattern solve?
-- It makes structs faster to create
 + It creates values with many optional settings in a readable way, since Rust has no named or default arguments
+- It makes structs faster to create
 - It allows private fields to be changed
 - It replaces the need for `Default`
 = A builder collects options through chained method calls and checks them once in `build()`.

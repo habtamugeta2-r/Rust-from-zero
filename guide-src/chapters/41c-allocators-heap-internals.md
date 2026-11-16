@@ -4,7 +4,7 @@
 @title Heap Allocators, Memory Management & Rust Allocator Internals
 @short Allocators & heap internals
 @level intermediate
-@time 35
+@time 30
 @learn Contrast bump, free-list, slab/size-class, and thread-local (jemalloc/mimalloc) allocators | Trace how std's System allocator turns Box/Vec calls into malloc/free and brk/mmap | Implement a working bump allocator and GlobalAlloc wrapper in Rust | Diagnose internal/external fragmentation, allocator lock contention, and heap metadata
 
 When `Box::new` or a `Vec` needs heap memory, Rust asks the configured global allocator for it. The standard `Box` and `Vec` types delegate allocation rather than calling the Linux kernel for each value; the allocator usually manages memory in user space and requests more from the operating system when needed. The details and costs vary by allocator, operating system and workload. [The standard-library internals chapter](#rust-stdlib-internals) shows how those collection types are built.
@@ -263,15 +263,15 @@ Notice how taking `&mut self` binds the lifetime of `nums` to `arena`, making th
 :::quiz Check your understanding
 ? Why do general-purpose allocators use size classes (`16, 32, 48, 64, ...`) instead of splitting arbitrary byte counts for small allocations?
 - Because CPUs can only read powers of two
-+ To eliminate external fragmentation inside slabs and enable fast O(1) free-list reuse
 - Because Linux `mmap` only maps 16-byte chunks
++ To eliminate external fragmentation inside slabs and enable fast O(1) free-list reuse
 - So `Box::new(())` can allocate 16 bytes
 = When every slot in a slab has the exact same size, freeing any slot leaves a hole guaranteed to fit the next request in that class.
 
 ? What happens when you execute `Box::new(())` in Rust?
-- `malloc(1)` is called on the system allocator
-- `mmap` allocates one 4 KiB zeroed page
 + No allocator call happens; Rust returns a well-aligned non-null dangling pointer
+- `mmap` allocates one 4 KiB zeroed page
+- `malloc(1)` is called on the system allocator
 - The compiler fails with a ZST error
 = Zero-sized types require zero heap bytes; `Box::new(())` creates an aligned dangling pointer at zero runtime cost.
 
@@ -284,8 +284,8 @@ Notice how taking `&mut self` binds the lifetime of `nums` to `arena`, making th
 
 ? Why does `GlobalAlloc::dealloc` take `(ptr, layout)` instead of only `ptr`?
 - So the allocator knows how much virtual RAM the CPU has
-+ Because Rust knows the type's size and alignment statically, sparing size-class allocators from storing an inline size header next to every object
 - To zero out the freed memory automatically
++ Because Rust knows the type's size and alignment statically, sparing size-class allocators from storing an inline size header next to every object
 - To convert raw pointers back into `NonNull`
 = Passing `Layout` on `dealloc` is a zero-overhead Rust design choice that removes extra per-allocation size bookkeeping.
 :::

@@ -3,7 +3,7 @@
 @title Threads: doing several things at once
 @short Threads
 @level advanced
-@time 55
+@time 45
 @learn Explain concurrency, parallelism, threads and data races | Start threads, wait for them and get their results | Share local data with scoped threads | Send data between threads through channels | Explain how `Send` and `Sync` let the compiler rule out data races
 
 A single thread follows one path through its instructions. A program can create additional **threads** so work can make progress concurrently, and on a machine with multiple processor cores some threads may run at the same time. Core counts vary widely, and using more threads does not automatically make a program faster. Threads are also useful for keeping independent work responsive while another task waits.
@@ -70,7 +70,7 @@ both are done
 
 Run it several times. The lines of the two threads mix, and the exact order can change from run to run. The operating system decides when each thread gets to run, and you cannot predict it. That unpredictability is the heart of what makes concurrent programs hard. (`thread::sleep` pauses the current thread. It is here to give the other thread a chance to run in between.)
 
-`spawn` returns a **`JoinHandle`**. Calling `.join()` on it waits until the thread has finished.
+`spawn` returns a thread **[[handle]]** (`JoinHandle`). Calling `.join()` on it waits until the thread has finished.
 
 :::warn When `main` ends, everything ends
 If the main thread reaches the end of `main`, the whole program stops, even if other threads are in the middle of their work. Call `join` on every thread whose work you need.
@@ -228,7 +228,7 @@ true
 `thread::available_parallelism()` reports how many threads can really run at the same time on this machine. Starting many more threads than that gains nothing for calculations, because the cores are already busy.
 
 :::tip The easy way: Rayon
-The crate **`rayon`** reduces this whole pattern to one word. Write `numbers.par_iter().sum()` in place of `numbers.iter().sum()`, and Rayon splits the work across all cores for you. [Chapter 60](#async-ecosystem) shows it.
+The crate **`rayon`** reduces this whole pattern to one word. Write `numbers.par_iter().sum()` in place of `numbers.iter().sum()`, and Rayon splits the work across all cores for you. [Chapter 65](#async-ecosystem) shows it.
 :::
 
 ## Channels: passing messages
@@ -307,7 +307,7 @@ The Go language made a slogan of this style: *do not communicate by sharing memo
 
 ## `Send` and `Sync`: how the compiler knows
 
-Why did the compiler accept a `Vec<String>` being moved into a thread? And how does it know what is dangerous? Through two marker traits ([chapter 33](#advanced-traits)):
+Why did the compiler accept a `Vec<String>` being moved into a thread? And how does it know what is dangerous? Through two marker traits ([chapter 36](#advanced-traits)):
 
 - **`Send`**: a type is `Send` if a value of it may be **moved to another thread**.
 - **`Sync`**: a type is `Sync` if it may be **used from several threads at once** through shared references.
@@ -381,16 +381,16 @@ Always measure before and after. And use `cargo run --release` for any timing: a
 = The thread's lifetime is not tied to the current function. Use `move` to give the vector to the thread, or use a scoped thread.
 
 ? What makes scoped threads (`thread::scope`) able to borrow local variables?
-- They copy the variables
-- They run in the main thread
 + All of them are guaranteed to finish before the scope ends, so the borrowed data is still alive
+- They run in the main thread
+- They copy the variables
 - They ignore the borrow checker
 = The scope joins every thread it started before it returns. The compiler can therefore prove that the borrows do not outlive the data.
 
 ? After `sender.send(text).unwrap();`, can the sending thread still use `text` (a `String`)?
-- Yes, both threads share it
-- Yes, but only for reading
 + No. The value was moved into the channel
+- Yes, but only for reading
+- Yes, both threads share it
 - Only after the receiver has read it
 = Sending transfers ownership. That is what guarantees that two threads never access the same value.
 
