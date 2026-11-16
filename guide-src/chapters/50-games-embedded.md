@@ -9,7 +9,7 @@
 This chapter surveys three areas that use Rust: games, embedded devices and data work. Each has its own constraints, tools and learning path, so the aim here is orientation rather than mastery. You will meet a small example in each area, learn the central terms, and find a route for exploring further.
 
 :::note How the programs of this chapter were tested
-The Cortex-M3 bare-metal project (`thumbv7m-none-eabi`) is extracted and cross-compiled in CI by `tools/check.py --projects`, and the standalone `embedded-hal`, `heapless`, `ndarray`, and machine-learning listings are checked and run by `tools/check.py`. Windowed games (`macroquad`, `Bevy`) were built and played on Linux with real key presses, the QEMU firmware run and Raspberry Pi Pico binary were verified against their targets locally, and the Polars snippet was run against the chapter 26 sales data.
+The Cortex-M3 bare-metal project (`thumbv7m-none-eabi`) is extracted and cross-compiled in CI by `tools/check.py --projects`, and the standalone `embedded-hal`, `heapless`, `ndarray`, and machine-learning listings are checked and run by `tools/check.py`. Windowed games (`macroquad`, `Bevy`) were built and played on Linux with real key presses, the QEMU firmware run and Raspberry Pi Pico binary were verified against their targets locally, and the Polars snippet was run against the [chapter 31](#project-report) sales data.
 :::
 
 :::plain Games, chips, and data
