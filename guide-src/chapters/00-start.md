@@ -3,7 +3,7 @@
 @title How to use this guide
 @short Learn the guide and the study rhythm
 @level beginner
-@time 8
+@time 15
 @learn Find your way around the guide and its interactive parts | Follow a study routine that makes new knowledge stick | Know what to do when you get stuck
 
 Welcome. This guide starts with two questions: how does a computer carry out a program, and how can Rust help you write one safely? No previous programming or computer-science study is required. You will need a computer, a terminal for some exercises, and time to try the examples rather than only read them. Linux is used for several hands-on systems labs; where a task needs it, the chapter says so.
@@ -27,8 +27,8 @@ Explore the full chapter-by-chapter dependency map in the **[Complete Learning R
 | Structure | 13 Parts + 5 Appendices (83 tracked chapters & orientation guides + 5 appendices = 88 sections) |
 | Projects | 9 complete projects and labs built step by step, including a Linux `/proc` & ELF systems inspector |
 | Appendices | Glossary, systems & Rust reference tables, compiler error catalogue, language translation guides, and a from-source-to-silicon deep dive |
-| Rust examples | 991 Rust listings across 1,308 code blocks, paired with real compiler diagnostics and machine-level traces |
-| Exercises & Quizzes | 274 worked exercises (each with hint + solution) and 351 instant-feedback quiz questions |
+| Rust examples | 1,005 Rust listings across 1,329 code blocks, paired with real compiler diagnostics and machine-level traces |
+| Exercises & Quizzes | 274 worked exercises (each with hint + solution) and 379 instant-feedback quiz questions |
 
 Where the guide shows compiler diagnostics or captured output, those blocks come straight from `rustc` (Rust 2024 edition). Hardware, ELF, and Linux kernel experiments are written for `x86_64` and `ARM64` Linux environments with `rustc`, `cargo`, `objdump`, `readelf`, `nm`, `strace`, `rust-gdb`, `perf`, and `/proc`.
 
@@ -38,10 +38,10 @@ Start with the **Complete Learning Roadmap** ([roadmap](#roadmap)) to see how ev
 
 | Route | Chapters to read | Best for |
 |---|---|---|
-| **Core Rust path** | [1](#what-is-rust), [4](#setup), Part III core chapters, and Part XII tooling ([Cargo](#cargo)–[Testing strategies](#testing-strategies)) | Beginners focusing first on everyday Rust syntax, ownership, traits, and testing |
-| **Systems & internals** | Parts I through XII in full order | Understanding the entire computer stack from hardware & compilation to OS, I/O, CPU, networking & storage |
+| **Core Rust path** | [1](#what-is-rust), [4](#setup), Part 3 core chapters, and Part 4 tooling ([Cargo](#cargo)–[Testing strategies](#testing-strategies)) | Beginners focusing first on everyday Rust syntax, ownership, traits, and testing |
+| **Systems & internals** | Parts 1 through 15 in full order | Understanding the entire computer stack from hardware & compilation to OS, I/O, CPU, networking & storage |
 | **CLI tools** | Core path → [Crates](#crates) → [Serde](#serde) → [Command-line tools](#cli) | Terminal utilities and automation scripts |
-| **Web backends & APIs** | Core path → Part IX Concurrency → Part X Networking & [Axum](#web) → Part XI [Databases](#databases) → [Observability](#observability) → [Capstone](#capstone) | Production HTTP services, telemetry, and SQL persistence |
+| **Web backends & APIs** | Core path → Part 11 Concurrency → Part 12 Networking & [Axum](#web) → Part 13 [Databases](#databases) → [Observability](#observability) → [Capstone](#capstone) | Production HTTP services, telemetry, and SQL persistence |
 | **Optional ecosystem surveys** | [Apps (Wasm, Tauri, GUI)](#apps) and [Games, embedded & data](#games-embedded) | Exploring specialised application domains |
 
 :::tip Follow the ten-stage lens
@@ -151,9 +151,9 @@ Quizzes give you an answer straight away. Try this one:
 
 :::quiz Try a quiz question
 ? What is the best way to use the examples in this guide?
++ Type them out yourself, guess what they will do, then run them
 - Read them carefully and move on
 - Copy and paste them, then run them
-+ Type them out yourself, guess what they will do, then run them
 - Skip them and go straight to the exercises
 = Typing code yourself trains your fingers and your eyes. Guessing the result first turns each example into a small experiment, and you learn the most when your guess turns out to be wrong.
 :::
@@ -168,7 +168,7 @@ Quizzes give you an answer straight away. Try this one:
 - **Do the projects.** They join the small ideas into something real.
 
 :::tip Already know another programming language?
-You can skim the early syntax chapters in Part III quickly, but read **Part I**, **Part II**, and the ownership and internals chapters carefully: Rust's memory model, compiler guarantees, and zero-cost mapping to hardware are where everything clicks together. Also check [Coming from another language](#from-other-languages) for quick translation tables.
+You can skim the early syntax chapters in Part 3 quickly, but read **Part 1**, **Part 2**, and the ownership and internals chapters carefully: Rust's memory model, compiler guarantees, and zero-cost mapping to hardware are where everything clicks together. Also check [Coming from another language](#from-other-languages) for quick translation tables.
 :::
 
 ## When you get stuck

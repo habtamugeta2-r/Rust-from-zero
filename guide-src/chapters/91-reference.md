@@ -4,7 +4,7 @@
 @title Reference tables
 @short Reference tables
 @level all
-@time 10
+@time 15
 
 This appendix collects lookup tables for Rust syntax, formatting, derivable traits and standard-library modules. Use it as a reference while working through examples; consult the linked chapters for explanations and context. Compiler output is included where it is part of the reference material.
 
@@ -192,7 +192,7 @@ For more than a few flags, the crate `bitflags` gives them a type of their own, 
 | `"text"` | a `&str`. `\n`, `\t`, `\\`, `\"` and `\u{…}` work inside |
 | `r"C:\temp"`, `r#"say "hi""#` | a raw string: backslashes (and, with `#`, quotation marks) mean themselves |
 | `b"bytes"` | a byte string: `&[u8; 5]` |
-| `c"text"` | a C string, with a zero byte at the end: `&CStr` ([chapter 37](#ffi)) |
+| `c"text"` | a C string, with a zero byte at the end: `&CStr` ([chapter 40](#ffi)) |
 | `(1, "a")`, `()` | a tuple; the empty tuple, called "unit" |
 | `[1, 2, 3]`, `[0; 8]` | an array; an array of eight zeros |
 
@@ -282,7 +282,7 @@ A common full set for a small value type is `#[derive(Debug, Clone, Copy, Partia
 | `Option<Result<T, E>>` | `Result<Option<T>, E>` | `transpose()` |
 | many `Result<T, E>` | one `Result<Vec<T>, E>` | `collect()` ([chapter 30](#iterators)) |
 
-[Chapter 40](#idioms) shows these in use.
+[Chapter 43](#idioms) shows these in use.
 
 ## A map of the standard library
 
@@ -342,7 +342,7 @@ Without an operating system, a program uses `core` (everything that needs neithe
 
 ## HTTP status codes
 
-HTTP status codes are part of every web service, and the numbers matter to clients. The ones a Rust web service sends, in practice ([chapter 64](#web)):
+HTTP status codes are part of every web service, and the numbers matter to clients. The ones a Rust web service sends, in practice ([chapter 67](#web)):
 
 | Code | Name | Meaning | When a server sends it |
 |---|---|---|---|
@@ -370,11 +370,11 @@ The two that are most often confused are **401** and **403**: authentication ver
 
 The full list, with the official definitions, is in [RFC 9110](https://www.rfc-editor.org/rfc/rfc9110).
 
-## Computer Systems & Linux Internals Quick Reference
+## Computer systems & Linux internals quick reference
 
-Quick lookup tables for [Part I](#hardware-architecture), [Part II](#compilation-pipeline), [Part IV–VIII](#virtual-memory-address-spaces), and [the Linux Systems Lab](#linux-systems-lab):
+Quick lookup tables for [Part 1](#hardware-architecture), [Part 2](#compilation-pipeline), [Parts 6–10](#virtual-memory-address-spaces), and [the Linux Systems Lab](#linux-systems-lab):
 
-### Calling Conventions & Linux `syscall` Registers
+### Calling conventions & Linux `syscall` registers
 
 | Slot | x86-64 System V C Call | x86-64 Linux `syscall` | ARM64 (AArch64) C Call | ARM64 Linux `svc #0` |
 |---|---|---|---|---|
@@ -388,7 +388,7 @@ Quick lookup tables for [Part I](#hardware-architecture), [Part II](#compilation
 | Return | `RAX` (+ `RDX`) | `RAX` (`-4095..-1` = `-errno`) | `X0` (+ `X1`) | `X0` |
 | Callee-saved | `RBX, RBP, R12–R15` | all preserved except `RCX, R11` | `X19–X28, X29, X30` | preserved |
 
-### Essential Linux Binary & Process Inspection Commands
+### Essential Linux binary & process inspection commands
 
 | Command | Purpose |
 |---|---|
@@ -407,8 +407,8 @@ Quick lookup tables for [Part I](#hardware-architecture), [Part II](#compilation
 - All patterns: [chapter 19](#patterns).
 - The most used iterator methods: [chapter 30](#iterators).
 - Which smart pointer for which job: [chapter 32](#smart-pointers).
-- Naming rules: [chapter 40](#idioms).
-- The Cargo commands: [chapter 70](#cargo).
+- Naming rules: [chapter 43](#idioms).
+- The Cargo commands: [chapter 35](#cargo).
 - The common compiler errors and their repairs: [the errors appendix](#errors-ref).
 
 ## Authoritative and current sources

@@ -363,8 +363,8 @@ for i in 0..5 {
 }
 ```
 - 4
-+ 5
 - 6
++ 5
 - It never stops
 = `0..5` produces 0, 1, 2, 3, 4: five numbers. The end of a `..` range is not included.
 
@@ -379,16 +379,16 @@ if x > 10 {
     println!("small");
 }
 ```
-+ `big`
 - `big` and `medium`
 - `medium`
 - `small`
++ `big`
 = Only the first true condition runs. `x > 5` is also true, but it is never tested, because the branch above it already matched.
 
 ? What does `continue` do inside a loop?
++ It skips the rest of the current round and starts the next one
 - It ends the loop
 - It ends the program
-+ It skips the rest of the current round and starts the next one
 - It restarts the loop from the first round
 = `continue` jumps to the next round. `break` is the one that ends the loop.
 

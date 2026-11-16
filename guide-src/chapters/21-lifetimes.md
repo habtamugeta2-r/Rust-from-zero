@@ -1,9 +1,9 @@
 @id lifetimes
-@part p3
+@part p3b
 @title Lifetimes: how long references stay valid
 @short Lifetimes
 @level intermediate
-@time 45
+@time 50
 @learn Explain what a lifetime is and why the compiler tracks it | Read and write lifetime annotations such as `'a` | Know when annotations are needed and when the compiler fills them in | Put references into structs | Recognise `'static` and avoid misusing it
 
 A reference is useful only while the value it points to remains valid. The compiler checks that relationship; a **lifetime** describes the region in which a reference may be used. Non-lexical lifetimes let many borrows end after their last use rather than at the end of the surrounding block. This analysis applies across Rust editions; lifetime annotations describe relationships the compiler cannot infer from a function's signature alone. The borrowing rules are introduced in [the references chapter](#borrowing); [the compiler-pipeline chapter](#compilation-pipeline) explains where borrow checking fits.
@@ -226,7 +226,7 @@ fn main() {
 yes hello
 ```
 
-You will also see `'static` as a bound on a type: `T: 'static`. It means "`T` contains no borrowed data that could expire", which is true for all owned types such as `String`, `Vec<u8>` and `i32`. A new thread, for instance, requires that of the data you give to it, because the thread might run longer than the function that started it ([chapter 55](#threads)).
+You will also see `'static` as a bound on a type: `T: 'static`. It means "`T` contains no borrowed data that could expire", which is true for all owned types such as `String`, `Vec<u8>` and `i32`. A new thread, for instance, requires that of the data you give to it, because the thread might run longer than the function that started it ([chapter 58](#threads)).
 
 :::warn `'static` is rarely the fix
 When a lifetime error appears, the compiler sometimes mentions `'static`, and it is tempting to write it everywhere until the errors stop. This almost never solves the real problem. It demands that the data lives for ever, which you usually cannot provide. Ask instead: who should own this data, and how long does it need to live?
@@ -359,9 +359,9 @@ Lifetimes such as `'a` exist **solely inside the compiler** and take **zero byte
 
 :::quiz Check your understanding
 ? What does a lifetime annotation like `'a` do?
++ It describes how the validity of references relates, so that the compiler can check it
 - It makes a value live longer
 - It tells the compiler when to free memory
-+ It describes how the validity of references relates, so that the compiler can check it
 - It slows the program down slightly
 = Annotations are descriptions for the borrow checker. They do not exist in the finished program and never change how long anything lives.
 
@@ -387,15 +387,15 @@ fn make() -> &String {
 
 ? What does `struct Parser<'a> { input: &'a str }` tell you?
 - The parser owns its input
-+ A `Parser` borrows its input and cannot be used after the input has gone away
 - The parser lives for the whole program
 - The input can be changed through the parser
++ A `Parser` borrows its input and cannot be used after the input has gone away
 = The lifetime parameter ties the struct to the data it references. The compiler will not let the struct outlive that data.
 
 ? Which values have the lifetime `'static`?
++ String literals such as `"hello"`, and other data stored in the program itself
 - All `String`s
 - Everything stored on the heap
-+ String literals such as `"hello"`, and other data stored in the program itself
 - Local variables in `main`
 = A string literal is part of the program file and is therefore valid for the whole run. A local variable in `main` is dropped when `main` ends, which is not quite the same.
 :::

@@ -18,10 +18,24 @@ export const RAW_PARTS: Omit<PartMeta, "partLabel" | "partTitle">[] = [
   },
   {
     key: "p3",
-    title: "Rust language and compiler internals",
+    title: "Core Rust fundamentals",
     level: "Beginner",
     blurb:
-      "Variables, types, ownership, borrowing, slices, structs, enums, collections, generics, traits, lifetimes, smart pointers, memory layout, unsafe Rust, and standard library internals at the machine level.",
+      "Variables and mutability, types, functions, control flow, ownership, borrowing, slices and text, structs, enums, patterns and collections — the syntax and the ownership model every later chapter assumes, with a small project after each stage.",
+  },
+  {
+    key: "p3b",
+    title: "Abstraction and architecture",
+    level: "Intermediate",
+    blurb:
+      "Modules, error handling, generics, traits, lifetimes, closures, iterators, smart pointers, advanced traits and the type system: how a Rust program is organised once the syntax is familiar.",
+  },
+  {
+    key: "p3c",
+    title: "Advanced Rust",
+    level: "Advanced",
+    blurb:
+      "Declarative and procedural macros, unsafe Rust and its invariants, the C ABI and FFI, memory layout, the standard library's internals, and the idioms that separate working code from idiomatic code.",
   },
   {
     key: "p4",
@@ -54,7 +68,7 @@ export const RAW_PARTS: Omit<PartMeta, "partLabel" | "partTitle">[] = [
   {
     key: "p8",
     title: "CPU architecture and instruction execution",
-    level: "Advanced",
+    level: "Intermediate",
     blurb:
       "x86-64 and ARM64 ISAs, instruction decoding, pipelining, branch prediction, superscalar and out-of-order execution, MESI cache coherency, hardware atomics, and SIMD.",
   },
@@ -68,21 +82,21 @@ export const RAW_PARTS: Omit<PartMeta, "partLabel" | "partTitle">[] = [
   {
     key: "p10",
     title: "Networking and communication",
-    level: "Advanced",
+    level: "Intermediate",
     blurb:
       "OSI and TCP/IP models, Ethernet, IP, routing, TCP, UDP, DNS, HTTP, TLS, BSD sockets, kernel sk_buff buffers, end-to-end HTTP tracing, Axum web servers, and observability.",
   },
   {
     key: "p11",
     title: "Storage and file systems",
-    level: "Advanced",
+    level: "Intermediate",
     blurb:
       "HDD and SSD/NVMe internals, blocks and sectors, file systems, inodes, journaling, kernel page cache, mmap, std::fs operations, and relational databases.",
   },
   {
     key: "p12",
     title: "Practical system programming with Rust",
-    level: "Advanced",
+    level: "Intermediate",
     blurb:
       "Cargo workflows, quality tooling, testing strategies, CLI utilities, performance profiling, hands-on Linux inspection labs (GDB, objdump, readelf, strace, perf, /proc), and capstone.",
   },
@@ -286,6 +300,10 @@ export const LANG_LABELS: Record<string, string> = {
   asm: "Assembly",
   llvm: "LLVM IR",
   mir: "Rust MIR",
+  protobuf: "Protocol Buffers",
+  // `flame` is not a code fence at all — it is the flame-graph directive — but
+  // it reaches the label lookup on the way through, and "FLAME" read badly.
+  flame: "Flame graph",
   diff: "Diff",
 };
 

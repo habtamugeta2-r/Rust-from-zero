@@ -424,29 +424,29 @@ The full list is in the [reference appendix](#reference).
 :::quiz Check your understanding
 ? What is the type of `"hello"` written directly in the code?
 - `String`
-+ `&str`
 - `char`
++ `&str`
 - `[char; 5]`
 = A string literal is a string slice, `&str`. Its characters are stored in the program itself. To get an owned `String`, call `.to_string()` or `String::from`.
 
 ? What does `"ሰላም".len()` return, and why?
 - 3, because there are three characters
-+ 9, because `len` counts bytes and each of these characters takes 3 bytes in UTF-8
 - 6, because each character takes 2 bytes
 - It does not compile
++ 9, because `len` counts bytes and each of these characters takes 3 bytes in UTF-8
 = `.len()` is the number of bytes. For the number of characters, use `.chars().count()`.
 
 ? Which signature is the most flexible for a function that only reads a text?
++ `fn show(text: &str)`
 - `fn show(text: String)`
 - `fn show(text: &String)`
-+ `fn show(text: &str)`
 - `fn show(text: &mut String)`
 = `&str` accepts string literals, slices, and references to `String` values. `&String` works only with a `String`, and `String` would take ownership.
 
 ? Why does Rust not allow `text[0]` on a string?
 - Strings are stored on the heap
-- Strings are immutable
 + Characters have different sizes in UTF-8, so byte 0 may be only a part of a character, and Rust will not guess what you mean
+- Strings are immutable
 - It is allowed, but only for `String`
 = Indexing would have to return either a byte, which is often not a character, or do a slow search for the right character. Rust makes you choose with `.bytes()` or `.chars()`.
 

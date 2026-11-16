@@ -93,6 +93,24 @@ const AMERICAN_TO_BRITISH: Record<string, string> = {
   judgment: "judgement",
   skillful: "skilful",
   acknowledgment: "acknowledgement",
+  catalog: "catalogue",
+  catalogs: "catalogues",
+  honoring: "honouring",
+  honored: "honoured",
+  honor: "honour",
+  fiber: "fibre",
+  serialization: "serialisation",
+  serialize: "serialise",
+  deserialization: "deserialisation",
+  tokenize: "tokenise",
+  tokenizer: "tokeniser",
+  memoize: "memoise",
+  visualize: "visualise",
+  visualization: "visualisation",
+  capitalize: "capitalise",
+  behavioral: "behavioural",
+  analogue: "analogue",
+  aluminum: "aluminium",
 };
 
 /**
@@ -110,6 +128,33 @@ const PLACEHOLDER_MARKERS = [
   /\bXXX\b/,
   /lorem ipsum/i,
 ];
+
+/**
+ * Words that tell a stuck reader the problem was easy. A guide for beginners
+ * cannot know that, so it does not say it. "Simply" and "just" are allowed when
+ * they mean "merely" ("the counter simply ran out"), which is a description of
+ * the machine rather than a judgement about the reader, so these patterns only
+ * catch the imperative forms: "just run", "simply write".
+ */
+const DISMISSIVE_PATTERNS: { pattern: RegExp; advice: string }[] = [
+  {
+    pattern:
+      /\b(?:just|simply) (?:use|run|add|write|call|put|change|set|replace|install|delete|remove|copy|remember|look|type|do)\b/i,
+    advice: "drop the filler, or say what the step costs",
+  },
+  {
+    pattern: /\bobviously\b/i,
+    advice: "if it were obvious the reader would not need the sentence",
+  },
+  { pattern: /\btrivially\b/i, advice: "say what makes it easy instead" },
+];
+
+/**
+ * Longest encoded program a Playground link may carry. Chromium stops honouring
+ * a URL past roughly 8,000 characters and servers reject longer request lines
+ * sooner than that, so this is the practical ceiling, not a style preference.
+ */
+const MAX_PLAYGROUND_QUERY = 8000;
 
 /** Words per minute used to sanity-check the declared `@time`. */
 const READING_WPM = 200;
@@ -181,7 +226,9 @@ export function proseWordCount(blocks: BlockNode[]): number {
       return;
     }
     for (const [key, value] of Object.entries(node)) {
-      if (key === "type" || value === null || typeof value !== "object") continue;
+      if (key === "type" || key === "parent" || value === null || typeof value !== "object") {
+        continue;
+      }
       visit(value);
     }
   };
@@ -196,19 +243,26 @@ export function proseWordCount(blocks: BlockNode[]): number {
  */
 function collectNodes(blocks: BlockNode[]): any[] {
   const out: any[] = [];
-  const visit = (node: any): void => {
+  const visit = (node: any, parent: any | null): void => {
     if (!node || typeof node !== "object") return;
     if (Array.isArray(node)) {
-      for (const child of node) visit(child);
+      for (const child of node) visit(child, parent);
       return;
     }
-    if (typeof node.type === "string") out.push(node);
+    if (typeof node.type === "string") {
+      // The node that contains this one, so a rule can read, for example, the
+      // label of the link a text node sits inside.
+      if (parent) node.parent = parent;
+      out.push(node);
+    }
     for (const [key, value] of Object.entries(node)) {
-      if (key === "type" || value === null || typeof value !== "object") continue;
-      visit(value);
+      if (key === "type" || key === "parent" || value === null || typeof value !== "object") {
+        continue;
+      }
+      visit(value, typeof node.type === "string" ? node : parent);
     }
   };
-  visit(blocks);
+  visit(blocks, null);
   return out;
 }
 
@@ -423,6 +477,7 @@ export function lintContent(guide: LoadedGuide, options: LintOptions = {}): Lint
   const capturedDir = options.capturedDir ?? path.join(chaptersDir, "..", "captured");
 
   const knownIds = new Set(guide.chapters.map((chapter) => chapter.id));
+  const chapterById = new Map(guide.chapters.map((chapter) => [chapter.id, chapter]));
 
   // ---- per-chapter structure, spelling and links -------------------------
   const inbound = new Map<string, number>();
@@ -571,6 +626,71 @@ export function lintContent(guide: LoadedGuide, options: LintOptions = {}): Lint
             rule: "text/spelling",
             where: `${chapter.file}:${line}`,
             message: `“${match[0]}” — this guide uses British spelling: “${british}”`,
+          });
+        }
+      }
+    }
+
+    // Prose that spells out a chapter number has to agree with the order the
+    // reader actually meets. Read from the raw markdown, because the parser
+    // rewrites `[Chapter 6](#control-flow)` to the live number on the way in and
+    // would therefore hide every stale label from an AST-level check.
+    const normaliseNum = (value: string): string =>
+      /^\d+$/.test(value) ? String(Number(value)) : value.toUpperCase();
+    const rawLines = markdown.split("\n");
+    for (const { line } of lines) {
+      for (const match of rawLines[line - 1].matchAll(
+        /\[([Cc])hapter\s+(\d+|[A-J]|Map|0)\]\(#([a-z0-9-]+)\)/g,
+      )) {
+        const [, cased, claimed, targetId] = match;
+        const target = chapterById.get(targetId);
+        if (!target?.num) continue;
+        if (normaliseNum(claimed) === normaliseNum(target.num)) continue;
+        problems.push({
+          severity: "error",
+          rule: "link/chapter-number",
+          where: `${chapter.file}:${line}`,
+          message: `labels #${targetId} as "${cased}hapter ${claimed}", but it is chapter ${target.num}`,
+        });
+      }
+    }
+
+    // Reader-facing filler is reported rather than enforced: the guide has
+    // legitimate uses of "just", and a warning that names the line is enough to
+    // stop the pattern spreading.
+    for (const { line } of lines) {
+      for (const { pattern, advice } of DISMISSIVE_PATTERNS) {
+        const match = pattern.exec(rawLines[line - 1]);
+        if (!match) continue;
+        problems.push({
+          severity: "warn",
+          rule: "text/dismissive",
+          where: `${chapter.file}:${line}`,
+          message: `“${match[0]}” — ${advice}`,
+        });
+      }
+    }
+
+    // The roadmap's `## Part N — Title` headings are the reader's map of the
+    // whole guide, so they have to agree with the part titles the navigation
+    // renders from guide-config.ts. Compared case-insensitively, because the
+    // roadmap writes sentence case and a part title may not.
+    if (chapter.id === "roadmap") {
+      const byNumber = new Map<number, string>();
+      guide.parts
+        .filter((part) => part.partLabel)
+        .forEach((part, index) => byNumber.set(index + 1, part.title));
+      for (const { line } of lines) {
+        const match = /^## Part (\d+) — (.+)$/.exec(rawLines[line - 1]);
+        if (!match) continue;
+        const expected = byNumber.get(Number(match[1]));
+        if (!expected) continue;
+        if (expected.toLowerCase() !== match[2].trim().toLowerCase()) {
+          problems.push({
+            severity: "error",
+            rule: "docs/roadmap-part-title",
+            where: `${chapter.file}:${line}`,
+            message: `says "${match[2].trim()}" but guide-config.ts calls the part "${expected}"`,
           });
         }
       }
@@ -758,7 +878,100 @@ export function lintContent(guide: LoadedGuide, options: LintOptions = {}): Lint
     }
   }
 
+  // ---- the numbers chapter 0 advertises ------------------------------------
+  // The home page and README are checked against the parser; the orientation
+  // chapter quotes the same facts in prose, so it is checked the same way.
+  const startChapter = guide.chapters.find((chapter) => chapter.id === "start");
+  if (startChapter) {
+    const treeFacts = {
+      rustListings: countRustFences(chaptersDir, chapterFiles),
+      codeBlocks: guide.stats.codeBlocks,
+      exercises: guide.stats.exercises,
+      quizQuestions: guide.stats.questions,
+    };
+    // One pattern per published number, each with the capture it reads.
+    const advertised: { pattern: RegExp; capture: number; label: string; expected: number }[] = [
+      {
+        pattern: /([\d,]+) Rust listings across ([\d,]+) code blocks/,
+        capture: 1,
+        label: "Rust listings",
+        expected: treeFacts.rustListings,
+      },
+      {
+        pattern: /([\d,]+) Rust listings across ([\d,]+) code blocks/,
+        capture: 2,
+        label: "code blocks",
+        expected: treeFacts.codeBlocks,
+      },
+      {
+        pattern: /([\d,]+) worked exercises/,
+        capture: 1,
+        label: "worked exercises",
+        expected: treeFacts.exercises,
+      },
+      {
+        pattern: /([\d,]+) instant-feedback quiz questions/,
+        capture: 1,
+        label: "quiz questions",
+        expected: treeFacts.quizQuestions,
+      },
+    ];
+    // Read the source, so the check sees the summary table exactly as written
+    // (and works for a fixture guide whose blocks were built by hand).
+    let startText = "";
+    try {
+      startText = fs.readFileSync(path.join(chaptersDir, startChapter.file), "utf8");
+    } catch {
+      // A guide whose source is not on disk (a unit-test fixture, say) has no
+      // table to check, and the missing-file rule reports it separately.
+    }
+
+    for (const advert of advertised) {
+      const found = advert.pattern.exec(startText);
+      if (!found) {
+        problems.push({
+          severity: "error",
+          rule: "docs/start-stats",
+          where: startChapter.file,
+          message: `no longer advertises the ${advert.label} count; keep the measured number in the summary table`,
+        });
+        continue;
+      }
+      const quoted = Number((found[advert.capture] ?? found[1]).replace(/,/g, ""));
+      if (quoted !== advert.expected) {
+        problems.push({
+          severity: "error",
+          rule: "docs/start-stats",
+          where: startChapter.file,
+          message: `advertises ${quoted} ${advert.label}, but the parser counts ${advert.expected}; run \`npm run stats\``,
+        });
+      }
+    }
+  }
+
   // ---- information, for the person reading the CI log ---------------------
+  // ---- Playground links a browser can actually open ------------------------
+  // A "Run" button encodes the whole program into the query string; beyond
+  // about 8,000 characters browsers and proxies start refusing the URL, and
+  // the guide's four largest listings were each producing one. A listing that
+  // big belongs behind `noplay`, with a note pointing at the project instead.
+  for (const chapter of guide.chapters) {
+    for (const node of collectNodes(chapter.blocks)) {
+      if (node.type !== "code" || node.lang !== "rust") continue;
+      const playable = node.kind === "run" || node.kind === "wrap";
+      if (!playable || node.noPlay || node.isExt) continue;
+      const encoded = encodeURIComponent(node.code).length;
+      if (encoded > MAX_PLAYGROUND_QUERY) {
+        problems.push({
+          severity: "error",
+          rule: "code/playground-too-long",
+          where: chapter.file,
+          message: `a ${node.kind} listing encodes to ${encoded} characters, over the ${MAX_PLAYGROUND_QUERY}-character Playground limit; add \`noplay\` and point at the project instead`,
+        });
+      }
+    }
+  }
+
   const glossaryTerms = Object.keys(guide.glossary).length;
   info.push(`glossary: ${termRefs.size} of ${glossaryTerms} terms are linked from prose`);
   info.push(

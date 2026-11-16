@@ -482,15 +482,15 @@ A struct's fields are stored side by side as one block. A `Point` with two `i32`
 :::quiz Check your understanding
 ? What does `&self` in a method signature mean?
 - The method creates a new instance
-+ The method borrows the instance it is called on and can only read it
 - The method takes ownership of the instance
 - The method does not use the instance
++ The method borrows the instance it is called on and can only read it
 = `&self` is a shared borrow of the instance. To change it, a method needs `&mut self`. To take ownership, it uses `self`.
 
 ? How do you call the associated function `new` of the struct `Rectangle`?
++ `Rectangle::new(3, 4)`
 - `Rectangle.new(3, 4)`
 - `new Rectangle(3, 4)`
-+ `Rectangle::new(3, 4)`
 - `rectangle.new(3, 4)`
 = Associated functions are called on the type with `::`. Methods are called on an instance with a dot.
 
@@ -500,15 +500,15 @@ struct Song { title: String, seconds: u32 }
 let song = Song { title: String::from("Blue") };
 ```
 - A struct cannot contain a `String`
-- `song` must be `mut`
 + The field `seconds` has no value. Every field must be set when a struct is created
+- `song` must be `mut`
 - `Song` must derive `Debug`
 = Rust has no half-initialised values. All fields need a value, either written out or taken from another instance with `..other`.
 
 ? What is the newtype pattern good for?
 - It makes programs run faster
-+ It gives a simple value its own type, so that the compiler stops you from mixing it up with other values of the same underlying type
 - It allows a struct to inherit from another
++ It gives a simple value its own type, so that the compiler stops you from mixing it up with other values of the same underlying type
 - It lets you avoid `derive`
 = `struct Meters(f64);` and `struct Seconds(f64);` are different types although both hold an `f64`, so they cannot be confused.
 :::

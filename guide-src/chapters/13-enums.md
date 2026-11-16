@@ -383,37 +383,37 @@ In C, C++ and Java (in its basic form), an enum is a list of named constants. It
 :::quiz Check your understanding
 ? What is special about Rust's enums compared with enums in C or Java?
 - They can only hold numbers
-+ Each variant can carry its own data
 - They cannot be used with `match`
 - They are stored on the heap
++ Each variant can carry its own data
 = A Rust enum variant can hold values, and different variants can hold different types and numbers of values.
 
 ? What happens if a `match` on an enum does not cover one of the variants?
++ The program does not compile
 - That case is skipped when the program runs
 - The program panics when it reaches that case
-+ The program does not compile
 - The last arm is used for it
 = `match` must be exhaustive. The compiler reports error E0004 and names the missing variant.
 
 ? A function returns `Option<String>`. What does that tell you?
 - It always returns a string
-- It may crash
 + It returns either `Some(text)` or `None`, and the caller must handle both before using the text
+- It may crash
 - It returns an empty string when there is nothing
 = An `Option<String>` is not a `String`. The compiler makes the caller deal with the `None` case.
 
 ? What does `value.unwrap_or(10)` do for `value: Option<i32>`?
 - It panics if the value is `None`
-+ It gives the number inside `Some`, or 10 if the value is `None`
 - It always gives 10
++ It gives the number inside `Some`, or 10 if the value is `None`
 - It turns the number into an `Option`
 = `unwrap_or` supplies a fallback. Unlike `unwrap`, it never panics.
 
 ? When is `if let` a better choice than `match`?
 - When all variants must be handled
-+ When only one pattern is interesting and the rest needs little or no code
 - When the value is a number
 - Never. They are unrelated
++ When only one pattern is interesting and the rest needs little or no code
 = `if let` is a shorter way to write a `match` that cares about one pattern. For several cases, `match` is clearer and keeps the exhaustiveness check.
 :::
 

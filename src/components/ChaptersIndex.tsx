@@ -88,18 +88,27 @@ export function ChaptersIndex({ chapters }: { chapters: ChapterMeta[] }) {
                       aria-label="Bookmarked"
                     />
                   )}
-                  <span
-                    className={`inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-1 font-sans text-[11px] font-bold ${
-                      row.done
-                        ? "bg-emerald-600 text-white"
-                        : row.pct > 0
-                          ? "bg-[var(--g-accent-soft)] text-[var(--g-accent)]"
-                          : "bg-[var(--g-sunken)] text-[var(--g-ink3)]"
-                    }`}
-                  >
-                    {row.done && <Check className="h-3 w-3" aria-hidden="true" />}
-                    {row.done ? "Done" : row.pct > 0 ? `${row.pct}%` : "Not started"}
-                  </span>
+                  {/* An appendix is reference material: it has no completion
+                      state, so badging it "Not started" forever was simply a
+                      false statement about the reader. */}
+                  {row.kind === "appendix" ? (
+                    <span className="inline-flex shrink-0 items-center rounded-full bg-[var(--g-sunken)] px-2 py-1 font-sans text-[11px] font-bold text-[var(--g-ink3)]">
+                      Reference
+                    </span>
+                  ) : (
+                    <span
+                      className={`inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-1 font-sans text-[11px] font-bold ${
+                        row.done
+                          ? "bg-emerald-600 text-white"
+                          : row.pct > 0
+                            ? "bg-[var(--g-accent-soft)] text-[var(--g-accent)]"
+                            : "bg-[var(--g-sunken)] text-[var(--g-ink3)]"
+                      }`}
+                    >
+                      {row.done && <Check className="h-3 w-3" aria-hidden="true" />}
+                      {row.done ? "Done" : row.pct > 0 ? `${row.pct}%` : "Not started"}
+                    </span>
+                  )}
                 </Link>
               </li>
             ))}

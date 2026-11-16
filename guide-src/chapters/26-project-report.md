@@ -1,10 +1,10 @@
 @id project-report
-@part p3
+@part p3b
 @kind project
 @title Project: a sales report from raw data
 @short Project: sales report
 @level intermediate
-@time 120
+@time 45
 @learn Turn raw text into typed data, and report bad rows without stopping | Summarise data with iterator pipelines | Write one generic function that groups by any key, using a closure | Handle money correctly | Print aligned tables
 
 This project turns a CSV file of sales records into a summary report. You will parse each row, handle malformed input, aggregate the data and format the result. The program is a useful exercise in composing iterators, collections and error handling around a concrete data-processing task.
@@ -309,7 +309,9 @@ fn print_table(title: &str, rows: &[(&str, u64)], total: u64) {
 
 ## The complete program
 
-```rust run
+The listing below is the whole report program. It is too long to hand to the online Playground through a link, so it has no Run button; paste it into a file and run it with `cargo run`, or extract it with `tools/project.py`.
+
+```rust run noplay
 use std::collections::BTreeMap;
 
 const SAMPLE: &str = "\
@@ -660,7 +662,7 @@ Let the user restrict the report with options such as `--category Food` and `--m
 ::hint
 The list has the type `Vec<Box<dyn Fn(&Sale) -> bool>>`. For `--category X`, push `Box::new(move |s: &Sale| s.category == x)`. The `move` matters, because each closure must own the text it compares with. Then: `sales.into_iter().filter(|sale| filters.iter().all(|f| f(sale))).collect()`.
 ::solution
-```rust run
+```rust run noplay
 #[derive(Debug)]
 struct Sale {
     date: String,
@@ -744,31 +746,31 @@ The selection itself is one line: a sale is kept if `all` filters say yes. With 
 
 :::quiz Check your understanding
 ? The project stores money as integer cents rather than as `f64` dollars. Why?
-- Because integers are faster to add
 + Because binary floating point cannot represent every decimal amount exactly, so sums can drift
+- Because integers are faster to add
 - Because `f64` cannot hold large numbers
 - Because the report prints amounts in cents
 = A tenth of a dollar has no exact `f64` representation, so adding such values accumulates rounding error. Integer cents make every sum exact; floats are kept for display values such as percentages.
 
 ? A row that cannot be parsed does not stop the program. What does the project collect instead?
-+ The problems, each with its line number, and then carries on with the good rows
 - Nothing: the program returns an empty report
++ The problems, each with its line number, and then carries on with the good rows
 - The bad line, replaced with zeroes
 - An exception that the caller must catch
 = A report over real data should say what went wrong and still show the rest. Collecting the problems with line numbers keeps the damage visible without discarding the rows that parsed cleanly.
 
 ? The grouping function takes a closure parameter, so one function serves several groupings. What is that called and what does it buy?
-+ Monomorphisation: the compiler makes one copy per closure type, and you write the grouping logic once
 - Trait objects: the grouping is chosen at run time
 - Boxing: the closure is stored on the heap
++ Monomorphisation: the compiler makes one copy per closure type, and you write the grouping logic once
 - Currying: the function takes two arguments
 = `revenue_by` is generic over a key function, so each call site instantiates its own copy. One body then covers "revenue by region", "revenue by product" and any other grouping you add later.
 
 ? The summary functions return data instead of printing it. Why is that a deliberate decision?
-+ Printing from a function cannot be captured in a test
 - The functions are easier to read without `println!` in them
 - Rust forbids printing from functions that return values
 - The compiler cannot optimise functions that print
++ Printing from a function cannot be captured in a test
 = A function that returns data can be checked by a test with a plain `assert_eq!`, and the same data can be printed as a table, written to JSON, or sent to a terminal. Printing inside the function would tie the summary to one output format.
 :::
 

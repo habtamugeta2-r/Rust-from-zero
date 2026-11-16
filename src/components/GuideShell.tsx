@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import {
   Check,
   ChevronDown,
@@ -15,24 +15,33 @@ import {
   Sun,
   X,
 } from "lucide-react";
-import type { ChapterSummary, PartMeta, SearchHit } from "@/lib/guide-types";
 import { themeHint, themeLabel } from "@/lib/theme";
+import type { ChapterProgressInput, PartNav } from "@/lib/guide-types";
 import { CommandPalette } from "./CommandPalette";
 import { useGuideState } from "./GuideStateProvider";
+import { usePageInfo } from "./GlossaryTipContext";
 
 const SIDEBAR_KEY = "rust-guide-sidebar";
 
+/**
+ * The app chrome: header, sidebar, drawer, palette and the reading column.
+ *
+ * Everything here is a client component, so its props are serialised into
+ * every page's RSC payload. That is why they are narrow, per-page facts —
+ * {@link PartNav} and {@link ChapterProgressInput} without prose, objectives
+ * or block trees — rather than the parser's full chapter objects. It used to
+ * be handed all 88 `ChapterSummary` records and used three fields of one.
+ */
 export function GuideShell({
   parts,
   chapters,
   children,
 }: {
-  parts: PartMeta[];
-  chapters: ChapterSummary[];
+  parts: PartNav[];
+  chapters: ChapterProgressInput[];
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  const router = useRouter();
   const { state, persistent, resetAllProgress, cycleTheme, themeMode, stepFontSize } =
     useGuideState();
 
@@ -40,22 +49,16 @@ export function GuideShell({
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [isDesktop, setIsDesktop] = useState(true);
   const [collapsedParts, setCollapsedParts] = useState<Record<string, boolean>>({});
-  const [query, setQuery] = useState("");
-  const [hits, setHits] = useState<SearchHit[] | null>(null);
-  const [searching, setSearching] = useState(false);
-  const [activeHit, setActiveHit] = useState(-1);
   const [confirmReset, setConfirmReset] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
 
-  const searchRef = useRef<HTMLInputElement>(null);
   const drawerRef = useRef<HTMLElement>(null);
 
+  const page = usePageInfo();
   const activeChapterId = pathname.startsWith("/chapters/")
     ? pathname.slice("/chapters/".length)
     : null;
-  const activeChapter = activeChapterId
-    ? (chapters.find((c) => c.id === activeChapterId) ?? null)
-    : null;
+  const activeChapter = page.chapter ?? null;
 
   const tracked = useMemo(() => chapters.filter((c) => c.kind !== "appendix"), [chapters]);
   const doneCount = useMemo(
@@ -145,12 +148,9 @@ export function GuideShell({
     if (isDesktop) setDrawerOpen(false);
   }, [isDesktop]);
 
-  // Route change: close the drawer and drop any transient search state.
+  // Route change: close the drawer.
   useEffect(() => {
     setDrawerOpen(false);
-    setQuery("");
-    setHits(null);
-    setActiveHit(-1);
   }, [pathname]);
 
   /* ---------------- keyboard shortcuts ---------------- */
@@ -176,11 +176,6 @@ export function GuideShell({
       if (event.key === "Escape") {
         setDrawerOpen(false);
         setPaletteOpen(false);
-        if (query || hits) {
-          setQuery("");
-          setHits(null);
-          setActiveHit(-1);
-        }
         return;
       }
 
@@ -195,56 +190,7 @@ export function GuideShell({
     };
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
-  }, [query, hits, openPalette]);
-
-  /* ---------------- search ---------------- */
-
-  useEffect(() => {
-    const q = query.trim();
-    if (!q) {
-      setHits(null);
-      setSearching(false);
-      setActiveHit(-1);
-      return;
-    }
-    setSearching(true);
-    const controller = new AbortController();
-    const timer = window.setTimeout(async () => {
-      try {
-        const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`, {
-          signal: controller.signal,
-        });
-        if (!res.ok) throw new Error(`search failed: ${res.status}`);
-        const data = (await res.json()) as { hits: SearchHit[] };
-        setHits(data.hits);
-        setActiveHit(-1);
-      } catch (error) {
-        if ((error as Error).name === "AbortError") return;
-        setHits([]);
-      } finally {
-        setSearching(false);
-      }
-    }, 160);
-    return () => {
-      controller.abort();
-      window.clearTimeout(timer);
-    };
-  }, [query]);
-
-  const onSearchKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
-    if (!hits || hits.length === 0) return;
-    if (event.key === "ArrowDown") {
-      event.preventDefault();
-      setActiveHit((i) => (i + 1) % hits.length);
-    } else if (event.key === "ArrowUp") {
-      event.preventDefault();
-      setActiveHit((i) => (i <= 0 ? hits.length - 1 : i - 1));
-    } else if (event.key === "Enter" && activeHit >= 0) {
-      event.preventDefault();
-      const hit = hits[activeHit];
-      router.push(`/chapters/${hit.chapterId}${hit.anchor ? `#${hit.anchor}` : ""}`);
-    }
-  };
+  }, [openPalette]);
 
   const togglePart = (key: string) => {
     setCollapsedParts((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -306,38 +252,25 @@ export function GuideShell({
           </button>
         </div>
 
-        {/* Search */}
+        {/* Search lives in one place: the command palette. A second input here
+            duplicated it, and its `/` badge was a lie — the shortcut opens the
+            palette, not this box. The trigger below says so honestly. */}
         <div className="px-3 pb-3">
-          <label className="relative flex items-center">
-            <Search
-              className="pointer-events-none absolute left-3 h-4 w-4 text-[var(--g-ink3)]"
-              aria-hidden="true"
-            />
-            <input
-              ref={searchRef}
-              type="search"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              onKeyDown={onSearchKeyDown}
-              placeholder="Search the whole guide"
-              aria-label="Search the whole guide"
-              title="Search the whole guide (press / or Ctrl-K)"
-              role="combobox"
-              aria-expanded={hits !== null}
-              aria-controls="search-results"
-              aria-activedescendant={activeHit >= 0 ? `search-hit-${activeHit}` : undefined}
-              autoComplete="off"
-              spellCheck={false}
-              className="h-9 w-full rounded-lg border border-[var(--g-line)] bg-[var(--g-surface)] pr-14 pl-9 text-[13px] text-[var(--g-ink)] shadow-card placeholder:text-[var(--g-ink3)] focus:border-[var(--g-accent)] focus:outline-none"
-            />
+          <button
+            type="button"
+            onClick={openPalette}
+            aria-keyshortcuts="/ Control+k Meta+k"
+            className="flex h-9 w-full items-center gap-2 rounded-lg border border-[var(--g-line)] bg-[var(--g-surface)] px-3 text-left text-[13px] text-[var(--g-ink3)] shadow-card transition-colors hover:border-[var(--g-accent)] hover:text-[var(--g-ink2)]"
+          >
+            <Search className="h-4 w-4 shrink-0" aria-hidden="true" />
+            <span className="flex-1 truncate">Search the whole guide</span>
             <kbd
               aria-hidden="true"
-              title="Press / or Ctrl-K"
-              className="pointer-events-none absolute right-2.5 hidden rounded-md border border-[var(--g-line)] bg-[var(--g-sunken)] px-1.5 py-0.5 font-sans text-[11px] font-medium text-[var(--g-ink3)] sm:inline-block"
+              className="hidden rounded-md border border-[var(--g-line)] bg-[var(--g-sunken)] px-1.5 py-0.5 font-sans text-[11px] font-medium sm:inline-block"
             >
               /
             </kbd>
-          </label>
+          </button>
         </div>
 
         {/* Progress */}
@@ -376,156 +309,100 @@ export function GuideShell({
 
         {/* Search results OR table of contents */}
         <div
-          id="search-results"
           className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 py-2"
           data-scroll-pane
           tabIndex={-1}
         >
-          {hits !== null ? (
-            <div className="space-y-1" role="listbox" aria-label="Search results">
-              {searching && <p className="px-2 py-2 text-xs text-[var(--g-ink3)]">Searching…</p>}
-              {!searching && hits.length === 0 && (
-                <p className="px-2 py-3 text-xs leading-relaxed text-[var(--g-ink3)]">
-                  Nothing found for “{query}”. Try a single, shorter word — or look in the glossary.
-                </p>
-              )}
-              {!searching && hits.length > 0 && (
-                <p className="px-2 py-1 text-[11px] font-semibold tracking-wide text-[var(--g-ink3)] uppercase">
-                  {hits.length} {hits.length === 1 ? "match" : "matches"} · ↑↓ to move, Enter to
-                  open
-                </p>
-              )}
-              {hits.map((hit, index) => (
-                <Link
-                  key={`${hit.chapterId}-${hit.anchor}-${index}`}
-                  id={`search-hit-${index}`}
-                  role="option"
-                  aria-selected={index === activeHit}
-                  href={`/chapters/${hit.chapterId}${hit.anchor ? `#${hit.anchor}` : ""}`}
-                  onMouseEnter={() => setActiveHit(index)}
-                  className={`block scroll-mt-2 rounded-lg px-2 py-1.5 transition-colors ${
-                    index === activeHit
-                      ? "bg-[var(--g-accent-soft)] text-[var(--g-ink)]"
-                      : "hover:bg-[var(--g-surface)]"
-                  }`}
-                >
-                  <div className="flex items-baseline gap-1.5">
-                    <span className="shrink-0 font-mono text-[11px] text-[var(--g-ink3)]">
-                      {hit.num}
-                    </span>
-                    <span className="min-w-0 truncate text-[12px] font-bold text-[var(--g-ink)]">
-                      {hit.chapterTitle}
-                    </span>
-                  </div>
-                  {hit.heading && (
-                    <div className="truncate text-[11px] font-medium text-[var(--g-accent)]">
-                      {hit.heading}
-                    </div>
-                  )}
-                  <div className="mt-0.5 line-clamp-2 text-[12px] leading-snug text-[var(--g-ink3)]">
-                    {hit.before}
-                    {hit.match && (
-                      <mark className="rounded bg-amber-300/60 px-0.5 text-[#33291c] dark:bg-amber-500/30 dark:text-amber-100">
-                        {hit.match}
-                      </mark>
-                    )}
-                    {hit.after}
-                  </div>
-                </Link>
-              ))}
-            </div>
-          ) : (
-            <nav aria-label="Table of contents" className="space-y-1">
-              {parts.map((part) => {
-                const list = chapters.filter((c) => c.part === part.key);
-                if (list.length === 0) return null;
-                const isCollapsed = Boolean(collapsedParts[part.key]);
-                const pDone = list.filter((c) => Boolean(state.done[c.id])).length;
+          <nav aria-label="Table of contents" className="space-y-1">
+            {parts.map((part) => {
+              const list = chapters.filter((c) => c.part === part.key);
+              if (list.length === 0) return null;
+              const isCollapsed = Boolean(collapsedParts[part.key]);
+              const pDone = list.filter((c) => Boolean(state.done[c.id])).length;
 
-                return (
-                  <div key={part.key}>
-                    <button
-                      type="button"
-                      aria-expanded={!isCollapsed}
-                      aria-controls={`part-list-${part.key}`}
-                      onClick={() => togglePart(part.key)}
-                      className="flex w-full items-center gap-1.5 rounded-lg px-2 py-1.5 text-left text-xs font-bold text-[var(--g-ink2)] hover:bg-[var(--g-line)]/40 hover:text-[var(--g-ink)]"
-                    >
-                      {isCollapsed ? (
-                        <ChevronRight
-                          className="h-3.5 w-3.5 shrink-0 text-[var(--g-ink3)]"
-                          aria-hidden="true"
-                        />
-                      ) : (
-                        <ChevronDown
-                          className="h-3.5 w-3.5 shrink-0 text-[var(--g-ink3)]"
-                          aria-hidden="true"
-                        />
-                      )}
-                      <span className="min-w-0 flex-1 truncate">
-                        {part.partLabel && (
-                          <span className="mr-1.5 text-[10.5px] tracking-wider text-[var(--g-ink3)] uppercase">
-                            {part.partLabel}
-                          </span>
-                        )}
-                        {part.title}
-                      </span>
-                      {part.key !== "app" && (
-                        <span className="text-[11px] font-medium text-[var(--g-ink3)] tabular-nums">
-                          {pDone}/{list.length}
+              return (
+                <div key={part.key}>
+                  <button
+                    type="button"
+                    aria-expanded={!isCollapsed}
+                    aria-controls={`part-list-${part.key}`}
+                    onClick={() => togglePart(part.key)}
+                    className="flex w-full items-center gap-1.5 rounded-lg px-2 py-1.5 text-left text-xs font-bold text-[var(--g-ink2)] hover:bg-[var(--g-line)]/40 hover:text-[var(--g-ink)]"
+                  >
+                    {isCollapsed ? (
+                      <ChevronRight
+                        className="h-3.5 w-3.5 shrink-0 text-[var(--g-ink3)]"
+                        aria-hidden="true"
+                      />
+                    ) : (
+                      <ChevronDown
+                        className="h-3.5 w-3.5 shrink-0 text-[var(--g-ink3)]"
+                        aria-hidden="true"
+                      />
+                    )}
+                    <span className="min-w-0 flex-1 truncate">
+                      {part.partLabel && (
+                        <span className="mr-1.5 text-[10.5px] tracking-wider text-[var(--g-ink3)] uppercase">
+                          {part.partLabel}
                         </span>
                       )}
-                    </button>
-
-                    {!isCollapsed && (
-                      <ol id={`part-list-${part.key}`} className="mt-0.5 space-y-0.5 pb-1.5 pl-3">
-                        {list.map((c) => {
-                          const isActive = c.id === activeChapterId;
-                          const isDone = Boolean(state.done[c.id]);
-                          return (
-                            <li key={c.id}>
-                              <Link
-                                href={`/chapters/${c.id}`}
-                                aria-current={isActive ? "page" : undefined}
-                                className={`relative flex items-center gap-2 rounded-lg px-2 py-1.5 text-[13px] leading-snug transition-colors ${
-                                  isActive
-                                    ? "bg-[var(--g-accent-soft)] font-semibold text-[var(--g-accent)]"
-                                    : "text-[var(--g-ink2)] hover:bg-[var(--g-surface)] hover:text-[var(--g-ink)]"
-                                }`}
-                              >
-                                {isActive && (
-                                  <span
-                                    aria-hidden="true"
-                                    className="absolute top-1.5 bottom-1.5 -left-2 w-[3px] rounded-full bg-[var(--g-accent)]"
-                                  />
-                                )}
-                                <span className="min-w-[1.6rem] shrink-0 font-mono text-[11px] tabular-nums text-[var(--g-ink3)]">
-                                  {c.num}
-                                </span>
-                                <span className="min-w-0 flex-1 truncate">{c.short}</span>
-                                {c.kind === "project" && (
-                                  <Flag
-                                    className="h-3 w-3 shrink-0 text-[var(--g-accent)]"
-                                    aria-hidden="true"
-                                  />
-                                )}
-                                {isDone && (
-                                  <Check
-                                    className="h-3.5 w-3.5 shrink-0 text-emerald-600 dark:text-emerald-400"
-                                    aria-hidden="true"
-                                  />
-                                )}
-                              </Link>
-                            </li>
-                          );
-                        })}
-                      </ol>
+                      {part.partTitle}
+                    </span>
+                    {part.key !== "app" && (
+                      <span className="text-[11px] font-medium text-[var(--g-ink3)] tabular-nums">
+                        {pDone}/{list.length}
+                      </span>
                     )}
-                  </div>
-                );
-              })}
-            </nav>
-          )}
+                  </button>
+
+                  {!isCollapsed && (
+                    <ol id={`part-list-${part.key}`} className="mt-0.5 space-y-0.5 pb-1.5 pl-3">
+                      {list.map((c) => {
+                        const isActive = c.id === activeChapterId;
+                        const isDone = Boolean(state.done[c.id]);
+                        return (
+                          <li key={c.id}>
+                            <Link
+                              href={`/chapters/${c.id}`}
+                              aria-current={isActive ? "page" : undefined}
+                              className={`relative flex items-center gap-2 rounded-lg px-2 py-1.5 text-[13px] leading-snug transition-colors ${
+                                isActive
+                                  ? "bg-[var(--g-accent-soft)] font-semibold text-[var(--g-accent)]"
+                                  : "text-[var(--g-ink2)] hover:bg-[var(--g-surface)] hover:text-[var(--g-ink)]"
+                              }`}
+                            >
+                              {isActive && (
+                                <span
+                                  aria-hidden="true"
+                                  className="absolute top-1.5 bottom-1.5 -left-2 w-[3px] rounded-full bg-[var(--g-accent)]"
+                                />
+                              )}
+                              <span className="min-w-[1.6rem] shrink-0 font-mono text-[11px] tabular-nums text-[var(--g-ink3)]">
+                                {c.num}
+                              </span>
+                              <span className="min-w-0 flex-1 truncate">{c.short}</span>
+                              {c.kind === "project" && (
+                                <Flag
+                                  className="h-3 w-3 shrink-0 text-[var(--g-accent)]"
+                                  aria-hidden="true"
+                                />
+                              )}
+                              {isDone && (
+                                <Check
+                                  className="h-3.5 w-3.5 shrink-0 text-emerald-600 dark:text-emerald-400"
+                                  aria-hidden="true"
+                                />
+                              )}
+                            </Link>
+                          </li>
+                        );
+                      })}
+                    </ol>
+                  )}
+                </div>
+              );
+            })}
+          </nav>
         </div>
 
         {/* Footer: reading settings live here on small screens */}

@@ -27,6 +27,13 @@ export interface RouteMeta {
   chapters: string[] | null;
 }
 
+/** The slice of a glossary entry the hover tooltip needs. */
+export interface GlossaryTipItem {
+  key: string;
+  term: string;
+  definitionPlain: string;
+}
+
 export interface GlossaryEntry {
   key: string;
   term: string;
@@ -96,7 +103,13 @@ export type BlockNode =
       lang: string;
       label: string;
       code: string;
-      fullCode?: string;
+      /**
+       * Whether this block has a runnable wrapper (`fullCode`) different from
+       * the visible code. The wrapper itself is fetched on demand from
+       * `GET /api/playground`, because carrying it inside the chapter made the
+       * RSC payload as large as the page itself.
+       */
+      hasFullCode: boolean;
       filename?: string;
       isContinuation: boolean;
       kind: string;
@@ -189,6 +202,29 @@ export interface SearchHit {
   after: string;
 }
 
+/**
+ * The slice of a part the client shell needs: its identity, for the sidebar
+ * heading. The blurb and level are server-side facts and stay out of the
+ * serialised payload.
+ */
+export interface PartNav {
+  key: string;
+  partLabel: string;
+  partTitle: string;
+}
+
+/**
+ * The slice of a chapter the client shell needs: enough to draw a sidebar row,
+ * tick it as read and count progress. Titles and numbering, no prose.
+ */
+export interface ChapterProgressInput {
+  id: string;
+  num: string;
+  part: string;
+  kind: string;
+  short: string;
+}
+
 export interface LoadedGuide {
   parts: PartMeta[];
   routes: RouteMeta[];
@@ -198,5 +234,11 @@ export interface LoadedGuide {
   glossary: Record<string, GlossaryEntry>;
   stats: GuideStats;
   searchIndex: SearchEntry[];
+  /**
+   * Runnable wrappers (`fullCode`) keyed by the SHA-1 of the block they wrap.
+   * Served on demand by `GET /api/playground`, so the wrapper of every listing
+   * is not shipped inside every page that renders it.
+   */
+  wrappers: Record<string, string>;
   warnings: string[];
 }

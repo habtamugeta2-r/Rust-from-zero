@@ -1,5 +1,5 @@
 @id generics
-@part p3
+@part p3b
 @title Generics: code that works for many types
 @short Generics
 @level intermediate
@@ -272,9 +272,9 @@ Grid { cells: [[0, 0, 0], [0, 0, 0]] }
 :::quiz Check your understanding
 ? What does the `<T>` in `fn first<T>(list: &[T]) -> &T` declare?
 - A variable called `T`
-+ A type parameter: a placeholder for a type that is chosen at each call
 - A trait
 - A constant
++ A type parameter: a placeholder for a type that is chosen at each call
 = `T` stands for a type. Each call of `first` fills it in, for example with `i32` or `String`.
 
 ? Why does this function not compile?
@@ -283,9 +283,9 @@ fn double<T>(x: T) -> T {
     x + x
 }
 ```
++ Not every type supports `+`. A trait bound is needed that guarantees `T` can be added
 - Generic functions cannot return values
 - `T` must be written as `i32`
-+ Not every type supports `+`. A trait bound is needed that guarantees `T` can be added
 - `x` is used twice
 = Without a bound, `T` could be any type, and the compiler only allows operations that every type has. The bound `T: std::ops::Add<Output = T> + Copy` would make it work.
 
@@ -298,8 +298,8 @@ fn double<T>(x: T) -> T {
 
 ? Which line uses the turbofish correctly?
 - `let n = "5".parse<i32>().unwrap();`
-+ `let n = "5".parse::<i32>().unwrap();`
 - `let n = "5".parse(i32).unwrap();`
++ `let n = "5".parse::<i32>().unwrap();`
 - `let n = "5".<i32>parse().unwrap();`
 = The type goes after `::` and inside angle brackets, between the function name and the parentheses.
 :::

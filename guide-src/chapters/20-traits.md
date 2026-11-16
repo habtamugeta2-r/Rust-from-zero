@@ -1,9 +1,9 @@
 @id traits
-@part p3
+@part p3b
 @title Traits: shared behaviour
 @short Traits
 @level intermediate
-@time 55
+@time 50
 @learn Define a trait and implement it for your own types | Write functions that accept any type with a certain ability | Use the standard traits (`Debug`, `Display`, `Clone`, `PartialEq`, `Ord`, `Default`, `From`) | Store values of different types together with `dyn Trait` | Explain how traits replace inheritance
 
 Two different types may support the same operation without sharing a common parent class. A **trait** names a set of behaviour that types can implement. Rust uses traits for familiar operations such as formatting and comparison, and generic functions can require the traits they need through bounds. This chapter builds from implementations to trait bounds and dynamic dispatch.
@@ -192,7 +192,7 @@ The real type returned here is long and awkward to write. The caller only needs 
 
 ### What the returned type is allowed to borrow: `use<…>`
 
-An `impl Trait` return type is an opaque type, and an opaque type has to say which lifetimes it depends on. Since the **2024 edition** the rule is the simple one: **the hidden type may capture every lifetime in scope**. Before 2024 it captured only the ones it obviously needed, which caused the opposite problem — a returned iterator that *did* borrow something failed to compile until you added a lifetime nobody could see in the signature.
+An `impl Trait` return type is an opaque type, and an opaque type has to say which lifetimes it depends on. Since the **2024 edition** the rule is the simple one: **the hidden type may capture every lifetime in scope**. Before 2024 it captured only the ones the body used, which caused the opposite problem — a returned iterator that *did* borrow something failed to compile until you added a lifetime nobody could see in the signature.
 
 The new rule is easier to explain and occasionally too generous: capturing a lifetime ties the returned value to a borrow it does not really need. When that happens, say precisely what the return type captures with a `use<…>` list — an empty `use<>` means "captures nothing":
 
@@ -221,7 +221,7 @@ Without `use<>`, edition 2024 would make the return type depend on the borrow of
 
 Two rules of thumb:
 
-- **You rarely need to write `use<…>`.** Write it when the compiler complains that a value is borrowed for too long, or when you are returning a closure or iterator that obviously owns everything it uses.
+- **You rarely need to write `use<…>`.** Write it when the compiler complains that a value is borrowed for too long, or when you are returning a closure or iterator that owns everything it uses.
 - **List what the type really needs.** `use<'a>` for one lifetime, `use<'a, T>` when a generic type parameter is also involved. In edition 2024 all type parameters are captured by default, so a `use<…>` list must mention every type parameter the hidden type uses — the compiler checks this and tells you which one is missing.
 
 
@@ -547,14 +547,14 @@ fn main() {
 :::quiz Check your understanding
 ? What does a trait definition contain?
 - The fields that a struct must have
-+ The methods that a type must provide to have a certain ability, optionally with default bodies
 - A list of types
 - Variables that are shared between types
++ The methods that a type must provide to have a certain ability, optionally with default bodies
 = A trait describes behaviour: method signatures, some of which may come with a default implementation. It never contains fields.
 
 ? What does the parameter `item: &impl Summary` accept?
-- Only values of a type called `Summary`
 + A reference to a value of any type that implements the trait `Summary`
+- Only values of a type called `Summary`
 - Any value at all
 - Only trait objects
 = `impl Trait` in a parameter is shorthand for a generic type parameter with that trait bound.
@@ -575,9 +575,9 @@ fn main() {
 
 ? When do you need `Box<dyn Shape>` and not a generic `T: Shape`?
 - When speed matters most
-+ When one collection has to hold values of different types that all implement `Shape`
 - When the trait has default methods
 - Always. Generics do not work with traits
++ When one collection has to hold values of different types that all implement `Shape`
 = A `Vec<T>` holds one type. Trait objects let each element be a different concrete type, at the cost of a run-time lookup per call.
 :::
 

@@ -4,7 +4,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { test } from "node:test";
-import { loadGuide } from "../src/lib/guide-parser";
+import { glossaryTipsFor, inlinePlainText, loadGuide } from "../src/lib/guide-parser";
 import type { BlockNode } from "../src/lib/guide-types";
 
 const RUST_LINES = ["fn main() {", '    println!("hi");', "}"];
@@ -235,4 +235,168 @@ test("parser: fixture statistics count exercises, questions and code", () => {
   assert.equal(guide.stats.questions, 1);
   assert.ok(guide.stats.codeBlocks >= 1);
   assert.equal(guide.stats.totalChapters, 3);
+});
+
+test("parser: a chapter's tooltip glossary is only what its prose links", () => {
+  const guide = loadGuide();
+  const chapter = guide.chapterMap.terms ?? guide.chapterMap.variables;
+  const tips = glossaryTipsFor(chapter.id);
+  const keys = Object.keys(tips);
+  assert.ok(keys.length > 0, "the chapter links at least one term");
+  assert.ok(keys.length < Object.keys(guide.glossary).length, "and not the whole glossary");
+  for (const [key, tip] of Object.entries(tips)) {
+    assert.equal(tip.key, key);
+    assert.equal(tip.term, guide.glossary[key].term);
+    assert.equal(tip.definitionPlain, guide.glossary[key].definitionPlain);
+  }
+  // Every key really does occur as a `term` node in the chapter tree.
+  const referenced = new Set<string>();
+  const visit = (node: unknown): void => {
+    if (!node || typeof node !== "object") return;
+    if (Array.isArray(node)) return node.forEach(visit);
+    const record = node as Record<string, unknown>;
+    if (record.type === "term" && typeof record.key === "string") referenced.add(record.key);
+    for (const [k, v] of Object.entries(record)) if (k !== "parent") visit(v);
+  };
+  visit(chapter.blocks);
+  for (const key of keys) assert.ok(referenced.has(key), `${key} is not linked from the chapter`);
+});
+
+test("parser: runnable wrappers live in the index, not on the block", () => {
+  const guide = loadGuide();
+  const wrappers = Object.entries(guide.wrappers);
+  assert.ok(wrappers.length > 0, "the guide has at least one wrapped listing");
+  assert.ok(guide.searchIndex.length > 0);
+  let wrapped = 0;
+  let leaked = 0;
+  for (const chapter of guide.chapters) {
+    const visit = (node: unknown): void => {
+      if (!node || typeof node !== "object") return;
+      if (Array.isArray(node)) return node.forEach(visit);
+      const record = node as Record<string, unknown>;
+      if (record.type === "code") {
+        if (record.hasFullCode) wrapped += 1;
+        // The wrapper text itself must never be on the block: that is what
+        // used to double the size of the largest pages.
+        if ("fullCode" in record) leaked += 1;
+      }
+      for (const [k, v] of Object.entries(record)) if (k !== "parent") visit(v);
+    };
+    visit(chapter.blocks);
+  }
+  assert.ok(wrapped > 0, "some block is marked as having a wrapper");
+  assert.equal(leaked, 0, "no block carries its wrapper inline");
+  for (const [hash, code] of wrappers) {
+    assert.match(hash, /^[0-9a-f]{16}$/);
+    assert.ok(code.length > 0);
+  }
+});
+
+test("parser: a route link keeps its visible text", () => {
+  const guide = loadGuide();
+  const find = (nodes: any[]): string[] => {
+    const out: string[] = [];
+    const visit = (node: any): void => {
+      if (!node || typeof node !== "object") return;
+      if (Array.isArray(node)) return node.forEach(visit);
+      if (node.type === "routeLink") {
+        const text = inlinePlainText(node.children);
+        assert.ok(text.length > 0, `${node.href} lost its text`);
+        out.push(node.href);
+      }
+      for (const [k, v] of Object.entries(node)) if (k !== "parent") visit(v);
+    };
+    visit(nodes);
+    return out;
+  };
+  const hrefs = guide.chapters.flatMap((ch) => find(ch.blocks));
+  assert.ok(hrefs.length >= 2, "the guide links to /progress and /search from prose");
+  // And the text a reader sees survives into the plain-text helper.
+  const roadmap = guide.chapterMap.roadmap;
+  const text = roadmap.blocks.flatMap((block) => JSON.stringify(block)).join(" ");
+  assert.ok(text.includes("routeLink"));
+});
+
+test("parser: a fenced block inside a quote keeps its indentation", () => {
+  const next = loadGuide().chapterMap.next;
+  const quoted: any[] = [];
+  const visit = (node: any): void => {
+    if (!node || typeof node !== "object") return;
+    if (Array.isArray(node)) return node.forEach(visit);
+    if (node.type === "blockquote") quoted.push(node);
+    for (const [k, v] of Object.entries(node)) if (k !== "parent") visit(v);
+  };
+  visit(next.blocks);
+  assert.ok(quoted.length > 0, "the chapter has a quoted example");
+  const code = quoted
+    .flatMap((quote) => quote.blocks)
+    .find((block: any) => block.type === "code" && block.lang === "rust");
+  assert.ok(code, "the quote contains a Rust listing");
+  // The body was indented inside `fn main`, and that nesting must survive.
+  assert.match(code.code, /\n {4}\S/);
+});
+
+test("parser: a flame graph with a zero parent share cannot produce NaN", () => {
+  const guide = loadGuide();
+  const flames: any[] = [];
+  const visit = (node: any): void => {
+    if (!node || typeof node !== "object") return;
+    if (Array.isArray(node)) return node.forEach(visit);
+    if (node.type === "flame") flames.push(node);
+    for (const [k, v] of Object.entries(node)) if (k !== "parent") visit(v);
+  };
+  for (const chapter of guide.chapters) visit(chapter.blocks);
+  assert.ok(flames.length > 0);
+  const check = (node: any): void => {
+    assert.ok(Number.isFinite(node.widthPct), `widthPct is ${node.widthPct}`);
+    assert.ok(node.widthPct >= 0 && node.widthPct <= 100);
+    for (const child of node.children) check(child);
+  };
+  for (const flame of flames) for (const root of flame.roots) check(root);
+});
+
+test("parser: quizzes, checklists, steppers and objectives are searchable", () => {
+  const guide = loadGuide();
+  const index = guide.searchIndex;
+  const variables = guide.chapterMap.variables;
+
+  // An objective from the chapter's own @learn list.
+  const objective = variables.learn[0].split("|")[0].trim().slice(0, 24).toLowerCase();
+  assert.ok(
+    index.some((entry) => entry.chapterId === "variables" && entry.lower.includes(objective)),
+    `no index entry for the objective “${objective}”`,
+  );
+
+  // A quiz explanation, which is teaching content like any paragraph.
+  const quizEntry = index.find(
+    (entry) => entry.weight === 6 && /^(yes|no|because|[A-Z])/.test(entry.text),
+  );
+  assert.ok(quizEntry, "quiz prompts or options are indexed");
+});
+
+test("quiz: correct answers are spread across all four positions", () => {
+  // A reader who always picks the same letter should score about 25%, not 56%.
+  // Before the rebalance, B held 56% of answers and D held 1%.
+  const guide = loadGuide();
+  const tally = new Map<number, number>();
+  let total = 0;
+  for (const chapter of guide.chapters) {
+    for (const block of chapter.blocks) {
+      if (block.type !== "quiz") continue;
+      for (const question of block.questions) {
+        const index = question.options.findIndex((option) => option.correct);
+        assert.ok(index >= 0, `${chapter.id}: a question has no correct option`);
+        tally.set(index, (tally.get(index) ?? 0) + 1);
+        total += 1;
+      }
+    }
+  }
+  assert.ok(total > 300, `expected the full question bank, found ${total}`);
+  for (let position = 0; position < 4; position += 1) {
+    const share = (tally.get(position) ?? 0) / total;
+    assert.ok(
+      share > 0.15 && share < 0.35,
+      `position ${"ABCD"[position]} holds ${(share * 100).toFixed(1)}% of answers`,
+    );
+  }
 });

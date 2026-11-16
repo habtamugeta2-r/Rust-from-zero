@@ -195,7 +195,7 @@ fn main() {
         String::from("Lena"),
     ];
 
-    let borrowed = &names[0];             // 1. just look at it
+    let borrowed = &names[0];             // 1. look at it
     println!("{borrowed}");
 
     let copy = names[0].clone();          // 2. make a copy
@@ -571,9 +571,9 @@ The ideas are the same everywhere. Rust's versions differ in three ways: every e
 
 :::quiz Check your understanding
 ? What is the difference between `v[10]` and `v.get(10)` on a vector with 3 elements?
++ `v[10]` panics, and `v.get(10)` returns `None`
 - There is none
 - `v[10]` returns `None` and `v.get(10)` panics
-+ `v[10]` panics, and `v.get(10)` returns `None`
 - Both return 0
 = Indexing is for cases where an invalid index is a bug. `get` returns an `Option`, so the program can handle a missing element.
 
@@ -594,13 +594,13 @@ The ideas are the same everywhere. Rust's versions differ in three ways: every e
 ? You need to print names in alphabetical order with a number for each. Which collection gives you that order without sorting?
 - `HashMap<String, u32>`
 - `HashSet<String>`
-+ `BTreeMap<String, u32>`
 - `VecDeque<String>`
++ `BTreeMap<String, u32>`
 = A `BTreeMap` always keeps its keys sorted. A `HashMap` returns its pairs in an arbitrary order.
 
 ? Why does `let s = names[0];` not compile for a `Vec<String>`?
-- Indexing is not allowed on vectors of strings
 + It would move the `String` out of the vector and leave a hole. The vector owns its elements
+- Indexing is not allowed on vectors of strings
 - `names` must be mutable
 - Strings cannot be stored in variables
 = Moving out by index is forbidden for non-`Copy` types. Borrow with `&names[0]`, copy with `.clone()`, or take the element out with `remove` or `pop`.

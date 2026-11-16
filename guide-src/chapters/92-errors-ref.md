@@ -4,7 +4,7 @@
 @title Compiler errors and how to repair them
 @short Compiler errors
 @level all
-@time 10
+@time 15
 
 When Rust rejects a program, its diagnostic usually points to a location and may include a suggested repair. This reference explains a selection of common compiler errors: the code that triggers each one, what the message means, and ways to resolve it. Search by error code, such as `E0382`, or by the term you are trying to understand.
 
@@ -317,8 +317,8 @@ The closure borrows `name`, and a new thread may run longer than the function th
 **Repairs:**
 
 - `move`: `thread::spawn(move || …)` gives the closure ownership.
-- To share with several threads: `Arc::clone` for each one, then `move` ([chapter 56](#shared-state)).
-- To really borrow: `thread::scope` ([chapter 55](#threads)).
+- To share with several threads: `Arc::clone` for each one, then `move` ([chapter 59](#shared-state)).
+- To really borrow: `thread::scope` ([chapter 58](#threads)).
 
 ## Types and traits
 
@@ -367,7 +367,7 @@ An operation needs a trait that the type does not have. This one code covers man
 - "the `?` operator can only be used in a function that returns `Result`": give the function (also `main`) the return type `Result<(), Box<dyn std::error::Error>>`.
 - "cannot add a float to an integer": convert one side, `count as f64 + 2.5`.
 - "the trait bound `T: …` is not satisfied": add the bound to your generic function ([chapter 24](#generics)).
-- "cannot be sent between threads safely": an `Rc` or `RefCell` crossed a thread. Use `Arc` and `Mutex` ([chapter 56](#shared-state)).
+- "cannot be sent between threads safely": an `Rc` or `RefCell` crossed a thread. Use `Arc` and `Mutex` ([chapter 59](#shared-state)).
 - "the size … cannot be known at compilation time": a `str` or `[T]` without `&`, or a `dyn Trait` without `Box`.
 
 ### E0599: no method with this name
@@ -452,7 +452,7 @@ Rust has no optional parameters and no default values for them.
 **Repairs:**
 
 - Pass every argument.
-- For optional settings: an `Option<T>` parameter, a struct of options with `Default`, or a builder ([chapter 40](#idioms)).
+- For optional settings: an `Option<T>` parameter, a struct of options with `Default`, or a builder ([chapter 43](#idioms)).
 
 ## Names, modules and privacy
 
@@ -661,7 +661,7 @@ The function has requirements that the compiler cannot check, and the caller mus
 
 **Repairs:**
 
-- `unsafe { danger(); }`, with a `// SAFETY:` comment that says why the requirements hold ([chapter 36](#unsafe)).
+- `unsafe { danger(); }`, with a `// SAFETY:` comment that says why the requirements hold ([chapter 39](#unsafe)).
 
 ### E0728: `await` outside async code
 
@@ -683,7 +683,7 @@ fn main() {
 **Repairs:**
 
 - Make the calling function `async`.
-- At the top: `#[tokio::main] async fn main()`, or `runtime.block_on(…)` ([chapter 57](#async)).
+- At the top: `#[tokio::main] async fn main()`, or `runtime.block_on(…)` ([chapter 60](#async)).
 - An async function that calls itself gives E0733: put the inner call in `Box::pin(…)`.
 
 ## Messages without a code
@@ -715,4 +715,4 @@ A warning does not stop the build, and it is nearly always right.
 | `value assigned … is never read` | the variable is overwritten before anyone looks at it |
 | `unused comparison`, `comparison is useless` | a test that is always true or always false, such as `x >= 0` for an unsigned number |
 
-`cargo clippy` adds several hundred more checks of this kind ([chapter 71](#quality-tools)).
+`cargo clippy` adds several hundred more checks of this kind ([chapter 36](#quality-tools)).

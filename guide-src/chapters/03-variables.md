@@ -3,7 +3,7 @@
 @title Variables: giving names to values
 @short Variables and mutability
 @level beginner
-@time 25
+@time 40
 @learn Store a value under a name with `let` and use it | Explain why Rust variables cannot change unless you write `mut` | Use shadowing, scopes and constants correctly | Read the compiler errors that variables cause
 
 When a value is used more than once, repeating it by hand makes changes error-prone. A variable gives a value a name so later code can refer to it. In Rust, `let` creates a binding; the value's type is checked, and the binding is immutable unless you explicitly choose `mut`. This chapter starts with those rules and builds towards scopes and constants.
@@ -311,8 +311,8 @@ let lives = 3;
 lives = lives - 1;
 ```
 - Nothing. It sets `lives` to 2
-- `lives - 1` is not allowed
 + `lives` is immutable, so it cannot be given a new value. It needs `let mut`
+- `lives - 1` is not allowed
 - The variable name is too short
 = Variables are immutable unless declared with `let mut`. The compiler reports error E0384 and suggests adding `mut`.
 
@@ -328,22 +328,22 @@ fn main() {
 }
 ```
 - `2`
-+ `4`
 - `104`
++ `4`
 - It does not compile
 = The second `let` shadows `n` with 2 × 2 = 4. The `let` inside the block creates another `n` (104), but that one disappears when the block ends. Outside, `n` is still 4. (The compiler will warn that the inner `n` is never used.)
 
 ? Which name follows Rust's style for a normal variable?
 - `PlayerScore`
 - `playerScore`
-+ `player_score`
 - `PLAYER_SCORE`
++ `player_score`
 = Variables use snake_case. `SCREAMING_SNAKE_CASE` is for constants, and the capitalised styles are used for other things you will meet later.
 
 ? When should you use `const` instead of `let`?
++ When the value is fixed for the whole program and known before the program runs
 - Whenever a variable is not `mut`
 - When the value is a number
-+ When the value is fixed for the whole program and known before the program runs
 - Never. `const` is only kept for old programs
 = A constant is for a value that is the same in every run, such as a conversion factor or a limit. An immutable `let` variable can still get a different value each time the program runs, for example from user input.
 :::

@@ -433,9 +433,9 @@ Older mainstream languages have only a `switch` statement, which compares a valu
 
 :::quiz Check your understanding
 ? Which pattern can be used in a plain `let` statement without `else`?
++ `(a, b)`
 - `Some(x)`
 - `Ok(value)`
-+ `(a, b)`
 - `[first]` on a slice
 = A plain `let` needs a pattern that always fits. A tuple pattern fits every tuple of that size. The others can fail to fit, so they need `if let`, `match` or `let … else`.
 
@@ -456,16 +456,16 @@ match n {
 
 ? Why does `match &name { Some(n) => ... }` leave `name` usable afterwards, when `name` is an `Option<String>`?
 - Because `String` is `Copy`
-+ Because matching on a reference binds `n` as a reference, so nothing is moved out
 - Because `match` always clones
++ Because matching on a reference binds `n` as a reference, so nothing is moved out
 - It does not. `name` is moved
 = Matching through `&name` only borrows. The bound names become references to the parts.
 
 ? What does the pattern `[first, .., last]` fit?
 - Only slices with exactly two elements
 - Slices of any length, including empty ones
-+ Slices with at least two elements
 - Only arrays, not slices
++ Slices with at least two elements
 = `first` and `last` each need an element, and `..` stands for zero or more elements in between.
 :::
 

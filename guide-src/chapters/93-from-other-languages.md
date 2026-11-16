@@ -47,8 +47,8 @@ What will surprise you:
 - **Types everywhere, but rarely written.** The compiler works most of them out. You write them in function signatures.
 - **Integers have a size** and can overflow. `7 / 2` is `3`, and `7.0 / 2.0` is `3.5`. An integer and a float cannot be mixed without `as`.
 - **`text[0]` does not exist.** A string is UTF-8, and a character can take several bytes ([chapter 16](#slices-strings)).
-- **No default values for parameters and no keyword arguments.** Use `Option`, a struct of options, or a builder ([chapter 40](#idioms)).
-- **Speed.** A loop in Rust runs at the speed of C. You no longer need a library written in another language for the heavy parts, and you can write such a library for Python yourself with PyO3 ([chapter 37](#ffi)).
+- **No default values for parameters and no keyword arguments.** Use `Option`, a struct of options, or a builder ([chapter 43](#idioms)).
+- **Speed.** A loop in Rust runs at the speed of C. You no longer need a library written in another language for the heavy parts, and you can write such a library for Python yourself with PyO3 ([chapter 40](#ffi)).
 
 ## From JavaScript and TypeScript
 
@@ -101,7 +101,7 @@ What will surprise you:
 - **There is no base class to put shared code in.** See the worked example below.
 - **Values are not references by default.** A struct sits directly where it is declared, on the stack or inside another struct. A heap allocation is something you ask for, with `Box`, `Vec` or `String`.
 - **No run time to start, and nothing to install on the target machine.** The result of a build is one program file.
-- **Dependency injection frameworks are rare.** Pass what a function needs as a parameter, as a trait if tests need a fake ([chapter 72](#testing-strategies)).
+- **Dependency injection frameworks are rare.** Pass what a function needs as a parameter, as a trait if tests need a fake ([chapter 37](#testing-strategies)).
 
 ## From C and C++
 
@@ -129,7 +129,7 @@ What will surprise you:
 - **The borrow checker rejects patterns that you know to be correct**, such as two pointers into the same structure. Some need a different design (indices in place of pointers), some need `Rc<RefCell<T>>`, and a few really need `unsafe` behind a safe interface.
 - **Integer overflow is defined**: a panic in debug builds, wrapping in release builds. The conversion rules are explicit, with no silent promotion.
 - **No copy constructors.** A copy that costs something is always visible as `.clone()`.
-- **You can keep your C and C++ code.** Rust calls it and can be called from it ([chapter 37](#ffi)).
+- **You can keep your C and C++ code.** Rust calls it and can be called from it ([chapter 40](#ffi)).
 
 ## From Go
 
@@ -267,6 +267,6 @@ The other three words of object-oriented programming translate like this:
 | catching every exception at the top | return `Result`, add context on the way up, report once in `main` |
 | a base class "for later" | start with plain structs and functions; add a trait when a second kind appears |
 | getters and setters for every field | public fields for plain data; private fields and methods where a rule must hold |
-| cloning or locking everything until it compiles | ask who should own the data ([chapter 40](#idioms)) |
+| cloning or locking everything until it compiles | ask who should own the data ([chapter 43](#idioms)) |
 
 Keep: small functions, clear names, tests, code review, and measuring before optimising. Those are the same in every language.

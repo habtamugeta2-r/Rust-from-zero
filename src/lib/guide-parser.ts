@@ -11,6 +11,7 @@ import type {
   ChapterSummary,
   FlameNode,
   GlossaryEntry,
+  GlossaryTipItem,
   HeadingItem,
   InlineNode,
   LoadedGuide,
@@ -61,6 +62,12 @@ interface ParseCtx {
   capturedDir: string;
   /** Directory figure images must exist in (a fixture in tests). */
   publicDir: string;
+  /**
+   * Runnable wrappers, keyed by the SHA-1 of the code block they belong to.
+   * Collected here rather than stored on the block so the chapter payload a
+   * browser receives carries only the code it renders.
+   */
+  wrappers?: Map<string, string>;
 }
 
 function slugify(text: string): string {
@@ -109,8 +116,18 @@ export function inlinePlainText(nodes: InlineNode[]): string {
         case "strong":
         case "em":
         case "internalLink":
+        case "routeLink":
         case "externalLink":
           return inlinePlainText(n.children);
+        default:
+          // A node type this function has not been taught yet must not put the
+          // word "undefined" into a page, a search snippet or an aria-label:
+          // it degrades to its own text where it has any, and to nothing
+          // otherwise. `routeLink` used to fall out of this switch entirely and
+          // every link to /progress or /search became an empty string.
+          return typeof (n as { text?: unknown }).text === "string"
+            ? (n as { text: string }).text
+            : "";
       }
     })
     .join("");
@@ -325,7 +342,10 @@ function renderFlame(caption: string, lines: string[], ctx: ParseCtx): BlockNode
   const convert = (node: RawNode, parentPct: number): FlameNode => {
     counter += 1;
     const hue = 8 + ((counter * 23) % 40);
-    const widthPct = Math.min(100, (100 * node.pct) / parentPct);
+    // A zero or missing parent share would make this Infinity or NaN, and the
+    // bar would be rendered with a `width: NaN%` style.
+    const share = parentPct > 0 ? node.pct / parentPct : 0;
+    const widthPct = Math.max(0, Math.min(100, 100 * share));
     return {
       id: `fl-${counter}`,
       label: node.label,
@@ -344,6 +364,11 @@ function renderFlame(caption: string, lines: string[], ctx: ParseCtx): BlockNode
   };
 }
 
+/** SHA-1 (16 hex characters) of a code block's raw text: its capture key. */
+export function codeHash(raw: string): string {
+  return crypto.createHash("sha1").update(raw, "utf8").digest("hex").slice(0, 16);
+}
+
 function renderCode(info: string, rawLines: string[], ctx: ParseCtx): BlockNode {
   const parts = info.trim() ? info.trim().split(/\s+/) : [];
   const lang = parts[0] || "text";
@@ -360,14 +385,12 @@ function renderCode(info: string, rawLines: string[], ctx: ParseCtx): BlockNode 
   const isContinuation = Boolean(filename && flags.includes("cont"));
   const kind = flags.find((f) => CHECK_FLAGS.has(f)) ?? "";
   let lines = [...rawLines];
-  let fullCode: string | undefined;
+  // The runnable wrapper is kept in the index below, not on the block: see the
+  // comment on `hasFullCode` in guide-types.ts.
+  let wrapper: string | undefined;
 
   if (lang === "rust") {
-    ctx.lastHash = crypto
-      .createHash("sha1")
-      .update(rawLines.join("\n"), "utf8")
-      .digest("hex")
-      .slice(0, 16);
+    ctx.lastHash = codeHash(rawLines.join("\n"));
     const hidden = rawLines.some((l) => {
       const st = l.trimStart();
       return st === "#" || st.startsWith("# ");
@@ -398,7 +421,7 @@ function renderCode(info: string, rawLines: string[], ctx: ParseCtx): BlockNode 
           .join("\n");
         full = `fn main() {\n${indented}\n}`;
       }
-      fullCode = full;
+      wrapper = full;
     }
     lines = visibleRust(rawLines);
   }
@@ -445,12 +468,16 @@ function renderCode(info: string, rawLines: string[], ctx: ParseCtx): BlockNode 
     ctx.stats.code += 1;
   }
 
+  if (wrapper !== undefined) {
+    ctx.wrappers?.set(ctx.lastHash, wrapper);
+  }
+
   return {
     type: "code",
     lang,
     label,
     code,
-    fullCode,
+    hasFullCode: wrapper !== undefined,
     filename,
     isContinuation,
     kind,
@@ -962,7 +989,12 @@ function parseBlocks(lines: string[], ctx: ParseCtx): BlockNode[] {
       const buf: string[] = [];
       let j = i;
       while (j < n && lines[j].trim().startsWith(">")) {
-        buf.push(lines[j].trim().slice(1).trimStart());
+        // Strip the marker and at most the one space that follows it. Using
+        // `trimStart()` here ate the indentation of fenced code inside a
+        // quote, so a quoted Rust listing came out flush left and its nesting
+        // disappeared.
+        const quoted = lines[j].replace(/^\s*> ?/, "");
+        buf.push(quoted);
         j += 1;
       }
       out.push({ type: "blockquote", blocks: parseBlocks(buf, ctx) });
@@ -984,6 +1016,28 @@ function parseBlocks(lines: string[], ctx: ParseCtx): BlockNode[] {
   }
 
   return out;
+}
+
+/** Append one index entry when the text is worth searching for. */
+function pushSearchEntry(
+  out: SearchEntry[],
+  ch: RawChapter,
+  heading: { anchor: string; text: string },
+  text: string,
+  weight: number,
+): void {
+  const clean = text.trim();
+  if (clean.length < 3) return;
+  out.push({
+    chapterId: ch.id,
+    num: ch.num,
+    chapterTitle: ch.title,
+    anchor: heading.anchor,
+    heading: heading.text,
+    text: clean,
+    lower: clean.toLowerCase(),
+    weight,
+  });
 }
 
 function collectSearchEntries(
@@ -1078,7 +1132,10 @@ function collectSearchEntries(
       case "list":
         for (const item of b.items) {
           const text = inlinePlainText(item.children);
-          if (text.length >= 3 && item.blocks.length === 0) {
+          // An item with nested blocks used to be skipped entirely, so a list
+          // whose bullets continued with paragraphs or code vanished from the
+          // index. Index the item's own text and then walk what follows it.
+          if (text.length >= 3) {
             out.push({
               chapterId: ch.id,
               num: ch.num,
@@ -1102,6 +1159,48 @@ function collectSearchEntries(
         collectSearchEntries(b.body, ch, out, curHeading);
         if (b.hint) collectSearchEntries(b.hint, ch, out, curHeading);
         if (b.solution) collectSearchEntries(b.solution, ch, out, curHeading);
+        break;
+      case "quiz":
+        for (const question of b.questions) {
+          pushSearchEntry(
+            out,
+            ch,
+            curHeading,
+            question.prompt
+              .map((block) => (block.type === "paragraph" ? inlinePlainText(block.children) : ""))
+              .join(" "),
+            6,
+          );
+          for (const option of question.options) {
+            pushSearchEntry(out, ch, curHeading, inlinePlainText(option.children), 4);
+          }
+          for (const block of question.explanation) {
+            collectSearchEntries([block], ch, out, curHeading);
+          }
+        }
+        break;
+      case "checklist":
+        for (const item of b.items) {
+          pushSearchEntry(out, ch, curHeading, inlinePlainText(item.children), 6);
+        }
+        break;
+      case "stepper":
+        // The step notes are the teaching content; the code is already covered
+        // by the block's own listing above it.
+        pushSearchEntry(out, ch, curHeading, inlinePlainText(b.title), 8);
+        for (const step of b.steps) {
+          pushSearchEntry(out, ch, curHeading, inlinePlainText(step.note), 6);
+        }
+        break;
+      case "flame":
+        pushSearchEntry(out, ch, curHeading, inlinePlainText(b.caption), 6);
+        for (const root of b.roots) {
+          const visit = (node: typeof root): void => {
+            pushSearchEntry(out, ch, curHeading, `${node.label} ${node.long}`, 4);
+            for (const child of node.children) visit(child);
+          };
+          visit(root);
+        }
         break;
       case "glossary":
         for (const entry of b.entries) {
@@ -1298,7 +1397,11 @@ export function loadGuide(forceReload = false, rootDir?: string): LoadedGuide {
     file: ch.file,
   }));
 
+  /** Every runnable wrapper in the guide, keyed by its code hash. */
+  const codeIndex: Record<string, string> = {};
+
   const chapters: ChapterData[] = rawChapters.map((ch, idx) => {
+    const wrappersForChapter = new Map<string, string>();
     const ctx: ParseCtx = {
       id: ch.id,
       slugs: new Set(),
@@ -1314,8 +1417,10 @@ export function loadGuide(forceReload = false, rootDir?: string): LoadedGuide {
       links,
       warnings,
       stats,
+      wrappers: wrappersForChapter,
     };
     const blocks = parseBlocks(ch.lines, ctx);
+    for (const [hash, code] of wrappersForChapter) codeIndex[hash] = code;
     const learnNodes = ch.learn.map((item) => splitMarkdownInline(item, ctx));
     const summary = summaries[idx];
     return {
@@ -1359,6 +1464,12 @@ export function loadGuide(forceReload = false, rootDir?: string): LoadedGuide {
       lower: ch.title.toLowerCase(),
       weight: 30,
     });
+    // The objectives shown at the top of every chapter are part of what the
+    // chapter teaches, and a reader often remembers the goal rather than the
+    // heading. They carry the chapter title's weight, not a paragraph's.
+    for (const objective of ch.learnNodes) {
+      pushSearchEntry(searchIndex, raw, { anchor: "", text: "" }, inlinePlainText(objective), 12);
+    }
     collectSearchEntries(ch.blocks, raw, searchIndex, { anchor: "", text: "" });
   }
 
@@ -1388,6 +1499,7 @@ export function loadGuide(forceReload = false, rootDir?: string): LoadedGuide {
       totalMinutes,
     },
     searchIndex,
+    wrappers: codeIndex,
     warnings,
   };
 
@@ -1399,4 +1511,46 @@ export function loadGuide(forceReload = false, rootDir?: string): LoadedGuide {
 
 export function loadChapter(id: string): ChapterData | undefined {
   return loadGuide().chapterMap[id];
+}
+
+/**
+ * The glossary terms a chapter actually links, in the shape the tooltip needs.
+ *
+ * The root layout used to pass all 258 definitions into every page's RSC
+ * payload. A page only needs the terms its own prose marks with `[[…]]`, which
+ * for most chapters is a few dozen and for some is none.
+ */
+export function glossaryTipsFor(chapterId: string): Record<string, GlossaryTipItem> {
+  const guide = loadGuide();
+  const chapter = guide.chapterMap[chapterId];
+  const out: Record<string, GlossaryTipItem> = {};
+  if (!chapter) return out;
+
+  const visit = (node: unknown): void => {
+    if (!node || typeof node !== "object") return;
+    if (Array.isArray(node)) {
+      for (const child of node) visit(child);
+      return;
+    }
+    const record = node as Record<string, unknown>;
+    if (record.type === "term" && typeof record.key === "string") {
+      const entry = guide.glossary[record.key];
+      if (entry && !out[entry.key]) {
+        out[entry.key] = {
+          key: entry.key,
+          term: entry.term,
+          definitionPlain: entry.definitionPlain,
+        };
+      }
+      return;
+    }
+    for (const [key, value] of Object.entries(record)) {
+      if (key === "parent") continue;
+      visit(value);
+    }
+  };
+
+  visit(chapter.blocks);
+  visit(chapter.learnNodes);
+  return out;
 }

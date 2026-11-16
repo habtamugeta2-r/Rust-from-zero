@@ -51,6 +51,7 @@ function chapter(id: string, file: string, patch: ChapterPatch = {}): any {
   const isB = id === "b";
   return {
     id,
+    num: isB ? "2" : "1",
     file,
     kind: "chapter",
     title: `Title ${id}`,
@@ -380,4 +381,112 @@ test("lint: docs/stats fires on a stale README and is silent on a true one", () 
     readmePath,
   });
   assert.ok(!fresh.includes("docs/stats"), `unexpected docs/stats: ${fresh}`);
+});
+
+test("lint: link/chapter-number reads the raw markdown, not the parsed label", () => {
+  // The parser rewrites `[Chapter 6](#control-flow)` to the live number while it
+  // builds the AST, so an AST-level check can never see a stale label. This
+  // exercises the raw-source path that actually catches them.
+  const guide = cleanGuide({
+    blocks: [
+      { type: "callout", kind: "recap", blocks: [] },
+      { type: "quiz", quizId: "a-q1", questions: [{}] },
+      { type: "exercise", exerciseId: "a-x1" },
+    ],
+  });
+  const source = (label: string) => `# A\n\nSee [${label}](#b).\n`;
+  const rulesForSource = (label: string): string[] => {
+    const fx = makeFixture({ "01-a.md": source(label) });
+    return rulesFor(guide, fx);
+  };
+  assert.ok(rulesForSource("Chapter 9").includes("link/chapter-number"));
+  // "Chapter 2" is how a reader meets chapter 02: the leading zero is not a
+  // mismatch, and a correct label must never fire.
+  assert.ok(!rulesForSource("Chapter 2").includes("link/chapter-number"));
+  assert.ok(!rulesForSource("chapter 2").includes("link/chapter-number"));
+});
+
+test("lint: docs/start-stats fires when chapter 0 advertises a stale count", () => {
+  const table = (listings: number, blocks: number, exercises: number, quizzes: number) =>
+    "# How to use\n\n" +
+    `| Rust examples | ${listings} Rust listings across ${blocks} code blocks |\n` +
+    `| Exercises & Quizzes | ${exercises} worked exercises and ${quizzes} instant-feedback quiz questions |\n`;
+  // The fixture tree has no code blocks, exercises or questions, so any
+  // non-zero number in the table is a claim the parser cannot support.
+  const stale = makeFixture({ "00-start.md": table(991, 1308, 274, 351) });
+  const guide = makeGuide([chapter("start", "00-start.md"), chapter("b", "02-b.md")]);
+  const rules = rulesFor(guide, stale);
+  assert.ok(rules.includes("docs/start-stats"), `expected docs/start-stats in ${rules}`);
+
+  const truthful = makeFixture({ "00-start.md": table(0, 0, 0, 0) });
+  const fixed = rulesFor(guide, truthful);
+  assert.ok(!fixed.includes("docs/start-stats"), `unexpected on the true table: ${fixed}`);
+});
+
+test("lint: code/playground-too-long fires on a listing a browser cannot open", () => {
+  const fixture = makeFixture();
+  const longCode = `fn main() {\n${"    // padding padding padding padding padding\n".repeat(160)}}\n`;
+  const guide = cleanGuide({
+    blocks: [
+      {
+        type: "paragraph",
+        children: [{ type: "internalLink", chapterId: "b", children: [] }],
+      },
+      { type: "code", lang: "rust", kind: "run", code: longCode, noPlay: false, isExt: false },
+      { type: "callout", kind: "recap", blocks: [] },
+      { type: "quiz", quizId: "a-q1", questions: [{}] },
+      { type: "exercise", exerciseId: "a-x1" },
+    ],
+  });
+  assert.ok(rulesFor(guide, fixture).includes("code/playground-too-long"));
+
+  // The same listing with `noplay` is legal: that is the fix the rule asks for.
+  const fixed = cleanGuide({
+    blocks: [
+      {
+        type: "paragraph",
+        children: [{ type: "internalLink", chapterId: "b", children: [] }],
+      },
+      { type: "code", lang: "rust", kind: "run", code: longCode, noPlay: true, isExt: false },
+      { type: "callout", kind: "recap", blocks: [] },
+      { type: "quiz", quizId: "a-q1", questions: [{}] },
+      { type: "exercise", exerciseId: "a-x1" },
+    ],
+  });
+  assert.ok(!rulesFor(fixed, fixture).includes("code/playground-too-long"));
+});
+
+test("lint: docs/roadmap-part-title keeps the roadmap in step with guide-config", () => {
+  const fixture = makeFixture({ "01-a.md": "# A\n\nClean prose.\n" });
+  const guide = makeGuide([chapter("roadmap", "01-a.md")], {
+    parts: [
+      { key: "welcome", title: "Start here", partLabel: "", partTitle: "Start here" },
+      { key: "p1", title: "Core Rust fundamentals", partLabel: "Part 1", partTitle: "" },
+    ],
+  });
+  const heading = (title: string) => `# A\n\n## Part 1 \u2014 ${title}\n\nClean prose.\n`;
+
+  // The roadmap writes the same words as the config, so the part number the
+  // reader sees in navigation matches the map.
+  fs.writeFileSync(path.join(fixture.chaptersDir, "01-a.md"), heading("Core Rust fundamentals"));
+  assert.ok(!rulesFor(guide, fixture).includes("docs/roadmap-part-title"));
+
+  fs.writeFileSync(path.join(fixture.chaptersDir, "01-a.md"), heading("Core Rust everything"));
+  assert.ok(rulesFor(guide, fixture).includes("docs/roadmap-part-title"));
+});
+
+test("lint: text/dismissive warns on reader-facing filler", () => {
+  const fixture = makeFixture();
+  const guide = cleanGuide();
+  const body = (prose: string) =>
+    `# A\n\n${prose}\n\n` +
+    ":::recap\nDone.\n:::\n\n:::quiz Q\n? What?\n- no\n+ yes\n= because\n:::\n\n:::exercise X\n:::\n";
+  const prose = (text: string): string => {
+    fs.writeFileSync(path.join(fixture.chaptersDir, "01-a.md"), body(text));
+    return rulesFor(guide, fixture).join(" ");
+  };
+  assert.ok(prose("Now just add the new field.").includes("text/dismissive"));
+  assert.ok(prose("The counter obviously ran out.").includes("text/dismissive"));
+  // "merely" is a statement about the machine, not about the reader.
+  assert.ok(!prose("The counter simply ran out.").includes("text/dismissive"));
 });

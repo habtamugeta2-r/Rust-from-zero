@@ -3,7 +3,7 @@
 @title Basic data types: numbers, truth values, characters and groups
 @short Basic data types
 @level beginner
-@time 35
+@time 50
 @learn Choose the right number type and explain what the names like `i32` and `u8` mean | Calculate with whole numbers and decimals, and convert between them | Work with true/false values and single characters | Group several values in a tuple or an array | Explain what Rust does when a number gets too big or an index is out of range
 
 A **[[type]]** tells Rust what a value represents and which operations make sense for it. For example, integer values can be added, while text is handled with text operations. A type also determines a value's representation and layout; some types, such as slices, need context to determine their size.
@@ -483,21 +483,21 @@ fn main() {
 ? Which line compiles?
 - `let x = 5 + 2.0;`
 - `let x: i32 = 2.5;`
-+ `let x = 5 as f64 + 2.0;`
 - `let x: u8 = -1;`
++ `let x = 5 as f64 + 2.0;`
 = Rust never mixes integers and floats silently. `5 as f64` converts the integer first. The other lines try to mix types or put a value into a type that cannot hold it.
 
 ? An array has 4 elements. What is the index of the last one?
-- 4
 + 3
+- 4
 - 5
 - 0
 = Indexes start at 0, so four elements have the indexes 0, 1, 2 and 3. The last index is always the length minus one.
 
 ? What is the difference between `'x'` and `"x"`?
 - There is none
-- `'x'` is text and `"x"` is a number
 + `'x'` is a single character (`char`) and `"x"` is a string
+- `'x'` is text and `"x"` is a number
 - `"x"` can only hold letters
 = Single quotes make a `char`, which is always exactly one character. Double quotes make a string, which can hold any number of characters.
 :::

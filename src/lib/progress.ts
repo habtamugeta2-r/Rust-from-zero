@@ -136,8 +136,10 @@ export function buildChapterProgress(meta: ChapterMeta, state: ProgressState): C
   const exerciseSolved = meta.exercises.filter((id) => state.saved[id]).length;
   const done = Boolean(state.done[meta.id]);
 
+  // A question counts towards completion only when it was answered correctly.
+  // Crediting any answer let a reader reach 100% by pressing random options.
   const units = 1 + quizTotal + exerciseTotal;
-  const earned = (done ? 1 : 0) + Math.min(quizAnswered, quizTotal) + exerciseSolved;
+  const earned = (done ? 1 : 0) + Math.min(quizCorrect, quizTotal) + exerciseSolved;
 
   return {
     id: meta.id,
@@ -192,7 +194,7 @@ export function summariseProgress(rows: ChapterProgress[]): ProgressTotals {
     if (row.bookmarked) totals.bookmarksTotal += 1;
 
     units += 1 + row.quizTotal + row.exerciseTotal;
-    earned += (row.done ? 1 : 0) + row.quizAnswered + row.exerciseSolved;
+    earned += (row.done ? 1 : 0) + row.quizCorrect + row.exerciseSolved;
   }
 
   totals.pct = ratio(earned, units);
@@ -255,8 +257,18 @@ export function serialiseProgress(
   return JSON.stringify(document, null, 2);
 }
 
+/**
+ * A plain JSON object. Arrays are rejected explicitly: `typeof [] === "object"`
+ * and `Object.entries` happily walks one, so without the check `"done": [1,2]`
+ * would import as `{ "0": 1, "1": 2 }` and quietly corrupt progress.
+ */
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+/** A non-negative integer, which is the only shape these counts may take. */
+function isCounter(value: unknown): value is number {
+  return typeof value === "number" && Number.isInteger(value) && value >= 0;
 }
 
 function numberRecord(value: unknown, field: string): Record<string, number> {
@@ -264,8 +276,11 @@ function numberRecord(value: unknown, field: string): Record<string, number> {
   if (!isRecord(value)) throw new Error(`“${field}” must be an object`);
   const out: Record<string, number> = {};
   for (const [key, entry] of Object.entries(value)) {
-    if (typeof entry !== "number" || !Number.isFinite(entry)) {
-      throw new Error(`“${field}.${key}” must be a number`);
+    // A stored entry is a flag or a count; a non-integer, a string or a
+    // negative number is not something this app ever wrote, so it is refused
+    // rather than coerced.
+    if (!isCounter(entry) || entry === 0) {
+      throw new Error(`“${field}.${key}” must be a positive integer`);
     }
     out[key] = entry;
   }
@@ -280,10 +295,10 @@ function quizRecord(value: unknown): Record<string, Record<string, StoredQuizAns
     if (!isRecord(answers)) throw new Error(`“quiz.${quizId}” must be an object`);
     const clean: Record<string, StoredQuizAnswer> = {};
     for (const [index, answer] of Object.entries(answers)) {
-      if (typeof answer === "number") {
+      if (isCounter(answer)) {
         // 2.0.0 stored the bare option index, before correctness was kept.
         clean[index] = { picked: answer };
-      } else if (isRecord(answer) && typeof answer.picked === "number") {
+      } else if (isRecord(answer) && isCounter(answer.picked)) {
         clean[index] = {
           picked: answer.picked,
           correct: typeof answer.correct === "boolean" ? answer.correct : undefined,
@@ -386,8 +401,10 @@ export function bookmarkedChapters(rows: ChapterProgress[]): ChapterProgress[] {
 }
 
 /**
- * Split rows into the three states a reader cares about, in curriculum order:
- * finished, started, untouched. `started` is anything with partial work.
+ * Split rows into the two lists a reader acts on, in curriculum order:
+ * `started` is anything with work in it — including chapters that are done, so
+ * a finished chapter is shown rather than silently vanishing — and `untouched`
+ * is everything else.
  */
 export function bucketChapters(rows: ChapterProgress[]): {
   started: ChapterProgress[];
@@ -396,7 +413,6 @@ export function bucketChapters(rows: ChapterProgress[]): {
   const started: ChapterProgress[] = [];
   const untouched: ChapterProgress[] = [];
   for (const row of rows) {
-    if (row.done) continue;
     if (row.pct > 0) started.push(row);
     else untouched.push(row);
   }

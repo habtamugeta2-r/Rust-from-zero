@@ -3,13 +3,13 @@
 @title Compiler stages: lexing, parsing, AST, HIR, MIR, and LLVM IR
 @short The compilation pipeline
 @level beginner
-@time 45
+@time 30
 @learn Compare high-level languages, low-level languages, compilers, and interpreters | Trace source code through lexing, parsing, AST, name resolution, HIR, MIR, and LLVM IR | Explain why Rust performs type checking on HIR and borrow checking on MIR | Inspect real intermediate representations emitted by `rustc`
 
 Turning `let sum = a + b;` into a running program involves several stages, much like translating a document before printing it: each stage changes the representation and makes particular checks or transformations possible. Rust's compiler, `rustc`, does not translate source text directly into the final instructions in one step. This chapter follows the main intermediate forms and explains what each contributes.
 
-:::note A gentle tour before Part III
-In Part II (Chapters 5–7), we open the hood of `rustc` so you can see how source text turns into a runnable program. Whenever a compiler stage mentions a Rust concept you have not met yet—such as *traits*, *generics*, or the *borrow checker*—do not worry about memorising it now: [Part III](#variables) teaches every single one from zero starting in [Chapter 8](#variables).
+:::note A gentle tour before Part 3
+In Part 2 (Chapters 5–7), we open the hood of `rustc` so you can see how source text turns into a runnable program. Whenever a compiler stage mentions a Rust concept you have not met yet—such as *traits*, *generics*, or the *borrow checker*—do not worry about memorising it now: [Part 3](#variables) teaches every single one from zero starting in [Chapter 8](#variables).
 :::
 
 ## Starting point: languages, compilation, and interpretation
@@ -111,7 +111,7 @@ Ident("i32") Brace('{')    Ident("a")  Plus('+')    Ident("b")  Brace('}')
 
 Notice that the lexer knows nothing about grammar or types yet: if you swap `fn` and `add` around (`add fn`), the lexer happily emits tokens, and the next stage catches the grammar error.
 
-## Stage 2: Parsing and the Abstract Syntax Tree (AST)
+## Stage 2: parsing and the abstract syntax tree (AST)
 
 The **parser** checks grammar rules and arranges flat tokens into a nested hierarchy called an **Abstract Syntax Tree** (**[[AST]]**). In Rust, macro invocations such as `println!(...)` are also expanded right here at the AST level before later analysis begins:
 
@@ -209,8 +209,8 @@ Compare `-C opt-level=0` vs `-C opt-level=3` on `example.ll`: in debug mode (`op
 
 :::quiz Check your understanding
 ? Which compiler stage converts raw UTF-8 text into keywords, identifiers, and punctuation tokens?
-+ Lexical analysis (lexer)
 - MIR lowering
++ Lexical analysis (lexer)
 - LLVM optimisation
 - Static linking
 = The lexer scans characters into discrete tokens before the parser builds a syntax tree.
@@ -224,14 +224,14 @@ Compare `-C opt-level=0` vs `-C opt-level=3` on `example.ll`: in debug mode (`op
 
 ? Why does `rustc --release` fold `add(10, 32)` directly into `42`?
 - Because the CPU hardware executes arithmetic inside RAM before launching the binary
-+ Because LLVM performs inlining and constant folding on LLVM IR when optimisations are enabled
 - Because the lexer evaluates arithmetic expressions while reading tokens
 - Because Rust forbids function calls on literals
++ Because LLVM performs inlining and constant folding on LLVM IR when optimisations are enabled
 = LLVM inlines small functions and folds compile-time-known constants during its optimisation passes.
 
 ? Why can LLVM apply stronger `noalias` optimisations to Rust `&mut T` references than to typical C pointers?
-- Because Rust disables CPU caches
 + Because the Rust borrow checker already proved at compile time that no other active pointer aliases `&mut T`
+- Because Rust disables CPU caches
 - Because C has no integer addition instruction
 - Because Rust programs always run in an interpreter
 = Rust's aliasing rules give LLVM mathematical permission to keep values in CPU registers without reloading memory after unrelated writes.

@@ -1,9 +1,9 @@
 @id smart-pointers
-@part p3
+@part p3b
 @title Smart pointers: `Box`, `Rc`, `RefCell` and friends
 @short Smart pointers
 @level advanced
-@time 60
+@time 55
 @learn Put data on the heap with `Box` and build recursive types | Explain what `Deref` and `Drop` do | Share ownership with `Rc` and break cycles with `Weak` | Change data behind a shared reference with `Cell` and `RefCell` | Pick the right pointer type for a task
 
 A reference such as `&T` gives temporary access to a value without owning it. A **smart pointer** is a type whose pointer-like behaviour is combined with ownership or another capability, such as shared ownership or runtime borrowing checks. `Box`, `Rc` and `RefCell` provide different trade-offs; this chapter compares them and shows when each is useful.
@@ -21,7 +21,7 @@ A smart pointer is like a keycard that both opens a room and keeps track of who 
 | `Box<T>` | one owner, data on the heap |
 | `Rc<T>` | several owners, read-only, one thread |
 | `RefCell<T>` | borrowing rules checked while the program runs, not at compile time |
-| `Arc<T>`, `Mutex<T>` | the same ideas, safe to use from several threads ([chapter 56](#shared-state)) |
+| `Arc<T>`, `Mutex<T>` | the same ideas, safe to use from several threads ([chapter 59](#shared-state)) |
 
 :::analogy A visitor badge vs a shared locker key
 A normal reference (`&T`) is a visitor badge: it lets you read what is in a room, but it cannot keep the building open after the owner locks up and leaves. A smart pointer like `Box<T>` or `Rc<T>` is a deed or shared key card that actually keeps the data alive until the last holder steps out and closes the door.
@@ -214,7 +214,7 @@ cleaning up first
 - Values are dropped at the end of their scope, in the **reverse** order of their creation.
 - `drop(value)` is an ordinary function that takes ownership of its argument and lets it go out of scope immediately.
 
-You will rarely write `Drop` yourself. You benefit from it all the time: it is how a `File` closes itself, how a `Vec` frees its memory, and how a lock releases itself ([chapter 56](#shared-state)).
+You will rarely write `Drop` yourself. You benefit from it all the time: it is how a `File` closes itself, how a `Vec` frees its memory, and how a lock releases itself ([chapter 59](#shared-state)).
 
 :::compare RAII
 Tying a resource (memory, a file, a lock, a network connection) to a value, so that the resource is released when the value dies, is a technique from C++ with the awkward name **RAII** ("resource acquisition is initialization"). In Java, Python or Go you write `try … finally`, `with` or `defer` each time, and can forget it. In Rust the clean-up is attached to the type once, and then it cannot be forgotten.
@@ -511,7 +511,7 @@ A `Cow<str>` can be used like a `&str` through `Deref`. The `'_` in the return t
 | several owners that can change the value | `Rc<RefCell<T>>` |
 | a pointer back to an owner, without owning | `Weak<T>` |
 | to change a small `Copy` field through `&self` | `Cell<T>` |
-| the same across threads | `Arc<T>`, `Arc<Mutex<T>>` ([chapter 56](#shared-state)) |
+| the same across threads | `Arc<T>`, `Arc<Mutex<T>>` ([chapter 59](#shared-state)) |
 
 The order of this table is also the order of preference. Plain references and single ownership are the simplest and the fastest, and the compiler checks them completely. Reach for `Rc` and `RefCell` when the shape of your data truly demands shared ownership.
 
@@ -527,8 +527,8 @@ The order of this table is also the order of preference. Plain references and si
 
 :::quiz Check your understanding
 ? Why does `enum List { Node(i32, List), End }` not compile, while `Node(i32, Box<List>)` does?
-- Enums cannot contain themselves in any form
 + The compiler needs a known size. A type that directly contains itself would be infinitely large, and a `Box` is a pointer of fixed size
+- Enums cannot contain themselves in any form
 - `Box` makes the list faster
 - The first version needs a lifetime
 = A `Box<List>` has the size of one pointer, whatever it points to, so the size of `List` can be calculated.
@@ -550,13 +550,13 @@ The order of this table is also the order of preference. Plain references and si
 ? Two values hold an `Rc` to each other and nothing else refers to them. What happens?
 - Rust detects it and frees them
 - The program panics
-+ Their counts never reach zero, so the memory is never freed: a memory leak
 - The compiler refuses the program
++ Their counts never reach zero, so the memory is never freed: a memory leak
 = Reference counting cannot free cycles. Make one of the two directions a `Weak` pointer.
 
 ? In which order are the local variables of a function dropped?
-- In the order they were created
 + In the reverse order of their creation
+- In the order they were created
 - In alphabetical order
 - In no defined order
 = The variable declared last is dropped first. Later variables may refer to earlier ones, so they must go first.

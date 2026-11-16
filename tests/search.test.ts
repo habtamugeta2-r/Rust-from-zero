@@ -1,6 +1,15 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { expandWord, groupHitsByChapter, searchEntries, SYNONYMS } from "../src/lib/search";
+import {
+  expandWord,
+  groupHitsByChapter,
+  MAX_QUERY_LENGTH,
+  MAX_QUERY_WORDS,
+  patternCacheSize,
+  queryWords,
+  searchEntries,
+  SYNONYMS,
+} from "../src/lib/search";
 import type { SearchEntry } from "../src/lib/guide-types";
 
 function entry(partial: Partial<SearchEntry>): SearchEntry {
@@ -95,4 +104,48 @@ test("search: hits group by chapter in ranking order", () => {
     hits.length,
   );
   assert.equal(groups[0].chapterId, hits[0].chapterId);
+});
+
+test("search: a query is capped in length and in distinct words", () => {
+  // 400 characters of padding and twelve distinct words: only the first eight
+  // words of the first 120 characters may reach the matcher.
+  const words = queryWords(
+    "mut " + "x ".repeat(300) + "ownership borrowing value function module trait generic macro",
+  );
+  assert.ok(words.length <= MAX_QUERY_WORDS, `got ${words.length} words`);
+  assert.equal(words[0], "mut");
+  for (const word of words) assert.ok(word.length <= MAX_QUERY_LENGTH);
+  assert.deepEqual(queryWords("mut mut mut"), ["mut"]);
+  assert.deepEqual(queryWords("   "), []);
+});
+
+test("search: a truncated query keeps whole words and drops a giant blob", () => {
+  const long = "ownership borrowing lifetimes ".repeat(20);
+  assert.deepEqual(queryWords(long), ["ownership", "borrowing", "lifetimes"]);
+  // A single unbroken token longer than any indexed word is a paste accident.
+  assert.deepEqual(queryWords("a".repeat(300)), []);
+});
+
+test("search: short tokens do not match inside longer words", () => {
+  const index = [
+    entry({ chapterId: "cost", text: "The cost of a copy is low, and a loss is rare." }),
+    entry({ chapterId: "os", text: "The operating system schedules the work." }),
+  ];
+  // `os` used to match *cost* and *loss* as a substring; now it needs a word
+  // boundary or a word prefix, so only the real entry matches.
+  const hits = searchEntries(index, "os");
+  assert.deepEqual(
+    hits.map((hit) => hit.chapterId),
+    ["os"],
+  );
+  // Four characters or more may still match infix, so `yst` finds *system*.
+  assert.ok(searchEntries(index, "ystem").length > 0);
+});
+
+test("search: the pattern cache is bounded and reused", () => {
+  // Many distinct words must not grow the cache without limit.
+  for (let i = 0; i < 700; i += 1) {
+    searchEntries(INDEX, `word${i}`);
+  }
+  assert.ok(patternCacheSize() <= 500, `cache grew to ${patternCacheSize()}`);
 });

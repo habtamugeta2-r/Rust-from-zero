@@ -13,8 +13,8 @@ Deliverable: Next.js App Router web application (`src/`) built directly from
 `npm run typecheck`, and `npm run build` to verify and build.
 
 ## Reader routes
-- Core path: Parts 1–5 (chapters 01–26) + Part 8 Tooling (chapters 34–36). Essential Cargo, formatting, testing, and Clippy commands are introduced in chapter 02; chapters 34–36 provide the deeper workflow reference before Part 9 advanced topics (chapters 37–41).
-- After the core path, readers can follow goal-based routes in chapter 00 / the Home route selector (and `53-next.md`). Advanced language topics and ecosystem surveys (`49-apps`, `50-games-embedded`) remain optional deep dives.
+- Core path: Parts 1–4 (chapters 1–37). Essential Cargo, formatting, testing and Clippy commands are introduced in chapter 4; chapters 35–37 (`cargo`, `quality-tools`, `testing-strategies`) close Part 4 with the deeper workflow reference, before the advanced language material in Part 5 (chapters 38–43) and the systems parts that follow.
+- After the core path, readers can follow goal-based routes in chapter 00 / the Home route selector (and `76-next.md`). Advanced language topics and ecosystem surveys (`74-apps`, `75-games-embedded`) remain optional deep dives.
 
 ## Tooling (not persisted between messages — reinstall if /opt/rs is missing)
 - Rust toolchain lives in /opt/rs (RUSTUP_HOME=/opt/rs/rustup, CARGO_HOME=/opt/rs/cargo, `. /opt/rs/env.sh`).
@@ -23,8 +23,9 @@ Deliverable: Next.js App Router web application (`src/`) built directly from
   fail [E0xxx], panic, warns, ext[=project], nocmp, noplay). `--ext` also cargo-checks crate examples in
   /opt/rs/ext/main (Cargo.toml copy: tools/ext-main-Cargo.toml) and runs `cargo test` for `ext test` blocks.
   `--projects` extracts every `proj=<name>` project across chapters via `tools/project.py` (including
-  chapter 23 `finder`, 33 `chat`, 44 `todo_cli`, 48 `shortener`, 49 WebAssembly/WASI targets,
-  50 Cortex-M3 `thumbv7m-none-eabi`, and 52 `library`) and runs `cargo check` / `cargo test`.
+  `finder` in chapter 23, `todo_cli` in chapter 70, `chat` in chapter 43, `shortener` in chapter 69,
+  the WebAssembly/WASI targets in chapter 74, the Cortex-M3 (`thumbv7m-none-eabi`) firmware in
+  chapter 75, and `library` in chapter 73) and runs `cargo check` / `cargo test`.
   Results cached in /opt/rs/chk.
 - An ```output auto / ```error auto block directly after a rust block is filled with the REAL captured
   output/compiler message (stored in captured/<hash>.txt; `lines=N` truncates). Do not use hidden `# ` lines
@@ -64,7 +65,8 @@ Blocks: ## h2, ### h3, lists, tables, ```lang flags, :::analogy|plain|compare|wa
 
 **Links** — three forms, and nothing else:
 - `[label](#chapter-id)` — a chapter link. Use the id, never the number in the target; the visible
-  label is renumbered for you (`[chapter 99](#errors)` becomes “chapter 23”).
+  label is renumbered for you (`[chapter 99](#errors)` becomes “chapter 23”) — and the
+  `link/chapter-number` lint rule reads the raw markdown, so a stale label still fails the build.
 - `[label](#home)` — the landing page. `home` is the only non-chapter name allowed after `#`.
 - `[label](/progress)`, `[label](/search)`, `[label](/chapters)` — a route link: rendered with
   `next/link`, in the same tab, no external-link arrow. Allowed routes are `/`, `/chapters`,
@@ -94,17 +96,24 @@ exempt.
 ## Maintenance decisions (3.0.0)
 
 - **Appendix reading time is included in the published total.** The five appendices declare a
-  realistic `@time`, measured from their prose at 200 words per minute and rounded (glossary 25,
-  reference 10, compiler-errors 10, from-other-languages 10, under-the-hood 20). The parser's
-  `totalMinutes` sums **all** chapters, appendices included, and the README table follows it.
-  Appendices still do not count as tracked chapters for progress.
+  realistic `@time`, derived from their own content rather than assigned by hand: prose at 200
+  words per minute, code fence bodies at 40 lines per minute, five minutes per exercise and 1.5 per
+  quiz question, rounded to five minutes. Lookup appendices are floored at 1.2x their
+  straight-through reading time, because a glossary or reference is skimmed section by section and
+  the additive model under-counts it (glossary 30, reference 15, compiler-errors 15,
+  from-other-languages 10, under-the-hood 45). The parser's `totalMinutes` sums **all** chapters,
+  appendices included, and the README table follows it. Appendices still do not count as tracked
+  chapters for progress.
 - **Published numbers come from `npm run stats`.** The README statistics table is checked by the
   `docs/stats` lint rule; regenerating the table is pasting the output of `npm run stats`.
 - **Tests are permanent.** `npm test` runs `node:test` via `tsx` over `tests/`: a parser fixture
   chapter (every block type, `auto` fill, unknown glossary term), search ranking and snippets
   (whole-word, prefix and synonym matching), progress arithmetic including 2.0.0's bare-index
   quiz answers, and one test per content-lint rule that injects the rule's fault. The 2.2.0
-  practice of verifying a rule by hand once is now a test that runs in CI.
+  practice of verifying a rule by hand once is now a test that runs in CI. Two structural tests
+  guard invariants rather than rules: quiz answers must stay within 15–35% per option position,
+  and `link/chapter-number` is driven through the raw-markdown path the parser cannot rewrite.
+  Current total: 68 tests.
 - **`npm run lint` is ESLint plus a Prettier check.** New dependencies, justified in the
   changelog: `eslint`, `@eslint/js`, `typescript-eslint`, `prettier`, `eslint-config-prettier`.
   Prettier adoption is incremental: files created or materially edited since 3.0.0 are
@@ -129,7 +138,7 @@ worse than none.
 |---|---|
 | 18 chapters with no outgoing cross-link | 0; the lint fails if one returns |
 | 8 project chapters without a quiz | 9 of 9 project chapters have a 4-question quiz on their decisions |
-| Glossary 98 of 253 terms linked at the 2.2.0 review | 207 of 253 in the current checkout, wrapped at the term's first substantive explanation |
+| Glossary 98 of 253 terms linked at the 2.2.0 review | 207 of 258 in the current checkout, wrapped at the term's first substantive explanation |
 | Sentences over 55 words: 7 (8 after the new links) | 0 |
 | Appendices with no `@time`, excluded from the total | Each declares a measured `@time`; the total includes them |
 | `what-is-rust` the only tracked teaching chapter without a challenge exercise | It has one; `start` and `roadmap` stay challenge-free as orientation |
@@ -137,24 +146,109 @@ worse than none.
 | 104 captured files, some unreferenced | 3 historical orphan captures are retained and listed in `captured/archived-orphans.json`; unexpected orphans warn |
 
 ## Outline (file → id). [x] = written and checked
-welcome: [x] 00-start → start
-p1:  [x] 01-what-is-rust → what-is-rust   [x] 02-setup → setup   [x] 03-variables → variables   [x] 04-types → types
-     [x] 05-functions → functions   [x] 06-control-flow → control-flow   [x] 07-project-guessing → project-guessing (project)
-p2:  [x] 08-memory → memory   [x] 09-ownership → ownership   [x] 10-borrowing → borrowing   [x] 11-slices-strings → slices-strings
-p3:  [x] 12-structs → structs   [x] 13-enums → enums   [x] 14-patterns → patterns   [x] 15-collections → collections
+
+welcome:
+     [x] 00-start → start
+     [x] 00b-roadmap → roadmap (@kind orientation)
+p1:
+     [x] 01-what-is-rust → what-is-rust
+     [x] 01b-hardware-architecture → hardware-architecture
+     [x] 01c-bits-bytes-representation → bits-bytes-representation
+     [x] 02-setup → setup
+p2:
+     [x] 02b-compilation-pipeline → compilation-pipeline
+     [x] 02c-assembly-machine-code → assembly-machine-code
+     [x] 02d-linking-elf → linking-elf
+p3:
+     [x] 03-variables → variables
+     [x] 04-types → types
+     [x] 05-functions → functions
+     [x] 06-control-flow → control-flow
+     [x] 07-project-guessing → project-guessing (project)
+     [x] 08-memory → memory
+     [x] 09-ownership → ownership
+     [x] 10-borrowing → borrowing
+     [x] 11-slices-strings → slices-strings
+     [x] 12-structs → structs
+     [x] 13-enums → enums
+     [x] 14-patterns → patterns
+     [x] 15-collections → collections
      [x] 16-project-todo → project-todo (project)
-p4:  [x] 17-modules → modules   [x] 18-errors → errors   [x] 19-generics → generics   [x] 20-traits → traits
-     [x] 21-lifetimes → lifetimes   [x] 22-testing → testing   [x] 23-project-search → project-search (project)
-p5:  [x] 24-closures → closures   [x] 25-iterators → iterators   [x] 26-project-report → project-report (project)
-p6:  [x] 27-smart-pointers → smart-pointers   [x] 28-advanced-traits → advanced-traits   [x] 29-type-system → type-system
-p7:  [x] 30-threads → threads   [x] 31-shared-state → shared-state   [x] 32-async → async   [x] 33-project-chat → project-chat (project)
-p8:  [x] 34-cargo → cargo   [x] 35-quality-tools → quality-tools   [x] 36-testing-strategies → testing-strategies
-p9:  [x] 37-macros → macros   [x] 38-unsafe → unsafe   [x] 39-ffi → ffi   [x] 40-memory-layout → memory-layout   [x] 41-idioms → idioms
-p10: [x] 42-crates → crates (finding crates + everyday crates)   [x] 43-serde → serde   [x] 44-cli → cli (clap; project inside)
-     [x] 45-async-ecosystem → async-ecosystem (Tokio, Rayon, reqwest, tower…)   [x] 46-web → web (Axum, Actix, Rocket…)
-     [x] 47-databases → databases (SQLx, Diesel, SeaORM…)   [x] 48-project-api → project-api (project)
-     [x] 49-apps → apps (survey: WebAssembly, Leptos/Yew/Dioxus, Tauri, egui/iced/Slint)   [x] 50-games-embedded → games-embedded (survey: Bevy, embedded, data/ML)
-     [x] 54-observability → observability (tracing JSON, request IDs, OpenTelemetry, metrics, health probes)
-p11:  [x] 51-performance → performance   [x] 52-capstone → capstone (project)   [x] 53-next → next (@kind orientation)
-app: [x] 90-glossary → glossary (stub exists; fill with every [[term]])   [x] 91-reference → reference   [x] 92-errors-ref → errors-ref
-     [x] 93-from-other-languages → from-other-languages   [x] 94-under-the-hood → under-the-hood (appendix: from source to silicon — compiler pipeline, OS loader, CPU)
+     [x] 17-modules → modules
+     [x] 18-errors → errors
+p3b:
+     [x] 19-generics → generics
+     [x] 20-traits → traits
+     [x] 21-lifetimes → lifetimes
+     [x] 22-testing → testing
+     [x] 23-project-search → project-search (project)
+     [x] 24-closures → closures
+     [x] 25-iterators → iterators
+     [x] 26-project-report → project-report (project)
+     [x] 27-smart-pointers → smart-pointers
+     [x] 28-advanced-traits → advanced-traits
+     [x] 29-type-system → type-system
+     [x] 30-cargo → cargo
+     [x] 31-quality-tools → quality-tools
+     [x] 32-testing-strategies → testing-strategies
+p3c:
+     [x] 33-macros → macros
+     [x] 34-unsafe → unsafe
+     [x] 35-ffi → ffi
+     [x] 36-memory-layout → memory-layout
+     [x] 37-rust-stdlib-internals → rust-stdlib-internals
+     [x] 38-idioms → idioms
+p4:
+     [x] 47-virtual-memory-address-spaces → virtual-memory-address-spaces
+     [x] 48-allocators-heap-internals → allocators-heap-internals
+     [x] 49-pointers-safety-caches → pointers-safety-caches
+p5:
+     [x] 50-program-loading-startup → program-loading-startup
+     [x] 51-calling-conventions-execution → calling-conventions-execution
+     [x] 52-end-to-end-trace → end-to-end-trace
+p6:
+     [x] 53-kernel-syscalls-processes → kernel-syscalls-processes
+     [x] 54-processes-threads-scheduling → processes-threads-scheduling
+     [x] 55-sync-interrupts-signals → sync-interrupts-signals
+p7:
+     [x] 56-streams-fds-buffering → streams-fds-buffering
+     [x] 57-blocking-epoll-io-uring → blocking-epoll-io-uring
+p8:
+     [x] 58-isa-opcodes-control-flow → isa-opcodes-control-flow
+     [x] 59-pipelines-branch-prediction-ooo → pipelines-branch-prediction-ooo
+     [x] 60-cache-coherency-atomics-simd → cache-coherency-atomics-simd
+p9:
+     [x] 39-threads → threads
+     [x] 40-shared-state → shared-state
+     [x] 41-async → async
+     [x] 42-concurrency-async-internals → concurrency-async-internals
+     [x] 43-project-chat → project-chat (project)
+     [x] 46-async-ecosystem → async-ecosystem
+p10:
+     [x] 61-network-layers-ethernet-ip → network-layers-ethernet-ip
+     [x] 62-tcp-udp-sockets-kernel → tcp-udp-sockets-kernel
+     [x] 63-dns-http-tls-trace → dns-http-tls-trace
+     [x] 64-web → web
+     [x] 65-observability → observability
+p11:
+     [x] 66-storage-hardware-blocks → storage-hardware-blocks
+     [x] 67-filesystems-cache-mmap → filesystems-cache-mmap
+     [x] 68-databases → databases
+     [x] 69-project-api → project-api (project)
+p12:
+     [x] 70-cli → cli (project)
+     [x] 71-performance → performance
+     [x] 72-linux-systems-lab → linux-systems-lab (project)
+     [x] 73-capstone → capstone (project)
+p13:
+     [x] 44-crates → crates
+     [x] 45-serde → serde
+     [x] 74-apps → apps
+     [x] 75-games-embedded → games-embedded
+     [x] 76-next → next (@kind orientation)
+app:
+     [x] 90-glossary → glossary (appendix)
+     [x] 91-reference → reference (appendix)
+     [x] 92-errors-ref → errors-ref (appendix)
+     [x] 93-from-other-languages → from-other-languages (appendix)
+     [x] 94-under-the-hood → under-the-hood (appendix)

@@ -1,5 +1,5 @@
 @id closures
-@part p3
+@part p3b
 @title Closures: functions you can carry around
 @short Closures
 @level intermediate
@@ -155,7 +155,7 @@ fn main() {
 6 11
 ```
 
-`make_adder` is a function that builds functions. Each closure it returns carries its own `n`. `move` is needed in two typical places: when a closure is **returned** from a function, and when it is handed to a **new thread** ([chapter 55](#threads)).
+`make_adder` is a function that builds functions. Each closure it returns carries its own `n`. `move` is needed in two typical places: when a closure is **returned** from a function, and when it is handed to a **new thread** ([chapter 58](#threads)).
 
 :::plain What a closure really is
 There is no magic. For each closure, the compiler creates a hidden struct with one field per captured variable, and one method that contains the body. `make_adder(5)` returns a struct holding the number 5. Calling the closure calls the method. That is why closures are exactly as fast as ordinary functions, and why each closure has its own unique type that has no name you can write.
@@ -322,13 +322,13 @@ fn main() {
 ? What does `move` do in `move |x| x + n`?
 - It moves the closure to the heap
 - It makes the closure run faster
-+ It makes the closure take ownership of the variables it uses, here `n`
 - It makes `x` mutable
++ It makes the closure take ownership of the variables it uses, here `n`
 = Without `move`, the closure would borrow `n`. With it, the closure owns its own copy and can live longer than the scope where `n` was defined.
 
 ? A function calls the closure it receives several times, and the closure adds to a counter outside. Which bound must the parameter have?
-- `Fn()`
 + `FnMut()`
+- `Fn()`
 - `FnOnce()`
 - `fn()`
 = The closure changes a captured variable, so it is not `Fn`. It is called more than once, so `FnOnce` is not enough. `FnMut` fits.

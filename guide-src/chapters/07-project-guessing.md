@@ -4,7 +4,7 @@
 @title Project: a number guessing game
 @short Project: guessing game
 @level beginner
-@time 60
+@time 35
 @learn Plan a program in plain words before writing code | Read what the user types and turn it into a number | Use code written by other people (a crate) through Cargo | Combine variables, loops, decisions and functions in one working program
 
 This project combines input, parsing, decisions and repetition in a small number-guessing game. The program chooses a secret number in the stated range, reads guesses from the player, and reports whether each guess is too high or too low. The goal is to make the interaction work while keeping invalid input from crashing the program.
@@ -358,22 +358,22 @@ if distance != 0 && distance <= 5 {
 
 :::quiz Check your understanding
 ? The game needs a random secret number, so the project added the `rand` crate. Why not write the random number generator itself?
-+ Because Rust's standard library deliberately ships without one, so a published crate is the supported route
 - Because `rand` is faster than any generator you could write
 - Because the compiler refuses to compile randomness without a crate
++ Because Rust's standard library deliberately ships without one, so a published crate is the supported route
 - Because `cargo add` also writes the algorithm for you
 = Rust's standard library stays small on purpose and has no random number generator. Adding `rand` as a dependency, through `cargo add`, is the normal way to get one. Cargo also records the exact version in `Cargo.lock`, so every machine builds the same program.
 
 ? The player types `50` and presses {{Enter}}. Why does the program call `.trim()` before `.parse()`?
 - Because `trim()` removes spaces from the middle of the text
-+ Because the text still contains the line ending the player typed, and `parse` refuses it
 - Because `parse()` only works on `&str` and not on `String`
 - Because `trim()` turns the text into a number
++ Because the text still contains the line ending the player typed, and `parse` refuses it
 = {{Enter}} leaves a line ending at the end of the text, and `parse` will not read `"50\n"` as a number. `trim()` removes the whitespace around the text first, so the parse succeeds.
 
 ? What does `.parse::<u32>()` give back when the player types `abc`, and what did the project do with it?
-- It panics, because the text is not a number
 + A `Result` holding either the number or an error, and the program asks the player to try again
+- It panics, because the text is not a number
 - `0`, because the text could not be read
 - A `String`, because the parse failed
 = `parse` returns a `Result`. The program matches on it: the `Ok` arm compares the guess, and the `Err` arm prints a friendly message and loops back for another try. Using `.expect()` here would end the game on one typo.

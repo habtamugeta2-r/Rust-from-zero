@@ -3,7 +3,7 @@
 @title Setting up and running your first program
 @short Setup and your first program
 @level beginner
-@time 30
+@time 45
 @learn Run Rust code in the browser without installing anything | Use a terminal for basic tasks | Install Rust and a code editor on your own computer | Create, run and change a Rust project with Cargo | Read a compiler error message without fear
 
 Start by running a small Rust program in the browser, where no local installation is needed. Then set up the compiler and Cargo on your computer, create a project, and examine the first program line by line. You can pause after the browser exercise and return to installation when you are ready.
@@ -201,7 +201,7 @@ fn main() {
 - **`main`** is the function's name. This name is special: every Rust program starts by running the function called `main`.
 - **`()`** would hold the inputs of the function. `main` has none, so the brackets are empty.
 - **`{` and `}`** mark where the function's instructions begin and end. Everything between them is called the function's *body*.
-- **`println!`** means "print a line": show some text on the screen, then move to the next line. The `!` tells you that `println!` is a **macro**, a special kind of instruction that writes some code for you. For now, just remember that printing needs the `!`.
+- **`println!`** means "print a line": show some text on the screen, then move to the next line. The `!` tells you that `println!` is a **macro**, a special kind of instruction that writes some code for you. For now, remember that printing needs the `!`.
 - **`"Hello, world!"`** is the text to print. Text inside double quotes is called a **string**.
 - **`;`** ends the instruction, like a full stop ends a sentence.
 
@@ -269,7 +269,7 @@ Putting `//` in front of a line of code switches it off without deleting it. Pro
 | `cargo fmt` | Tidies the layout of your code | Before you save your work |
 | `cargo clippy` | Checks for common mistakes and suggests cleaner Rust | Regularly before sharing your code |
 
-Formatting (`cargo fmt --check`), testing (`cargo test`), and linting (`cargo clippy`) are built in from day one. You will use these commands long before any advanced Rust features, and Part XII ([chapter 70](#cargo) through [chapter 72](#testing-strategies)) covers this everyday engineering workflow in depth.
+Formatting (`cargo fmt --check`), testing (`cargo test`), and linting (`cargo clippy`) are built in from day one. You will use these commands long before any advanced Rust features, and Part 4 ([chapter 35](#cargo) through [chapter 37](#testing-strategies)) covers this everyday engineering workflow in depth.
 
 ## Your Linux systems inspection toolkit
 
@@ -383,8 +383,8 @@ A compiler error is not a failure. It is the compiler doing its job: catching a 
 = Each `{}` is replaced by the next value, in order: the first by 3, the second by 5.
 
 ? The compiler reports an error at `src/main.rs:7:12`. Where should you look?
-- Line 12, character 7
 + Line 7, character 12
+- Line 12, character 7
 - The 7th file, line 12
 - Chapter 7, section 12 of the manual
 = The format is file, then line, then column (the character position on that line).
@@ -507,5 +507,5 @@ Pancakes for 3 people
 - 300 ml milk
 ```
 
-It works, but the number `3` is written four times. To cook for 5 people you would have to change it in four places, and it is easy to miss one. In Part II you first see how source code like this turns into assembly and ELF machine executables, and then Part III fixes the repetition with **variables**: you give the value a name once and use the name everywhere.
+It works, but the number `3` is written four times. To cook for 5 people you would have to change it in four places, and it is easy to miss one. In Part 2 you first see how source code like this turns into assembly and ELF machine executables, and then Part 3 fixes the repetition with **variables**: you give the value a name once and use the name everywhere.
 :::

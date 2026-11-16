@@ -1,9 +1,9 @@
 @id iterators
-@part p3
+@part p3b
 @title Iterators: processing data step by step
 @short Iterators
 @level intermediate
-@time 60
+@time 45
 @learn Explain what an iterator is and how `for` uses it | Build processing pipelines with `map`, `filter` and other adapters | Finish a pipeline with `collect`, `sum`, `fold`, `find` and friends | Understand laziness and why iterator chains are as fast as loops | Write your own iterator
 
 Many tasks process a collection one element at a time: filter values, transform them, add them up or find a match. A `for` loop is one clear way to do this. Rust's **iterators** offer another way to compose those steps, often without a temporary collection; the compiler can optimise many iterator chains, but performance should be measured for the workload that matters.
@@ -584,14 +584,14 @@ Rust's version combines the pleasant pipeline style with the speed of a hand-wri
 ```
 - `1 2 3` on separate lines
 - `3 2 1`
-+ Nothing. `map` is lazy, and no consumer asks for items
 - An error message at run time
++ Nothing. `map` is lazy, and no consumer asks for items
 = Adapters only describe work. Without a consumer such as `collect`, `count` or a `for` loop, no item is ever produced. The compiler warns about the unused iterator.
 
 ? Which call gives ownership of the elements of a `Vec<String>`?
++ `v.into_iter()`
 - `v.iter()`
 - `v.iter_mut()`
-+ `v.into_iter()`
 - `v.len()`
 = `into_iter` consumes the vector and yields each `String` by value. `iter` yields `&String` and `iter_mut` yields `&mut String`.
 

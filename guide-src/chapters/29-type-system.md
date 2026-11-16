@@ -1,5 +1,5 @@
 @id type-system
-@part p3
+@part p3b
 @title The type system as a design tool
 @short Type system
 @level advanced
@@ -645,21 +645,21 @@ The check happens once, at the edge of the program. From then on, the type `Emai
 ? What does `300_i32 as u8` produce?
 - A compile error
 - A panic
-+ 44, because the value is cut down to the lowest 8 bits
 - 255
++ 44, because the value is cut down to the lowest 8 bits
 = `as` never fails. It keeps the lowest 8 bits: 300 − 256 = 44. Use `u8::try_from(300)` to get an error value in such a case.
 
 ? Why is there `i64::from(x)` for an `i32`, but no `i32::from(x)` for an `i64`?
-- An oversight in the standard library
 + `From` is only implemented for conversions that always succeed without loss. An `i64` may not fit into an `i32`
+- An oversight in the standard library
 - `i32` is older than `i64`
 - `From` only works with strings
 = For the direction that can fail, the standard library offers `TryFrom`, which returns a `Result`.
 
 ? What is the difference between `type Metres = f64;` and `struct Metres(f64);`?
 - There is none
-- The alias is faster
 + The alias is only another name for `f64`. The struct is a new, distinct type that cannot be mixed up with other `f64` values
+- The alias is faster
 - The struct uses more memory
 = An alias gives no protection: `Metres` and `f64` are interchangeable. A newtype is checked by the compiler and has the same size as its content.
 
@@ -672,9 +672,9 @@ The check happens once, at the edge of the program. From then on, the type `Emai
 
 ? In the typestate pattern, why do the transition methods take `self` by value?
 - It is faster
-+ The old state is consumed, so no one can go on using the object in its previous state
 - Methods cannot take `&self` in generic types
 - To allow cloning
++ The old state is consumed, so no one can go on using the object in its previous state
 = Moving `self` into the method ends the life of the old state. The only thing the caller has afterwards is the value of the new type.
 :::
 

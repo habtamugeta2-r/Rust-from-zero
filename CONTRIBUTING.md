@@ -1,10 +1,15 @@
 # Contributing to Rust from Zero
 
 Thank you for helping. This guide has one unusual rule that shapes everything
-else: **every Rust example is compiled and run, and the output printed in the
-guide is the output that program really produced.** Compiler messages are real
-diagnostics, on real line numbers. A change that breaks that promise is worse
-than no change.
+else: **code that claims an output has really produced it.** Every complete
+Rust program (`run`, `wrap`, `panic`) is compiled and run by
+`guide-src/tools/check.py` and its captured stdout must match the `output`
+block below it; every `fail` listing must produce the diagnostic it shows, on
+the line numbers it shows; `check` listings must compile. Listings that need
+crates from crates.io are built separately with `--ext`, and a project made of
+several files is rebuilt with `--projects`. A listing deliberately left
+unverified is not printed with output. A change that breaks that promise is
+worse than no change.
 
 ## Get set up
 
@@ -60,7 +65,7 @@ captured-output mechanism.
    for each), a quiz of at least four questions, and a recap.
 4. **Be honest about limits.** If a topic is only named and not taught, say so,
    and point somewhere useful. Do not let a crate appear once in a table with no
-   advice about when to choose it. `53-next.md` holds the written coverage
+   advice about when to choose it. `76-next.md` holds the written coverage
    policy: taught, named with advice, or declared out of scope with a reason.
 5. **Prose, not marketing.** No "simply", no "just", no claims that cannot be
    checked. Numbers that appear in the guide (example counts, versions) come

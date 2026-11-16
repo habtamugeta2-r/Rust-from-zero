@@ -90,7 +90,7 @@ export function CommandPalette({
       {
         kind: "action",
         id: "continue",
-        label: state.last ? "Continue where you left off" : "Start at chapter 1",
+        label: state.last ? "Continue where you left off" : "Start at chapter 0",
         hint: state.last ? state.last : "start",
         icon: BookOpen,
         run: () => go(lastChapter),
@@ -227,8 +227,11 @@ export function CommandPalette({
       return;
     }
 
-    // Arrows and Enter drive the highlight only while the field has focus; on a
-    // row, Enter and Space keep their native meaning for that row.
+    // The listbox is owned by the input, so the rows are `option`s inside it and
+    // must not take DOM focus: Tab moves through the field and the close button
+    // only, while arrows, Home/End and Enter drive the highlight. This is the
+    // WAI-ARIA combobox pattern; tabbing onto individual results instead would
+    // take focus off the combobox and break `aria-activedescendant`.
     if (event.target !== inputRef.current) return;
 
     if (event.key === "ArrowDown") {
@@ -241,6 +244,16 @@ export function CommandPalette({
       setActive((i) =>
         items.length === 0 ? 0 : (i - 1 + items.length) % items.length
       );
+      return;
+    }
+    if (event.key === "Home") {
+      event.preventDefault();
+      setActive(0);
+      return;
+    }
+    if (event.key === "End") {
+      event.preventDefault();
+      setActive(Math.max(0, items.length - 1));
       return;
     }
     if (event.key === "Enter") {
@@ -289,7 +302,15 @@ export function CommandPalette({
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Search chapters, sections and terms…"
+            // WAI-ARIA 1.2 combobox: the input is the combobox, it owns the
+            // listbox, and it points at the active option by id rather than
+            // moving DOM focus into the list.
+            role="combobox"
             aria-label="Search the guide"
+            aria-expanded={true}
+            aria-controls="palette-listbox"
+            aria-autocomplete="list"
+            aria-activedescendant={activeItem ? `palette-option-${activeItem.id}` : undefined}
             aria-describedby="palette-hint"
             autoComplete="off"
             autoCorrect="off"
@@ -315,6 +336,8 @@ export function CommandPalette({
         </p>
 
         <ul
+          id="palette-listbox"
+          role="listbox"
           className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-2"
           aria-label={q.length >= 2 ? "Search results" : "Quick links"}
         >
@@ -342,6 +365,10 @@ export function CommandPalette({
               return (
                 <li key={item.id}>
                   <Link
+                    id={`palette-option-${item.id}`}
+                    role="option"
+                    aria-selected={isActive}
+                    tabIndex={-1}
                     ref={(node) => {
                       itemRefs.current[index] = node;
                     }}
@@ -385,6 +412,10 @@ export function CommandPalette({
             return (
               <li key={item.id}>
                 <button
+                  id={`palette-option-${item.id}`}
+                  role="option"
+                  aria-selected={isActive}
+                  tabIndex={-1}
                   ref={(node) => {
                     itemRefs.current[index] = node;
                   }}

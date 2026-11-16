@@ -3,7 +3,7 @@
 @title Error handling
 @short Error handling
 @level intermediate
-@time 55
+@time 50
 @learn Tell apart errors a program should recover from and bugs that should stop it | Return, handle and pass on errors with `Result` and the `?` operator | Read and write files | Define your own error type | Choose between `panic!`, `Option` and `Result`, and compare `anyhow`, `thiserror`, `eyre` and `miette`
 
 Files can be missing, input can be malformed, and network requests can fail. These are expected outcomes a program may need to handle, not necessarily bugs. Rust commonly represents recoverable failures as `Result` values returned from functions. The type makes the possibility visible, and the compiler warns when a `Result` is discarded without being handled.
@@ -704,10 +704,10 @@ Avoid patterns that throw an error away without a decision: `let _ = risky();`, 
 = `?` unwraps an `Ok`, and on an `Err` it returns early with that error, converting it with `From` if needed.
 
 ? Which of these situations calls for a `Result` and not a panic?
-+ The user asks to open a file that does not exist
 - A function that must only receive even numbers, and has checked that itself two lines earlier, sees an odd one
 - An index that your own code calculated is outside the vector
 - A `match` arm that can never be reached is reached
++ The user asks to open a file that does not exist
 = A missing file is a normal event that the program should handle. The other three are bugs: the code is wrong, and stopping is the honest reaction.
 
 ? Why does this not compile?
@@ -716,8 +716,8 @@ fn main() {
     let n: i32 = "5".parse()?;
 }
 ```
-- `parse` does not return a `Result`
 + `?` needs a function that returns a `Result` or `Option`, and this `main` returns nothing
+- `parse` does not return a `Result`
 - `?` cannot be used with numbers
 - The type annotation is wrong
 = `?` may return an error from the function, so the function's return type must be able to hold one. Declare `fn main() -> Result<(), Box<dyn std::error::Error>>` and end with `Ok(())`.

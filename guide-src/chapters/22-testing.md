@@ -1,5 +1,5 @@
 @id testing
-@part p3
+@part p3b
 @title Testing your code
 @short Testing
 @level intermediate
@@ -473,7 +473,7 @@ In most languages you choose and install a test framework first: JUnit for Java,
 :::
 
 :::tip More tools for later
-[Chapter 72](#testing-strategies) goes further: tests that generate hundreds of random inputs (property testing), snapshot tests, measuring speed (benchmarks), replacing parts of a system with stand-ins (mocking), and running tests automatically on every change (continuous integration).
+[Chapter 37](#testing-strategies) goes further: tests that generate hundreds of random inputs (property testing), snapshot tests, measuring speed (benchmarks), replacing parts of a system with stand-ins (mocking), and running tests automatically on every change (continuous integration).
 :::
 
 :::recap
@@ -503,13 +503,13 @@ In most languages you choose and install a test framework first: JUnit for Java,
 ? Why prefer `assert_eq!(result, 5)` to `assert!(result == 5)`?
 - It is faster
 - `assert!` cannot compare numbers
-+ On failure it prints both values, so you see what the code actually produced
 - It works without `Debug`
++ On failure it prints both values, so you see what the code actually produced
 = Both check the same thing. `assert_eq!` gives the more useful failure message, with `left` and `right`.
 
 ? Where do integration tests live, and what can they use?
-- In `src/lib.rs`, and they can use everything
 + In the `tests/` folder, and they can only use the public API of the library
+- In `src/lib.rs`, and they can use everything
 - In `Cargo.toml`
 - In `src/tests.rs`, and they can use private functions
 = Each file in `tests/` is its own crate that depends on your library like any outside user would.
