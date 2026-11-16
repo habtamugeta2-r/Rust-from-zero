@@ -10,7 +10,7 @@ const SECURITY_HEADERS = [
   {
     key: "Content-Security-Policy",
     value:
-      "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'",
+      "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://play.rust-lang.org; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'",
   },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
   {

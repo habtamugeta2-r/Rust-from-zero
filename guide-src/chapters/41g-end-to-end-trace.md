@@ -11,7 +11,7 @@ This chapter brings several earlier threads together. You have met hardware and 
 
 Now let's watch **everything fire together** on just two ordinary lines of Rust:
 
-```rust
+```rust run
 fn main() {
     let name = String::from("Habtamu");
     println!("{}", name);

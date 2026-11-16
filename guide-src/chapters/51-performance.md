@@ -25,7 +25,7 @@ A restaurant gets complaints: the food takes too long. The owner is sure that th
 :::
 
 :::note The numbers in this chapter
-All times were measured on the machine that tests this guide: Linux, two processor cores, Rust 1.100. Your numbers will differ, but their proportions should be similar. The Run buttons of this chapter open the playground in release mode.
+All times were measured on the machine that tests this guide: Linux, two processor cores, Rust 1.100. Your numbers will differ, but their proportions should be similar. The Run buttons of this chapter compile and run the examples in release mode.
 :::
 
 ## A program to make faster

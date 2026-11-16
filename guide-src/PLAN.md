@@ -34,7 +34,7 @@ Deliverable: Next.js App Router web application (`src/`) built directly from
   single project from its chapter, and `python3 tools/project.py --list` lists all discovered projects.
   `python3 tools/check.py --projects --strict-targets` verifies all of them in CI (also wrapped by
   `tools/check-projects.py`).
-- Flag `release` on a rust block: check.py compiles it with optimisation, and Run opens the playground in release mode
+- Flag `release` on a rust block: check.py compiles it with optimisation, and Run executes it in release mode
   (chapter 51: timings).
 - `text`/`output` blocks with a line over 100 chars soft-wrap automatically (class `soft`), unless they contain
   box-drawing characters. Force with the flag `soft`, forbid with `nosoft` (compiler messages with ^^^ markers).
