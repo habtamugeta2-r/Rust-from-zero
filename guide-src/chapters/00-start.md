@@ -111,9 +111,9 @@ The grey box below the code shows the **output**: what appears on the screen whe
 Each code box has buttons in its top-right corner:
 
 - **Copy** puts the code on your clipboard so you can paste it somewhere else.
-- **Run** appears on complete programs. It opens the code in the *Rust Playground*, a free website that runs Rust for you, so you can try things without installing anything. It needs an internet connection.
+- **Run** appears on complete programs (and **Test** on unit-test listings). It compiles and runs the code right here in the guide and prints the result directly below the box, so you can try things without installing anything or leaving the page. Press **Edit** beside it to tweak the code and run your version in place. Running needs an internet connection.
 
-Some examples are *meant* to be wrong, because the error teaches something. They have a red label:
+Some examples are *meant* to be wrong, because the error teaches something. They have a red label — you can press **Run** to see the compiler error below, or **Edit** to fix the mistake right in place:
 
 ```rust fail
 fn main() {

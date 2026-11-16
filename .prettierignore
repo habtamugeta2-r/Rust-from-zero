@@ -6,7 +6,6 @@ scripts/check-deploy-config.mjs
 src/app/api/search/route.ts
 src/app/error.tsx
 src/app/not-found.tsx
-src/app/page.tsx
 src/app/progress/page.tsx
 src/app/search/page.tsx
 src/components/ChapterActions.tsx
@@ -14,7 +13,6 @@ src/components/ChapterBody.tsx
 src/components/ChapterBookmark.tsx
 src/components/ChapterRail.tsx
 src/components/ChecklistWidget.tsx
-src/components/CodeBlock.tsx
 src/components/CommandPalette.tsx
 src/components/ExerciseCard.tsx
 src/components/FlameGraph.tsx

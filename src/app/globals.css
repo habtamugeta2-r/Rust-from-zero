@@ -371,7 +371,8 @@ body {
 .guide-prose code:not(pre code),
 .guide-prose kbd,
 .guide-prose table,
-.guide-prose pre {
+.guide-prose pre,
+.guide-prose textarea {
   font-family: var(--font-mono);
 }
 

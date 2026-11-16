@@ -14,7 +14,7 @@ Start by running a small Rust program in the browser, where no local installatio
 A borrowed kitchen lets you try a recipe quickly, but a real kitchen is what you need when you are cooking for a week. The Rust Playground is the borrowed kitchen: perfect for a first try. A real Rust install is the kitchen you keep: the place where you build larger projects and keep your files.
 :::
 
-**1. In the browser: the Rust Playground.** Open [play.rust-lang.org](https://play.rust-lang.org). You see an editor with a small program in it. Press the **Run** button and the result appears below. That is all. The Playground is perfect for the first chapters and for quick experiments. The **Run** button on examples in this guide opens the example there for you.
+**1. In the browser: right inside this guide.** Press the **Run** button on any complete example in this guide and the result appears directly below the code box — no new tab, no setup. Press **Edit** to change the code and press **Run** again to test your change. For a blank scratchpad you can also visit the Rust Playground at [play.rust-lang.org](https://play.rust-lang.org). Running in the browser is ideal for the first chapters and for quick experiments.
 
 **2. On your own computer.** You will need this for multi-file projects, programs that read local files, and the later projects. The steps below explain how to install Rust and check that the tools work.
 
@@ -191,7 +191,7 @@ If you look in the project folder now, there is a new `target/` directory full o
 
 ## What every part of the program means
 
-```rust
+```rust run
 fn main() {
     println!("Hello, world!");
 }
