@@ -380,4 +380,15 @@ test("lint: docs/stats fires on a stale README and is silent on a true one", () 
     readmePath,
   });
   assert.ok(!fresh.includes("docs/stats"), `unexpected docs/stats: ${fresh}`);
+
+  const startPath = path.join(fixture.chaptersDir, "00-start.md");
+  fs.writeFileSync(
+    startPath,
+    "| Rust examples | 999 Rust listings across 888 code blocks |\n| Exercises & Quizzes | 77 worked exercises and 66 quiz questions |\n",
+  );
+  const staleStart = rulesFor(guide, fixture, {
+    checkReadmeStats: true,
+    readmePath,
+  });
+  assert.ok(staleStart.includes("docs/stats"));
 });

@@ -27,8 +27,8 @@ Explore the full chapter-by-chapter dependency map in the **[Complete Learning R
 | Structure | 13 Parts + 5 Appendices (83 tracked chapters & orientation guides + 5 appendices = 88 sections) |
 | Projects | 9 complete projects and labs built step by step, including a Linux `/proc` & ELF systems inspector |
 | Appendices | Glossary, systems & Rust reference tables, compiler error catalogue, language translation guides, and a from-source-to-silicon deep dive |
-| Rust examples | 991 Rust listings across 1,308 code blocks, paired with real compiler diagnostics and machine-level traces |
-| Exercises & Quizzes | 274 worked exercises (each with hint + solution) and 351 instant-feedback quiz questions |
+| Rust examples | 1,005 Rust listings across 1,329 code blocks, paired with real compiler diagnostics and machine-level traces |
+| Exercises & Quizzes | 274 worked exercises (each with hint + solution) and 379 quiz questions |
 
 Where the guide shows compiler diagnostics or captured output, those blocks come straight from `rustc` (Rust 2024 edition). Hardware, ELF, and Linux kernel experiments are written for `x86_64` and `ARM64` Linux environments with `rustc`, `cargo`, `objdump`, `readelf`, `nm`, `strace`, `rust-gdb`, `perf`, and `/proc`.
 

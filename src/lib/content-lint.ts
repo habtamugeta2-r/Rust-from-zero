@@ -756,6 +756,59 @@ export function lintContent(guide: LoadedGuide, options: LintOptions = {}): Lint
         }
       }
     }
+
+    const startPath = path.join(chaptersDir, "00-start.md");
+    if (fs.existsSync(startPath)) {
+      const startMd = fs.readFileSync(startPath, "utf8");
+      const parseNum = (s: string) => Number(s.replace(/,/g, ""));
+      const rustMatch = /(\d[\d,]*)\s+Rust listings across\s+(\d[\d,]*)\s+code blocks/.exec(
+        startMd,
+      );
+      if (rustMatch) {
+        const claimedRust = parseNum(rustMatch[1]);
+        const claimedBlocks = parseNum(rustMatch[2]);
+        if (claimedRust !== numbers.rustFences) {
+          problems.push({
+            severity: "error",
+            rule: "docs/stats",
+            where: "00-start.md",
+            message: `says ${claimedRust} Rust listings, but the parser counts ${numbers.rustFences}`,
+          });
+        }
+        if (claimedBlocks !== numbers.codeBlocks) {
+          problems.push({
+            severity: "error",
+            rule: "docs/stats",
+            where: "00-start.md",
+            message: `says ${claimedBlocks} code blocks, but the parser counts ${numbers.codeBlocks}`,
+          });
+        }
+      }
+      const exQuizMatch =
+        /(\d[\d,]*)\s+worked exercises[^\n]*and\s+(\d[\d,]*)\s+(?:instant-feedback\s+)?quiz questions/.exec(
+          startMd,
+        );
+      if (exQuizMatch) {
+        const claimedEx = parseNum(exQuizMatch[1]);
+        const claimedQuiz = parseNum(exQuizMatch[2]);
+        if (claimedEx !== numbers.exercises) {
+          problems.push({
+            severity: "error",
+            rule: "docs/stats",
+            where: "00-start.md",
+            message: `says ${claimedEx} worked exercises, but the parser counts ${numbers.exercises}`,
+          });
+        }
+        if (claimedQuiz !== numbers.quizQuestions) {
+          problems.push({
+            severity: "error",
+            rule: "docs/stats",
+            where: "00-start.md",
+            message: `says ${claimedQuiz} quiz questions, but the parser counts ${numbers.quizQuestions}`,
+          });
+        }
+      }
+    }
   }
 
   // ---- information, for the person reading the CI log ---------------------

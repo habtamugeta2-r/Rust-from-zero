@@ -30,7 +30,7 @@ table disagrees with that measurement.
 | Glossary terms | 253 |
 | Glossary terms linked from prose | 207 |
 | Cross-links (inbound edges) | 1,131 |
-| Words of prose | 224,135 |
+| Words of prose | 224,134 |
 | Declared reading time (minutes) | 4,558 |
 
 Exercises carry a hint and a worked solution; quiz questions carry an
