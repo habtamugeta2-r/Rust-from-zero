@@ -3,21 +3,11 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import {
-  Check,
-  ChevronDown,
-  ChevronRight,
-  Flag,
-  Menu,
-  Monitor,
-  Moon,
-  Search,
-  Sun,
-  X,
-} from "lucide-react";
+import { Menu, Monitor, Moon, Search, Sun, X } from "lucide-react";
 import type { ChapterSummary, PartMeta, SearchHit } from "@/lib/guide-types";
 import { themeHint, themeLabel } from "@/lib/theme";
 import { CommandPalette } from "./CommandPalette";
+import { ContentTree } from "./ContentTree";
 import { useGuideState } from "./GuideStateProvider";
 
 const SIDEBAR_KEY = "rust-guide-sidebar";
@@ -39,7 +29,6 @@ export function GuideShell({
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [isDesktop, setIsDesktop] = useState(true);
-  const [collapsedParts, setCollapsedParts] = useState<Record<string, boolean>>({});
   const [query, setQuery] = useState("");
   const [hits, setHits] = useState<SearchHit[] | null>(null);
   const [searching, setSearching] = useState(false);
@@ -246,10 +235,6 @@ export function GuideShell({
     }
   };
 
-  const togglePart = (key: string) => {
-    setCollapsedParts((prev) => ({ ...prev, [key]: !prev[key] }));
-  };
-
   const toggleNavigation = () => {
     if (isDesktop) setSidebarOpen((open) => !open);
     else setDrawerOpen((open) => !open);
@@ -435,96 +420,13 @@ export function GuideShell({
               ))}
             </div>
           ) : (
-            <nav aria-label="Table of contents" className="space-y-1">
-              {parts.map((part) => {
-                const list = chapters.filter((c) => c.part === part.key);
-                if (list.length === 0) return null;
-                const isCollapsed = Boolean(collapsedParts[part.key]);
-                const pDone = list.filter((c) => Boolean(state.done[c.id])).length;
-
-                return (
-                  <div key={part.key}>
-                    <button
-                      type="button"
-                      aria-expanded={!isCollapsed}
-                      aria-controls={`part-list-${part.key}`}
-                      onClick={() => togglePart(part.key)}
-                      className="flex w-full items-center gap-1.5 rounded-lg px-2 py-1.5 text-left text-xs font-bold text-[var(--g-ink2)] hover:bg-[var(--g-line)]/40 hover:text-[var(--g-ink)]"
-                    >
-                      {isCollapsed ? (
-                        <ChevronRight
-                          className="h-3.5 w-3.5 shrink-0 text-[var(--g-ink3)]"
-                          aria-hidden="true"
-                        />
-                      ) : (
-                        <ChevronDown
-                          className="h-3.5 w-3.5 shrink-0 text-[var(--g-ink3)]"
-                          aria-hidden="true"
-                        />
-                      )}
-                      <span className="min-w-0 flex-1 truncate">
-                        {part.partLabel && (
-                          <span className="mr-1.5 text-[10.5px] tracking-wider text-[var(--g-ink3)] uppercase">
-                            {part.partLabel}
-                          </span>
-                        )}
-                        {part.title}
-                      </span>
-                      {part.key !== "app" && (
-                        <span className="text-[11px] font-medium text-[var(--g-ink3)] tabular-nums">
-                          {pDone}/{list.length}
-                        </span>
-                      )}
-                    </button>
-
-                    {!isCollapsed && (
-                      <ol id={`part-list-${part.key}`} className="mt-0.5 space-y-0.5 pb-1.5 pl-3">
-                        {list.map((c) => {
-                          const isActive = c.id === activeChapterId;
-                          const isDone = Boolean(state.done[c.id]);
-                          return (
-                            <li key={c.id}>
-                              <Link
-                                href={`/chapters/${c.id}`}
-                                aria-current={isActive ? "page" : undefined}
-                                className={`relative flex items-center gap-2 rounded-lg px-2 py-1.5 text-[13px] leading-snug transition-colors ${
-                                  isActive
-                                    ? "bg-[var(--g-accent-soft)] font-semibold text-[var(--g-accent)]"
-                                    : "text-[var(--g-ink2)] hover:bg-[var(--g-surface)] hover:text-[var(--g-ink)]"
-                                }`}
-                              >
-                                {isActive && (
-                                  <span
-                                    aria-hidden="true"
-                                    className="absolute top-1.5 bottom-1.5 -left-2 w-[3px] rounded-full bg-[var(--g-accent)]"
-                                  />
-                                )}
-                                <span className="min-w-[1.6rem] shrink-0 font-mono text-[11px] tabular-nums text-[var(--g-ink3)]">
-                                  {c.num}
-                                </span>
-                                <span className="min-w-0 flex-1 truncate">{c.short}</span>
-                                {c.kind === "project" && (
-                                  <Flag
-                                    className="h-3 w-3 shrink-0 text-[var(--g-accent)]"
-                                    aria-hidden="true"
-                                  />
-                                )}
-                                {isDone && (
-                                  <Check
-                                    className="h-3.5 w-3.5 shrink-0 text-emerald-600 dark:text-emerald-400"
-                                    aria-hidden="true"
-                                  />
-                                )}
-                              </Link>
-                            </li>
-                          );
-                        })}
-                      </ol>
-                    )}
-                  </div>
-                );
-              })}
-            </nav>
+            <ContentTree
+              parts={parts}
+              chapters={chapters}
+              activeChapterId={activeChapterId}
+              done={state.done}
+              onNavigate={() => setDrawerOpen(false)}
+            />
           )}
         </div>
 

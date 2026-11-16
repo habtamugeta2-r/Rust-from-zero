@@ -217,7 +217,7 @@ async function renderBlock(
     case "callout": {
       const Icon = CALLOUT_ICONS[block.kind];
       return (
-        <aside key={key} role="note" className="guide-callout" data-kind={block.kind}>
+        <aside key={key} id={block.id} role="note" className="guide-callout" data-kind={block.kind}>
           <div className="guide-callout-label mb-2 flex items-center gap-2 font-sans text-xs font-bold tracking-[0.06em] uppercase">
             <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
             <span>{CALLOUT_LABELS[block.kind]}</span>
@@ -295,6 +295,7 @@ async function renderBlock(
       return (
         <ChecklistWidget
           key={key}
+          checklistId={block.checklistId}
           items={block.items.map((it) => ({
             id: it.id,
             content: <InlineRenderer nodes={it.children} />,
