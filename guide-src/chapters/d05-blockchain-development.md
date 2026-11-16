@@ -13,6 +13,14 @@ network. This chapter teaches the programming models, the cryptographic
 primitives and the economic patterns. It does not promise that a token will be
 valuable; it promises that you can read and write the code.
 
+Unlike most Definitive chapters, this one has no counterpart in the numbered
+library: blockchain was outside the guide's scope until this track. The
+prerequisites are therefore the language chapters, not a second treatment of
+the same material — [chapter D1](#core-language) for the language and
+[chapter D6](#security-engineering) for the cryptographic and hostile-input
+thinking that §5.7 and §5.9 rely on. Read this chapter in order the first
+time; there is no earlier version of it to skim.
+
 :::warn Irreversibility and real money
 A deployed program and a signed transaction are effectively irreversible. Test
 on a local validator or devnet, assume every input is hostile, and never put a

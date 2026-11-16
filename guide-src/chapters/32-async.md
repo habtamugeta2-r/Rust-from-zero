@@ -505,6 +505,8 @@ In [the chat server project](#project-chat), this skeleton grows into a chat ser
 
 You can use async Rust without this section. It is here because knowing what is inside takes away the mystery.
 
+Keep the boundary in mind. This section explains the *idea* of a future, a waker and an executor with a hand-written example small enough to hold in your head. The next chapter, [async internals](#concurrency-async-internals), then does the engineering version: the state-machine `enum` the compiler actually emits, why self-referential futures need `Pin`, and how Tokio's work-stealing scheduler parks and wakes tasks. Read this section for the mental model; read that chapter when an error message mentions `Pin` or `Send`, or when a task stalls and you need to know why.
+
 **A future is a value with one method, `poll`.** Polling a future asks: "are you finished?" It answers `Poll::Ready(value)` or `Poll::Pending` ("not yet, I will let you know").
 
 ```rust

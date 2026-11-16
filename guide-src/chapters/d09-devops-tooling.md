@@ -15,6 +15,13 @@ decide what ships. This chapter is the operational handbook. The library's
 [testing-strategies chapter](#testing-strategies) supply more depth on each
 tool; [chapter D4](#backend-development) covers the service runtime side.
 
+If you read those three library chapters, this chapter's first pass can be
+selective: Cargo mechanics, Clippy, formatting and the test pyramid are
+recaps. The material taught only here is procedural macros as a product
+(§9.3), command-line and terminal interfaces at depth (§9.4–§9.5), mocking and
+coverage as routine practice (§9.8–§9.9), containers and reproducible builds
+(§9.14–§9.15), and releasing software other people install (§9.16, §9.20).
+
 :::analogy A workshop with labelled drawers
 A good workshop does not make you a better craftsperson, but a missing label
 costs ten minutes every time. Cargo workspaces label the crates; features label

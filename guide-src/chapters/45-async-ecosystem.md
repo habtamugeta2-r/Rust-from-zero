@@ -1178,12 +1178,12 @@ finished in under a second: true
 The practice server answers number 5 only after two seconds, and number 7 with an error. Each result is kept together with its id, so one failure does not hide the other answers. This is the same idea as in [chapter 30](#iterators): decide per item what an error means.
 
 :::note Encrypted connections
-An address that starts with `https://` is encrypted with **TLS**. reqwest handles this for you. In version 0.13 it uses `rustls` by default, a TLS library written in Rust, so that no system library has to be installed. For a small script that needs no async code, `reqwest::blocking` offers the same API without `await` (enable the feature `blocking`). The crate `ureq` is a smaller, blocking alternative.
+An address that starts with `https://` is encrypted with **TLS**. reqwest handles this for you. In version 0.13 it uses `rustls` by default, a TLS library written in Rust, so that no system library has to be installed. For a small script that needs no async code, `reqwest::blocking` offers the same API without `await` (enable the feature `blocking`). The smaller blocking client, `ureq`, was compared with reqwest earlier in this section; the next part shows how to reuse one `ureq` client well.
 :::
 
-### `ureq`: a synchronous HTTP client
+### Reusing one `ureq` client: the `Agent`
 
-Choose `ureq` when a command-line program makes a few HTTP calls and a blocking request is simpler than introducing an async runtime. It is not a faster way to make many concurrent requests: while a call waits, its current thread is blocked. Its `Agent` owns reusable client configuration and a connection pool; borrow one agent across calls instead of rebuilding a client each time.
+The earlier comparison settled when to choose `ureq`: a few blocking calls from a program with no async runtime. This section adds the one habit that makes that choice work well in practice. Build a single `Agent` and borrow it for every call. The agent owns the reusable client configuration and the connection pool, so repeated requests can reuse a connection instead of paying for a new one each time. Remember the cost of the blocking design while you use it: a call in progress holds its thread, so an agent is a tool for a handful of sequential requests, not a way to run many requests at once.
 
 ```toml
 [dependencies]
@@ -1421,6 +1421,8 @@ Because `tonic` runs on `tower`, timeouts, concurrency limits, and request-ID / 
 ## Watching a service in production: logs, metrics and traces
 
 A program that works on your laptop is half of the job. In production nobody can attach a debugger to the machine that is failing, and the failure happens at three in the morning. What you have instead are three kinds of signal that the program emits while it runs. Between them they answer almost every question you will ever ask about a service.
+
+This section is the working essentials: which three signals exist, what each one answers, and the checklist a new service should satisfy. It is not the whole subject. The dedicated [observability chapter](#observability) goes further — composing a `tracing` subscriber, avoiding span bugs across `.await`, propagating trace context between services, exporting to OpenTelemetry, and separating liveness from readiness probes. Learn the vocabulary here, where you first run a service; open that chapter when a service of yours has to be operated by someone else.
 
 | Signal | The question it answers | Size | An example |
 |---|---|---|---|

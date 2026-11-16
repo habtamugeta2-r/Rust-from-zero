@@ -14,6 +14,13 @@ chapter](#unsafe), [FFI chapter](#ffi), [memory-layout
 chapter](#memory-layout) and [Linux systems lab](#linux-systems-lab) go deeper;
 this chapter is the practical tour.
 
+If you already read those library chapters, skim the layout, `unsafe` and FFI
+foundations in §3.1–§3.5 and spend your time on the recipes the library treats
+only in passing: C++ interop with `cxx` (§3.6), generated bindings (§3.7),
+process control as a recipe (§3.9), memory-mapped files (§3.11), inline
+assembly (§3.13), panic and out-of-memory handlers (§3.14), and the debugging
+workflow for a crash (§3.17).
+
 :::analogy A workshop with sharp tools
 Safe Rust is a workshop where every blade is retracted until you ask for it.
 `unsafe` does not remove the blade guards from the whole workshop; it opens one

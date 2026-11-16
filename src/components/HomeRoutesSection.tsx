@@ -52,7 +52,9 @@ export function HomeRoutesSection({
       </h2>
       <p className="mt-2 max-w-2xl font-sans text-[15px] leading-relaxed text-pretty text-[var(--g-ink2)]">
         Work through the core parts in order, or highlight a goal-based route
-        below so you only tackle what matches what you want to build. Tick
+        below so you only tackle what matches what you want to build. Routes
+        overlap on purpose — the same chapter can serve several goals — so pick
+        one route at a time rather than adding the hours together. Tick
         chapters off as you go and your progress is saved in this browser.
       </p>
 

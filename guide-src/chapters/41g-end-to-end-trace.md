@@ -9,6 +9,8 @@
 
 This chapter brings several earlier threads together. You have met hardware and binary data, followed Rust through [compiler stages](#compilation-pipeline), and studied [ownership](#ownership), [memory layout](#memory-layout) and [process startup](#program-loading-startup). Now trace one small program across those layers—from source code through compilation and loading to the instructions and system interactions involved while it runs.
 
+Read this chapter as the *running* counterpart to the compiler chapters. Part 2 stopped at the finished executable; this chapter starts there and follows bytes through the heap, the caches, a system call and the terminal. The [from-source-to-silicon appendix](#under-the-hood) draws the same route as a one-page map for revision; this chapter is the detailed walk, with the allocator, the kernel and the terminal included.
+
 Now let's watch **everything fire together** on just two ordinary lines of Rust:
 
 ```rust run

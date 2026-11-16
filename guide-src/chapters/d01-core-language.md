@@ -24,6 +24,18 @@ the aim is to show the shape of the idea, not to build an application. The
 shows where each linked chapter sits.
 :::
 
+:::tip Already read the library's language chapters? Read this chapter faster
+Parts 3–5 of the library teach this same language across twenty-five short
+chapters, from [variables](#variables) to [idioms](#idioms). If you finished
+those, do not read this chapter as a second course. Use its headings as a
+checklist: skim the sections whose library chapter you could still teach from
+memory, and slow down for the material the library treats lightly or in
+passing — generic associated types (§1.15), the interior mutability pattern
+(§1.27), typestate (§1.28), and const evaluation (§1.30). The exercises and
+quiz at the end are a compact test of the whole language; try them before you
+decide a section needs re-reading.
+:::
+
 ## 1.1 Variables, mutability and shadowing
 
 A binding is introduced with `let`. Bindings are **immutable by default**:

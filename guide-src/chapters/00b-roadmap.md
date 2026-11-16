@@ -7,7 +7,7 @@
 @time 25
 @learn Navigate the entire computer systems and Rust internals curriculum | Trace conceptual dependencies from hardware up to distributed services | See how every chapter maps to practical Linux and Rust experiments
 
-Use this roadmap to see how the guide is organised and how its topics connect. It lists the Parts and chapters, their learning goals, useful prerequisites and practical experiments. The order builds from basic ideas towards systems topics, but you can follow a project-specific route when that better fits your goal.
+Use this roadmap as a map, not as a second introduction. [How to use this guide](#start) explains how to study and how the interactive parts work; this page answers a narrower question: **what depends on what, and in which order should I read it?** It lists every Part and chapter with its learning goals, prerequisites and practical experiments. The order builds from basic ideas towards systems topics, but you can follow a project-specific route when that better fits your goal. Where the two spines of the guide cover the same ground — the library in Parts 1–15 and the Definitive Curriculum, D1–D13 — read one spine and use the other as a reference, as [the start page](#start) explains.
 
 ## How the Full Stack Connects
 
@@ -442,6 +442,9 @@ same material: thirteen domain-complete chapters, numbered **D1 to D13**, that
 each cover one area from beginner explanations to advanced practice, with
 idiomatic code, pitfalls, cross-references and exercises. Read it front to back
 for a structured path, or open a single chapter when you need that domain.
+Because each D chapter restates the language ideas it needs, reading both this
+track and Parts 1–15 from cover to cover would teach the core language twice.
+Choose one track as your route and use the other as a reference instead.
 
 | # | Chapter | Focus | Level |
 | --- | --- | --- | --- |

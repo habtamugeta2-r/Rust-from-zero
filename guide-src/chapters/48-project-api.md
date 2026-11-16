@@ -39,6 +39,10 @@ A link shortener works like the cloakroom of a theatre. You hand over a bulky co
 The cloakroom also shows how the program is organised. The attendant at the counter talks to the visitors. A sheet of rules says which coats are accepted. And only the clerk in the back walks among the racks. Each of the three has one job, and none does the job of another.
 :::
 
+:::note The architecture you learn here returns in the capstone
+The three layers, the single error type, the settings read from the environment, and the tests that bypass the network are not specific to a link shortener. They are the guide's standard shape for a database-backed service, and the [capstone project](#capstone) builds that same shape a second time — a personal library with both a web API and a command-line tool sharing one data model. Learn the shape carefully here, where the domain is at its smallest. In the capstone you will be able to skim the familiar steps and spend your attention on what is new there: the shared model, richer domain rules, and JSON import and export.
+:::
+
 ## Step 0: plan
 
 ### The API

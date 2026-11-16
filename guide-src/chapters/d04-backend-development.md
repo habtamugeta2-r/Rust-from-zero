@@ -15,6 +15,14 @@ chapter](#databases), [API project](#project-api) and [observability
 chapter](#observability) go deeper on the systems side; [chapter D2](#async-concurrency) supplies the
 async foundation, and [chapter D6](#security-engineering) covers the security properties in detail.
 
+If you built the guide's [API project](#project-api) and [capstone](#capstone),
+the Axum, SQLx and error-handling recipes here will feel familiar, because
+those projects use them end to end. What this chapter adds is breadth and
+choice: the other frameworks (§4.1), GraphQL and gRPC (§4.3–§4.4),
+authentication and authorisation as a system (§4.6–§4.7), queues and caching
+(§4.12–§4.13), and the operational concerns — versioning, pagination, health
+checks and graceful shutdown — collected in §4.21–§4.26.
+
 :::analogy A restaurant service, not a recipe book
 A backend is a kitchen during service: orders arrive (requests), a host seats
 them (routing), cooks prepare dishes (handlers), the pantry is shared (database

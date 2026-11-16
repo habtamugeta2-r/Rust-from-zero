@@ -26,11 +26,11 @@ table disagrees with that measurement.
 | Exercises | 313 |
 | Quiz questions | 444 |
 | Captured outputs | 104 |
-| Search entries | 20,687 |
+| Search entries | 20,751 |
 | Glossary terms | 253 |
 | Glossary terms linked from prose | 253 |
-| Cross-links (inbound edges) | 1,259 |
-| Words of prose | 267,220 |
+| Cross-links (inbound edges) | 1,306 |
+| Words of prose | 270,053 |
 | Declared reading time (minutes) | 5,030 |
 
 Exercises carry a hint and a worked solution; quiz questions carry an

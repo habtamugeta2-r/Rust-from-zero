@@ -15,6 +15,14 @@ server path and the component model that connects them. The [security chapter](#
 sandbox and capability model; the [DevOps chapter](#devops-tooling) covers size
 optimisation and release profiles.
 
+The library's [apps survey](#apps) introduces the same sandbox, the same
+`wasm-bindgen` glue and the same counter program, as one option among desktop
+and native toolkits. That survey is about choosing an interface world; this
+chapter assumes the choice is made. Survey readers can move quickly through
+§12.1–§12.4 and slow down for the four interface frameworks (§12.5–§12.8),
+WASI and the component model (§12.9–§12.11), and running Wasm outside a
+browser (§12.15–§12.19).
+
 :::analogy A shipping container for code
 A container has a standard exterior, a declared manifest and no ability to
 touch the ship except through the doors it was given. Wasm gives code a standard

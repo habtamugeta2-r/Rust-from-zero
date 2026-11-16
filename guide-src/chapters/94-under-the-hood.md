@@ -6,7 +6,9 @@
 @level advanced
 @time 45
 
-This appendix is for readers who want the last layer of the story. [Chapter 13](#memory) introduced the stack and the heap. [Chapter 41](#memory-layout) showed how individual values are arranged byte by byte. This page takes the remaining step: what the compiler does between your source text and a running program, what the operating system does to start it, and what the processor does with each instruction once it is running.
+This appendix is a consolidation, not a second teaching pass. The journey it follows — source text, compiler, executable, running process, processor — is taught in full, one stage at a time, in Part 2 and Parts 6–8. This page puts the stages back together on one screen, so you can check that you hold the whole route at once. If a stage below feels unfamiliar, read its chapter first and return here; the table after the picture says which chapter teaches which stage.
+
+Two neighbouring pages do related but different work. [The compilation pipeline](#compilation-pipeline) teaches each compiler stage with real `rustc` output, and the [end-to-end trace](#end-to-end-trace) follows two concrete lines of Rust through a running program, the allocator and the kernel. This appendix stays at map level: one small example, every station named, and a link onward wherever you want the detail.
 
 Everything here is a model, not a specification of the compiler. `rustc` and LLVM evolve, and internal stage names or ordering can change between versions. The explanations focus on recurring ideas—parsing, type checking, optimisation, code generation and process startup—and flag details that depend on the toolchain, target or optimisation settings.
 
@@ -55,7 +57,19 @@ Here is the whole route a Rust program travels, from the characters you type to 
   └──────────────────┘
 ```
 
-Each station is explained below, in order.
+Each station is explained below, in order. Use this table to find the full teaching chapter for any station:
+
+| Station on this page | Taught in full in |
+|---|---|
+| 1–2. Lexing and parsing | [The compilation pipeline](#compilation-pipeline) |
+| 3. HIR: names and types | [The compilation pipeline](#compilation-pipeline) |
+| 4. MIR and the borrow checker | [The compilation pipeline](#compilation-pipeline), and from the programmer's side in [borrowing](#borrowing) and [lifetimes](#lifetimes) |
+| 5. LLVM IR and optimisation | [The compilation pipeline](#compilation-pipeline) |
+| 6. Machine code | [Assembly and machine code](#assembly-machine-code) and [calling conventions](#calling-conventions-execution) |
+| 7. The linker and the executable file | [Linking and ELF](#linking-elf) |
+| 8. The operating system starts the program | [Program loading and start-up](#program-loading-startup) and [virtual memory](#virtual-memory-address-spaces) |
+| 9. Fetch, decode, execute | [Hardware architecture](#hardware-architecture) and [pipelines and branch prediction](#pipelines-branch-prediction-ooo) |
+| 10. One line, all the way down | [The end-to-end trace](#end-to-end-trace), which follows a running program into the kernel and the terminal |
 
 ## 1. Lexing: text becomes tokens
 

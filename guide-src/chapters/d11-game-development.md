@@ -14,6 +14,14 @@ ship a small game. The library's [games and embedded
 survey](#games-embedded) is a shorter introduction; [chapter D3](#systems-programming) covers the systems
 foundations, and [chapter D12](#webassembly) covers Wasm builds for the browser.
 
+The survey and this chapter intentionally show the same two engines at
+different depths: a macroquad game and a first Bevy app there, the working
+architecture here. If you played through the survey, skim §11.1–§11.4 until
+the ECS discussion goes past entities and systems into schedules and change
+detection, and reserve your attention for rendering, physics, audio, assets,
+netcode and procedural generation (§11.5 onwards), which the survey only
+names.
+
 :::analogy A theatre company, not a script
 A traditional game engine is a script: objects update in the order you wrote.
 An ECS is a theatre company: actors (entities) are identified by badges,
