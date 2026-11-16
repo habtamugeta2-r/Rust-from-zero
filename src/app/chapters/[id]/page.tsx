@@ -84,9 +84,7 @@ export default async function ChapterPage({ params }: { params: Promise<{ id: st
           {/* Chapter header */}
           <header className="mb-9 border-b border-[var(--g-line)] pb-7">
             <div className="flex flex-wrap items-center gap-x-3 gap-y-2 font-sans text-xs font-semibold">
-              <span className="rounded-full bg-[var(--g-accent-soft)] px-3 py-1 text-[11px] font-bold tracking-wide text-[var(--g-accent)]">
-                {eyebrow}
-              </span>
+              <span className="chapter-eyebrow">{eyebrow}</span>
               <span className="hidden text-[var(--g-ink3)] sm:inline">{chapter.partTitle}</span>
               <ChapterTocTrigger headings={chapter.headings} />
               <ChapterBookmark chapterId={chapter.id} title={chapter.title} />
@@ -97,16 +95,12 @@ export default async function ChapterPage({ params }: { params: Promise<{ id: st
               )}
             </div>
 
-            <h1 className="mt-3.5 font-sans text-[30px] leading-[1.14] font-bold tracking-[-0.02em] text-balance text-[var(--g-ink)] sm:text-[38px]">
+            <h1 className="mt-5 font-sans text-[34px] leading-[1.12] font-semibold tracking-[-0.045em] text-balance text-[var(--g-ink)] sm:text-[46px]">
               {chapter.title}
             </h1>
 
             {chapter.learnNodes.length > 0 && (
-              <div className="relative mt-6 overflow-hidden rounded-card border border-[var(--g-line)] bg-[var(--g-surface)] p-5 font-sans shadow-card">
-                <span
-                  aria-hidden="true"
-                  className="absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-[var(--g-accent)] to-[var(--g-accent-2)]"
-                />
+              <div className="chapter-objectives mt-7 font-sans">
                 <div className="mb-3 text-[11px] font-bold tracking-[0.08em] text-[var(--g-ink3)] uppercase">
                   In this chapter you will learn
                 </div>

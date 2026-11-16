@@ -26,17 +26,14 @@ export default function ProgressPage() {
 
   return (
     <div className="mx-auto w-full max-w-[var(--page-max)] px-5 py-10 sm:px-8 lg:py-14">
-      <p className="font-sans text-[11px] font-bold tracking-[0.09em] text-[var(--g-ink3)] uppercase">
-        Your progress
-      </p>
-      <h1 className="mt-2 font-sans text-[30px] font-bold tracking-tight text-balance text-[var(--g-ink)] sm:text-[36px]">
-        How far you have come
-      </h1>
-      <p className="mt-3 max-w-[var(--measure)] font-sans text-[15px] leading-relaxed text-[var(--g-ink2)]">
-        Everything below is kept in this browser only. Work through a chapter,
-        answer a quiz, tick an exercise — the numbers update as you go, and the
-        dashboard always points at the next thing to read.
-      </p>
+      <header className="guide-page-intro">
+        <p className="guide-page-eyebrow">YOUR LEARNING <span> / </span> PROGRESS</p>
+        <h1>Every step <em>counts.</em></h1>
+        <p>
+          Keep track of chapters, exercises and quizzes as you learn. Your progress is saved
+          privately in this browser.
+        </p>
+      </header>
 
       <div className="mt-8">
         <ProgressDashboard chapters={chapters} />

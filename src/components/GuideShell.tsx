@@ -229,6 +229,61 @@ export function GuideShell({
     );
   }
 
+  if (pathname === "/") {
+    return (
+      <div className="landing-shell">
+        <header className="landing-header no-print">
+          <div className="landing-header-inner">
+            <Link href="/" className="landing-brand" aria-label="Rust from Zero home">
+              <span className="landing-brand-mark">
+                R<span>.</span>
+              </span>
+              <span>
+                Rust <span className="landing-brand-light">from Zero</span>
+              </span>
+            </Link>
+            <nav aria-label="Main navigation" className="landing-nav">
+              <Link href="/chapters">The curriculum</Link>
+              <Link href="/chapters/roadmap">Learning roadmap</Link>
+              <Link href="/progress">Your progress</Link>
+            </nav>
+            <div className="landing-header-actions">
+              <button
+                type="button"
+                onClick={openPalette}
+                aria-label="Search the guide"
+                title="Search the guide"
+                className="landing-icon-button"
+              >
+                <Search className="h-[18px] w-[18px]" aria-hidden="true" />
+              </button>
+              <button
+                type="button"
+                onClick={cycleTheme}
+                aria-label={`Theme: ${themeLabel(themeMode)}. ${themeHint(themeMode)}`}
+                title={`Theme: ${themeLabel(themeMode)} — ${themeHint(themeMode)}`}
+                className="landing-icon-button"
+              >
+                {themeMode === "system" ? (
+                  <Monitor className="h-[18px] w-[18px]" aria-hidden="true" />
+                ) : themeMode === "dark" ? (
+                  <Moon className="h-[18px] w-[18px]" aria-hidden="true" />
+                ) : (
+                  <Sun className="h-[18px] w-[18px]" aria-hidden="true" />
+                )}
+              </button>
+              <Link href="/chapters/start" className="landing-header-cta">
+                Start learning <span aria-hidden="true">↗</span>
+              </Link>
+            </div>
+          </div>
+        </header>
+        <main id="main">{children}</main>
+        <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
+      </div>
+    );
+  }
+
   return (
     <div className="app-shell" data-sidebar={sidebarOpen ? "open" : "closed"}>
       {/* Mobile scrim */}
@@ -545,28 +600,11 @@ export function GuideShell({
   );
 }
 
-/** The gear-and-tick mark, drawn inline so it needs no network request. */
+/** Shared brand mark used on the landing page and in the guide. */
 function RustMark() {
   return (
-    <svg className="h-8 w-8 shrink-0 text-[var(--g-accent)]" viewBox="0 0 32 32" aria-hidden="true">
-      <circle
-        cx="16"
-        cy="16"
-        r="11"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="5"
-        strokeDasharray="4.32 4.32"
-      />
-      <circle cx="16" cy="16" r="8.4" fill="none" stroke="currentColor" strokeWidth="2.6" />
-      <path
-        d="M11.5 16.2l3.2 3.2 5.8-6.4"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2.4"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
+    <span className="landing-brand-mark shrink-0" aria-hidden="true">
+      R<span>.</span>
+    </span>
   );
 }
