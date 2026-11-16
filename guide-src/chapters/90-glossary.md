@@ -123,10 +123,7 @@ inlining :: An optimisation that copies the body of a small function into the pl
 inode :: Index node: the numbered file-system metadata record storing a file's owner, permissions, byte size, timestamps, and physical block extents (everything except its filename). See [chapter 67](#filesystems-cache-mmap).
 instruction :: One operation the processor can carry out. Machine code is a sequence of instructions with numeric opcodes. See [chapter 6](#assembly-machine-code), [chapter 52](#isa-opcodes-control-flow), and [the silicon appendix](#under-the-hood).
 integer :: A whole number. Rust has signed ones (`i8` to `i128`, `isize`) and unsigned ones (`u8` to `u128`, `usize`).
-integration TCP :: Transmission Control Protocol: the reliable, ordered, connection-oriented transport that carries most of the web, with a 20-byte header, sequence numbers, acknowledgements and congestion control. See [chapter 62](#tcp-udp-sockets-kernel).
-TCP :: Transmission Control Protocol: the reliable, ordered, connection-oriented transport that carries most of the web, with a 20-byte header, sequence numbers, acknowledgements and congestion control. See [chapter 62](#tcp-udp-sockets-kernel).
-
-test :: A test in the folder `tests/` that uses a crate from the outside, as a user would. See [chapter 27](#testing).
+integration test :: A test in the folder `tests/` that uses a crate from the outside, as a user would. See [chapter 27](#testing).
 interior mutability :: Changing a value through a shared reference, with the safety check moved to run time or to the processor. `Cell`, `RefCell`, `Mutex` and atomics do this. See [chapter 32](#smart-pointers).
 interrupt :: An asynchronous hardware signal (IRQ) from a device or timer causing the CPU to pause user code and jump to a Ring 0 kernel handler. See [chapter 49](#sync-interrupts-signals).
 invariant :: Something that must always be true for a value, such as "the percentage is between 0 and 100". Private fields and constructors protect invariants.
@@ -231,6 +228,7 @@ struct :: A type that groups several named values into one. See [chapter 17](#st
 Sync :: The marker trait for types that may be shared between threads by reference.
 system call :: A controlled CPU trap (`syscall` / `svc #0`) transferring privilege from Ring 3 user space to the Ring 0 kernel for I/O, memory mapping, or process management. See [chapter 47](#kernel-syscalls-processes).
 task :: A piece of async work that a runtime runs alongside others. Much cheaper than a thread.
+TCP :: Transmission Control Protocol: the reliable, ordered, connection-oriented transport that carries most of the web, with a 20-byte header, sequence numbers, acknowledgements and congestion control. See [chapter 62](#tcp-udp-sockets-kernel).
 test :: A function marked `#[test]` that checks that code does what it should. `cargo test` runs them all. See [chapter 27](#testing).
 thread :: A separate line of execution inside one program. Several threads can run at the same time on several cores. See [chapter 55](#threads).
 TLB :: Translation Lookaside Buffer: small ultra-fast hardware cache inside the MMU storing recent virtual-to-physical page translations. See [chapter 41](#virtual-memory-address-spaces).
