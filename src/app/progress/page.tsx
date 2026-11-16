@@ -22,9 +22,7 @@ export const metadata: Metadata = {
  */
 export default function ProgressPage() {
   const guide = loadGuide();
-  const chapters: ChapterMeta[] = guide.chapters
-    .filter((chapter) => chapter.kind !== "appendix")
-    .map(collectChapterMeta);
+  const chapters: ChapterMeta[] = guide.chapters.map(collectChapterMeta);
 
   return (
     <div className="mx-auto w-full max-w-[var(--page-max)] px-5 py-10 sm:px-8 lg:py-14">

@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { GuideShell } from "@/components/GuideShell";
-import { GuideStateProvider, type GlossaryTipItem } from "@/components/GuideStateProvider";
+import { GuideStateProvider } from "@/components/GuideStateProvider";
 import { loadGuide } from "@/lib/guide-parser";
 import { websiteJsonLd } from "@/lib/seo";
 import "./globals.css";
@@ -28,10 +28,11 @@ export const metadata: Metadata = {
   },
   openGraph: {
     type: "book",
+    locale: "en_GB",
     title: "Rust from Zero — The Complete Hands-On Guide",
     description: `Learn computer systems and Rust from scratch with plain language, architecture traces, ${EXERCISES} solved exercises, ${QUIZZES} quizzes and ${PROJECTS} hands-on projects.`,
     url: SITE_URL,
-    images: ["/og.png"],
+    images: [{ url: "/og.png", width: 1200, height: 630 }],
   },
   twitter: {
     card: "summary_large_image",
@@ -65,14 +66,18 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   const guide = loadGuide();
-  const slimGlossary: Record<string, GlossaryTipItem> = {};
-  for (const [k, v] of Object.entries(guide.glossary)) {
-    slimGlossary[k] = {
-      key: v.key,
-      term: v.term,
-      definitionPlain: v.definitionPlain,
-    };
-  }
+  const navigationChapters = guide.summaries.map(
+    ({ id, num, part, partTitle, kind, title, short, time }) => ({
+      id,
+      num,
+      part,
+      partTitle,
+      kind,
+      title,
+      short,
+      time,
+    }),
+  );
 
   const jsonLd = [
     {
@@ -110,8 +115,8 @@ export default function RootLayout({
         >
           Skip to content
         </a>
-        <GuideStateProvider glossary={slimGlossary}>
-          <GuideShell parts={guide.parts} chapters={guide.summaries}>
+        <GuideStateProvider>
+          <GuideShell parts={guide.parts} chapters={navigationChapters}>
             {children}
           </GuideShell>
         </GuideStateProvider>

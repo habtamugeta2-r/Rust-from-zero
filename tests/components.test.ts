@@ -11,16 +11,14 @@ import { ChecklistWidget } from "../src/components/ChecklistWidget";
 import { ExerciseCard } from "../src/components/ExerciseCard";
 import { GlossaryDirectory } from "../src/components/GlossaryDirectory";
 import { GuideFigure } from "../src/components/GuideFigure";
-import { GuideStateProvider, type GlossaryTipItem } from "../src/components/GuideStateProvider";
+import { GuideStateProvider } from "../src/components/GuideStateProvider";
 import { InlineRenderer } from "../src/components/InlineRenderer";
 import { MemoryStepper } from "../src/components/MemoryStepper";
 import { QuizWidget } from "../src/components/QuizWidget";
 import { loadGuide } from "../src/lib/guide-parser";
 
-function withState(glossary: Record<string, GlossaryTipItem>, node: React.ReactNode) {
-  return renderToStaticMarkup(
-    React.createElement(GuideStateProvider, { glossary, children: node }),
-  );
+function withState(node: React.ReactNode) {
+  return renderToStaticMarkup(React.createElement(GuideStateProvider, { children: node }));
 }
 
 test("component: GuideFigure renders light and dark SVG plates plus lightbox", () => {
@@ -61,13 +59,6 @@ test("component: every guide SVG figure has a matching dark-mode SVG plate", () 
 
 test("component: InlineRenderer renders terms, chapter links, route links and external links", () => {
   const html = withState(
-    {
-      ownership: {
-        key: "ownership",
-        term: "Ownership",
-        definitionPlain: "Single owner rule",
-      },
-    },
     React.createElement(InlineRenderer, {
       nodes: [
         { type: "term", key: "ownership", text: "ownership" },
@@ -130,7 +121,6 @@ test("component: MemoryStepper renders code, stack frames, heap slots and step c
 
 test("component: QuizWidget, ExerciseCard, ChecklistWidget and GlossaryDirectory render", () => {
   const quizHtml = withState(
-    {},
     React.createElement(QuizWidget, {
       quizId: "q-test",
       title: "Check",
@@ -151,7 +141,6 @@ test("component: QuizWidget, ExerciseCard, ChecklistWidget and GlossaryDirectory
   assert.ok(quizHtml.includes("1 question"));
 
   const exHtml = withState(
-    {},
     React.createElement(ExerciseCard, {
       exerciseId: "ex-test",
       kind: "guided",
@@ -165,7 +154,6 @@ test("component: QuizWidget, ExerciseCard, ChecklistWidget and GlossaryDirectory
   assert.ok(exHtml.includes("Use println!"));
 
   const checkHtml = withState(
-    {},
     React.createElement(ChecklistWidget, {
       checklistId: "cl-test",
       items: [{ id: "cl-item-0", content: "Read chapter" }],
@@ -174,7 +162,6 @@ test("component: QuizWidget, ExerciseCard, ChecklistWidget and GlossaryDirectory
   assert.ok(checkHtml.includes("Read chapter"));
 
   const glossHtml = withState(
-    {},
     React.createElement(GlossaryDirectory, {
       entries: [
         {
@@ -224,19 +211,11 @@ async function resolveAsyncTree(node: React.ReactNode): Promise<React.ReactNode>
 
 test("e2e: BlockList renders real guide chapters including new SVGs and steppers", async () => {
   const guide = loadGuide(true);
-  const tips: Record<string, GlossaryTipItem> = {};
-  for (const [key, entry] of Object.entries(guide.glossary)) {
-    tips[key] = {
-      key,
-      term: entry.term,
-      definitionPlain: entry.definitionPlain,
-    };
-  }
   for (const id of ["enums", "collections", "shared-state", "kernel-syscalls-processes"]) {
     const ch = guide.chapters.find((c) => c.id === id);
     assert.ok(ch, `missing chapter ${id}`);
     const element = await resolveAsyncTree(await BlockList({ blocks: ch.blocks }));
-    const html = withState(tips, element);
+    const html = withState(element);
     assert.ok(html.length > 1000, `chapter ${id} rendered too short`);
     if (id === "collections") {
       assert.ok(html.includes("Step through it:"), "collections missing stepper");

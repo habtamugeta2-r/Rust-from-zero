@@ -12,7 +12,7 @@ import {
   RotateCcw,
 } from "lucide-react";
 import { executeRustCode, formatRunDuration, type RunOutput } from "@/lib/rust-runner";
-import { applyTabIndent, DiagnosticPre } from "./CodeBlock";
+import { applyTabIndent, DiagnosticPre } from "./CodeBlockActions";
 
 type HeroRunState =
   | { status: "preview" }

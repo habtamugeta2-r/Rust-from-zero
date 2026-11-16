@@ -4,9 +4,10 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { test } from "node:test";
-import { loadGuide } from "../src/lib/guide-parser";
+import { inlinePlainText, loadGuide } from "../src/lib/guide-parser";
 import { flattenContentTree } from "../src/lib/content-tree";
-import type { BlockNode, ContentNodeKind } from "../src/lib/guide-types";
+import { LANG_LABELS } from "../src/lib/guide-config";
+import type { BlockNode, ContentNodeKind, InlineNode } from "../src/lib/guide-types";
 
 /** Every DOM anchor a chapter outline may point at, from its blocks. */
 function anchorIds(blocks: BlockNode[], into = new Set<string>()): Set<string> {
@@ -67,7 +68,7 @@ function fixtureRoot(): string {
 @short Fixture
 @level beginner
 @time 30
-@learn One | Two | Three
+@learn Learn the compass keyword | Focus on nested list indexing | Understand flame graph widths
 
 ## First heading
 
@@ -79,6 +80,8 @@ A paragraph about [[borrowing]] and [[nosuchterm]], linking to [the second chapt
 
 - one
 - two
+- Parent list item phrase
+  > Nested block content phrase.
 
 | A | B |
 | --- | --- |
@@ -134,6 +137,8 @@ fn main() {}
 \`\`\`flame A caption
 main | 100 | main
   child | 40 | child
+zero | 0 | zero
+  empty | 0 | empty
 \`\`\`
 `,
   );
@@ -192,6 +197,39 @@ function blockTypes(blocks: BlockNode[]): Set<string> {
   };
   visit(blocks);
   return types;
+}
+
+function collectInlineNodes(
+  node: unknown,
+  type: InlineNode["type"],
+  into: InlineNode[] = [],
+): InlineNode[] {
+  if (!node || typeof node !== "object") return into;
+  if (Array.isArray(node)) {
+    for (const child of node) collectInlineNodes(child, type, into);
+    return into;
+  }
+  const record = node as Record<string, unknown>;
+  if (record.type === type) into.push(record as InlineNode);
+  for (const child of Object.values(record)) collectInlineNodes(child, type, into);
+  return into;
+}
+
+function collectCodeBlocks(
+  node: unknown,
+  into: Extract<BlockNode, { type: "code" }>[] = [],
+): Extract<BlockNode, { type: "code" }>[] {
+  if (!node || typeof node !== "object") return into;
+  if (Array.isArray(node)) {
+    for (const child of node) collectCodeBlocks(child, into);
+    return into;
+  }
+  const record = node as Record<string, unknown>;
+  if (record.type === "code" && typeof record.code === "string") {
+    into.push(record as Extract<BlockNode, { type: "code" }>);
+  }
+  for (const child of Object.values(record)) collectCodeBlocks(child, into);
+  return into;
 }
 
 test("parser: a fixture chapter yields every block type", () => {
@@ -265,6 +303,72 @@ test("parser: an unknown glossary term is a warning, a known one is not", () => 
     !guide.warnings.some((warning) => warning.includes("[[borrowing]]")),
     "the defined term must not warn",
   );
+});
+
+test("parser: route-link plain text returns the visible labels", () => {
+  const roadmap = loadGuide(true).chapterMap["roadmap"];
+  const routeLinks = collectInlineNodes(roadmap.blocks, "routeLink");
+  const labels = routeLinks.map((node) => inlinePlainText([node]));
+  assert.ok(labels.includes("your progress"), `route labels were ${labels.join(", ")}`);
+  assert.ok(labels.includes("search"), `route labels were ${labels.join(", ")}`);
+});
+
+test("parser: search indexes nested list labels and interactive block content", () => {
+  const guide = loadGuide(true, fixtureRoot());
+  const texts = guide.searchIndex
+    .filter((entry) => entry.chapterId === "fixture")
+    .map((entry) => entry.text.toLowerCase());
+  const expected = [
+    "parent list item phrase",
+    "nested block content phrase",
+    "which answer is right?",
+    "the wrong one",
+    "because the fixture says so.",
+    "first item",
+    "the program starts.",
+    "a caption",
+    "empty",
+    "learn the compass keyword",
+  ];
+  for (const phrase of expected) {
+    assert.ok(
+      texts.some((text) => text.includes(phrase)),
+      `search index is missing “${phrase}”`,
+    );
+  }
+});
+
+test("parser: zero-width flame parents never produce NaN or Infinity", () => {
+  const guide = loadGuide(true, fixtureRoot());
+  const flame = guide.chapterMap["fixture"].blocks.find((block) => block.type === "flame");
+  assert.ok(flame && flame.type === "flame");
+  const zero = flame.roots.find((node) => node.label === "zero");
+  assert.ok(zero);
+  const empty = zero.children.find((node) => node.label === "empty");
+  assert.ok(empty);
+  assert.equal(zero.widthPct, 0);
+  assert.equal(empty.widthPct, 0);
+  assert.ok(Number.isFinite(zero.widthPct));
+  assert.ok(Number.isFinite(empty.widthPct));
+});
+
+test("parser: blockquoted Rust fences preserve code indentation", () => {
+  const chapter = loadGuide(true).chapterMap["next"];
+  const quotedExample = collectCodeBlocks(chapter.blocks).find((block) =>
+    block.code.includes("let total: f64"),
+  );
+  assert.ok(quotedExample, "the quoted runnable sketch is parsed as a code block");
+  assert.equal(
+    quotedExample.code,
+    'fn main() {\n    let total: f64 = (0..10).map(|n| n as f64).sum();\n    println!("{total}");\n}',
+  );
+});
+
+test("parser: language labels cover protobuf, flame, tree and MIR blocks", () => {
+  assert.equal(LANG_LABELS.protobuf, "Protocol Buffers");
+  assert.equal(LANG_LABELS.flame, "Flame graph");
+  assert.equal(LANG_LABELS.tree, "Folder layout");
+  assert.equal(LANG_LABELS.mir, "Rust MIR");
 });
 
 test("parser: a chapter summary carries its content graph", () => {

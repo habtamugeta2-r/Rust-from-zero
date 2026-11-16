@@ -1,14 +1,10 @@
-"use client";
-
 import React from "react";
 import Link from "next/link";
 import { ExternalLink } from "lucide-react";
 import type { InlineNode } from "@/lib/guide-types";
-import { useGuideState } from "./GuideStateProvider";
+import { GlossaryTerm } from "./GlossaryTerm";
 
 export function InlineRenderer({ nodes }: { nodes: InlineNode[] }) {
-  const { showGlossaryTip, hideGlossaryTip, activeTipKey } = useGuideState();
-
   return (
     <>
       {nodes.map((node, i) => {
@@ -46,25 +42,7 @@ export function InlineRenderer({ nodes }: { nodes: InlineNode[] }) {
               </em>
             );
           case "term":
-            return (
-              <button
-                key={i}
-                type="button"
-                data-glossary-term={node.key}
-                title={`Glossary: ${node.text}`}
-                onMouseEnter={(e) => showGlossaryTip(node.key, e.currentTarget)}
-                onMouseLeave={hideGlossaryTip}
-                onFocus={(e) => showGlossaryTip(node.key, e.currentTarget)}
-                onBlur={hideGlossaryTip}
-                onClick={(e) => {
-                  if (activeTipKey === node.key) hideGlossaryTip();
-                  else showGlossaryTip(node.key, e.currentTarget);
-                }}
-                className="cursor-help border-b border-dotted border-[var(--g-accent)] font-inherit text-inherit transition-colors hover:text-[var(--g-accent)] focus:outline-none focus-visible:rounded focus-visible:ring-2 focus-visible:ring-[var(--g-accent)]"
-              >
-                {node.text}
-              </button>
-            );
+            return <GlossaryTerm key={i} termKey={node.key} text={node.text} />;
           case "internalLink": {
             const href =
               node.chapterId === "home"

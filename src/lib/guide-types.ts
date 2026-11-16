@@ -180,6 +180,15 @@ export interface ChapterSummary {
   outline: ContentNode[];
 }
 
+/** Minimal chapter metadata sent to the client-side navigation shell. */
+export type NavigationChapter = Pick<
+  ChapterSummary,
+  "id" | "num" | "part" | "partTitle" | "kind" | "title" | "short" | "time"
+> & {
+  /** Fetched on demand for the active chapter or when a reader expands it. */
+  outline?: ContentNode[];
+};
+
 export interface ChapterData extends ChapterSummary {
   learnNodes: InlineNode[][];
   blocks: BlockNode[];

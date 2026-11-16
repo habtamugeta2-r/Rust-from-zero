@@ -26,6 +26,8 @@ import type { SearchEntry, SearchHit } from "./guide-types";
 
 const SNIPPET_BEFORE = 36;
 const SNIPPET_AFTER = 64;
+export const MAX_QUERY_LENGTH = 120;
+export const MAX_QUERY_TOKENS = 8;
 
 export interface SearchOptions {
   /** Hard cap on returned hits. */
@@ -67,49 +69,107 @@ interface Match {
   index: number;
   /** 3 whole word, 2 prefix, 1 substring, 0 no match. */
   strength: number;
+  /** True when the matched word is the exact token the user typed. */
+  exactToken?: boolean;
 }
 
-function wordPrefixIndex(lower: string, word: string): { index: number; surface: string } | null {
-  const pattern = new RegExp(`(^|[^a-z0-9])(${escapeRegExp(word)}[a-z0-9]*)`, "i");
-  const found = pattern.exec(lower);
-  if (!found) return null;
-  return { index: found.index + found[1].length, surface: found[2] };
+interface CompiledCandidate {
+  word: string;
+  isOriginal: boolean;
+  whole: RegExp;
+  prefix: RegExp;
+  allowPrefix: boolean;
+  allowInfix: boolean;
 }
 
 function escapeRegExp(text: string): string {
   return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
+const WORD_REGEX_CACHE = new Map<string, { whole: RegExp; prefix: RegExp }>();
+
+function getWordRegexes(word: string): { whole: RegExp; prefix: RegExp } {
+  let cached = WORD_REGEX_CACHE.get(word);
+  if (!cached) {
+    const escaped = escapeRegExp(word);
+    cached = {
+      whole: new RegExp(`(^|[^a-z0-9])(${escaped})(?![a-z0-9])`, "i"),
+      prefix: new RegExp(`(^|[^a-z0-9])(${escaped}[a-z0-9]*)`, "i"),
+    };
+    WORD_REGEX_CACHE.set(word, cached);
+  }
+  return cached;
+}
+
+// Pre-compile all synonym keys and expansions at module load time.
+for (const [key, expansions] of Object.entries(SYNONYMS)) {
+  getWordRegexes(key);
+  for (const synonym of expansions) {
+    getWordRegexes(synonym);
+  }
+}
+
+function compileQueryWord(queryWord: string): CompiledCandidate[] {
+  const isSynonymKey = Object.prototype.hasOwnProperty.call(SYNONYMS, queryWord);
+  return expandWord(queryWord).map((word) => {
+    const { whole, prefix } = getWordRegexes(word);
+    const isShort = word.length <= 3;
+    return {
+      word,
+      isOriginal: word === queryWord,
+      whole,
+      prefix,
+      allowPrefix: !(isShort && word === queryWord && isSynonymKey),
+      allowInfix: !isShort,
+    };
+  });
+}
+
 /** Best match of one query word (with synonyms) against one entry. */
-function matchWord(entry: SearchEntry, queryWord: string): Match | null {
+function matchCompiledWord(entry: SearchEntry, candidates: CompiledCandidate[]): Match | null {
   let best: Match | null = null;
-  for (const word of expandWord(queryWord)) {
-    const whole = new RegExp(`(^|[^a-z0-9])(${escapeRegExp(word)})(?![a-z0-9])`, "i").exec(
-      entry.lower,
-    );
+  for (const candidate of candidates) {
+    const whole = candidate.whole.exec(entry.lower);
     if (whole) {
-      const candidate: Match = {
+      const match: Match = {
         surface: whole[2],
         index: whole.index + whole[1].length,
         strength: 3,
+        exactToken: candidate.isOriginal,
       };
-      if (!best || candidate.strength > best.strength) best = candidate;
+      if (
+        !best ||
+        match.strength > best.strength ||
+        (match.strength === best.strength && match.exactToken && !best.exactToken)
+      ) {
+        best = match;
+      }
       continue;
     }
-    const prefix = wordPrefixIndex(entry.lower, word);
-    if (prefix) {
-      const candidate: Match = { surface: prefix.surface, index: prefix.index, strength: 2 };
-      if (!best || candidate.strength > best.strength) best = candidate;
-      continue;
+    if (candidate.allowPrefix) {
+      const prefix = candidate.prefix.exec(entry.lower);
+      if (prefix) {
+        const match: Match = {
+          surface: prefix[2],
+          index: prefix.index + prefix[1].length,
+          strength: 2,
+          exactToken: candidate.isOriginal,
+        };
+        if (!best || match.strength > best.strength) best = match;
+        continue;
+      }
     }
-    const index = entry.lower.indexOf(word);
-    if (index >= 0) {
-      const candidate: Match = {
-        surface: entry.text.slice(index, index + word.length),
-        index,
-        strength: 1,
-      };
-      if (!best || candidate.strength > best.strength) best = candidate;
+    if (candidate.allowInfix) {
+      const index = entry.lower.indexOf(candidate.word);
+      if (index >= 0) {
+        const match: Match = {
+          surface: entry.text.slice(index, index + candidate.word.length),
+          index,
+          strength: 1,
+          exactToken: candidate.isOriginal,
+        };
+        if (!best || match.strength > best.strength) best = match;
+      }
     }
   }
   return best;
@@ -148,9 +208,14 @@ export function searchEntries(
   query: string,
   options: SearchOptions = {},
 ): SearchHit[] {
-  const words = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  const capped = query.trim().slice(0, MAX_QUERY_LENGTH);
+  const words = Array.from(new Set(capped.toLowerCase().split(/\s+/).filter(Boolean))).slice(
+    0,
+    MAX_QUERY_TOKENS,
+  );
   if (words.length === 0) return [];
 
+  const compiledWords = words.map(compileQueryWord);
   const limit = options.limit ?? 40;
   const best = new Map<string, { score: number; entry: SearchEntry; match: Match }>();
 
@@ -158,22 +223,24 @@ export function searchEntries(
     let strength = 0;
     let firstMatch: Match | null = null;
     let matchesAll = true;
-    for (const word of words) {
-      const match = matchWord(entry, word);
+    for (const candidates of compiledWords) {
+      const match = matchCompiledWord(entry, candidates);
       if (!match) {
         matchesAll = false;
         break;
       }
-      strength += match.strength;
+      strength += match.strength + (match.exactToken && match.strength === 3 ? 1 : 0);
       if (!firstMatch) firstMatch = match;
     }
     if (!matchesAll || !firstMatch) continue;
 
-    const score =
-      entry.weight +
-      strength * 2 +
-      (entry.lower.startsWith(words[0]) ? 5 : 0) -
-      Math.min(4, entry.text.length / 200);
+    const startsBonus =
+      firstMatch.index === 0 && firstMatch.strength === 3 && firstMatch.exactToken
+        ? 18
+        : entry.lower.startsWith(words[0])
+          ? 5
+          : 0;
+    const score = entry.weight + strength * 2 + startsBonus - Math.min(4, entry.text.length / 200);
     const key = `${entry.chapterId}|${entry.anchor}`;
     const previous = best.get(key);
     if (!previous || score > previous.score) {

@@ -574,7 +574,6 @@ describe("in-guide Rust runner", () => {
     }) =>
       renderToStaticMarkup(
         React.createElement(GuideStateProvider, {
-          glossary: {},
           children: React.createElement(CodeBlock, {
             lang: "rust",
             label: "Rust",

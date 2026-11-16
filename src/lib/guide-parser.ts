@@ -307,7 +307,7 @@ function renderFlame(caption: string, lines: string[], ctx: ParseCtx): BlockNode
       .split("|")
       .map((f) => f.trim());
     const pct = Number(fields[1]);
-    if (fields.length < 2 || Number.isNaN(pct)) {
+    if (fields.length < 2 || !Number.isFinite(pct)) {
       ctx.warnings.push(`${ctx.id}: bad flame line ${JSON.stringify(raw)}`);
       continue;
     }
@@ -328,7 +328,10 @@ function renderFlame(caption: string, lines: string[], ctx: ParseCtx): BlockNode
   const convert = (node: RawNode, parentPct: number): FlameNode => {
     counter += 1;
     const hue = 8 + ((counter * 23) % 40);
-    const widthPct = Math.min(100, (100 * node.pct) / parentPct);
+    const widthPct =
+      parentPct > 0 && Number.isFinite(parentPct) && Number.isFinite(node.pct)
+        ? Math.min(100, Math.max(0, (100 * node.pct) / parentPct))
+        : 0;
     return {
       id: `fl-${counter}`,
       label: node.label,
@@ -839,6 +842,12 @@ function renderDirective(head: string, buf: string[], ctx: ParseCtx): BlockNode[
   return parseBlocks(buf, ctx);
 }
 
+/** Remove only the quote marker and its optional separator, preserving code indentation. */
+function stripQuotePrefix(line: string): string {
+  const prefix = line.match(/^\s*> ?/);
+  return prefix ? line.slice(prefix[0].length) : line;
+}
+
 function parseBlocks(lines: string[], ctx: ParseCtx): BlockNode[] {
   const out: BlockNode[] = [];
   let i = 0;
@@ -974,7 +983,7 @@ function parseBlocks(lines: string[], ctx: ParseCtx): BlockNode[] {
       const buf: string[] = [];
       let j = i;
       while (j < n && lines[j].trim().startsWith(">")) {
-        buf.push(lines[j].trim().slice(1).trimStart());
+        buf.push(stripQuotePrefix(lines[j]));
         j += 1;
       }
       out.push({ type: "blockquote", blocks: parseBlocks(buf, ctx) });
@@ -996,6 +1005,27 @@ function parseBlocks(lines: string[], ctx: ParseCtx): BlockNode[] {
   }
 
   return out;
+}
+
+function addSearchText(
+  rawText: string,
+  ch: RawChapter,
+  out: SearchEntry[],
+  curHeading: { anchor: string; text: string },
+  weight = 8,
+): void {
+  const text = rawText.trim();
+  if (text.length < 3) return;
+  out.push({
+    chapterId: ch.id,
+    num: ch.num,
+    chapterTitle: ch.title,
+    anchor: curHeading.anchor,
+    heading: curHeading.text,
+    text,
+    lower: text.toLowerCase(),
+    weight,
+  });
 }
 
 function collectSearchEntries(
@@ -1090,7 +1120,7 @@ function collectSearchEntries(
       case "list":
         for (const item of b.items) {
           const text = inlinePlainText(item.children);
-          if (text.length >= 3 && item.blocks.length === 0) {
+          if (text.length >= 3) {
             out.push({
               chapterId: ch.id,
               num: ch.num,
@@ -1110,11 +1140,55 @@ function collectSearchEntries(
       case "details":
         collectSearchEntries(b.blocks, ch, out, curHeading);
         break;
+      case "quiz":
+        addSearchText(inlinePlainText(b.title), ch, out, curHeading, 10);
+        for (const question of b.questions) {
+          collectSearchEntries(question.prompt, ch, out, curHeading);
+          for (const option of question.options) {
+            addSearchText(inlinePlainText(option.children), ch, out, curHeading, 9);
+          }
+          collectSearchEntries(question.explanation, ch, out, curHeading);
+        }
+        break;
       case "exercise":
+        addSearchText(inlinePlainText(b.title), ch, out, curHeading, 9);
         collectSearchEntries(b.body, ch, out, curHeading);
         if (b.hint) collectSearchEntries(b.hint, ch, out, curHeading);
         if (b.solution) collectSearchEntries(b.solution, ch, out, curHeading);
         break;
+      case "checklist":
+        for (const item of b.items) {
+          addSearchText(inlinePlainText(item.children), ch, out, curHeading, 8);
+        }
+        break;
+      case "stepper":
+        addSearchText(inlinePlainText(b.title), ch, out, curHeading, 10);
+        addSearchText(b.code, ch, out, curHeading, 4);
+        for (const step of b.steps) {
+          addSearchText(inlinePlainText(step.note), ch, out, curHeading, 8);
+          for (const value of step.stack) {
+            addSearchText(
+              `${value.frame} ${value.name} ${value.value} ${value.state}`,
+              ch,
+              out,
+              curHeading,
+              5,
+            );
+          }
+          for (const value of step.heap) {
+            addSearchText(`${value.value} ${value.state}`, ch, out, curHeading, 5);
+          }
+        }
+        break;
+      case "flame": {
+        addSearchText(inlinePlainText(b.caption), ch, out, curHeading, 6);
+        const visit = (node: FlameNode) => {
+          addSearchText(`${node.label} ${node.long}`, ch, out, curHeading, 5);
+          node.children.forEach(visit);
+        };
+        b.roots.forEach(visit);
+        break;
+      }
       case "glossary":
         for (const entry of b.entries) {
           const term = inlinePlainText(entry.term);
@@ -1380,6 +1454,10 @@ export function loadGuide(forceReload = false, rootDir?: string): LoadedGuide {
       weight: 30,
     });
     collectSearchEntries(ch.blocks, raw, searchIndex, { anchor: "", text: "" });
+    const learnHeading = { anchor: "", text: "In this chapter you will learn" };
+    for (const objective of ch.learnNodes) {
+      addSearchText(inlinePlainText(objective), raw, searchIndex, learnHeading, 12);
+    }
   }
 
   const chapterMap: Record<string, ChapterData> = {};
