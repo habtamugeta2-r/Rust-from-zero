@@ -1,9 +1,9 @@
 @id testing
-@part p3
+@part p3b
 @title Testing your code
 @short Testing
 @level intermediate
-@time 45
+@time 35
 @learn Write tests and run them with `cargo test` | Check results with `assert!`, `assert_eq!` and `assert_ne!`, and read a failure report | Test that code panics or returns errors as intended | Organise unit tests, integration tests and documentation tests | Choose good test cases
 
 The compiler checks types, borrowing rules and whether required pattern cases are covered. Those checks cannot tell whether the program's behaviour matches your intent: a function meant to add two numbers could subtract them and still compile. A **[[test]]** runs code with chosen inputs and checks an expected result, giving you a way to verify behaviour as well as compilation.
@@ -287,7 +287,7 @@ Everything so far was a **unit test**: a test of one small piece (a "unit") in i
 
 ### 2. Integration tests: from the outside
 
-An **integration test** uses your library the way another crate would: only through its public API. Integration tests live in a folder called `tests` next to `src`. Each file there is compiled as its own small crate.
+An **[[integration test]]** uses your library the way another crate would: only through its public API. Integration tests live in a folder called `tests` next to `src`. Each file there is compiled as its own small crate.
 
 ```text
 textkit/
@@ -473,7 +473,7 @@ In most languages you choose and install a test framework first: JUnit for Java,
 :::
 
 :::tip More tools for later
-[Chapter 72](#testing-strategies) goes further: tests that generate hundreds of random inputs (property testing), snapshot tests, measuring speed (benchmarks), replacing parts of a system with stand-ins (mocking), and running tests automatically on every change (continuous integration).
+[Chapter 34](#testing-strategies) goes further: tests that generate hundreds of random inputs (property testing), snapshot tests, measuring speed (benchmarks), replacing parts of a system with stand-ins (mocking), and running tests automatically on every change (continuous integration).
 :::
 
 :::recap
@@ -488,35 +488,35 @@ In most languages you choose and install a test framework first: JUnit for Java,
 :::quiz Check your understanding
 ? When does a test function pass?
 - When it returns `true`
-+ When it finishes without panicking (or returns `Ok`)
 - When it prints "ok"
++ When it finishes without panicking (or returns `Ok`)
 - When it has at least one assertion
 = The test runner treats a panic as a failure. The assertion macros panic when their check fails.
 
 ? What does `#[cfg(test)]` on the `tests` module do?
 - It runs the tests automatically at every build
-- It makes the tests run faster
 + It compiles the module only when testing, so the tests are not part of the normal program
+- It makes the tests run faster
 - It makes private functions public
 = `cfg` is short for "configuration". The module is included only under `cargo test`, so tests cost nothing in the finished binary.
 
 ? Why prefer `assert_eq!(result, 5)` to `assert!(result == 5)`?
-- It is faster
-- `assert!` cannot compare numbers
 + On failure it prints both values, so you see what the code actually produced
+- `assert!` cannot compare numbers
+- It is faster
 - It works without `Debug`
 = Both check the same thing. `assert_eq!` gives the more useful failure message, with `left` and `right`.
 
 ? Where do integration tests live, and what can they use?
 - In `src/lib.rs`, and they can use everything
-+ In the `tests/` folder, and they can only use the public API of the library
 - In `Cargo.toml`
++ In the `tests/` folder, and they can only use the public API of the library
 - In `src/tests.rs`, and they can use private functions
 = Each file in `tests/` is its own crate that depends on your library like any outside user would.
 
 ? A test passes when run alone, and sometimes fails when all tests run together. What is the most likely reason?
-- The compiler has a bug
 + The test shares something (a file, a global value) with another test, and tests run in parallel
+- The compiler has a bug
 - `assert_eq!` is unreliable
 - The test is too short
 = Tests run at the same time and in no fixed order. Tests that share state can disturb each other. Make each test independent, for example by giving each its own file name.

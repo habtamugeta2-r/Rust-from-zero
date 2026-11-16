@@ -3,7 +3,7 @@
 @title Structs: building your own types
 @short Structs and methods
 @level beginner
-@time 40
+@time 35
 @learn Define a struct that groups related values under one name | Create, read and change struct values | Give a struct behaviour with methods and associated functions | Print structs for debugging and add common abilities with `derive` | Explain how structs differ from classes in other languages
 
 A program often needs to keep related facts together: a user's name and email, or a rectangle's width and height. A **[[struct]]** is a type you define to group named fields into one value. This chapter builds structs, creates and updates their values, and gives them methods.
@@ -202,12 +202,12 @@ When you run small examples like this one, the compiler may warn that the fields
 :::
 
 :::plain Attribute and derive
-A line such as `#[derive(Debug)]` is an **attribute**: extra information for the compiler about the item that follows it. `derive` asks the compiler to write some standard code for your type automatically. `Debug` is the ability to be printed with `{:?}`. You will meet more of these abilities below. They are called *traits*, and [chapter 25](#traits) explains them.
+A line such as `#[derive(Debug)]` is an **attribute**: extra information for the compiler about the item that follows it. [[derive]] asks the compiler to write some standard code for your type automatically. `Debug` is the ability to be printed with `{:?}`. You will meet more of these abilities below. They are called *traits*, and [chapter 25](#traits) explains them.
 :::
 
 ## Methods: giving a struct behaviour
 
-A **method** is a function that belongs to a type. Methods are written in an `impl` block ("implementation") and are called with a dot.
+A **method** is a function that belongs to a type. Methods are written in an [[impl]] (`impl`) block ("implementation") and are called with a dot.
 
 ```rust run
 #[derive(Debug)]
@@ -481,8 +481,8 @@ A struct's fields are stored side by side as one block. A `Point` with two `i32`
 
 :::quiz Check your understanding
 ? What does `&self` in a method signature mean?
-- The method creates a new instance
 + The method borrows the instance it is called on and can only read it
+- The method creates a new instance
 - The method takes ownership of the instance
 - The method does not use the instance
 = `&self` is a shared borrow of the instance. To change it, a method needs `&mut self`. To take ownership, it uses `self`.
@@ -490,8 +490,8 @@ A struct's fields are stored side by side as one block. A `Point` with two `i32`
 ? How do you call the associated function `new` of the struct `Rectangle`?
 - `Rectangle.new(3, 4)`
 - `new Rectangle(3, 4)`
-+ `Rectangle::new(3, 4)`
 - `rectangle.new(3, 4)`
++ `Rectangle::new(3, 4)`
 = Associated functions are called on the type with `::`. Methods are called on an instance with a dot.
 
 ? Why does this not compile?
@@ -507,8 +507,8 @@ let song = Song { title: String::from("Blue") };
 
 ? What is the newtype pattern good for?
 - It makes programs run faster
-+ It gives a simple value its own type, so that the compiler stops you from mixing it up with other values of the same underlying type
 - It allows a struct to inherit from another
++ It gives a simple value its own type, so that the compiler stops you from mixing it up with other values of the same underlying type
 - It lets you avoid `derive`
 = `struct Meters(f64);` and `struct Seconds(f64);` are different types although both hold an `f64`, so they cannot be confused.
 :::

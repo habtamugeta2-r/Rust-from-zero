@@ -4,7 +4,7 @@
 @title DNS, TLS 1.3, HTTP/1.1 vs HTTP/2 vs HTTP/3 & Packet Trace
 @short DNS, HTTP, TLS & packet trace
 @level intermediate
-@time 35
+@time 30
 @learn Trace DNS resolution from /etc/hosts and glibc nsswitch to UDP/53 recursive resolvers and TTL caching | Explain TLS 1.3 (X25519 key exchange, X.509 certificate chains, AEAD encryption) in 1-RTT | Contrast HTTP/1.1 text streams, HTTP/2 binary multiplexed frames, and HTTP/3 over QUIC/UDP | Follow reqwest::get("https://example.com/data") end-to-end across every network packet and syscall
 
 The [end-to-end trace](#end-to-end-trace) followed a local program from source code to terminal output. This chapter follows a network request through name resolution, transport and application protocols, then relates those layers to the Rust code that initiates it. The path varies with configuration, caches and protocol negotiation, so the trace is a model of a common case rather than a fixed route.
@@ -266,8 +266,8 @@ Does the Linux kernel's TCP stack know that byte range `0..1460` belonged only t
 :::quiz Check your understanding
 ? How many network round trips does a cold **TLS 1.3** handshake take after TCP connects (compared to TLS 1.2's 2 round trips)?
 - 0 round trips always
-+ 1 round trip (client sends `ClientHello` + ephemeral `KeyShare`, server completes handshake in one reply)
 - 3 round trips
++ 1 round trip (client sends `ClientHello` + ephemeral `KeyShare`, server completes handshake in one reply)
 - 5 round trips
 = TLS 1.3 eliminates the extra key-exchange round trip by sending the ephemeral X25519 key share eagerly inside `ClientHello`.
 
@@ -279,8 +279,8 @@ Does the Linux kernel's TCP stack know that byte range `0..1460` belonged only t
 = Ephemeral Diffie-Hellman keys (`X25519`) are discarded when the connection closes; the long-term certificate key only *signs* the handshake, never encrypts traffic directly.
 
 ? What security failure did Heartbleed demonstrate in C TLS implementations that Rust's `rustls` eliminates structurally?
-- Slow `X25519` curve math
 + Reading out-of-bounds heap memory past an untrusted packet slice length; Rust enforces slice bounds checks on every parse
+- Slow `X25519` curve math
 - Forgetting to set `TCP_NODELAY`
 - DNS cache poisoning
 = Checked slice indexing in Rust refuses to copy past `&pkt[..]` boundaries even if an attacker lies about a length prefix.

@@ -93,14 +93,36 @@ const AMERICAN_TO_BRITISH: Record<string, string> = {
   judgment: "judgement",
   skillful: "skilful",
   acknowledgment: "acknowledgement",
+  catalog: "catalogue",
+  catalogs: "catalogues",
+  dialog: "dialogue",
+  dialogs: "dialogues",
+  fiber: "fibre",
+  monomorphization: "monomorphisation",
+  monomorphized: "monomorphised",
+  monomorphizing: "monomorphising",
+  monomorphize: "monomorphise",
+  synchronizing: "synchronising",
+  synchronized: "synchronised",
+  synchronize: "synchronise",
+  synchronization: "synchronisation",
+  serializing: "serialising",
+  serialized: "serialised",
+  serialize: "serialise",
+  deserializing: "deserialising",
+  deserialized: "deserialised",
+  deserialize: "deserialise",
 };
 
 /**
  * Phrases that are American by name, not by accident: the C++ expansion of
- * RAII, which is a quotation. Matched case-insensitively against the whole
- * line before the spelling check runs.
+ * RAII, which is a quotation, plus standard testing terminology. Matched
+ * case-insensitively against the whole line before the rules run.
  */
-const ALLOWED_PHRASES = ["resource acquisition is initialization"];
+const ALLOWED_PHRASES = ["resource acquisition is initialization", "obviously correct"];
+
+const DISMISSIVE_RE =
+  /\b(obviously|trivially|of course|(?:simply|just)\s+(?:use|run|call|write|add|pass|put|drop|create|check|remove|replace|change))\b/i;
 
 const PLACEHOLDER_MARKERS = [
   /\bTODO\b/,
@@ -423,6 +445,7 @@ export function lintContent(guide: LoadedGuide, options: LintOptions = {}): Lint
   const capturedDir = options.capturedDir ?? path.join(chaptersDir, "..", "captured");
 
   const knownIds = new Set(guide.chapters.map((chapter) => chapter.id));
+  const chapterById = new Map(guide.chapters.map((chapter) => [chapter.id, chapter]));
 
   // ---- per-chapter structure, spelling and links -------------------------
   const inbound = new Map<string, number>();
@@ -546,6 +569,56 @@ export function lintContent(guide: LoadedGuide, options: LintOptions = {}): Lint
       continue;
     }
 
+    // Raw-markdown link label check (the parser rewrites `[chapter N](#id)`
+    // at parse time, so only the raw source reveals stale chapter numbers).
+    {
+      let inFence = false;
+      let inGlossary = false;
+      const seenGlossary = new Map<string, number>();
+      const rawLines = markdown.split("\n");
+      for (let i = 0; i < rawLines.length; i += 1) {
+        const raw = rawLines[i];
+        const trimmed = raw.trim();
+        if (trimmed.startsWith("```")) {
+          inFence = !inFence;
+          continue;
+        }
+        if (inFence) continue;
+        const noInlineCode = raw.replace(/`[^`]*`/g, " ");
+        for (const m of noInlineCode.matchAll(
+          /\[([Cc])hapter\s+(\d+)\]\(#([a-z0-9-]+)(?:\/[^)\s]*)?\)/g,
+        )) {
+          const target = chapterById.get(m[3]);
+          if (target && /^\d+$/.test(target.num) && Number(m[2]) !== Number(target.num)) {
+            problems.push({
+              severity: "error",
+              rule: "link/chapter-number",
+              where: `${chapter.file}:${i + 1}`,
+              message: `“${m[0]}” says chapter ${Number(m[2])}, but #${target.id} is chapter ${Number(target.num)}`,
+            });
+          }
+        }
+        if (chapter.id === "glossary") {
+          if (trimmed.startsWith(":::glossary")) inGlossary = true;
+          else if (trimmed === ":::") inGlossary = false;
+          else if (inGlossary && raw.includes("::")) {
+            const termKey = raw.slice(0, raw.indexOf("::")).trim().toLowerCase();
+            const prevLine = seenGlossary.get(termKey);
+            if (prevLine !== undefined) {
+              problems.push({
+                severity: "error",
+                rule: "glossary/duplicate",
+                where: `${chapter.file}:${i + 1}`,
+                message: `duplicate glossary key “${termKey}” (first defined at line ${prevLine})`,
+              });
+            } else {
+              seenGlossary.set(termKey, i + 1);
+            }
+          }
+        }
+      }
+    }
+
     const lines = visibleLines(markdown);
     for (const { line, text } of lines) {
       for (const marker of PLACEHOLDER_MARKERS) {
@@ -571,6 +644,56 @@ export function lintContent(guide: LoadedGuide, options: LintOptions = {}): Lint
             rule: "text/spelling",
             where: `${chapter.file}:${line}`,
             message: `“${match[0]}” — this guide uses British spelling: “${british}”`,
+          });
+        }
+      }
+
+      // Dismissive filler aimed at the reader ("simply run", "obviously", ...),
+      // stripping double-quoted strings so quoted criticism is not flagged.
+      const unquoted = sentenceFree.replace(/"[^"]*"/g, " ");
+      const dismissive = DISMISSIVE_RE.exec(unquoted);
+      if (dismissive) {
+        problems.push({
+          severity: "error",
+          rule: "text/dismissive",
+          where: `${chapter.file}:${line}`,
+          message: `avoid dismissive phrasing “${dismissive[0]}”; state the step directly`,
+        });
+      }
+    }
+
+    if (chapter.id === "roadmap") {
+      const partHeadingRe = /^##\s+Part\s+(\d+)\s+[—·-]\s+(.+)$/;
+      const roadmapParts = new Map<number, { line: number; title: string }>();
+      let inFence = false;
+      markdown.split("\n").forEach((raw, idx) => {
+        const trimmed = raw.trim();
+        if (trimmed.startsWith("```")) {
+          inFence = !inFence;
+          return;
+        }
+        if (inFence) return;
+        const m = partHeadingRe.exec(trimmed);
+        if (m) roadmapParts.set(Number(m[1]), { line: idx + 1, title: m[2].trim() });
+      });
+      let pNum = 0;
+      for (const part of guide.parts) {
+        if (!part.key.startsWith("p")) continue;
+        pNum += 1;
+        const found = roadmapParts.get(pNum);
+        if (!found) {
+          problems.push({
+            severity: "error",
+            rule: "docs/roadmap-part-title",
+            where: chapter.file,
+            message: `missing “## Part ${pNum} — ${part.title}” heading`,
+          });
+        } else if (found.title !== part.title) {
+          problems.push({
+            severity: "error",
+            rule: "docs/roadmap-part-title",
+            where: `${chapter.file}:${found.line}`,
+            message: `Part ${pNum} heading says “${found.title}”, but guide-config.ts has “${part.title}”`,
           });
         }
       }

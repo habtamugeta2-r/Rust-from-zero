@@ -3,7 +3,7 @@
 @title Databases: SQL with SQLx, Diesel and SeaORM
 @short Databases
 @level intermediate
-@time 100
+@time 65
 @learn Explain tables, rows, keys and the basic SQL statements | Query a database from Rust with SQLx and map rows to structs | Prevent SQL injection with bound parameters | Keep data consistent with transactions and row locking | Size connection pools, paginate with cursors and avoid N+1 queries | Manage the schema with migrations and check queries at compile time | Pair SQL with Redis caching, NoSQL or embedded key-value stores
 
 Keeping application data only in memory or rewriting a whole file becomes awkward when records grow, multiple users update them, or queries need to filter and combine information. A **database** is software for storing and querying structured data, often with support for transactions and concurrent clients. Its durability and performance depend on the database, configuration and workload; this chapter shows how Rust applications work with those guarantees.
@@ -567,7 +567,7 @@ Running `sqlx migrate run` again does nothing, because both are recorded as inst
 sqlx::migrate!().run(&pool).await?;
 ```
 
-The macro reads the folder while the program is compiled. Cargo compiles again only when a Rust file changes, so a new migration file alone would go unnoticed. A build script ([chapter 37](#ffi)) next to `Cargo.toml` tells Cargo to watch the folder. The command `sqlx migrate build-script` writes it for you:
+The macro reads the folder while the program is compiled. Cargo compiles again only when a Rust file changes, so a new migration file alone would go unnoticed. A build script ([chapter 40](#ffi)) next to `Cargo.toml` tells Cargo to watch the folder. The command `sqlx migrate build-script` writes it for you:
 
 ```rust file=build.rs
 fn main() {
@@ -1188,16 +1188,16 @@ For search, `tantivy` is a search engine library: you define a schema, index doc
 
 :::quiz Check your understanding
 ? Why is `format!("SELECT * FROM users WHERE name = '{name}'")` dangerous when `name` comes from a user?
-- It is slower than a bound parameter
 + The input becomes part of the SQL text, so a crafted input can change the meaning of the query
+- It is slower than a bound parameter
 - `format!` cannot handle quotes
 - The query returns too many columns
 = This is SQL injection. With `.bind(name)`, the value is sent apart from the SQL text and can never be read as SQL.
 
 ? A function starts a transaction, runs one `UPDATE`, and then returns early with `?` because the next statement failed. What happens to the `UPDATE`?
 - It stays in the database
-+ It is undone: the transaction is dropped without `commit`, which rolls it back
 - The database is left locked
++ It is undone: the transaction is dropped without `commit`, which rolls it back
 - The program panics
 = Dropping a transaction rolls it back. Only an explicit `commit()` makes the changes permanent.
 
@@ -1209,24 +1209,24 @@ For search, `tantivy` is a search engine library: you define a schema, index doc
 = `fetch_optional` returns `Option<T>`. `fetch_one` would return an error for a missing row, which makes an expected case look like a failure.
 
 ? What does an index on a column do?
-- It makes the column unique
-- It sorts the table on disk
 + It lets the database find rows by that column without reading the whole table, at some cost for every write
+- It sorts the table on disk
+- It makes the column unique
 - It compresses the column
 = An index is a sorted look-up structure. It speeds up reads that filter or sort by the column, and must be kept up to date on writes.
 
 ? What is special about `sqlx::query!` compared with `sqlx::query`?
 - It runs the query faster
-- It needs no database at all
 + It checks the SQL and the types against a real database while the program is compiled
+- It needs no database at all
 - It writes the SQL for you
 = The macro asks the development database (or the saved `.sqlx` data) to describe the query. Wrong column names and types become compile errors.
 
 ? Why is keyset (cursor) pagination (`WHERE (created_at, id) < ($1, $2)`) usually better than `LIMIT 20 OFFSET 10000` for large tables?
 - SQL databases cannot use `OFFSET` with `ORDER BY`
-+ `OFFSET` forces the database to scan and discard earlier rows on every page and can duplicate or skip items when new rows are inserted
-- `OFFSET` returns rows in random order
 - Keyset pagination requires no index
+- `OFFSET` returns rows in random order
++ `OFFSET` forces the database to scan and discard earlier rows on every page and can duplicate or skip items when new rows are inserted
 = With an index on `(created_at, id)`, keyset pagination jumps straight to the next page in constant work per page, regardless of how deep the user scrolls.
 
 ? Why should you avoid setting `max_connections(500)` on each instance of a web service's database pool?

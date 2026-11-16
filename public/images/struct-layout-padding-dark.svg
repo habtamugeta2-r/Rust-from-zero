@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 470" role="img" aria-labelledby="t d">
+  <title id="t">Struct alignment, padding, and Rust field reordering</title>
+  <desc id="d">A repr(C) struct with u8, u32, and u16 fields uses 12 bytes due to 5 bytes of alignment padding, whereas Rust's default layout reorders fields from largest to smallest to fit in 8 bytes.</desc>
+  <rect width="1200" height="470" rx="24" fill="#1C1A17"/>
+  <rect x="1" y="1" width="1198" height="468" rx="23" fill="none" stroke="#2D2A24" stroke-width="2"/>
+  <text x="48" y="58" font-family="system-ui, sans-serif" font-size="24" font-weight="700" fill="#ECE7DD">Alignment, padding, and why Rust reorders struct fields</text>
+  <text x="48" y="86" font-family="system-ui, sans-serif" font-size="15" fill="#A49B88">A 4-byte u32 must sit at an address divisible by 4. Sorting fields shrinks the wasted gaps.</text>
+  <g font-family="system-ui, sans-serif">
+    <text x="48" y="138" font-size="14" font-weight="700" letter-spacing="1.5" fill="#E9743E">#[repr(C)] · WRITTEN ORDER (a: u8, b: u32, c: u16) · 12 BYTES TOTAL</text>
+    <rect x="48" y="152" width="1104" height="94" rx="14" fill="#39231A" stroke="#E9743E" stroke-width="2"/>
+    <g font-family="ui-monospace, monospace" font-size="14" text-anchor="middle">
+      <rect x="72" y="172" width="84" height="54" rx="8" fill="#FFFFFF" stroke="#BC4114" stroke-width="2"/><text x="114" y="205" font-weight="700" fill="#11100E" stroke="#3E3930" stroke-width="1.5">a: u8</text>
+      <rect x="162" y="172" width="264" height="54" rx="8" fill="#232019" stroke="#3E3930" stroke-dasharray="6 4"/><text x="294" y="205" fill="#A49B88">3 bytes padding</text>
+      <rect x="432" y="172" width="352" height="54" rx="8" fill="#FFFFFF" stroke="#0F766E" stroke-width="2"/><text x="608" y="205" font-weight="700" fill="#11100E" stroke="#3E3930" stroke-width="1.5">b: u32 (offset 4)</text>
+      <rect x="790" y="172" width="174" height="54" rx="8" fill="#FFFFFF" stroke="#0369A1" stroke-width="2"/><text x="877" y="205" font-weight="700" fill="#11100E" stroke="#3E3930" stroke-width="1.5">c: u16 (off 8)</text>
+      <rect x="970" y="172" width="158" height="54" rx="8" fill="#232019" stroke="#3E3930" stroke-dasharray="6 4"/><text x="1049" y="205" fill="#A49B88">2 B tail pad</text>
+    </g>
+
+    <text x="48" y="294" font-size="14" font-weight="700" letter-spacing="1.5" fill="#2DD4BF">RUST DEFAULT (#[repr(Rust)]) · REORDERED (b, c, a) · 8 BYTES TOTAL</text>
+    <rect x="48" y="308" width="764" height="94" rx="14" fill="#12322E" stroke="#2DD4BF" stroke-width="2"/>
+    <g font-family="ui-monospace, monospace" font-size="14" text-anchor="middle">
+      <rect x="72" y="328" width="352" height="54" rx="8" fill="#FFFFFF" stroke="#0F766E" stroke-width="2"/><text x="248" y="361" font-weight="700" fill="#11100E" stroke="#3E3930" stroke-width="1.5">b: u32 (offset 0)</text>
+      <rect x="430" y="328" width="174" height="54" rx="8" fill="#FFFFFF" stroke="#0369A1" stroke-width="2"/><text x="517" y="361" font-weight="700" fill="#11100E" stroke="#3E3930" stroke-width="1.5">c: u16 (off 4)</text>
+      <rect x="610" y="328" width="84" height="54" rx="8" fill="#FFFFFF" stroke="#BC4114" stroke-width="2"/><text x="652" y="361" font-weight="700" fill="#11100E" stroke="#3E3930" stroke-width="1.5">a: u8</text>
+      <rect x="700" y="328" width="88" height="54" rx="8" fill="#232019" stroke="#3E3930" stroke-dasharray="6 4"/><text x="744" y="361" fill="#A49B88">1B pad</text>
+    </g>
+    <rect x="836" y="308" width="316" height="94" rx="14" fill="#181613" stroke="#2DD4BF" stroke-width="2"/>
+    <text x="994" y="348" text-anchor="middle" font-size="18" font-weight="700" fill="#2DD4BF">33% smaller</text>
+    <text x="994" y="376" text-anchor="middle" font-size="13.5" fill="#C2BBAF">Fits more structs per 64-byte cache line.</text>
+
+    <text x="48" y="440" font-size="14" font-style="italic" fill="#A49B88">Use #[repr(C)] only when sharing exact byte order with C or a wire/disk format.</text>
+  </g>
+</svg>

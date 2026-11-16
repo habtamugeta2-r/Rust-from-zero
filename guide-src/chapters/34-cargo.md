@@ -1,9 +1,9 @@
 @id cargo
-@part p12
+@part p3b
 @title Cargo in depth
 @short Cargo in depth
 @level intermediate
-@time 50
+@time 55
 @learn Read and write every important section of `Cargo.toml` | Manage dependencies, versions and features | Tune builds with profiles | Organise several packages in a workspace | Document, install and publish a crate, and manage toolchains with rustup
 
 Cargo is Rust's build tool and package manager. It reads a project's manifest, resolves dependencies, builds targets and runs tests. You have already used commands such as `cargo new` and `cargo run`; this chapter explains manifests, workspaces, features, profiles and the other tools needed to manage a project as it grows.
@@ -65,7 +65,7 @@ cc = "1.11.2"
 | Key | Meaning |
 |---|---|
 | `name` | the package's name, and by default the name of its library and program |
-| `version` | the version, following semantic versioning (below) |
+| `version` | the version, following [[semantic versioning]] (below) |
 | `edition` | the language edition: `2015`, `2018`, `2021` or `2024` |
 | `rust-version` | the oldest compiler the package supports. Older compilers refuse to build it, with a clear message |
 | `description`, `license`, `repository`, … | information for people and for crates.io. `description` and `license` are required for publishing |
@@ -100,7 +100,7 @@ Three of the 2024 changes are worth recognising, because they arrive as diagnost
 
 - **Tail-expression drop order.** In an older edition, the temporary values created in the final expression of a function body were dropped *after* the local variables of that body. In 2024 they are dropped *before* them, at the end of the expression. Consider a function whose last line is `cell.borrow().len()`. Under the old order the borrow was still alive when the local `cell` was dropped, so the borrow checker refused the function. Under the new order the borrow ends first and the function compiles. Code that relied on the old order — a guard that read the local variable it outlived — now fails to compile instead of misbehaving, which is the point of the change.
 - **`unsafe_op_in_unsafe_fn`.** Every unsafe operation inside an `unsafe fn` must now sit in its own `unsafe` block. The lint that reports this is named in the error message, and it is a good habit to enable it in older editions too: the body of an `unsafe fn` was never meant to be an unsafe block.
-- **`static_mut_refs`.** Taking a reference to a `static mut` is an error in 2024, because two threads can do it at once. The fix is one of the tools from [chapter 56](#shared-state): an `AtomicU32`, a `Mutex` behind a `OnceLock`, or `&raw mut` when you really only need the address.
+- **`static_mut_refs`.** Taking a reference to a `static mut` is an error in 2024, because two threads can do it at once. The fix is one of the tools from [chapter 61](#shared-state): an `AtomicU32`, a `Mutex` behind a `OnceLock`, or `&raw mut` when you really only need the address.
 
 :::tip The Edition Guide is the authority
 The [Rust Edition Guide](https://doc.rust-lang.org/edition-guide/) lists every change in every edition, with a migration example for each one, and it is short. When an old snippet will not compile and the edition is the suspect, read the page for that edition before changing the code.
@@ -188,7 +188,7 @@ windows-sys = "0.61"
 
 ## Features
 
-A **feature** is a named switch that turns optional parts of a crate on. Features keep compile times and binaries small: you pay only for what you use. `tokio = { version = "1", features = ["full"] }` and `serde = { features = ["derive"] }` are switches of this kind.
+A **[[feature]]** is a named switch that turns optional parts of a crate on. Features keep compile times and binaries small: you pay only for what you use. `tokio = { version = "1", features = ["full"] }` and `serde = { features = ["derive"] }` are switches of this kind.
 
 You can define features in your own crate:
 
@@ -243,7 +243,7 @@ If two crates in a program need the same dependency with different features, Car
 
 ## Profiles: how the code is built
 
-A **profile** is a set of compiler settings. Two are used all the time. For what the optimiser does between your source text and the final bytes, see [the silicon appendix](#under-the-hood).
+A **[[profile]]** is a set of compiler settings. Two are used all the time. For what the optimiser does between your source text and the final bytes, see [the silicon appendix](#under-the-hood).
 
 | | `dev` (`cargo build`) | `release` (`cargo build --release`) |
 |---|---|---|
@@ -348,7 +348,7 @@ pub fn count_lines<P: AsRef<Path>>(path: P) -> std::io::Result<usize> {
 }
 ```
 
-Measure before and after each step, as with every other kind of performance work ([chapter 74](#performance)).
+Measure before and after each step, as with every other kind of performance work ([chapter 76](#performance)).
 
 ## Workspaces
 
@@ -631,43 +631,43 @@ For supply-chain hygiene in CI, pair `cargo audit` (vulnerability checks against
 ? Your `Cargo.toml` says `regex = "1.10.2"`. Which version may Cargo choose?
 - Only 1.10.2
 - Any version at all
-+ 1.10.2 or any newer version below 2.0.0
 - 1.10.2 up to 1.10.9 only
++ 1.10.2 or any newer version below 2.0.0
 = A plain version number is a "caret" requirement: compatible updates are allowed. The exact version in use is recorded in `Cargo.lock`.
 
 ? What is `Cargo.lock` for?
 - It stops two people from building at the same time
-+ It records the exact version of every dependency, so that every build uses the same ones
-- It contains passwords for crates.io
 - It lists the features of the package
+- It contains passwords for crates.io
++ It records the exact version of every dependency, so that every build uses the same ones
 = The manifest gives ranges. The lock file pins the concrete choice until you run `cargo update`.
 
 ? Why should a Cargo feature only add functionality, and never remove or change it?
 - Cargo forbids anything else
-- Features are compiled last
 + A dependency is built once with the union of all features requested anywhere in the program
+- Features are compiled last
 - Removing code is slower
 = Because of feature unification, a crate cannot know that a feature is off just because it did not ask for it. Another crate may have switched it on.
 
 ? Your program takes 20 seconds for a calculation when started with `cargo run`. What is the first thing to try?
 - Rewrite it with `unsafe`
-- Add more threads
 + Run it with `cargo run --release`
+- Add more threads
 - Use a different computer
 = The default build is unoptimised. Release builds are often ten to a hundred times faster for calculations.
 
 ? What is the advantage of `cargo check` over `cargo build` during development?
 - It also runs the tests
-+ It reports the same errors and skips the slow step of generating the program
-- It produces smaller programs
 - It formats the code
+- It produces smaller programs
++ It reports the same errors and skips the slow step of generating the program
 = `check` runs all the analysis, including the borrow checker, without generating machine code. It is the fastest way to find out whether the code compiles.
 
 ? What does `cargo fix --edition` do?
 - Rewrites the whole program to use the newest version of every crate
 - Changes the compiler version the package is built with
-+ Applies the mechanical changes needed to move a package to the next edition, and leaves the rest of the code alone
 - Reformats the code in the new edition's style
++ Applies the mechanical changes needed to move a package to the next edition, and leaves the rest of the code alone
 = An edition is a set of rules inside one crate, so moving to it is a code-level migration. `cargo fix --edition` performs the changes that can be done mechanically, and reports the few that need a human decision.
 
 ? You paste a snippet from a 2018-era blog post into a 2024 project and get errors that make no sense. What should you check first?

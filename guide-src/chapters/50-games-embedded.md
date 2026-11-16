@@ -3,13 +3,13 @@
 @title Games, small devices and data
 @short Games, devices, data
 @level intermediate
-@time 100
+@time 50
 @learn Explain the game loop and why movement is multiplied by the frame time | Write a small game with macroquad | Describe entities, components and systems, and run a Bevy app | Say what `no_std` means and what `core` still offers | Run a program for a microcontroller in an emulator and read its layers: PAC, HAL, `embedded-hal`, drivers | Test device logic on your own machine with a fake pin | Calculate with tables of numbers in ndarray and summarise data with Polars | Explain how a program learns a line from data
 
 This chapter surveys three areas that use Rust: games, embedded devices and data work. Each has its own constraints, tools and learning path, so the aim here is orientation rather than mastery. You will meet a small example in each area, learn the central terms, and find a route for exploring further.
 
 :::note How the programs of this chapter were tested
-The Cortex-M3 bare-metal project (`thumbv7m-none-eabi`) is extracted and cross-compiled in CI by `tools/check.py --projects`, and the standalone `embedded-hal`, `heapless`, `ndarray`, and machine-learning listings are checked and run by `tools/check.py`. Windowed games (`macroquad`, `Bevy`) were built and played on Linux with real key presses, the QEMU firmware run and Raspberry Pi Pico binary were verified against their targets locally, and the Polars snippet was run against the chapter 26 sales data.
+The Cortex-M3 bare-metal project (`thumbv7m-none-eabi`) is extracted and cross-compiled in CI by `tools/check.py --projects`, and the standalone `embedded-hal`, `heapless`, `ndarray`, and machine-learning listings are checked and run by `tools/check.py`. Windowed games (`macroquad`, `Bevy`) were built and played on Linux with real key presses, the QEMU firmware run and Raspberry Pi Pico binary were verified against their targets locally, and the Polars snippet was run against the [Chapter 31](#project-report) sales data.
 :::
 
 :::plain Games, chips, and data
@@ -203,12 +203,12 @@ bird   at ( 8.5,  5.0)
 
 - A component is an ordinary struct with `#[derive(Component)]`.
 - `commands.spawn(…)` creates an entity from a tuple of components.
-- A system is an ordinary function. Its parameters say what it needs, and Bevy passes it in. You saw the same trick with the extractors of Axum in [chapter 64](#web).
+- A system is an ordinary function. Its parameters say what it needs, and Bevy passes it in. You saw the same trick with the extractors of Axum in [chapter 69](#web).
 - `Query<(&mut Position, &Velocity)>` means: every entity that has both components, with the position writable. The tree has no `Velocity`, so `movement` never sees it. `report` asks only for a label and a position, and gets all three.
 - `add_systems(Startup, …)` registers systems that run once. Those under `Update` run every frame. `.chain()` fixes their order: first move, then report.
 - The tree is printed first although it was created last. Bevy stores entities with the same set of components together, and a query walks through these groups. Never rely on the order.
 
-Two things make this design more than a matter of taste. It **composes**: to make the tree fall over, you add a `Velocity` to it, and the existing system moves it. No class has to be rewritten. And it is **fast**: the components of one kind lie side by side in memory, as in the "struct of arrays" layout of [chapter 38](#memory-layout). Bevy also reads from the parameters which systems touch the same data. Systems that do not get in each other's way run on several cores at the same time. These are the borrowing rules, applied to whole functions: many readers or one writer.
+Two things make this design more than a matter of taste. It **composes**: to make the tree fall over, you add a `Velocity` to it, and the existing system moves it. No class has to be rewritten. And it is **fast**: the components of one kind lie side by side in memory, as in the "struct of arrays" layout of [chapter 41](#memory-layout). Bevy also reads from the parameters which systems touch the same data. Systems that do not get in each other's way run on several cores at the same time. These are the borrowing rules, applied to whole functions: many readers or one writer.
 
 ### A window and the keyboard
 
@@ -294,7 +294,7 @@ There is no operating system on such a chip. Your program is the only program. I
 
 ### `no_std`: Rust without an operating system
 
-The standard library assumes an operating system: files, threads, a heap, a clock. On a chip none of this exists, so embedded programs start with the attribute `#![no_std]` and use a smaller library instead:
+The standard library assumes an operating system: files, threads, a heap, a clock. On a chip none of this exists, so embedded [[no_std]] programs start with the attribute `#![no_std]` and use a smaller library instead:
 
 | Library | Needs | Contains |
 |---|---|---|
@@ -502,13 +502,13 @@ fn main() {
 the pin was switched: [true, false, true]
 ```
 
-On a device, `FanControl::new` would receive a real pin from the HAL. In the test it receives `FakePin`, and the logic can be checked in milliseconds, without a soldering iron. This is the dependency injection of [chapter 69](#project-api), with a pin in the role of the clock.
+On a device, `FanControl::new` would receive a real pin from the HAL. In the test it receives `FakePin`, and the logic can be checked in milliseconds, without a soldering iron. This is the dependency injection of [chapter 74](#project-api), with a pin in the role of the clock.
 
-In a HAL, every pin is a *value*, and you can only get it once. Two parts of a program cannot drive the same pin by accident, because one of them does not own it. The type of a pin also records whether it is set up as an input or an output, so reading an output pin is a compile error. Ownership and the typestate pattern of [chapter 34](#type-system) turn wiring mistakes into compiler messages.
+In a HAL, every pin is a *value*, and you can only get it once. Two parts of a program cannot drive the same pin by accident, because one of them does not own it. The type of a pin also records whether it is set up as an input or an output, so reading an output pin is a compile error. Ownership and the typestate pattern of [chapter 37](#type-system) turn wiring mistakes into compiler messages.
 
 ### Async on a chip: Embassy
 
-A device often does several things at once: blink a light, watch a button, read a sensor every second. Without an operating system there are no threads. The classic answer is a hand-written state machine driven by interrupts. Rust has a better one. `async` functions *are* state machines that the compiler writes ([chapter 57](#async)), and they need no heap. **Embassy** is an async runtime for microcontrollers, with HALs for many chip families. This program for the Raspberry Pi Pico blinks two lights at different speeds:
+A device often does several things at once: blink a light, watch a button, read a sensor every second. Without an operating system there are no threads. The classic answer is a hand-written state machine driven by interrupts. Rust has a better one. `async` functions *are* state machines that the compiler writes ([chapter 62](#async)), and they need no heap. **Embassy** is an async runtime for microcontrollers, with HALs for many chip families. This program for the Raspberry Pi Pico blinks two lights at different speeds:
 
 ```toml file=Cargo.toml
 [dependencies]
@@ -591,7 +591,7 @@ T=23 H=61 (9 of 16 bytes used)
 writing more: Err(Error)
 ```
 
-**`postcard`** is a Serde format ([chapter 78](#serde)) for small devices. It works without a heap and produces very few bytes, which matters when a message travels over a slow radio link:
+**`postcard`** is a Serde format ([chapter 45](#serde)) for small devices. It works without a heap and produces very few bytes, which matters when a message travels over a slow radio link:
 
 ```rust ext run
 use serde::{Deserialize, Serialize};
@@ -819,7 +819,7 @@ Choosing between them, in three lines each:
 - **`arrow` and `parquet`** — Arrow is the in-memory column format that Polars, DataFusion, pandas and Spark all speak; Parquet is its compressed form on disk. Together they are why a Rust data pipeline can hand its output to a Python notebook without a conversion step.
 
 :::compare Rust and Python in data science
-Python is the language in which data scientists think and try things out, and that will not change soon. But much of what makes Python fast today is Rust underneath: Polars, the `tokenizers` library, the validation core of Pydantic, the tools `ruff` and `uv`. They are Python modules built with PyO3, like the one in [chapter 37](#ffi) that was 27 times faster than its Python version. Reach for Rust when a data job must run fast and reliably day after day, when a trained model has to answer requests with little memory, when it has to run in a browser or on a device, or when a Python library needs a fast core.
+Python is the language in which data scientists think and try things out, and that will not change soon. But much of what makes Python fast today is Rust underneath: Polars, the `tokenizers` library, the validation core of Pydantic, the tools `ruff` and `uv`. They are Python modules built with PyO3, like the one in [chapter 40](#ffi) that was 27 times faster than its Python version. Reach for Rust when a data job must run fast and reliably day after day, when a trained model has to answer requests with little memory, when it has to run in a browser or on a device, or when a Python library needs a fast core.
 :::
 
 :::recap
@@ -836,36 +836,36 @@ Python is the language in which data scientists think and try things out, and th
 :::quiz Check your understanding
 ? A game moves a ball with `ball.x += 5.0;` once per frame. What is wrong with that?
 - Nothing, as long as the window has a fixed size
-- The ball leaves the screen
 + The ball moves faster on a machine that draws more frames per second
+- The ball leaves the screen
 - Floating-point numbers cannot be added in a loop
 = The distance should depend on the time that has passed, not on the number of frames: `ball.x += speed * delta_time`.
 
 ? In the Bevy example, why does the system `movement` never touch the tree?
 - The tree was spawned after the other entities
 - Systems run only for the first two entities
-+ The query asks for a `Position` and a `Velocity`, and the tree has no `Velocity`
 - The tree is marked as immovable
++ The query asks for a `Position` and a `Velocity`, and the tree has no `Velocity`
 = A query matches the entities that have all the requested components. What an entity "is" follows from the components it carries.
 
 ? Which of these is available in a `#![no_std]` program without any further setup?
-- `Vec<T>`
-- `std::fs::File`
 + `Option<T>`, iterators and slices
+- `std::fs::File`
+- `Vec<T>`
 - `println!`
 = They are part of `core`, which needs nothing from the outside. `Vec` needs a heap (`alloc`), and files and `println!` need an operating system (`std`).
 
 ? What is the point of the traits in `embedded-hal`?
-- They make programs for chips smaller
 + A driver or a piece of logic written against them works with every chip's HAL, and with a fake in tests
+- They make programs for chips smaller
 - They replace the standard library
 - They are required by the Rust compiler for `no_std`
 = `FanControl<P: OutputPin>` runs on any chip, and on your desk with `FakePin`. This is ordinary generic programming with traits.
 
 ? In the line-fitting program, what does one step of gradient descent do?
 - It tries random values for the slope and keeps the best
-- It adds one more example to the data
 + It changes each parameter a little in the direction that reduces the loss
+- It adds one more example to the data
 - It sorts the examples by their error
 = The gradient tells for each parameter which way the loss falls. Many small steps in that direction lead to parameters that fit the data.
 :::

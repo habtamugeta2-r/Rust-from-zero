@@ -1,15 +1,15 @@
 @id advanced-traits
-@part p3
+@part p3c
 @title Traits in depth
 @short Traits in depth
 @level advanced
-@time 55
+@time 40
 @learn Use associated types and constants, and know when to prefer them to generic parameters | Overload operators such as `+` and `==` for your own types | Implement a trait for many types at once with a blanket implementation | Explain what makes a trait usable as `dyn Trait` | Recognise the marker traits `Sized`, `Send` and `Sync`
 
 The earlier [traits chapter](#traits) introduced implementations and bounds. Here we examine features used to design flexible libraries: associated types, operator traits, supertraits, blanket implementations and other advanced patterns. The examples explain what each feature enables and the constraints it adds, so you can return to a section when a design calls for it.
 
 :::plain Associated types, GATs, and operator traits
-Chapter 25's traits described what a type can *do*; the advanced forms describe how traits combine. An **associated type** (`type Item`) makes a trait carry one type per implementation, which is why `Iterator` can only yield one kind of value. A **super-trait** (`trait Sorted: Ord`) requires implementors to satisfy another trait first. **Operator traits** (`Add`, `Index`, `Deref`) are ordinary traits that overload syntax, and `impl Trait` in argument and return position hides a concrete type without a `Box`. **Blanket implementations** give a method to every type that meets a bound, and **trait objects** (`dyn Trait`) trade static dispatch for one vtable lookup.
+[Chapter 25](#traits) described what traits let a type *do*; the advanced forms describe how traits combine. An **associated type** (`type Item`) makes a trait carry one type per implementation, which is why `Iterator` can only yield one kind of value. A **super-trait** (`trait Sorted: Ord`) requires implementors to satisfy another trait first. **Operator traits** (`Add`, `Index`, `Deref`) are ordinary traits that overload syntax, and `impl Trait` in argument and return position hides a concrete type without a `Box`. **Blanket implementations** give a method to every type that meets a bound, and **trait objects** (`dyn Trait`) trade static dispatch for one vtable lookup.
 :::
 
 :::analogy A manager with special rules
@@ -528,7 +528,7 @@ fn main() {}
 
 `duplicate` returns `Self`. For a `dyn Duplicate`, nobody knows what `Self` is or how large it is. This is the reason `Clone` cannot be used as `dyn Clone`.
 
-The message mentions a **vtable** ("virtual method table"). That is the small table of function addresses that every trait object carries with it. Through it, the program finds the right method at run time. [Chapter 38](#memory-layout) shows what it looks like in memory.
+The message mentions a **vtable** ("virtual method table"). That is the small table of function addresses that every trait object carries with it. Through it, the program finds the right method at run time. [Chapter 41](#memory-layout) shows what it looks like in memory.
 
 You can keep such a method in a trait and still use the trait as an object, by telling the compiler that this one method is not available on trait objects:
 
@@ -643,7 +643,7 @@ fn main() {
 42
 ```
 
-- **`Send`** means "a value of this type can be handed to another thread". **`Sync`** means "a value of this type can be used from several threads at the same time, through shared references". The compiler works these out for every type automatically, and uses them to reject programs with data races. They are the foundation of [Part IX](#threads).
+- **[[Send|send]]** (`Send`) means "a value of this type can be handed to another thread". **[[Sync|sync]]** (`Sync`) means "a value of this type can be used from several threads at the same time, through shared references". The compiler works these out for every type automatically, and uses them to reject programs with data races. They are the foundation of [Part 11](#threads).
 
 ## Traits with generic methods and supertraits, together
 
@@ -721,16 +721,16 @@ AB AB
 
 :::quiz Check your understanding
 ? Why does `Iterator` use an associated type `Item` and not a generic parameter `Iterator<T>`?
-- Associated types are faster
 + A given iterator type yields one kind of item, so there should be exactly one implementation per type
+- Associated types are faster
 - Generic parameters are not allowed in traits
 - So that iterators can be endless
 = With `Iterator<T>`, one type could implement `Iterator<u32>` and `Iterator<String>` at once, and every call of `next` would be ambiguous. An associated type fixes the item type per implementation.
 
 ? Why does a generic associated type often need the bound `where Self: 'a`?
 - To make the type copyable
-- Because lifetimes cannot appear in associated types otherwise
 + Because the item borrows from `self`, and the compiler must know that `self` outlives that borrow
+- Because lifetimes cannot appear in associated types otherwise
 - Because `'a` must outlive the program
 = The GAT promises `type Item<'a>`, and an implementation may hand out `&'a str` taken from `self`. Without `Self: 'a` the borrow could outlive the value it points into, which is exactly the dangling reference the borrow checker exists to reject. The bound states the relationship once, so every caller gets it checked.
 
@@ -742,16 +742,16 @@ AB AB
 = The `+` operator is syntax for the `add` method of the `Add` trait. Only types that implement the trait can be added.
 
 ? What does `impl<T: Display> Summary for T { ... }` do?
-- It implements `Display` for all types
 + It implements `Summary` for every type that implements `Display`
+- It implements `Display` for all types
 - It creates a new type `T`
 - It is an error, because `T` is not a concrete type
 = This is a blanket implementation. Every present and future type with `Display` gets `Summary`.
 
 ? Why can the trait `Clone` not be used as `Box<dyn Clone>`?
 - `Clone` has no methods
-+ Its method returns `Self`, and behind `dyn` the concrete type and its size are unknown
 - `Clone` is private
++ Its method returns `Self`, and behind `dyn` the concrete type and its size are unknown
 - Trait objects cannot be boxed
 = A method that returns `Self` by value needs the concrete type. That makes the trait not dyn compatible.
 

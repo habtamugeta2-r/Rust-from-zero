@@ -3,7 +3,7 @@
 @title How a program uses memory: the stack and the heap
 @short Memory: stack and heap
 @level beginner
-@time 30
+@time 35
 @learn Describe what memory is and what a pointer is | Explain the difference between the stack and the heap | Name the classic memory bugs and how they happen | Compare the three ways languages manage memory
 
 Before studying ownership, it helps to picture where a running program keeps its data and how it refers to that data. This chapter introduces memory, addresses, the stack and the heap, then uses common memory bugs to motivate Rust's rules. The broad ideas apply across languages, though the exact memory model and implementation differ.
@@ -209,28 +209,28 @@ How that works is the subject of the next chapter.
 ? Why can the characters of a text typed by the user not simply be stored on the stack?
 - Because text is not a number
 - Because the stack is slower than the heap
-+ Because their number is unknown when the program is compiled, and the stack needs sizes that are known in advance
 - Because the stack is only for functions
++ Because their number is unknown when the program is compiled, and the stack needs sizes that are known in advance
 = Everything on the stack has a size that the compiler knows. Data whose size is decided while the program runs goes to the heap, and the stack keeps a fixed-size pointer to it.
 
 ? What happens to a function's local variables when the function returns?
 - They stay on the stack until the program ends
-+ Its stack frame is removed, and all its local variables are gone
 - They are moved to the heap
++ Its stack frame is removed, and all its local variables are gone
 - They are handed to the function that is called next
 = The whole frame is removed in a single step. That is what makes the stack fast and automatic.
 
 ? A program frees a block of memory and later reads from it through an old pointer. What is this bug called?
-- A memory leak
-- A stack overflow
 + Use after free
+- A stack overflow
+- A memory leak
 - A double free
 = The pointer is "dangling": it holds the address of memory that no longer belongs to that data. A leak is memory that is never freed, and a double free is freeing the same block twice.
 
 ? What is the main cost of a garbage collector?
-- Programs can no longer use the heap
-- The programmer must free memory by hand
 + It uses extra time and memory while the program runs, and can cause pauses
+- The programmer must free memory by hand
+- Programs can no longer use the heap
 - It makes memory bugs more likely
 = A garbage collector trades some speed and control for safety and convenience. Rust gets the safety without that cost by doing the checking at compile time.
 :::

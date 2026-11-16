@@ -1,9 +1,9 @@
 @id ffi
-@part p3
+@part p3c
 @title Working with other languages (FFI)
 @short Other languages (FFI)
 @level advanced
-@time 50
+@time 40
 @learn Explain what an ABI is and why C is the common language between languages | Call C functions from Rust and wrap them safely | Compile C code into a Rust project | Offer Rust functions to C and to Python | Handle strings, structs and ownership across a language boundary
 
 Rust programs often need to work with existing libraries or expose functions to another language. The **foreign function interface** (**[[FFI]]**) defines how code crosses that language boundary, including calling conventions and data layouts. The call itself has costs and constraints, and the compiler cannot check every foreign contract. This chapter shows how to make those boundaries explicit and keep unsafe assumptions contained.
@@ -441,21 +441,21 @@ FFI is where Rust's guarantees end and yours begin. A short checklist:
 :::quiz Check your understanding
 ? Why do languages usually talk to each other through the C ABI?
 - C is the fastest language
-+ The C ABI is stable, defined on every platform, and understood by nearly every language
 - Rust is compiled to C first
++ The C ABI is stable, defined on every platform, and understood by nearly every language
 - C has no types
 = Rust's own ABI may change between compiler versions. C's is the common denominator that all sides can rely on.
 
 ? Why is an `extern "C"` block marked `unsafe`?
-- Because C code is always wrong
-- Because it makes the program slower
 + The compiler cannot check that the declared signatures match the real C functions
+- Because it makes the program slower
+- Because C code is always wrong
 - Because it allocates memory
 = The declarations are taken on trust. A mismatch between declaration and reality is undefined behaviour.
 
 ? You want to pass the Rust string `"hello"` to a C function that expects `const char *`. What do you use?
-- `"hello".as_ptr()` directly
 + A `CString`, and its `.as_ptr()`, kept alive during the call
+- `"hello".as_ptr()` directly
 - A `Vec<char>`
 - A `Box<str>`
 = C expects a zero byte at the end of the text. A Rust `&str` has none. `CString` adds it and owns the memory.

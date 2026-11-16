@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 470" role="img" aria-labelledby="t d">
+  <title id="t">The borrowing rules: many readers, or one writer</title>
+  <desc id="d">Any number of shared references may read a value at once, or exactly one mutable reference may change it — never both at the same time.</desc>
+  <rect width="1200" height="470" rx="24" fill="#1C1A17"/>
+  <rect x="1" y="1" width="1198" height="468" rx="23" fill="none" stroke="#2D2A24" stroke-width="2"/>
+  <text x="48" y="58" font-family="system-ui, sans-serif" font-size="24" font-weight="700" fill="#ECE7DD">Many readers, or one writer — never both</text>
+  <text x="48" y="86" font-family="system-ui, sans-serif" font-size="15" fill="#A49B88">That single rule is what makes references safe without a garbage collector.</text>
+  <g font-family="system-ui, sans-serif">
+    <rect x="48" y="130" width="520" height="230" rx="16" fill="#12322E" stroke="#2DD4BF" stroke-width="2"/>
+    <text x="76" y="168" font-size="14" font-weight="700" letter-spacing="2" fill="#2DD4BF">SHARED · &amp;T · READING</text>
+    <g font-family="ui-monospace, monospace" font-size="16">
+      <rect x="76" y="190" width="210" height="52" rx="10" fill="#FFFFFF" stroke="#0F766E"/><text x="96" y="223" fill="#11100E" stroke="#3E3930" stroke-width="1.5">&amp;score (Ana)</text>
+      <rect x="302" y="190" width="210" height="52" rx="10" fill="#FFFFFF" stroke="#0F766E"/><text x="322" y="223" fill="#11100E" stroke="#3E3930" stroke-width="1.5">&amp;score (Ben)</text>
+      <rect x="76" y="256" width="210" height="52" rx="10" fill="#FFFFFF" stroke="#0F766E"/><text x="96" y="289" fill="#11100E" stroke="#3E3930" stroke-width="1.5">&amp;score (Cid)</text>
+      <rect x="302" y="256" width="210" height="52" rx="10" fill="#181613" stroke="#2DD4BF" stroke-dasharray="6 5"/><text x="322" y="289" fill="#A49B88">&amp;score (…)</text>
+    </g>
+    <text x="76" y="338" font-size="15" font-weight="700" fill="#2DD4BF">✓ as many readers as you like</text>
+
+    <text x="600" y="255" font-size="22" font-weight="700" fill="#E9743E">or</text>
+
+    <rect x="632" y="130" width="520" height="230" rx="16" fill="#39231A" stroke="#E9743E" stroke-width="2"/>
+    <text x="660" y="168" font-size="14" font-weight="700" letter-spacing="2" fill="#E9743E">MUTABLE · &amp;mut T · WRITING</text>
+    <rect x="660" y="190" width="300" height="52" rx="10" fill="#181613" stroke="#E9743E" stroke-width="2"/>
+    <text x="680" y="223" font-family="ui-monospace, monospace" font-size="16" fill="#ECE7DD">&amp;mut score (editor)</text>
+    <text x="660" y="282" font-size="15" fill="#C2BBAF">While the editor holds it, no new readers</text>
+    <text x="660" y="306" font-size="15" fill="#C2BBAF">and no second editor may start.</text>
+    <text x="660" y="338" font-size="15" font-weight="700" fill="#E9743E">✓ exactly one writer at a time</text>
+
+    <rect x="48" y="386" width="1104" height="52" rx="12" fill="#232019" stroke="#2D2A24"/>
+    <text x="72" y="419" font-size="14.5" fill="#C2BBAF">The compiler checks this at compile time. The program that breaks it <tspan font-weight="700" fill="#F28B82">never runs</tspan> — it never compiles.</text>
+  </g>
+</svg>

@@ -3,7 +3,7 @@
 @title Shared state: `Arc`, `Mutex` and atomics
 @short Shared state
 @level advanced
-@time 55
+@time 45
 @learn Share read-only data between threads with `Arc` | Protect changeable data with `Mutex` and `RwLock` | Use atomic types for simple counters and flags | Create global values safely with `static`, `OnceLock` and `LazyLock` | Recognise and avoid deadlocks, and choose between messages and shared state
 
 Threads can communicate by transferring ownership or sending messages through a channel. Some designs instead need shared state—for example, a cache consulted by several workers. Shared access requires a coordination rule that protects updates and keeps the data valid. This chapter compares mutexes, read-write locks and atomic values, and shows the costs each introduces.
@@ -49,6 +49,31 @@ To *change* shared data, the threads must take turns. A **mutex** (from "mutual 
 
 ![Diagram of Arc and Mutex: threads clone an Arc that owns a Mutex guarding a counter](/images/arc-mutex.svg "`Arc` shares ownership between threads. The `Mutex` inside shares access, one thread at a time.")
 
+:::stepper Sharing a `Mutex` across threads with `Arc`
+```rust
+use std::sync::{Arc, Mutex};
+use std::thread;
+
+fn main() {
+    let counter = Arc::new(Mutex::new(0));
+    let cloned = Arc::clone(&counter);
+    let handle = thread::spawn(move || {
+        let mut guard = cloned.lock().unwrap();
+        *guard += 1;
+    });
+    handle.join().unwrap();
+    println!("{}", *counter.lock().unwrap());
+}
+```
+5 | [main] counter = ->#1 !new | #1 = Arc(count 1, Mutex(0)) !new | `Arc::new(Mutex::new(0))` places an atomic reference count and the `Mutex` together on the heap.
+6 | [main] counter = ->#1; cloned = ->#1 !new | #1 = Arc(count 2, Mutex(0)) | `Arc::clone` atomically increments the strong count to `2` without copying the mutex or its integer.
+7 | [main] counter = ->#1; handle = JoinHandle !new; [worker] cloned = ->#1 !new | #1 = Arc(count 2, Mutex(0)) | `move` transfers `cloned` into the spawned worker thread's stack frame.
+8 | [main] counter = ->#1; handle = JoinHandle; [worker] cloned = ->#1; guard = lock ->#1 !mut | #1 = Arc(count 2, Mutex(0) locked) | Calling `cloned.lock()` acquires exclusive access and returns a `MutexGuard`.
+9-10 | [main] counter = ->#1; handle = JoinHandle | #1 = Arc(count 1, Mutex(1) unlocked) | `*guard += 1` updates the inner value to `1`. Exiting the closure drops `guard` (unlocking the mutex) and drops `cloned` (atomic count `2 -> 1`).
+11-12 | [main] counter = ->#1 | #1 = Arc(count 1, Mutex(1) unlocked) | `handle.join()` waits for the worker to finish, then `main` locks and prints `1`.
+13 | - | #1 = Arc(count 0, Mutex(1)) !freed | `counter` drops at the end of `main`; the atomic count hits `0` and the heap allocation is freed.
+:::
+
 :::plain Mutexes, atomics, and channels
 Shared mutation has three standard tools. A **[[mutex]]** (`Mutex<T>`) lets one thread at a time reach the data, and the lock's lifetime is a Rust guard, so forgetting to unlock is impossible. An **atomic** (`AtomicUsize`) updates a single number without a lock, and its `Ordering` says what other threads are allowed to observe. A **channel** (`mpsc`, `crossbeam`) avoids sharing entirely: one owner keeps the data and others send messages. In Rust the lock *owns* the data it guards, so the compiler prevents reading a `Mutex<T>`'s value without taking the lock — the class of bug that makes C++ shared state so error-prone is a type error here.
 :::
@@ -78,7 +103,7 @@ fn main() {
 
 - `Mutex::new(0)` wraps the value. **The data lives inside the mutex.** There is no way to reach it without going through `lock`.
 - `lock()` waits until the mutex is free, and then returns a **guard**. The guard is a smart pointer: `*guard` is the protected value.
-- When the guard is dropped, the lock is released. This happens automatically at the end of its scope, by the `Drop` trait from [chapter 32](#smart-pointers). You cannot forget to unlock.
+- When the guard is dropped, the lock is released. This happens automatically at the end of its scope, by the `Drop` trait from [chapter 35](#smart-pointers). You cannot forget to unlock.
 
 :::compare A lock that owns its data
 In C, C++, Java and Go, a mutex is a separate object that sits *next to* the data it is meant to protect. The connection exists only in comments and in the programmers' heads: "always lock `m` before touching `balance`". Forget it once, and you have a data race that compiles without complaint. Rust's `Mutex<T>` contains the data. The only path to the data leads through the lock, and the compiler checks every access.
@@ -115,7 +140,7 @@ fn main() {
 8000
 ```
 
-Eight threads each add one, a thousand times. The result is always exactly 8000. Without the lock, the classic race would strike: two threads read the same old value, both add one, and both write back the same new value. One increment is lost. In languages without protection, such a program prints a different number below 8000 on each run.
+Eight threads each add one, a thousand times. The result is always exactly 8000. Without the [[lock]], the classic [[race condition]] would strike: two threads read the same old value, both add one, and both write back the same new value. One increment is lost. In languages without protection, such a program prints a different number below 8000 on each run.
 
 `Arc<Mutex<T>>` is the multi-threaded twin of `Rc<RefCell<T>>`:
 
@@ -624,35 +649,35 @@ One more tool in `std::sync` for a special need: `Barrier` makes several threads
 ? Why is `Arc<T>` used with threads, and not `Rc<T>`?
 - `Arc` is faster
 - `Rc` can only hold numbers
-+ `Arc` updates its owner count with atomic operations, so several threads can clone and drop it safely
 - `Arc` allows changing the value
++ `Arc` updates its owner count with atomic operations, so several threads can clone and drop it safely
 = `Rc`'s counter is unprotected, so the compiler refuses to send it to another thread. `Arc` pays a small price for a thread-safe counter.
 
 ? When is a `Mutex` unlocked?
 - When `unlock()` is called
-+ When the guard returned by `lock()` is dropped
-- At the end of the program
 - When another thread asks for it
+- At the end of the program
++ When the guard returned by `lock()` is dropped
 = The guard releases the lock in its destructor. There is no `unlock` method to forget.
 
 ? Which bug does Rust's compiler **not** prevent?
-- A data race
-- Using a value after it was moved to another thread
 + A deadlock
+- Using a value after it was moved to another thread
+- A data race
 - Sending an `Rc` to another thread
 = A deadlock does not break memory safety. Two threads that wait for each other's lock compile fine. Avoiding it is up to the design.
 
 ? Eight threads each call `counter.fetch_add(1, Ordering::Relaxed)` a thousand times on a shared `AtomicU64` that starts at 0. What is the final value?
-- Some unpredictable number up to 8000
 + Exactly 8000
+- Some unpredictable number up to 8000
 - 1000
 - It does not compile
 = `fetch_add` is atomic: reading, adding and writing happen as one step, so no increment can be lost.
 
 ? Why does the worker pool wrap its `Receiver` in `Arc<Mutex<…>>`?
 - To make receiving faster
-+ A channel has a single receiver, and several workers need to share it and take jobs in turns
 - Because `Receiver` is not `Send`
++ A channel has a single receiver, and several workers need to share it and take jobs in turns
 - To keep the channel open
 = `Arc` gives each worker access to the same receiver. The `Mutex` makes sure that only one worker at a time takes a job from it.
 :::

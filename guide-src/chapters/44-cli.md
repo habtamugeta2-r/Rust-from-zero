@@ -4,7 +4,7 @@
 @title Command-line tools with clap
 @short Command-line tools
 @level intermediate
-@time 90
+@time 100
 @learn Describe what makes a command-line tool pleasant to use | Define arguments, options, flags and subcommands with clap | Get help texts, validation and error messages generated for you | Build a complete to-do tool that stores its data as JSON | Test a command-line program
 
 A command-line interface (CLI) lets a user give a program instructions through a terminal. Rust is one option for building CLI tools: Cargo can produce a native executable, and Rust's type system helps make argument handling explicit. Portability and runtime dependencies depend on the target and how the program is linked. Examples of Rust CLI applications include `ripgrep`, `fd`, `bat` and `eza`.
@@ -193,7 +193,7 @@ Options:
 - An enum with `#[derive(ValueEnum)]` becomes an option with a fixed set of values. The help lists them, and a wrong value is rejected with the list.
 - `value_parser!(u32).range(1..=10_000)` restricts a number to a range.
 - `ArgAction::Count` counts how often a flag is given: `-v`, `-vv`, `-vvv`.
-- A type that implements `FromStr` can be used directly as a field type, such as the `Minutes` of [chapter 34](#type-system).
+- A type that implements `FromStr` can be used directly as a field type, such as the `Minutes` of [chapter 37](#type-system).
 - The whole help text at the end was generated from the struct and its comments.
 
 ## The project: a to-do tool
@@ -794,7 +794,7 @@ fn main() -> io::Result<()> {
 }
 ```
 
-Locking standard output once, as this program does, also makes the writing faster ([chapter 74](#performance)).
+Locking standard output once, as this program does, also makes the writing faster ([chapter 76](#performance)).
 
 The other early exit is the one the user asks for: **Ctrl+C**. By default it kills the program where it stands, which is fine for a tool that only prints, and wrong for one that is holding a lock file, a temporary file or a half-written download. Handle the interrupt and tidy up:
 
@@ -852,7 +852,7 @@ sorted: apple fig pear
 
 - **Three ways to start.** `output()` waits and collects everything the program printed. `status()` waits and lets the program use your terminal directly. `spawn()` returns at once with a `Child` that you can talk to and wait for later.
 - **A failing program is not an `Err`.** An `Err` means that the program could not be started at all. If it started and failed, you get `Ok` with an exit code other than 0. Check `status.success()` every time.
-- **Arguments are passed one by one**, with `arg` or `args`. No shell is involved, so a file name with spaces or with a `;` in it is passed on exactly as it is. Do not build one long command string and hand it to `sh -c`. With text from a user, that is the same mistake as building SQL from input ([chapter 68](#databases)).
+- **Arguments are passed one by one**, with `arg` or `args`. No shell is involved, so a file name with spaces or with a `;` in it is passed on exactly as it is. Do not build one long command string and hand it to `sh -c`. With text from a user, that is the same mistake as building SQL from input ([chapter 73](#databases)).
 - **Close the input when you are done.** `sort` waits for the end of its input. Dropping the handle closes the pipe.
 
 ### Configuration files and precedence
@@ -864,7 +864,7 @@ Well-behaved command-line tools combine three sources in a predictable order, wh
 3. **Environment variables** (with `clap`'s `#[arg(env = "MYAPP_FORMAT")]`).
 4. **Command-line flags** (`--format json`), which always win for a single invocation.
 
-See [chapter 64](#web) for layered configuration with `figment` and protecting secret settings with `secrecy`.
+See [chapter 69](#web) for layered configuration with `figment` and protecting secret settings with `secrecy`.
 
 ### More crates for the terminal
 
@@ -1073,7 +1073,7 @@ One INFO line at start-up that shows every setting and where it came from turns 
 Environment variables are visible to anything that can read the process — a crash dump, a debugging endpoint, `/proc`, a child process. They are the conventional way to *pass* configuration, not a way to *protect* it. For real secrets use the host's secret store: Docker secrets, Kubernetes `Secret` objects, or the secret manager of your cloud. In particular, never bake a secret into a Docker image: image layers are readable for ever by anyone who can pull it, even if a later layer deletes the file. Pass secrets at run time, and rotate them.
 :::
 
-This is what the **twelve-factor app** means by "config in the environment". The name comes from [12factor.net](https://12factor.net/config), and the rule is about one idea: the same artefact, built once, runs in every environment, and only its configuration differs. [Chapter 69](#project-api) shows the same chain implemented for a web service in a few dozen lines, without a crate.
+This is what the **twelve-factor app** means by "config in the environment". The name comes from [12factor.net](https://12factor.net/config), and the rule is about one idea: the same artefact, built once, runs in every environment, and only its configuration differs. [Chapter 74](#project-api) shows the same chain implemented for a web service in a few dozen lines, without a crate.
 
 ## Make it better
 
@@ -1236,31 +1236,31 @@ Passing `today` into `run` keeps the logic free of the system clock. The test de
 
 :::quiz Check your understanding
 ? The command line is described with a struct and clap's derive macros instead of by hand with `std::env::args()`. What does clap generate from that?
-+ The help text, the value parsing, the validation errors and the version output
 - A faster argument parser written in Rust
++ The help text, the value parsing, the validation errors and the version output
 - The completion scripts for your shell
 - The man page for the program
 = A struct annotated with `#[derive(Parser)]` is one description that clap turns into all the user-facing behaviour: `--help`, `--version`, type checking of each value and clear messages when something is wrong.
 
 ? What happens when the user types `todo --colour` and the program has no such option?
-+ `Cli::parse()` prints an explanation of the problem and exits with a non-zero code
-- The unknown option is ignored
 - The program panics with a backtrace
+- The unknown option is ignored
++ `Cli::parse()` prints an explanation of the problem and exits with a non-zero code
 - The option is stored as a string
 = `parse()` is the "parse or exit" entry point: it writes a short message naming the offending argument and stops. `try_parse_from` returns the error instead, which is what the tests use.
 
 ? The tool keeps its work in a function that takes the parsed command and returns the output. Why?
-+ So the logic can be tested without running the program, and `main` stays a thin layer that loads, calls, saves, prints and sets the exit code
 - Because a function cannot print and return a value at the same time
++ So the logic can be tested without running the program, and `main` stays a thin layer that loads, calls, saves, prints and sets the exit code
 - Because `main` must be shorter than ten lines
 - Because clap can only be used inside a function
 = Separating the decision from the presentation means the tests call the function directly with a command value, and the terminal, the file and the exit code stay in one place at the edge.
 
 ? The tool writes results to standard output and problems to standard error. What does that buy a user?
-+ Results can be piped into another program while problems stay visible on the screen
+- The tool can be used without a terminal
 - Problems are printed twice
 - The tool runs faster
-- The tool can be used without a terminal
++ Results can be piped into another program while problems stay visible on the screen
 = Standard output carries the program's data; standard error carries its commentary. Keeping them apart is what lets `todo list | grep milk` work while a failure still reaches the screen.
 :::
 

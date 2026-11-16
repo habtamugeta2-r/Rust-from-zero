@@ -18,10 +18,24 @@ export const RAW_PARTS: Omit<PartMeta, "partLabel" | "partTitle">[] = [
   },
   {
     key: "p3",
-    title: "Rust language and compiler internals",
+    title: "Rust foundations and ownership",
     level: "Beginner",
     blurb:
-      "Variables, types, ownership, borrowing, slices, structs, enums, collections, generics, traits, lifetimes, smart pointers, memory layout, unsafe Rust, and standard library internals at the machine level.",
+      "Variables, data types, functions, control flow, stack and heap memory, ownership, borrowing, slices, structs, enums, patterns, collections, and two guided projects.",
+  },
+  {
+    key: "p3b",
+    title: "Modular Rust, abstractions, and tooling",
+    level: "Intermediate",
+    blurb:
+      "Modules, error handling, generics, traits, lifetimes, testing, closures, iterators, Cargo workflows, formatting and Clippy, testing strategies, and two projects.",
+  },
+  {
+    key: "p3c",
+    title: "Advanced Rust, unsafe, and everyday crates",
+    level: "Advanced",
+    blurb:
+      "Smart pointers, advanced traits, type-driven design, macros, unsafe Rust, FFI, memory layout, standard-library internals, idioms, everyday crates, and Serde.",
   },
   {
     key: "p4",
@@ -54,7 +68,7 @@ export const RAW_PARTS: Omit<PartMeta, "partLabel" | "partTitle">[] = [
   {
     key: "p8",
     title: "CPU architecture and instruction execution",
-    level: "Advanced",
+    level: "Intermediate",
     blurb:
       "x86-64 and ARM64 ISAs, instruction decoding, pipelining, branch prediction, superscalar and out-of-order execution, MESI cache coherency, hardware atomics, and SIMD.",
   },
@@ -68,30 +82,30 @@ export const RAW_PARTS: Omit<PartMeta, "partLabel" | "partTitle">[] = [
   {
     key: "p10",
     title: "Networking and communication",
-    level: "Advanced",
+    level: "Intermediate",
     blurb:
       "OSI and TCP/IP models, Ethernet, IP, routing, TCP, UDP, DNS, HTTP, TLS, BSD sockets, kernel sk_buff buffers, end-to-end HTTP tracing, Axum web servers, and observability.",
   },
   {
     key: "p11",
     title: "Storage and file systems",
-    level: "Advanced",
+    level: "Intermediate",
     blurb:
       "HDD and SSD/NVMe internals, blocks and sectors, file systems, inodes, journaling, kernel page cache, mmap, std::fs operations, and relational databases.",
   },
   {
     key: "p12",
     title: "Practical system programming with Rust",
-    level: "Advanced",
+    level: "Intermediate",
     blurb:
-      "Cargo workflows, quality tooling, testing strategies, CLI utilities, performance profiling, hands-on Linux inspection labs (GDB, objdump, readelf, strace, perf, /proc), and capstone.",
+      "CLI utilities with Clap, performance profiling, hands-on Linux inspection labs (GDB, objdump, readelf, strace, perf, /proc), and the full-stack library capstone.",
   },
   {
     key: "p13",
     title: "Applied Rust ecosystem and next steps",
     level: "Intermediate",
     blurb:
-      "Crate selection, Serde data formats, UI/WebAssembly/Tauri, games and embedded systems, and where to continue your journey.",
+      "UI/WebAssembly/Tauri, games and embedded systems, and where to continue your journey.",
   },
   {
     key: "app",
@@ -184,7 +198,7 @@ export const ROUTES: RouteMeta[] = [
     id: "all",
     label: "All chapters",
     summary:
-      "The complete 13-part curriculum: computer systems from hardware up, Rust internals, and 9 hands-on projects.",
+      "The complete 15-part curriculum: computer systems from hardware up, Rust internals, and 9 hands-on projects.",
     chapters: null,
   },
   {

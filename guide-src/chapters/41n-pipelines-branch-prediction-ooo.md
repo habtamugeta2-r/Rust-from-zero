@@ -4,7 +4,7 @@
 @title CPU Pipelines, Branch Prediction & Out-of-Order Execution
 @short Pipelines, branches & OoO
 @level intermediate
-@time 35
+@time 30
 @learn Trace an instruction pipeline and distinguish structural, data and control hazards | Measure the cost of branch misprediction on a chosen processor | Understand superscalar dispatch, register renaming, and out-of-order speculative execution | Connect speculative execution to Spectre side-channel attacks and bounds-check optimisation
 
 A processor can overlap instruction work to improve throughput, but dependencies and an incorrectly predicted branch can leave parts of the pipeline waiting or force speculative work to be discarded. The size of the effect depends on the processor and the program. This chapter explains pipelining, branch prediction and out-of-order execution, then connects those ideas to measurements of Rust code. It builds on [assembly and machine code](#assembly-machine-code) and relates its findings to [cache behaviour](#pointers-safety-caches).
@@ -187,30 +187,30 @@ Branch hints only guide static instruction layout / cold-path splitting when one
 
 :::quiz Check your understanding
 ? What is the hardware purpose of **Register Renaming** inside an out-of-order CPU?
-- Encrypting registers against Spectre attacks
 + Mapping the 16–31 architectural register names onto 200+ hidden physical registers so independent instructions reusing the same register name (`RAX`) can run in parallel
+- Encrypting registers against Spectre attacks
 - Compressing 64-bit integers into 32 bits
 - Converting x86-64 into ARM64 instructions
 = Register renaming removes false Write-After-Write and Write-After-Read dependencies between independent loops/instructions.
 
 ? Why do Rust's ubiquitous slice bounds checks (`slice[i]`) add nearly zero overhead in hot loops over valid indices?
 - Bounds checks are disabled automatically in release mode
-+ The CPU branch predictor learns the bounds-check jump is 100% "not panicked" and speculates straight past it without stalling (or LLVM hoists/eliminates the check!)
-- Bounds checks run on a separate GPU core
 - Rust compiles bounds checks out using `Box`
+- Bounds checks run on a separate GPU core
++ The CPU branch predictor learns the bounds-check jump is 100% "not panicked" and speculates straight past it without stalling (or LLVM hoists/eliminates the check!)
 = Predictable always-taken/always-not-taken checks execute speculatively at near-zero cycle cost (and LLVM eliminates checks cleanly inside `iter()`).
 
 ? Even though the Reorder Buffer (ROB) discards mispredicted instructions before committing registers, how does Spectre leak secrets across speculation?
 - By overwriting `.text` on disk
-+ Speculative memory loads still pull lines into **L1 data cache**, leaving observable read-latency differences (`1 ns` hit vs `80 ns` miss) after rollback
-- By triggering a kernel panic
 - By changing `CR3` permanently
+- By triggering a kernel panic
++ Speculative memory loads still pull lines into **L1 data cache**, leaving observable read-latency differences (`1 ns` hit vs `80 ns` miss) after rollback
 = Cache-timing side channels measure microarchitectural state (L1d cache hits) left behind by rolled-back speculative loads.
 
 ? When is converting a conditional `if` to branchless `usize::from(cond)` arithmetic most beneficial?
 - When the condition is `false` 99.99% of the time (like error logging)
-+ When the condition changes unpredictably (20%–50% misprediction rate) on tight inner-loop data
 - Around large `println!` formatting blocks
++ When the condition changes unpredictably (20%–50% misprediction rate) on tight inner-loop data
 - Whenever calling `File::open`
 = Unpredictable branches suffer ~15–20 cycle pipeline flushes per miss; branchless arithmetic runs in constant predictable time.
 :::

@@ -3,7 +3,7 @@
 @title Observability: logging, traces, metrics, and health
 @short Observability & telemetry
 @level intermediate
-@time 55
+@time 35
 @learn Emit structured JSON logs and spans with `tracing` and `tracing-subscriber` | Avoid async span bugs by using `.instrument()` instead of `.entered()` across `.await` | Propagate request IDs and W3C trace contexts across tasks and HTTP calls | Export distributed traces with OpenTelemetry and OTLP | Record counters, gauges, and histograms with `metrics` and serve `/metrics` | Separate `/health/live` and `/health/ready` probes cleanly
 
 For a small local program, `println!` or `dbg!` can help inspect what happened. In a concurrent service, interleaved output can be difficult to search or connect across components. **Observability** is the practice of exposing useful signals about a running system so that operators can investigate its behaviour. This chapter introduces structured logs, traces, metrics and health checks, and explains the questions each can answer.
@@ -34,7 +34,7 @@ Every signal serves a different question:
 
 ## Structured logging and spans with `tracing`
 
-You met `tracing` and `log` in [chapter 60](#async-ecosystem). In a service, two upgrades turn development logging into production telemetry: **machine-readable JSON** and **runtime filtering with `EnvFilter`**.
+You met `tracing` and `log` in [chapter 65](#async-ecosystem). In a service, two upgrades turn development logging into production telemetry: **machine-readable JSON** and **runtime filtering with `EnvFilter`**.
 
 ```toml file=Cargo.toml
 [dependencies]
@@ -488,21 +488,21 @@ Also keep `/health/*` and `/metrics` quiet: either attach `TraceLayer` only to y
 
 ? A handler has `#[tracing::instrument(skip(password))]` on `async fn login(email: String, password: String)`. Why is `skip(password)` essential?
 - Because `String` does not implement `Debug`
-+ Because `#[instrument]` otherwise records every argument into span attributes and logs, which would expose user passwords in log files
-- Because Tokio only allows one parameter to be instrumented
 - Because `skip` makes the function run without spawning a task
+- Because Tokio only allows one parameter to be instrumented
++ Because `#[instrument]` otherwise records every argument into span attributes and logs, which would expose user passwords in log files
 = Never log secrets, API keys, or tokens. Use `skip(...)` on sensitive or large parameters, and prefer logging only safe IDs.
 
 ? In Axum with `ServiceBuilder`, you notice `request_id` is empty inside `TraceLayer`'s `make_span_with`, even though `SetRequestIdLayer` is present. What is the likeliest cause?
-- `SetRequestIdLayer` only works on `POST` requests
 + `TraceLayer` was placed above `SetRequestIdLayer`, so it ran before the header was set
+- `SetRequestIdLayer` only works on `POST` requests
 - UUIDs cannot be stored in HTTP headers
 - `PropagateRequestIdLayer` deletes the request header before handlers run
 = `ServiceBuilder` runs layers top-to-bottom on incoming requests. `SetRequestIdLayer` must appear *above* `TraceLayer` so the ID exists when `make_span_with` inspects the headers.
 
 ? Why should metric labels use `MatchedPath` (`/users/{id}`) instead of `req.uri().path()` (`/users/42`)?
-- `MatchedPath` is faster to parse than UTF-8 strings
 + Raw paths with unbounded IDs cause cardinality explosion, exhausting memory in both the service and Prometheus
+- `MatchedPath` is faster to parse than UTF-8 strings
 - Prometheus rejects labels containing digits
 - `req.uri().path()` is only populated on `404` responses
 = Each unique combination of metric label values creates a permanent time series. Keep metric labels bounded; put IDs in logs and traces.

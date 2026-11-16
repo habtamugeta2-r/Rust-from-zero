@@ -3,7 +3,7 @@
 @title Bits, bytes, binary, hex, and data and instruction representation
 @short Bits, binary, hex, and encoding
 @level beginner
-@time 40
+@time 30
 @learn Convert numbers between decimal, binary, and hexadecimal | Explain two's complement representation of signed integers and wrap-around | Read the sign, exponent, and mantissa layout of IEEE-754 floats and UTF-8 bytes | Explain little-endian byte ordering and how machine instructions live as bytes in memory
 
 A byte in memory does not label itself as a letter, a negative number or an instruction. It is a bit pattern; software interprets that pattern according to an agreed representation. The same bits can stand for an integer, part of a floating-point number, UTF-8 text or a machine instruction. This chapter builds the tools for reading those representations.
@@ -114,11 +114,11 @@ Mnemonic:     lea       eax,      [rdi+rsi] ret
 Meaning:      [opcode]  [ModR/M]  [SIB]     [return]
 ```
 
-To a RAM chip, `0x8d 0x04 0x37 0xc3` is four bytes—indistinguishable from a four-byte string or the integer `0xc337048d`. What makes the CPU execute them as instructions is that the **program counter (`RIP`)** points at their address and the **control unit** fetches them into the **instruction register**! (When you read about **buffer overflows** and **[[W^X]] memory protection** in Part IV, you will see why keeping writable data pages non-executable is critical for security.)
+To a RAM chip, `0x8d 0x04 0x37 0xc3` is four bytes—indistinguishable from a four-byte string or the integer `0xc337048d`. What makes the CPU execute them as instructions is that the **program counter (`RIP`)** points at their address and the **control unit** fetches them into the **instruction register**! (When you read about **buffer overflows** and **[[W^X]] memory protection** in Part 6, you will see why keeping writable data pages non-executable is critical for security.)
 
 ## Following the ten-stage lens: inspecting raw byte representations in Rust
 
-Just as in [Chapter 2](#hardware-architecture), you do not need to memorise the Rust syntax yet ([Chapter 4](#setup) and [Part III](#variables) teach every piece)—focus on how each value turns into raw bits and bytes:
+Just as in [Chapter 2](#hardware-architecture), you do not need to memorise the Rust syntax yet ([Chapter 4](#setup) and [Part 3](#variables) teach every piece)—focus on how each value turns into raw bits and bytes:
 
 1. **Starting point:** Seeing how a negative number, a float, and [[UTF-8]] text look as raw bytes in memory.
 2. **Source code:**
@@ -163,8 +163,8 @@ In C, pointer casts can easily misread float bytes as integers or read past a st
 :::quiz Check your understanding
 ? What is `0x2A` in decimal and binary?
 - 32 and `0b0010_0000`
-+ 42 and `0b0010_1010`
 - 26 and `0b0001_1010`
++ 42 and `0b0010_1010`
 - 44 and `0b0010_1100`
 = `2 * 16 + 10 = 42`, and `2 = 0010`, `A (10) = 1010`, giving `0010_1010`.
 
@@ -177,16 +177,16 @@ In C, pointer casts can easily misread float bytes as integers or read past a st
 
 ? On a little-endian machine, how are the 4 bytes of `0x01020304_u32` stored from lowest address to highest address?
 - `[01, 02, 03, 04]`
-+ `[04, 03, 02, 01]`
-- `[02, 01, 04, 03]`
 - `[40, 30, 20, 10]`
+- `[02, 01, 04, 03]`
++ `[04, 03, 02, 01]`
 = Little-endian puts the least-significant byte (`0x04`) at the lowest memory address first.
 
 ? Why can the CPU tell a sequence of machine instructions apart from ordinary text bytes in memory?
 - Instructions use 9-bit bytes while text uses 8-bit bytes
-+ The program counter (`PC`) points to instruction bytes for the control unit to fetch and decode, whereas data addresses are read by load instructions
-- Instructions are stored exclusively inside the CPU forever and never in RAM
 - ASCII text is encrypted in hardware
+- Instructions are stored exclusively inside the CPU forever and never in RAM
++ The program counter (`PC`) points to instruction bytes for the control unit to fetch and decode, whereas data addresses are read by load instructions
 = In RAM, both instructions and data are 8-bit bytes; role depends on whether the CPU fetches them via the instruction pointer or loads them as data (assisted by OS page execution permissions).
 :::
 
@@ -278,5 +278,5 @@ fn main() {
 0008: 46 21                    |F!|
 ```
 
-That format is almost identical to what `xxd` or `hexdump -C` prints when you inspect real compiled binaries in Part II.
+That format is almost identical to what `xxd` or `hexdump -C` prints when you inspect real compiled binaries in Part 2.
 :::

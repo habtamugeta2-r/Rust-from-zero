@@ -4,7 +4,7 @@
 @title Blocking I/O, Non-Blocking Multiplexing, epoll & io_uring
 @short epoll & io_uring internals
 @level intermediate
-@time 35
+@time 30
 @learn Contrast blocking I/O, non-blocking EAGAIN polling, and I/O multiplexing (select/poll/epoll/kqueue) | Trace how epoll (epoll_create, epoll_ctl, epoll_wait) scales to 100,000 sockets (O(ready) vs O(N)) | Explain level-triggered vs edge-triggered epoll readiness notifications and why Tokio registers Wakers with mio | Understand Linux io_uring (SQ/CQ lockless ring buffers in shared memory) as true completion-based async I/O
 
 Consider a network service with many open connections, most of which are waiting for input at any moment. A blocking design can tie up a thread per wait; readiness-based I/O lets a program wait for activity across multiple sockets. This chapter compares blocking calls, `epoll` and `io_uring`, including the complexity and workload trade-offs.
@@ -94,6 +94,8 @@ Two limitations remained even with `epoll`:
 - **CQ (Completion Queue):** The kernel executes those operations asynchronously (using kernel DMA/workers for disk AND sockets alike!) and posts finished results (**CQEs**: bytes transferred or `-errno`) into the shared CQ ring!
 - With batched submissions (or `SQPOLL` kernel polling mode), a busy server submits hundreds of reads and reaps hundreds of completions in **a single `io_uring_enter` syscall**—or **zero syscalls** on hot paths!
 
+![Diagram comparing blocking read, epoll readiness polling, and io_uring shared submission and completion ring buffers](/images/io-models.svg "Blocking ties up one thread per file descriptor, epoll checks socket readiness, and io_uring shares submission and completion rings across user and kernel space.")
+
 Let's simulate a tiny non-blocking state-machine event loop in safe Rust to see how readiness polling (`WouldBlock` -> resume) mirrors `mio` / Tokio's core design:
 
 ```rust run
@@ -156,7 +158,7 @@ Look closely at Step 3: **draining in a loop until `WouldBlock`** is the exact i
 
 ## End-to-end trace: `std::fs::File::open` and `read` down to hardware
 
-Before moving to CPU microarchitecture in Part VIII, connect everything from Parts VI and VII by tracing `let data = std::fs::read("config.toml")?;` from Rust down to an [[NVMe]] SSD and back:
+Before moving to CPU microarchitecture in Part 10, connect everything from Parts 8 and 9 by tracing `let data = std::fs::read("config.toml")?;` from Rust down to an [[NVMe]] SSD and back:
 
 1. **`openat` syscall:** `File::open("config.toml")` calls `openat(AT_FDCWD, "config.toml\0", O_RDONLY | O_CLOEXEC)`.
 2. **Kernel [[VFS]] path walk:** Inside Ring 0, VFS walks `"config.toml"` in the in-RAM **[[dentry]] cache**; on a cache hit it finds the target **[[inode]]** immediately without touching disk, checks your process's `UID`/`GID` against the inode's read permission bit, allocates an Open File Description (`offset = 0`), and returns `FD 3` wrapped in Rust's RAII `File`.
@@ -203,28 +205,28 @@ Linux `epoll` tracks *readiness* on pipes and sockets (`EAGAIN` when empty)—re
 :::quiz Check your understanding
 ? What makes `epoll` asymptotically faster than `select` and `poll` when monitoring 50,000 mostly-idle TCP sockets?
 - `epoll` runs directly on the network card hardware
-+ `epoll_wait` scales with the number of *ready* sockets (`O(ready)`) rather than re-copying and scanning all 50,000 FDs on every call (`O(total)`)
-- `epoll` uses 64-byte UDP packets instead of TCP
 - `epoll` runs in Ring 3 without entering the kernel
+- `epoll` uses 64-byte UDP packets instead of TCP
++ `epoll_wait` scales with the number of *ready* sockets (`O(ready)`) rather than re-copying and scanning all 50,000 FDs on every call (`O(total)`)
 = `epoll` maintains a persistent kernel interest tree (`epoll_ctl`) and returns only active sockets from its ready list (`epoll_wait`).
 
 ? Inside a Tokio worker loop, how does a parked async network task wake up once bytes arrive on its socket?
 - Tokio polls every parked future in a tight spin loop
-+ `epoll_wait` returns the socket's readiness token to the reactor, which invokes `waker.wake()` to re-queue the task
-- The Linux kernel calls `Future::poll` directly from Ring 0
 - `Drop` wakes the task automatically
+- The Linux kernel calls `Future::poll` directly from Ring 0
++ `epoll_wait` returns the socket's readiness token to the reactor, which invokes `waker.wake()` to re-queue the task
 = The reactor maps `epoll` readiness tokens back to registered `Waker`s and schedules only ready tasks onto the executor queue.
 
 ? What rule MUST edge-triggered (`EPOLLET`) socket code follow after waking up on `EPOLLIN`?
-- Call `read()` at most once per wake-up
 + Loop `read()` until it returns `WouldBlock` (`EAGAIN`) or `Ok(0)` (EOF)
+- Call `read()` at most once per wake-up
 - Call `fsync()` after every `read()`
 - Switch the socket back to blocking mode
 = Because edge-triggered `epoll` notifies only once per arrival transition, leaving unread bytes risks hanging indefinitely.
 
 ? What core architectural shift separates `io_uring` from `epoll`?
-- `io_uring` uses user-space blocking threads
 + `io_uring` submits requests and reaps completions via shared-memory Submission/Completion rings (supporting async disk *and* network I/O with fewer syscalls)
+- `io_uring` uses user-space blocking threads
 - `io_uring` replaces virtual memory page tables
 - `io_uring` works only on UDP sockets
 = `io_uring` delivers true completion-based async I/O over shared lockless rings rather than readiness polling + separate read/write syscalls.

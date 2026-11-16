@@ -1,9 +1,9 @@
 @id quality-tools
-@part p12
+@part p3b
 @title Tools for quality: formatting, linting, debugging, CI
 @short Quality tools
 @level intermediate
-@time 40
+@time 35
 @learn Format code automatically with rustfmt | Find mistakes and unidiomatic code with Clippy | Configure lints for a whole project | Debug with `dbg!`, backtraces and a debugger | Set up continuous integration that checks every change
 
 The compiler catches many kinds of mistakes, but it does not check formatting, every style issue or all likely bugs. Rust's toolchain includes tools such as rustfmt and Clippy for those jobs. Teams choose which checks to run locally and in continuous integration; using them consistently makes code easier to review and maintain.
@@ -197,7 +197,7 @@ pedantic = { level = "warn", priority = -1 }
 When you switch a lint off, add a comment with the reason. `#[expect(lint_name)]` is a stricter relative of `#[allow]`: it silences the lint and warns you if the lint no longer fires, so that stale exceptions do not pile up.
 
 :::tip Clippy as a teacher
-Run Clippy on everything you write while learning. Its suggestions preview many of the idioms gathered later in [chapter 40](#idioms), applied to your own code at the moment you need them. Read the linked explanations. Do not treat the list as orders, though: if a suggestion makes the code less clear, keep your version and allow the lint with a reason.
+Run Clippy on everything you write while learning. Its suggestions preview many of the idioms gathered later in [chapter 43](#idioms), applied to your own code at the moment you need them. Read the linked explanations. Do not treat the list as orders, though: if a suggestion makes the code less clear, keep your version and allow the lint with a reason.
 :::
 
 ## The compiler's own help
@@ -248,7 +248,7 @@ fn main() {
 [src/main.rs:3:5] values.len() = 3
 ```
 
-For structs, derive `Debug` and print with `{:#?}`. For a program that runs for a long time, replace ad hoc printing with proper **logging**, which can be switched on and off by level. The crates for that, `log` and `tracing`, are covered in [chapter 77](#crates).
+For structs, derive `Debug` and print with `{:#?}`. For a program that runs for a long time, replace ad hoc printing with proper **logging**, which can be switched on and off by level. The crates for that, `log` and `tracing`, are covered in [chapter 44](#crates).
 
 ### Backtraces
 
@@ -358,7 +358,7 @@ One more line earns its place in any project that reads a database:
           SQLX_OFFLINE: "true"
 ```
 
-`SQLX_OFFLINE=true` tells SQLx to check its queries against the saved description in the `.sqlx/` folder instead of connecting to a live database ([chapter 68](#databases)). The cache step keeps compiled dependencies between runs, which saves minutes. Larger projects add a matrix that runs the tests on Linux, Windows and macOS, a job on the oldest supported Rust version, and `cargo audit` on a schedule.
+`SQLX_OFFLINE=true` tells SQLx to check its queries against the saved description in the `.sqlx/` folder instead of connecting to a live database ([chapter 73](#databases)). The cache step keeps compiled dependencies between runs, which saves minutes. Larger projects add a matrix that runs the tests on Linux, Windows and macOS, a job on the oldest supported Rust version, and `cargo audit` on a schedule.
 
 Run the same commands yourself before you push. Many people put them in a script, or use a tool such as `just`, a simple command runner:
 
@@ -387,22 +387,22 @@ Formatters and linters exist everywhere: Prettier and ESLint for JavaScript, Bla
 :::quiz Check your understanding
 ? What does `cargo fmt --check` do?
 - It formats all files
-+ It reports whether any file differs from the standard format, without changing anything
-- It checks the code for bugs
 - It checks the dependencies
+- It checks the code for bugs
++ It reports whether any file differs from the standard format, without changing anything
 = The `--check` form is for automation: it fails if formatting is needed, so that unformatted code cannot be merged.
 
 ? Which of these would Clippy typically point out?
-- A missing semicolon
-- A type mismatch
 + A loop `for i in 0..v.len()` that only uses `i` to index `v`
+- A type mismatch
+- A missing semicolon
 - A variable that was moved
 = The first, second and fourth are compiler errors. Clippy works on code that already compiles, and suggests the clearer or faster form.
 
 ? What does `cargo clippy -- -D warnings` achieve in CI?
 - It hides all warnings
-+ It turns every warning into an error, so that the check fails if any lint fires
 - It deletes the code that causes warnings
++ It turns every warning into an error, so that the check fails if any lint fires
 - It runs Clippy twice
 = `-D warnings` means "deny warnings". The pipeline then fails for any new warning, which keeps the code base clean.
 
@@ -415,9 +415,9 @@ Formatters and linters exist everywhere: Prettier and ESLint for JavaScript, Bla
 
 ? Why turn a bug into a test before fixing it?
 - Tests run faster than programs
-+ The test proves the bug exists, shows when it is fixed, and guards against its return
-- The compiler requires it
 - It makes the fix unnecessary
+- The compiler requires it
++ The test proves the bug exists, shows when it is fixed, and guards against its return
 = A failing test is a precise description of the bug. Once it passes, it stays as a regression test.
 :::
 

@@ -4,7 +4,7 @@
 @title Processes, OS Threads, Scheduling & Context Switching
 @short Processes, threads & scheduler
 @level intermediate
-@time 35
+@time 30
 @learn Contrast processes and OS threads via Linux clone() sharing flags | Trace fork() + COW, execve(), wait(), zombies, and orphans | Explain OS preemptive scheduling (CFS / EEVDF, run queues, time slices, I/O vs CPU bursts) | Measure what a full CPU context switch costs and inspect thread/PID isolation in Rust
 
 A system may have more runnable processes and threads than CPU cores. Yet interactive programs, background services and kernel workers appear to make progress together. The operating-system scheduler shares processor time among runnable threads, while many others wait for input or other events. The exact counts vary by machine and workload; the useful question is how the scheduler decides what runs next.
@@ -161,34 +161,34 @@ Think about context switching & cache thrashing vs blocked wait queues (`TASK_IN
 - Inside Linux, processes and OS threads are both `task_struct` objects created by `clone()` with different sharing flags (`CLONE_VM`, `CLONE_FILES`, `CLONE_THREAD`).
 - Processes isolate virtual memory (`CR3`), files, and crashes; threads share one address space and files while keeping private registers and stacks.
 - Every spawned Unix child process must be reaped via `wait()`/`waitpid()` (done by Rust `Command::wait`/`output`) or it remains a **zombie** holding its PID and exit code.
-- Preemptive schedulers (Linux **EEVDF**) rotate runnable threads via timer interrupts; **context switches** hurt most not from saving registers (~1 µs), but from evicting warm **L1/L2 CPU caches**.
+- Preemptive schedulers (Linux **EEVDF**) rotate runnable threads via timer interrupts; **[[context switches|context switch]]** hurt most not from saving registers (~1 µs), but from evicting warm **L1/L2 CPU caches**.
 :::
 
 :::quiz Check your understanding
 ? Which Linux system call creates BOTH child processes (`fork`) and new OS threads (`pthread_create` / `std::thread::spawn`) under the hood?
 - `execve`
-+ `clone`
-- `mmap`
 - `futex`
+- `mmap`
++ `clone`
 = Both `fork` and `std::thread::spawn` invoke `clone()` with different flag bitmasks (`CLONE_VM | CLONE_FILES | CLONE_THREAD` for threads).
 
 ? What happens if a parent process spawns child processes via `Command::spawn()` in a loop and never calls `.wait()` or `.try_wait()`?
 - The child processes keep executing forever even after returning from `main`
-+ Finished child processes remain in the kernel process table as **zombies (`Z`)** holding their PID and exit status until reaped or the parent exits
 - The OS immediately kills the parent process
++ Finished child processes remain in the kernel process table as **zombies (`Z`)** holding their PID and exit status until reaped or the parent exits
 - Child processes turn into threads inside the parent
 = The kernel preserves a dead child's PID and exit status slot until `waitpid()` collects it.
 
 ? Why does adding 200 OS threads to an 8-core server doing pure CPU arithmetic make it *slower* than 8 threads?
 - Linux limits user programs to 8 threads
-+ Extra threads cannot create extra CPU cores; instead they force frequent preemptive context switches and evict hot L1/L2 cache lines
 - `std::thread` disables compiler optimisations
++ Extra threads cannot create extra CPU cores; instead they force frequent preemptive context switches and evict hot L1/L2 cache lines
 - Atomic reference counts cannot run across more than 8 threads
 = More runnable threads than physical cores causes scheduling overhead and cache-line thrashing without increasing compute capacity.
 
 ? When a thread calls `std::thread::sleep` or blocks on `TcpStream::read`, how much CPU time does the OS scheduler give it while waiting?
-- 100% of one core spinning in a kernel loop
 + 0% — the kernel moves the thread onto a sleep/wait queue until the timer or socket wake-up arrives
+- 100% of one core spinning in a kernel loop
 - 50% alternating with sibling threads
 - One timer tick every microsecond
 = Blocked threads leave the run queue completely (`TASK_INTERRUPTIBLE`) so other threads use 100% of the CPU cores.

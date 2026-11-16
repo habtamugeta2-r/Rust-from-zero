@@ -1,9 +1,9 @@
 @id crates
-@part p13
+@part p3c
 @title The crate ecosystem: finding and using libraries
 @short Finding and using crates
 @level intermediate
-@time 50
+@time 40
 @learn Find crates for a task and judge their quality | Read a crate's documentation efficiently | Use the everyday crates: `rand`, `regex`, `chrono`, `itertools`, `tracing` | Name the standard choice for each common task | Keep dependencies safe and under control
 
 The Rust standard library covers common language and operating-system tasks, but many formats and specialised tools come from third-party libraries. In Rust, a distributable package of code is called a **[[crate]]**; many crates are published in the community registry **[[crates.io]]**. This chapter shows how to search for a library, assess its fit and maintenance, and manage dependencies deliberately.
@@ -356,7 +356,7 @@ ERROR something failed code=7
 - The five levels, from most to least detailed: `trace!`, `debug!`, `info!`, `warn!`, `error!`. A program in production usually shows `info` and above.
 - Messages can carry **fields** (`result = …`, `code = 7`) in addition to text. Tools can filter and search by them.
 - `#[instrument]` wraps a function in a **span**: a named stretch of time. Every message inside shows which call it belongs to, with the arguments (`divide{a=1 b=0}`). In async programs, where many tasks are interleaved, this is what makes logs readable.
-- The example switches off the time stamp and colours to keep the output stable. Normally you would just call `tracing_subscriber::fmt::init()`.
+- The example switches off the time stamp and colours to keep the output stable. Normally you call `tracing_subscriber::fmt::init()` directly.
 
 `tracing` is powerful, but a small program does not need spans and fields. The crate **`log`** is a *facade*: it provides the macros (`error!`, `warn!`, `info!`, `debug!`, `trace!`) and nothing more. A library should depend on `log` and call its macros — and never decide where messages go. The crate **`env_logger`** is a small logger implementation, and the environment variable `RUST_LOG` chooses how much to see.
 
@@ -419,7 +419,7 @@ hides `info` and `debug`. The filter is a pattern: `mycrate=debug` shows debug m
 | Async tasks | hard to tell which task said what | spans follow the task (`#[instrument]`) |
 | Best fit | small tools, command-line programs | services, servers, async code |
 
-This chapter introduces the basics for scripts and small programs. For structured JSON logging in production, request IDs across async tasks, OpenTelemetry distributed traces, Prometheus metrics, and health probes, see [chapter 65](#observability).
+This chapter introduces the basics for scripts and small programs. For structured JSON logging in production, request IDs across async tasks, OpenTelemetry distributed traces, Prometheus metrics, and health probes, see [chapter 70](#observability).
 
 :::compare Logging, not printing
 A library logs; an application decides where the logs go. `log` and `tracing` both leave the decision to `main`. A library that calls `println!` forces its output on everybody.
@@ -514,29 +514,29 @@ Each dependency is code you did not write, running with all the rights of your p
 :::quiz Check your understanding
 ? Where do you find the documentation of any published crate?
 - On crates.io, as a PDF
-+ On docs.rs, built automatically for every version
-- Only in the crate's source code
 - In the Rust standard library documentation
+- Only in the crate's source code
++ On docs.rs, built automatically for every version
 = docs.rs builds and hosts the documentation for every release of every crate, in the same format as the standard library's.
 
 ? Which sign suggests that a crate may be a risky choice?
 - It is at version 0.9
 - It has not had a release in three months
-+ Its bug reports and pull requests have had no reply for years
 - It depends on `serde`
++ Its bug reports and pull requests have had no reply for years
 = A quiet crate can simply be finished. Unanswered reports mean that nobody is looking after it. Many solid crates are below 1.0.
 
 ? Why build a `Regex` once and reuse it, and not inside a loop?
-- A `Regex` can be used only once
 + Compiling the pattern is expensive, while matching with a compiled regex is fast
+- A `Regex` can be used only once
 - It would not compile inside a loop
 - Loops cannot contain `expect`
 = `Regex::new` parses and compiles the pattern. Doing that for every item wastes most of the running time.
 
 ? When is a random number generator with a fixed seed the right choice?
 - For generating passwords
-+ For tests and simulations that must give the same result on every run
 - Never
++ For tests and simulations that must give the same result on every run
 - For shuffling a deck in an online casino
 = A seeded generator is repeatable, which is valuable for testing and useless for security. Secrets need the default, unpredictable generator.
 
@@ -612,7 +612,7 @@ fn main() {
 Sat
 ```
 
-Tuples are compared element by element, so `(month, day) < (month, day)` asks exactly "is today earlier in the year than the birthday?". The function takes `today` as a parameter and does not call `Utc::now()` itself. That is the dependency injection of [chapter 72](#testing-strategies): the function can be tested for any date. Date arithmetic by hand, with month lengths and leap years, is a classic source of bugs. The crate has them right.
+Tuples are compared element by element, so `(month, day) < (month, day)` asks exactly "is today earlier in the year than the birthday?". The function takes `today` as a parameter and does not call `Utc::now()` itself. That is the dependency injection of [chapter 34](#testing-strategies): the function can be tested for any date. Date arithmetic by hand, with month lengths and leap years, is a classic source of bugs. The crate has them right.
 :::
 
 :::exercise challenge Analyse a log

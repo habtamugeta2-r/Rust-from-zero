@@ -4,7 +4,7 @@
 @title Virtual Memory, Pages, TLB & Address Spaces
 @short Virtual memory & paging
 @level intermediate
-@time 35
+@time 30
 @learn Explain why every process gets its own private virtual address space | Trace virtual-to-physical translation through 4-level page tables and the TLB | Read /proc/self/maps and distinguish stack, heap, mapped segments, and guard pages | Understand ASLR, demand paging, page faults, and copy-on-write fork()
 
 Ordinary user-space code works with **virtual addresses**, not physical RAM addresses. The processor's memory-management unit translates those addresses using mappings managed by the operating system. As a result, two processes can use the same numerical virtual address while mapping it to different physical memory; a pointer's printed value does not identify a universal location in RAM.
@@ -233,30 +233,30 @@ Notice `PML4 = 255` (`0xff`)—the very top slot (`0..255`) of the user-space lo
 
 :::quiz Check your understanding
 ? Two separate processes both print a local stack variable at virtual address `0x7ffe8245635c` and write different numbers to it. Why do they not overwrite each other?
-- Stack variables live inside the CPU registers only
 + Each process has its own page tables mapped to distinct physical RAM frames
+- Stack variables live inside the CPU registers only
 - The OS swaps one process out to disk before running the other
 - The compiler rewrites addresses at runtime
 = The same virtual address translates through each process's own `CR3` / page table to completely separate physical RAM frames.
 
 ? What is the primary job of the TLB (Translation Lookaside Buffer)?
 - Storing heap metadata headers for `malloc`
-- Keeping copy-on-write forks synchronised
 + Caching recent virtual-to-physical page translations inside the CPU core
+- Keeping copy-on-write forks synchronised
 - Compressing unused pages onto SSD swap
 = Walking a 4-level page table in DRAM on every memory instruction would be prohibitively slow; the TLB caches translations in fast hardware registers.
 
 ? Which `/proc/self/maps` permission flags represent a normal `.text` code segment under W^X security?
 - `rw-p`
-+ `r-xp`
 - `rwxp`
++ `r-xp`
 - `---p`
 = Code segments are readable (`r`) and executable (`x`) but never writable (`-`), preventing runtime code injection.
 
 ? What happens during a minor (soft) page fault right after reserving virtual memory?
 - The program crashes immediately with `SIGSEGV`
-- The kernel reads the missing page from the NVMe disk
 + The kernel allocates a zeroed physical RAM frame, maps it into the page table, and resumes the instruction
+- The kernel reads the missing page from the NVMe disk
 - The MMU flushes every entry from the TLB across all CPU cores
 = Demand paging assigns physical frames lazily on first write via a minor page fault—no disk I/O is needed.
 :::

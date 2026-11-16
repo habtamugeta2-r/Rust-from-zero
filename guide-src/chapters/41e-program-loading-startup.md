@@ -4,7 +4,7 @@
 @title Program Loading, Dynamic Linking & Startup Before main()
 @short Program loading & startup
 @level intermediate
-@time 35
+@time 25
 @learn Trace execve() from shell fork() into the Linux kernel ELF loader | Understand ld-linux, PT_INTERP, GOT/PLT lazy symbol resolution, and ASLR | Inspect argc, argv, envp, and auxv placed on the initial stack | Follow Rust's crt0 / std::rt::lang_start_internal execution before your fn main() runs
 
 Running `./hello` starts several layers before Rust calls your `main`: the shell creates a process, the Linux kernel loads the executable, and—when dynamically linked—the dynamic loader prepares its shared libraries. Runtime startup code then calls the program's entry point. The exact path depends on the binary, target and build options; [object files, linking and ELF](#linking-elf) introduces the file format involved.
@@ -179,29 +179,29 @@ Explain step by step how **GOT** (Global Offset Table) and **PLT** (Procedure Li
 :::quiz Check your understanding
 ? Where do `std::env::args()` and `std::env::vars()` obtain the command-line arguments and environment variables on Linux?
 - By reading `/proc/self/stat` inside `env::args()`
-+ From `argc`, `argv`, and `envp` pushed onto the initial stack by the kernel during `execve()`, saved by `std::rt` before `main()`
 - Via a network socket to the shell parent process
++ From `argc`, `argv`, and `envp` pushed onto the initial stack by the kernel during `execve()`, saved by `std::rt` before `main()`
 - Compiled directly into `.rodata`
 = The Linux kernel places `argc`, `argv`, `envp`, and `auxv` onto the initial user stack during `execve()`, and `lang_start_internal` captures them for `std::env`.
 
 ? What does the `AT_RANDOM` entry in the kernel's `auxv` vector supply at process startup?
-- The ASLR offset of `.text`
 + 16 cryptographically random bytes from the kernel used to initialise stack canaries and `HashMap` seed hashes
+- The ASLR offset of `.text`
 - The PID of the shell parent
 - The total RAM size in pages
 = `AT_RANDOM` avoids an extra startup syscall by handing 16 fresh random bytes right on the initial stack.
 
 ? Why does Rust's runtime reset `SIGPIPE` to ignored by default?
 - So processes never exit on errors
-+ So writing to a closed pipe (like `cmd | head -n 1`) returns a normal `BrokenPipe` `std::io::Error` instead of abruptly terminating the process
 - Because Linux kernels forbid `SIGPIPE` in 64-bit mode
++ So writing to a closed pipe (like `cmd | head -n 1`) returns a normal `BrokenPipe` `std::io::Error` instead of abruptly terminating the process
 - To prevent `println!` from flushing buffers
 = Ignoring `SIGPIPE` lets Rust surface pipe closures via `Result` cleanly rather than killing the binary unexpectedly.
 
 ? Why must `_start` in a freestanding `#![no_main]` binary end in an `exit` syscall instead of `return`?
 - Rust forbids functions returning `()`
-+ Nothing called `_start` on a normal stack frame—there is no valid return address above `_start` on the initial stack
 - `return` is only valid in C++
++ Nothing called `_start` on a normal stack frame—there is no valid return address above `_start` on the initial stack
 - `_start` executes inside the kernel
 = The initial user stack holds `argc`, not a caller return address; returning from `_start` jumps into garbage and segfaults.
 :::

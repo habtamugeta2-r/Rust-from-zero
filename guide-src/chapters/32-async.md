@@ -3,7 +3,7 @@
 @title Async Rust: thousands of tasks at once
 @short Async and await
 @level advanced
-@time 70
+@time 50
 @learn Explain when async is the right tool and when threads are | Write `async` functions and use `.await` | Run tasks concurrently with `join!`, `spawn`, `select!` and timeouts | Use async channels and shared state, and avoid blocking the runtime | Describe what a future and a runtime are underneath
 
 Threads are useful for running work concurrently, but assigning a dedicated thread to every connection can use substantial resources. Network services often have many connections waiting for input, with only a few ready to make progress at a time. **Asynchronous programming** lets a task pause while it waits and resume when an event arrives, so a runtime can schedule other work in the meantime. Whether async is the right choice depends on the workload and design.
@@ -322,7 +322,7 @@ the timer came first
 :::key Dropping a future cancels it — and what "cancellation safety" means
 When a future is dropped before it finishes, its work stops at whichever `.await` it was paused on. That is how `timeout` and `select!` cancel the losing branches.
 
-When using `tokio::select!` inside a **`loop`**, check whether each branch is **cancellation-safe**:
+When using `tokio::select!` inside a **`loop`**, check whether each branch satisfies **[[cancellation safety]]** (is cancellation-safe):
 - **Cancellation-safe**: `mpsc::Receiver::recv`, `TcpListener::accept`, and `AsyncBufReadExt::read_line` lose no partial data when dropped before completing.
 - **Not cancellation-safe**: creating a fresh `tokio::time::sleep(...)` inside each loop turn resets the timer every time another branch fires, and multi-step async functions dropped mid-way discard partial work. For a deadline across loop iterations, create the future *outside* the loop (`let timer = tokio::time::sleep(...); tokio::pin!(timer);`) and poll `&mut timer` inside `select!`, or run stateful work in its own `tokio::spawn` task.
 :::
@@ -516,6 +516,8 @@ trait Future {
 
 **An `async fn` is turned into a state machine by the compiler.** It becomes a hidden struct that stores the local variables and remembers at which `.await` the function is paused. Each `poll` runs the code up to the next `.await` that is not ready, and returns `Pending`. This is why an async task is so small: it stores only its live variables, not a whole stack.
 
+![Diagram of an async state machine: executor calls poll, future returns Pending or Ready, and reactor wakes it with Waker](/images/async-state-machine.svg "Each `.await` becomes a state in the generated enum; the executor polls ready tasks while the reactor waits on I/O.")
+
 **A runtime is a loop that polls futures.** It keeps a queue of tasks that are ready, polls them, and puts aside those that return `Pending`. A pending future has stored a **waker** (handed in through the `Context`). When the event it waits for arrives, such as data on a socket or a timer firing, the waker puts the task back into the ready queue.
 
 Here is all of that in a program small enough to read, with no crate at all: a future written by hand, and a runtime of eight lines.
@@ -658,7 +660,7 @@ missing: None
 One limit remains: a trait with async methods cannot be used directly as `dyn Trait`. Where trait objects are needed, the crate `async-trait` is the usual answer.
 
 
-**An async function that calls itself** needs a box. The future of such a function would have to contain a future of the same function, which contains another one, without end. It is the problem of the list that contains a list from [chapter 32](#smart-pointers), and the remedy is the same:
+**An async function that calls itself** needs a box. The future of such a function would have to contain a future of the same function, which contains another one, without end. It is the problem of the list that contains a list from [chapter 35](#smart-pointers), and the remedy is the same:
 
 ```rust ext run
 async fn depth(n: u32) -> u32 {
@@ -686,14 +688,14 @@ async fn main() {
 | All of a fixed handful to finish | `join!` | Different types are fine; returns a tuple |
 | All to finish, or the first error | `try_join!` | Errors must share a type; the rest are cancelled |
 | The first to finish, ignore the rest | `select!` | Also the tool for timeout races |
-| Many at once, from a list | `buffer_unordered(n)` | Maps a stream to futures, at most `n` in flight ([chapter 60](#async-ecosystem)) |
+| Many at once, from a list | `buffer_unordered(n)` | Maps a stream to futures, at most `n` in flight ([chapter 65](#async-ecosystem)) |
 | Many independent tasks | `JoinSet` | Tasks may be cancelled, and `tokio-console` sees them |
 
 **A set of futures that grows and shrinks.** `FuturesUnordered` from the `futures` crate holds futures of one output type, lets you push new ones while it is being polled, and yields results in the order they finish. That is exactly what a worker needs when a finished job may add another job. It is also the honest answer to "how is this different from the other three?". `buffer_unordered` needs an iterator of items up front and applies a map function. `JoinSet` turns each future into an independent spawned task, so it needs `'static`, and gains cancellation and visibility. `FuturesUnordered` polls them all inside the task that owns it, so the futures may borrow from that task's data.
 
 **Projecting a pin, when the compiler asks.** A hand-written `Future` eventually has to turn `Pin<&mut Self>` into `Pin<&mut Field>`, and that operation is only sound if the field is never moved afterwards — which is why it cannot be written in safe Rust. Two escapes: put the self-referential part behind `Box::pin`, as the recursive `async fn` above does, or let `pin-project-lite` generate the projection and its `unsafe` for you. Libraries that implement `Stream`, `Future` or an async trait by hand use the second. Application code almost never needs either, and it is fine to recognise the pattern rather than write it.
 
-**Streams** are the async relatives of iterators: a sequence of values that arrive over time, such as lines from a connection. They come from the crates `futures` and `tokio-stream`, and you will see them in [chapter 60](#async-ecosystem).
+**Streams** are the async relatives of iterators: a sequence of values that arrive over time, such as lines from a connection. They come from the crates `futures` and `tokio-stream`, and you will see them in [chapter 65](#async-ecosystem).
 
 **Other runtimes.** Tokio is the default choice for servers and network tools. `smol` is a small alternative, and `embassy` brings async to microcontrollers that have no operating system. Libraries are often written for one runtime, so pick one per program. This guide uses Tokio throughout.
 
@@ -726,37 +728,37 @@ async fn main() {
 :::quiz Check your understanding
 ? What does calling an `async fn` do, by itself?
 - It runs the function in a new thread
-- It runs the function until the first `.await`
 + It creates a future. Nothing runs until the future is awaited or spawned
+- It runs the function until the first `.await`
 - It blocks until the function is finished
 = Futures are lazy. The call only builds the value that describes the work.
 
 ? Two futures each wait 100 ms on a timer. How long does `tokio::join!(a, b)` take, roughly?
-- 200 ms
 + 100 ms
+- 200 ms
 - 50 ms
 - It depends on the number of processor cores
 = `join!` drives both at once. Their waiting times overlap, so the total is the longer of the two, even on a single thread.
 
 ? Why must you not call `std::thread::sleep` inside an async task?
 - It does not compile
-- It is less precise
 + It blocks the whole thread, so all other tasks that share that thread stop too
+- It is less precise
 - It cancels the task
 = An `.await` yields control only when its future is not ready (`Pending`). A blocking call keeps the runtime thread busy, so other tasks on it cannot run. Use `tokio::time::sleep(...).await` instead of `std::thread::sleep`.
 
 ? What happens to the slower branch of a `tokio::select!`?
 - It keeps running in the background
 - It is paused and continues at the next `select!`
-+ Its future is dropped, which cancels it at the `.await` where it was waiting
 - It panics
++ Its future is dropped, which cancels it at the `.await` where it was waiting
 = `select!` continues with the first finished branch and drops the rest. Dropping a future is how cancellation works in async Rust.
 
 ? Which task is async the **wrong** tool for?
 - A chat server with 20,000 open connections
 - Downloading 500 web pages
-+ Rendering a large image, which needs minutes of pure calculation
 - Waiting for messages from several sources
++ Rendering a large image, which needs minutes of pure calculation
 = Async helps when tasks wait. A long calculation never waits, and gains nothing. It needs threads on several cores.
 :::
 

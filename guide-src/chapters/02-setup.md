@@ -3,7 +3,7 @@
 @title Setting up and running your first program
 @short Setup and your first program
 @level beginner
-@time 30
+@time 45
 @learn Run Rust code in the browser without installing anything | Use a terminal for basic tasks | Install Rust and a code editor on your own computer | Create, run and change a Rust project with Cargo | Read a compiler error message without fear
 
 Start by running a small Rust program in the browser, where no local installation is needed. Then set up the compiler and Cargo on your computer, create a project, and examine the first program line by line. You can pause after the browser exercise and return to installation when you are ready.
@@ -155,7 +155,7 @@ edition = "2024"
 [dependencies]
 ```
 
-The `name` and `version` are your project's name and version number. The `edition` says which set of language rules to use: `2024` is the newest. The idea of an edition is to let the language grow without breaking old code: a project pinned to edition `2021` still compiles under a newer compiler, while a project that opts into `2024` gets the newest rules. This is one of the ways Rust keeps its promise of stability, from [chapter 1](#what-is-rust). Under `[dependencies]` you will later list code from other people that your project uses. It is empty for now.
+The `name` and `version` are your project's name and version number. The [[edition]] (`edition` in `Cargo.toml`) says which set of language rules to use: `2024` is the newest. The idea of an edition is to let the language grow without breaking old code: a project pinned to edition `2021` still compiles under a newer compiler, while a project that opts into `2024` gets the newest rules. This is one of the ways Rust keeps its promise of stability, from [chapter 1](#what-is-rust). Under `[dependencies]` you will later list code from other people that your project uses. It is empty for now.
 
 :::analogy `Cargo.toml` is a project recipe card
 Imagine handing a friend a kit to assemble a shelf. You do not hand them a sack of random screws and hope for the best: you include a card saying *which* board, *which* screws, and *which* instructions to follow. `Cargo.toml` is that card for your program. Anyone with Cargo and that file can reproduce the exact same build on Windows, macOS or Linux.
@@ -269,11 +269,11 @@ Putting `//` in front of a line of code switches it off without deleting it. Pro
 | `cargo fmt` | Tidies the layout of your code | Before you save your work |
 | `cargo clippy` | Checks for common mistakes and suggests cleaner Rust | Regularly before sharing your code |
 
-Formatting (`cargo fmt --check`), testing (`cargo test`), and linting (`cargo clippy`) are built in from day one. You will use these commands long before any advanced Rust features, and Part XII ([chapter 70](#cargo) through [chapter 72](#testing-strategies)) covers this everyday engineering workflow in depth.
+Formatting (`cargo fmt --check`), testing (`cargo test`), and linting (`cargo clippy`) are built in from day one. You will use these commands long before any advanced Rust features, and Part 4 ([Chapter 32](#cargo) through [Chapter 34](#testing-strategies)) covers this everyday engineering workflow in depth.
 
 ## Your Linux systems inspection toolkit
 
-Because this guide explores what `rustc` and the operating system actually produce, Linux provides a set of inspection utilities that turn black boxes into open glass. Check which ones are installed on your machine (most come pre-installed with `binutils`, `gdb`, `strace`, and `linux-tools` / `perf`):
+Because this guide explores what [[rustc]] and the operating system actually produce, Linux provides a set of inspection utilities that turn black boxes into open glass. Check which ones are installed on your machine (most come pre-installed with `binutils`, `gdb`, `strace`, and `linux-tools` / `perf`):
 
 ```sh
 $ which rustc cargo objdump readelf nm ldd strace ltrace gdb lldb perf
@@ -363,29 +363,29 @@ A compiler error is not a failure. It is the compiler doing its job: catching a 
 :::quiz Check your understanding
 ? Where does a Rust program start running?
 - At the first line of the file
-+ In the function called `main`
 - In `Cargo.toml`
++ In the function called `main`
 - At the first `println!`
 = Every Rust program begins with the `main` function, wherever it appears in the file.
 
 ? What does `cargo run` do?
-- It only checks the code for mistakes
-- It creates a new project
 + It compiles the project if needed, then starts the program
+- It creates a new project
+- It only checks the code for mistakes
 - It installs Rust
 = `cargo run` builds and runs in one step. `cargo check` only checks, and `cargo new` creates a project.
 
 ? What does this line print? `println!("{} apples and {} pears", 3, 5);`
 - `{} apples and {} pears`
 - `3 5 apples and pears`
-- `5 apples and 3 pears`
 + `3 apples and 5 pears`
+- `5 apples and 3 pears`
 = Each `{}` is replaced by the next value, in order: the first by 3, the second by 5.
 
 ? The compiler reports an error at `src/main.rs:7:12`. Where should you look?
 - Line 12, character 7
-+ Line 7, character 12
 - The 7th file, line 12
++ Line 7, character 12
 - Chapter 7, section 12 of the manual
 = The format is file, then line, then column (the character position on that line).
 :::
@@ -507,5 +507,5 @@ Pancakes for 3 people
 - 300 ml milk
 ```
 
-It works, but the number `3` is written four times. To cook for 5 people you would have to change it in four places, and it is easy to miss one. In Part II you first see how source code like this turns into assembly and ELF machine executables, and then Part III fixes the repetition with **variables**: you give the value a name once and use the name everywhere.
+It works, but the number `3` is written four times. To cook for 5 people you would have to change it in four places, and it is easy to miss one. In Part 2 you first see how source code like this turns into assembly and ELF machine executables, and then Part 3 fixes the repetition with **variables**: you give the value a name once and use the name everywhere.
 :::

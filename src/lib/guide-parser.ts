@@ -111,6 +111,7 @@ export function inlinePlainText(nodes: InlineNode[]): string {
         case "strong":
         case "em":
         case "internalLink":
+        case "routeLink":
         case "externalLink":
           return inlinePlainText(n.children);
       }

@@ -1,9 +1,9 @@
 @id unsafe
-@part p3
+@part p3c
 @title Unsafe Rust: taking over responsibility
 @short Unsafe Rust
 @level advanced
-@time 55
+@time 45
 @learn Explain what `unsafe` allows, what it does not change, and what undefined behaviour is | Work with raw pointers | Wrap unsafe code in a safe interface and document why it is sound | Name the tools that check unsafe code | Judge when unsafe code is justified
 
 Most Rust code is written in **safe Rust**, where the compiler checks rules for references, indexing and thread-safe access. Safe indexing reports an out-of-range access rather than reading beyond a slice. These checks rely on unsafe code and foreign libraries upholding their contracts, and they do not prove that program logic is correct. This chapter examines the small set of operations that require the programmer to uphold invariants the compiler cannot check.
@@ -273,12 +273,12 @@ Every hazard of manual memory management appears in these lines, each one answer
 
 The fields are private. That matters: if outside code could change `length`, all the safety arguments would collapse. **The privacy boundary of the module is the safety boundary.** All code that can touch the private parts must be reviewed together.
 
-A `Layout` describes how many bytes are needed and how they must be aligned ([chapter 38](#memory-layout)). In real code you would simply use `vec![0; 4]`. The point is to see that there is no magic underneath.
+A `Layout` describes how many bytes are needed and how they must be aligned ([chapter 41](#memory-layout)). In real code you would reach for `vec![0; 4]` directly. The point is to see that there is no magic underneath.
 
 
 ### A lock built by hand: `UnsafeCell`
 
-[Chapter 32](#smart-pointers) showed `Cell` and `RefCell`, which change their content through a shared reference, and [chapter 56](#shared-state) will introduce their multi-threaded cousins (`Mutex` and the atomics). All of them are built on one type, **`UnsafeCell<T>`**. It is the only legal way in Rust to change data behind a `&`. Its method `get` returns a raw pointer to the content, and from there on the responsibility is yours.
+[Chapter 35](#smart-pointers) showed `Cell` and `RefCell`, which change their content through a shared reference, and [chapter 61](#shared-state) will introduce their multi-threaded cousins (`Mutex` and the atomics). All of them are built on one type, **`UnsafeCell<T>`**. It is the only legal way in Rust to change data behind a `&`. Its method `get` returns a raw pointer to the content, and from there on the responsibility is yours.
 
 To see how the pieces of the last chapters fit together, here is a complete lock. It waits by trying again and again, which is called a **spin lock**:
 
@@ -448,7 +448,7 @@ fn main() {
 2
 ```
 
-Even inside `unsafe`, Rust refuses to create a *reference* to a `static mut` (`println!("{}", COUNTER)` would, and is an error), because such a reference could be made invalid from anywhere. In new code there is almost never a reason to use `static mut`. An atomic, a `Mutex` or a `OnceLock` in a plain `static` does the same job safely ([chapter 56](#shared-state) covers all three).
+Even inside `unsafe`, Rust refuses to create a *reference* to a `static mut` (`println!("{}", COUNTER)` would, and is an error), because such a reference could be made invalid from anywhere. In new code there is almost never a reason to use `static mut`. An atomic, a `Mutex` or a `OnceLock` in a plain `static` does the same job safely ([chapter 61](#shared-state) covers all three).
 
 ### Unsafe traits
 
@@ -560,7 +560,7 @@ Unsafe code cannot be verified by the compiler, but you are not without help.
 
   Run it on every piece of unsafe code you write. It is slow, and it can only find problems on the paths your tests exercise, so write tests that cover the unusual cases.
 - **Sanitizers** (AddressSanitizer, ThreadSanitizer) are checks compiled into the program. They are faster than Miri and also cover code from other languages that is linked into your program.
-- **Clippy** ([chapter 71](#quality-tools)) has lints for unsafe code. `clippy::undocumented_unsafe_blocks` demands a `SAFETY` comment on every block.
+- **Clippy** ([chapter 33](#quality-tools)) has lints for unsafe code. `clippy::undocumented_unsafe_blocks` demands a `SAFETY` comment on every block.
 - **`#![forbid(unsafe_code)]`** at the top of a crate makes any `unsafe` a compile error. Use it to state, and enforce, that a crate is entirely safe.
 - **`cargo geiger`** counts the unsafe code in your dependencies.
 
@@ -568,7 +568,7 @@ Unsafe code cannot be verified by the compiler, but you are not without help.
 
 Good reasons:
 
-- **Talking to other languages and to the operating system.** There is no other way ([chapter 37](#ffi)).
+- **Talking to other languages and to the operating system.** There is no other way ([chapter 40](#ffi)).
 - **Talking to hardware**, in embedded systems and drivers, where memory addresses are device registers.
 - **Building basic data structures and synchronisation tools** that the borrow checker cannot express: a doubly linked list, a lock-free queue, a memory arena.
 - **Performance**, in a place that measurements have shown to matter, where a check cannot be removed in any safe way.
@@ -607,8 +607,8 @@ Most Rust programmers write unsafe code rarely or never. Application code, web s
 :::quiz Check your understanding
 ? What does an `unsafe` block switch off?
 - The borrow checker
-- All type checks
 + Nothing. It allows five additional operations, and all the usual checks stay active
+- All type checks
 - Bounds checks on vectors
 = `unsafe` adds abilities. References are still borrow-checked, types are still checked, and `v[i]` still checks its index.
 
@@ -620,16 +620,16 @@ Most Rust programmers write unsafe code rarely or never. Application code, web s
 = Making and handling raw pointers is safe. Dereferencing is not, because the pointer may be invalid.
 
 ? What does "undefined behaviour" mean?
-- The program always crashes
-- The result is random but harmless
 + The language gives no guarantee at all about what the program does. It may seem to work and still be broken
+- The result is random but harmless
+- The program always crashes
 - The compiler reports an error
 = The compiler optimises on the assumption that undefined behaviour never happens. When it does, anything can follow, including wrong results far from the cause.
 
 ? A safe function contains an `unsafe` block. For which inputs must it be free of undefined behaviour?
-- For the inputs the author had in mind
-- For all inputs mentioned in the documentation
 + For every input that safe code can possibly pass
+- For all inputs mentioned in the documentation
+- For the inputs the author had in mind
 - Only for inputs that pass the tests
 = A safe function promises soundness. If some input could trigger undefined behaviour, the function must either check for it, or be marked `unsafe` and document the requirement.
 
@@ -638,7 +638,7 @@ Most Rust programmers write unsafe code rarely or never. Application code, web s
 + The safety of the unsafe code relies on facts about those fields, and outside code could break those facts by changing them
 - Private fields are faster
 - The compiler requires it
-= If anyone could set `length` to a larger number, the bounds check in front of the unsafe access would be worthless. Privacy keeps the invariant in the hands of the module.
+= If anyone could set `length` to a larger number, the bounds check in front of the unsafe access would be worthless, breaking the type's [[invariant]]. Privacy keeps the invariant in the hands of the module.
 :::
 
 :::exercise guided Swap through raw pointers
@@ -752,7 +752,7 @@ For each function ask: is there any argument that safe code could pass that brea
 
 **C is unsound.** A `bool` must be the byte 0 or 1. `as_bool(2)` creates a `bool` with an invalid value, which is immediate undefined behaviour, even if it is never looked at. The function is safe to call and accepts every `u8`, so safe code can trigger it. Fix: `byte != 0`, which needs no `unsafe`.
 
-**D is unsound.** Nothing checks `index`. `get(&[1, 2, 3], 10)` reads beyond the slice. Because `get` is a safe function, any caller can do that. Fix: check the index first (`if index < list.len()`), or simply write `list[index]`, or mark the function `unsafe fn` and document the requirement in a `# Safety` section.
+**D is unsound.** Nothing checks `index`. `get(&[1, 2, 3], 10)` reads beyond the slice. Because `get` is a safe function, any caller can do that. Fix: check the index first (`if index < list.len()`), or write `list[index]` directly, or mark the function `unsafe fn` and document the requirement in a `# Safety` section.
 
 ```rust run
 fn as_bool(byte: u8) -> bool {
