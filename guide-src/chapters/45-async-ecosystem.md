@@ -1434,19 +1434,15 @@ They are not alternatives. Metrics tell you *that* something is wrong; traces te
 
 ### Logs that a machine can search
 
-`println!` is fine for a program you run yourself and useless for a service. The difference is **structure**: instead of one sentence, emit one line of JSON per event, with the parts you will want to filter on as fields.
+`println!` is fine for a program you run yourself and useless for a service, for one reason: a sentence cannot be filtered. Emit one line of JSON per event instead, with the parts you will later search for as named fields:
 
 ```json
 {"timestamp":"2026-11-14T09:12:03.421Z","level":"INFO","target":"notes_api","message":"request finished","method":"POST","route":"/notes","status":201,"duration_ms":7,"request_id":"8f3c1d0e"}
 ```
 
-Any log system — Loki, Elasticsearch, CloudWatch, Datadog, `jq` on a file — can then answer "every request slower than 500 ms on `/notes` yesterday" without a regular expression written by hand. The `message` field stays human, the fields stay machine-readable.
+The `message` field stays human. The fields stay machine-readable, so a log system — or `jq` on a file — can answer questions such as "every request slower than 500 ms on `/notes` yesterday" without a hand-written search pattern.
 
-In Rust the crate for this is [`tracing`](https://docs.rs/tracing), the crate the [observability chapter](#observability) builds on: an *event* is a log line, a *span* is a named region of work with fields attached, and every event inside that region inherits them. It is the same crate for logs and traces, which is why the ecosystem settled on it. The subscriber decides the format:
-
-- `tracing_subscriber::fmt()` prints human-readable lines, as in [chapter 74](#project-api);
-- `tracing_subscriber::fmt().json()` prints one JSON object per line — the production format;
-- `EnvFilter` reads `RUST_LOG`, so you can raise the level of one dependency at run time without rebuilding: `RUST_LOG=info,my_crate=debug,sqlx=warn`.
+Three habits make this work in Rust. Use the [`tracing`](https://docs.rs/tracing) crate: an *event* is one log line, and a *span* is a named stretch of work whose fields every event inside it inherits — the same crate therefore produces logs and traces. Let the subscriber choose the format: human-readable lines while you develop, one JSON object per line in production. And drive the level from `RUST_LOG` (for example `RUST_LOG=info,my_crate=debug,sqlx=warn`), so you can see more from one dependency without rebuilding. Composing that subscriber properly is the first job of the [observability chapter](#observability).
 
 :::warn What never goes into a log
 Never log a password, session cookie, `Authorization` header, API key, card number or full personal record. Logs are copied to other machines, indexed, kept for months, and read by people who are not you. Log an identifier and look the record up in the database instead. When you must log a value to debug it, log a hash or a prefix, and delete the line before merging.
@@ -1454,23 +1450,21 @@ Never log a password, session cookie, `Authorization` header, API key, card numb
 
 ### Metrics: a few numbers that never grow
 
-A metric is a number with a name and a set of labels, sampled over time. Three shapes cover almost everything:
+A metric answers "how much, how fast, how often" as a number sampled over time. Three shapes cover almost everything:
 
-| Kind | What it does | Rust type | Examples |
-|---|---|---|---|
-| **Counter** | Only goes up. Rate = per second | `Counter` | `http_requests_total`, `errors_total`, `jobs_processed_total` |
-| **Gauge** | Goes up and down | `Gauge` | `queue_depth`, `connections_open`, `cache_bytes` |
-| **Histogram** | Counts observations in buckets, so you can compute quantiles | `Histogram` | `http_request_duration_seconds` |
+| Kind | Behaviour | Examples |
+|---|---|---|
+| **Counter** | Only goes up; its rate per second is usually the interesting value | `http_requests_total`, `errors_total` |
+| **Gauge** | Goes up and down | `queue_depth`, `connections_open` |
+| **Histogram** | Counts observations into buckets, so percentiles can be computed later | `http_request_duration_seconds` |
 
-The labels are the powerful part, and also the trap: `http_requests_total{route="/notes",status="500"}` lets you ask for the error rate of one route. A label with unbounded values — a user id, a raw URL, an order number — creates a new time series for every value, and the monitoring system falls over. Keep labels to a handful of low-cardinality values (`route` not `path`, `status` not `request id`).
-
-For a web service the four numbers worth having on day one are the **RED** set: **R**ate (requests per second), **E**rrors (the proportion that failed), and **D**uration (the distribution, not the average).
+Start with the **RED** set: **R**ate (requests per second), **E**rrors (the share that failed), and **D**uration (the distribution, not the average). Labels make a metric useful — `http_requests_total{route="/notes",status="500"}` isolates one route's errors — and dangerous: a label that can take unbounded values (a user id, a raw path, an order number) creates a new time series per value until the monitoring system falls over. Label by route template and status, never by identifier.
 
 :::warn Never average a latency
 The average request time hides the problem: with one 30-second request in a thousand fast ones, the average barely moves while one user waited half a minute. Store a histogram and look at the 99th percentile (p99) — the time within which 99% of requests finished. That is the number your users feel.
 :::
 
-The facade is [`metrics`](https://docs.rs/metrics): your code calls `counter!`, `gauge!` and `histogram!` once, and a recorder installed at start-up decides where the numbers go. The usual recorder for a service is [`metrics-exporter-prometheus`](https://docs.rs/metrics-exporter-prometheus), which keeps them in memory and serves the standard Prometheus text format from one route:
+In code, the [`metrics`](https://docs.rs/metrics) facade records the numbers (`counter!`, `gauge!`, `histogram!`) and a recorder decides where they go. The usual recorder serves them in Prometheus text format from `GET /metrics`:
 
 ```text
 # HELP http_requests_total Total HTTP requests served
@@ -1484,38 +1478,32 @@ http_request_duration_seconds_bucket{route="/notes",le="0.05"} 1838
 http_request_duration_seconds_count{route="/notes"} 1844
 ```
 
-That text is what `GET /metrics` returns. Prometheus (or Grafana Agent, or VictoriaMetrics) scrapes it every fifteen seconds, and Grafana draws it. The `prometheus` crate is the alternative to the `metrics` facade when you want its client library directly; the `metrics` facade is the choice when a library needs to record something without forcing an exporter on its users.
+A scraper collects that text every few seconds and a dashboard draws it. Wiring the recorder, and keeping label counts under control, is worked through in the [observability chapter](#observability).
 
 ### Traces: one request, many services
 
-A **trace** follows a single request through the system. Each step is a **[[span]]**: a name, a start, an end, and the parent span it belongs to. Collect them and you can see, for one slow checkout, that 900 ms of 1,000 were spent in one database query — which no amount of grep on log lines will tell you.
+A **trace** follows a single request through the system. Each step is a **[[span]]**: a name, a start, an end, and the parent span it belongs to. Collected together, the spans show that 900 ms of one slow checkout went to a single database query — the *where* that neither a metric nor a pile of log lines can give you.
 
-The vendor-neutral standard is **OpenTelemetry** (often shortened to OTel). The Rust crates are [`opentelemetry`](https://docs.rs/opentelemetry) for the API and SDK, [`opentelemetry-otlp`](https://docs.rs/opentelemetry-otlp) for the exporter, and [`tracing-opentelemetry`](https://docs.rs/tracing-opentelemetry) to connect the two worlds: your `tracing` spans become OTel spans, so you instrument once and export anywhere. The exporter speaks **OTLP** to a **collector** — a sidecar or a service — which forwards to Jaeger, Grafana Tempo, Honeycomb, or whatever the team already runs. That indirection is the point of the facade: you can change backend without touching a line of application code.
-
-Practical rules that save hours:
-
-- **Instrument spans, not log lines.** A span for `GET /notes`, one for the database call inside it, one for the cache lookup. Field names come free, and the trace is assembled from the nesting.
-- **Sample.** Traces are bulky. Keep every request when the rate is low, a small percentage when it is high (head sampling in the SDK), and make sure errors are always kept.
-- **Propagate the context.** The trace id travels in a request header (`traceparent`) between services. That is what makes one trace span several processes instead of one.
+Three rules carry most of the value. Instrument spans around meaningful work (the request, the database call, the cache lookup), not around log lines. Sample when traffic is high, but always keep traces of errors. And propagate the trace identifier between services in the `traceparent` header, or one request becomes one trace per process and the picture breaks at every boundary. The vendor-neutral machinery behind this is OpenTelemetry; the [observability chapter](#observability) builds it with real code.
 
 ### Health and readiness
 
-Two tiny endpoints, with different meanings, and both needed by every orchestrator:
+Two tiny endpoints answer two different questions, and confusing them causes outages:
 
 | Route | Question | Answer | When it fails |
 |---|---|---|---|
 | `GET /health` | Is the process alive and serving HTTP? | `200` with `{"status":"ok"}` | Restart me |
 | `GET /ready` | Can it do useful work right now? | `200` when dependencies answer, `503` otherwise | Send me no traffic yet |
 
-`/health` must not touch the database. A liveness probe that fails because the database is down will restart a healthy process in a loop and make the outage worse. `/ready` is where the dependency checks belong: it returns `503` while the connection pool is still connecting after start-up, so the load balancer holds traffic back. [Chapter 74](#project-api) already has the first of the two; in Kubernetes they are `livenessProbe` and `readinessProbe`, and the handler patterns are those of [chapter 69](#web).
+The liveness route (`/health` here; the [observability chapter](#observability) uses the fuller names `/health/live` and `/health/ready`) must not touch the database: if it fails whenever the database is down, the orchestrator restarts a healthy process in a loop and makes the outage worse. Dependency checks belong in the readiness route, which returns `503` while the connection pool is still connecting so the load balancer holds traffic back. [The API project](#project-api) already builds the first of the two; the handler patterns are those of [the web chapter](#web).
 
 ### Request ids: one string that makes support possible
 
-Give every incoming request an id, put it in the log lines of that request, and return it in a response header such as `x-request-id`. Then a user can say "my request 8f3c1d0e failed" and you can find the three log lines and the trace in seconds. In Axum, `tower-http` provides `SetRequestIdLayer` and `PropagateRequestIdLayer` with `MakeRequestUuid`; if you prefer to write it, it is the same layer pattern as the timeout in the tower section above.
+Give every incoming request an identifier, put it in that request's log lines, and return it in a response header such as `x-request-id`. A user can then say "my request `8f3c1d0e` failed" and you can find its log lines and its trace at once. In Axum this is the same layer pattern as the timeout in the tower section above: `tower-http` provides `SetRequestIdLayer` and `PropagateRequestIdLayer` with `MakeRequestUuid`.
 
 ### Looking at a running process
 
-[`tokio-console`](https://github.com/tokio-rs/console) attaches to a running Tokio program and shows every task: how long it has waited, what woke it, and which task is holding a thread and blocking everything else. It is the tool that finds "one task does blocking work" in minutes instead of days. It needs the `console-subscriber` crate and a rebuild with `--cfg tokio_unstable`.
+One tool is worth naming here because it answers a question the three signals cannot: [`tokio-console`](https://github.com/tokio-rs/console) attaches to a running Tokio program and shows every task — how long it waited, what woke it, and which task is holding a thread. It is how "one task does blocking work" is found quickly. It needs the `console-subscriber` crate and a rebuild with `--cfg tokio_unstable`.
 
 :::checklist
 - The service logs one JSON line per request, with method, route, status, duration and a request id.

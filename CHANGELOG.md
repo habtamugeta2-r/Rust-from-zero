@@ -25,7 +25,16 @@ twice without saying so. Each now states its own job and what to skim:
   chapter is one lesson plus a shorter follow-on about reusing an `Agent`.
 - **Observability, essentials then depth.** The async ecosystem chapter is
   framed as the working essentials and checklist; the observability chapter
-  is framed as the second, production-depth pass.
+  is framed as the second, production-depth pass. The ecosystem section
+  itself was rewritten tighter — one reason per signal, RED metrics, the
+  label-cardinality trap, and liveness versus readiness (including the
+  `/health` versus `/health/live` naming difference) — with subscriber
+  composition, OpenTelemetry wiring and probe code left to the dedicated
+  chapter. In the same spirit, the async chapter's `Pin` box is now a short
+  answer that defers the in-memory mechanism to async internals, the
+  silicon appendix's virtual-memory and machine-code sections were cut back
+  to map level with links onward, and Part 2 now opens by naming what it
+  assumes from chapter 1.
 - **The two database-backed projects.** The link shortener and the capstone
   now cross-frame each other: which steps are the familiar pattern to skim,
   and which (a data model shared by API and CLI, richer domain rules, JSON

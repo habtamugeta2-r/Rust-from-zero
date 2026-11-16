@@ -183,11 +183,10 @@ bytes:  89 F8   0F AF C7   C3
 
 Six bytes of machine code. The numbers and the names are different things: the processor only ever sees the bytes. `89 F8` *is* "move EDI into EAX"; the disassembler prints the friendly names for you.
 
-A few observations worth internalising:
+Two observations carry most of the value here:
 
-- **Registers, not memory.** The arguments and the result travel in registers — the processor's tiny, blisteringly fast storage — not in memory. Reading or writing a register costs under a nanosecond; reading main memory can cost around a hundred nanoseconds.
-- **Position within the call.** On the System V ABI used on Linux and macOS, the first integer argument goes in `RDI`, the second in `RSI`, then `RDX`, `RCX`, `R8`, `R9`, and the integer return value comes back in `RAX`. (Windows uses a different convention: `RCX`, `RDX`, `R8`, `R9`.) `EDI`, `ESI`, `EAX` are the 32-bit halves of those registers. See [chapter 40](#ffi) and [chapter 50](#calling-conventions-execution) for why the ABI matters when Rust calls C.
-- **64-bit registers share names.** Each general-purpose register is one 64-bit cell with narrower windows onto it: `RAX` (64 bits) contains `EAX` (32) contains `AX` (16) contains `AH` and `AL` (8 bits each). Writing `EAX` zeroes the top half of `RAX`.
+- **Registers, not memory.** Arguments and results travel in registers, the processor's fastest storage (under a nanosecond), rather than in main memory (around a hundred nanoseconds). That gap is why compilers work so hard to keep values in registers, a theme the [hardware chapter](#hardware-architecture) develops.
+- **Which register is a rule, not a choice.** On the System V convention used on Linux and macOS, integer arguments arrive in `RDI`, `RSI`, `RDX`, `RCX`, `R8`, `R9` and the result returns in `RAX`; names such as `EDI` and `EAX` are the 32-bit halves of those same registers. Windows assigns the registers differently. These conventions, and why they matter at the boundary with C, are the subject of the [calling conventions](#calling-conventions-execution) chapter and the [FFI chapter](#ffi).
 
 ## 7. The linker: many pieces become one program
 
@@ -221,7 +220,7 @@ Typing `cargo run` (or `./myprogram`) starts a chain of events before your first
 
 ### Virtual memory in one paragraph
 
-The addresses your program uses are **virtual**. Each process believes it has the whole 64-bit range to itself, but those numbers are indices into page tables maintained by the operating system and consulted by a hardware unit called the **memory management unit** (MMU) on every memory access. The unit of mapping is a **page**, typically 4 KB. Two processes can both use address `0x7ffe…` and mean different physical RAM, because their page tables differ. Pages can be marked read-only, can be shared between processes (code pages usually are), and can live in a swapped-out file instead of RAM. The stack overflows you met in [chapter 13](#memory) are caught precisely this way: the OS leaves an unmapped **guard page** at the end of the stack, and the first write into it triggers a page fault that kills the program.
+The addresses your program uses are **virtual**: each process sees its own address space, and the hardware's memory management unit (MMU) translates every address through that process's page tables, in units called **pages** (typically 4 KB). Two consequences explain most of what you observe. The same address in two processes names different physical memory, because their page tables differ. And protection is enforced on every access, which is why the unmapped **guard page** at the end of a stack turns runaway recursion into a clean page fault instead of silent corruption. Page tables, the translation lookaside buffer, demand paging and copy-on-write are taught in full in the [virtual memory](#virtual-memory-address-spaces) chapter; hold on to this paragraph as the map of that territory.
 
 ## 9. Fetch, decode, execute: the processor's three-beat heartbeat
 
