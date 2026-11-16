@@ -2,9 +2,9 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { Menu, Monitor, Moon, Search, Sun, X } from "lucide-react";
-import type { ContentNode, NavigationChapter, PartMeta, SearchHit } from "@/lib/guide-types";
+import type { ContentNode, NavigationChapter, PartMeta } from "@/lib/guide-types";
 import { themeHint, themeLabel } from "@/lib/theme";
 import { CommandPalette } from "./CommandPalette";
 import { ContentTree } from "./ContentTree";
@@ -22,21 +22,15 @@ export function GuideShell({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  const router = useRouter();
   const { state, persistent, resetAllProgress, cycleTheme, themeMode, stepFontSize } =
     useGuideState();
 
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [isDesktop, setIsDesktop] = useState(true);
-  const [query, setQuery] = useState("");
-  const [hits, setHits] = useState<SearchHit[] | null>(null);
-  const [searching, setSearching] = useState(false);
-  const [activeHit, setActiveHit] = useState(-1);
   const [confirmReset, setConfirmReset] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
 
-  const searchRef = useRef<HTMLInputElement>(null);
   const drawerRef = useRef<HTMLElement>(null);
   const [loadedOutlines, setLoadedOutlines] = useState<Record<string, ContentNode[]>>({});
   const outlineRequests = useRef(new Set<string>());
@@ -174,12 +168,9 @@ export function GuideShell({
     if (isDesktop) setDrawerOpen(false);
   }, [isDesktop]);
 
-  // Route change: close the drawer and drop any transient search state.
+  // Route changes close the mobile navigation drawer.
   useEffect(() => {
     setDrawerOpen(false);
-    setQuery("");
-    setHits(null);
-    setActiveHit(-1);
   }, [pathname]);
 
   /* ---------------- keyboard shortcuts ---------------- */
@@ -205,11 +196,6 @@ export function GuideShell({
       if (event.key === "Escape") {
         setDrawerOpen(false);
         setPaletteOpen(false);
-        if (query || hits) {
-          setQuery("");
-          setHits(null);
-          setActiveHit(-1);
-        }
         return;
       }
 
@@ -224,56 +210,7 @@ export function GuideShell({
     };
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
-  }, [query, hits, openPalette]);
-
-  /* ---------------- search ---------------- */
-
-  useEffect(() => {
-    const q = query.trim();
-    if (!q) {
-      setHits(null);
-      setSearching(false);
-      setActiveHit(-1);
-      return;
-    }
-    setSearching(true);
-    const controller = new AbortController();
-    const timer = window.setTimeout(async () => {
-      try {
-        const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`, {
-          signal: controller.signal,
-        });
-        if (!res.ok) throw new Error(`search failed: ${res.status}`);
-        const data = (await res.json()) as { hits: SearchHit[] };
-        setHits(data.hits);
-        setActiveHit(-1);
-      } catch (error) {
-        if ((error as Error).name === "AbortError") return;
-        setHits([]);
-      } finally {
-        setSearching(false);
-      }
-    }, 160);
-    return () => {
-      controller.abort();
-      window.clearTimeout(timer);
-    };
-  }, [query]);
-
-  const onSearchKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
-    if (!hits || hits.length === 0) return;
-    if (event.key === "ArrowDown") {
-      event.preventDefault();
-      setActiveHit((i) => (i + 1) % hits.length);
-    } else if (event.key === "ArrowUp") {
-      event.preventDefault();
-      setActiveHit((i) => (i <= 0 ? hits.length - 1 : i - 1));
-    } else if (event.key === "Enter" && activeHit >= 0) {
-      event.preventDefault();
-      const hit = hits[activeHit];
-      router.push(`/chapters/${hit.chapterId}${hit.anchor ? `#${hit.anchor}` : ""}`);
-    }
-  };
+  }, [openPalette]);
 
   const toggleNavigation = () => {
     if (isDesktop) setSidebarOpen((open) => !open);
@@ -341,40 +278,6 @@ export function GuideShell({
           </button>
         </div>
 
-        {/* Search */}
-        <div className="px-3 pb-3">
-          <label className="relative flex items-center">
-            <Search
-              className="pointer-events-none absolute left-3 h-4 w-4 text-[var(--g-ink3)]"
-              aria-hidden="true"
-            />
-            <input
-              ref={searchRef}
-              type="search"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              onKeyDown={onSearchKeyDown}
-              placeholder="Search the whole guide"
-              aria-label="Search the whole guide"
-              title="Search the whole guide (press / or Ctrl-K)"
-              role="combobox"
-              aria-expanded={hits !== null}
-              aria-controls="search-results"
-              aria-activedescendant={activeHit >= 0 ? `search-hit-${activeHit}` : undefined}
-              autoComplete="off"
-              spellCheck={false}
-              className="h-9 w-full rounded-lg border border-[var(--g-line)] bg-[var(--g-surface)] pr-14 pl-9 text-[13px] text-[var(--g-ink)] shadow-card placeholder:text-[var(--g-ink3)] focus:border-[var(--g-accent)] focus:outline-none"
-            />
-            <kbd
-              aria-hidden="true"
-              title="Press / or Ctrl-K"
-              className="pointer-events-none absolute right-2.5 hidden rounded-md border border-[var(--g-line)] bg-[var(--g-sunken)] px-1.5 py-0.5 font-sans text-[11px] font-medium text-[var(--g-ink3)] sm:inline-block"
-            >
-              /
-            </kbd>
-          </label>
-        </div>
-
         {/* Progress */}
         <div className="border-b border-[var(--g-line)] px-4 pb-3.5">
           <div className="mb-2 flex items-center justify-between gap-2 text-xs">
@@ -409,76 +312,20 @@ export function GuideShell({
           </div>
         </div>
 
-        {/* Search results OR table of contents */}
+        {/* The CommandPalette is the guide's only search interface. */}
         <div
-          id="search-results"
           className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 py-2"
           data-scroll-pane
           tabIndex={-1}
         >
-          {hits !== null ? (
-            <div className="space-y-1" role="listbox" aria-label="Search results">
-              {searching && <p className="px-2 py-2 text-xs text-[var(--g-ink3)]">Searching…</p>}
-              {!searching && hits.length === 0 && (
-                <p className="px-2 py-3 text-xs leading-relaxed text-[var(--g-ink3)]">
-                  Nothing found for “{query}”. Try a single, shorter word — or look in the glossary.
-                </p>
-              )}
-              {!searching && hits.length > 0 && (
-                <p className="px-2 py-1 text-[11px] font-semibold tracking-wide text-[var(--g-ink3)] uppercase">
-                  {hits.length} {hits.length === 1 ? "match" : "matches"} · ↑↓ to move, Enter to
-                  open
-                </p>
-              )}
-              {hits.map((hit, index) => (
-                <Link
-                  key={`${hit.chapterId}-${hit.anchor}-${index}`}
-                  id={`search-hit-${index}`}
-                  role="option"
-                  aria-selected={index === activeHit}
-                  href={`/chapters/${hit.chapterId}${hit.anchor ? `#${hit.anchor}` : ""}`}
-                  onMouseEnter={() => setActiveHit(index)}
-                  className={`block scroll-mt-2 rounded-lg px-2 py-1.5 transition-colors ${
-                    index === activeHit
-                      ? "bg-[var(--g-accent-soft)] text-[var(--g-ink)]"
-                      : "hover:bg-[var(--g-surface)]"
-                  }`}
-                >
-                  <div className="flex items-baseline gap-1.5">
-                    <span className="shrink-0 font-mono text-[11px] text-[var(--g-ink3)]">
-                      {hit.num}
-                    </span>
-                    <span className="min-w-0 truncate text-[12px] font-bold text-[var(--g-ink)]">
-                      {hit.chapterTitle}
-                    </span>
-                  </div>
-                  {hit.heading && (
-                    <div className="truncate text-[11px] font-medium text-[var(--g-accent)]">
-                      {hit.heading}
-                    </div>
-                  )}
-                  <div className="mt-0.5 line-clamp-2 text-[12px] leading-snug text-[var(--g-ink3)]">
-                    {hit.before}
-                    {hit.match && (
-                      <mark className="rounded bg-amber-300/60 px-0.5 text-[#33291c] dark:bg-amber-500/30 dark:text-amber-100">
-                        {hit.match}
-                      </mark>
-                    )}
-                    {hit.after}
-                  </div>
-                </Link>
-              ))}
-            </div>
-          ) : (
-            <ContentTree
-              parts={parts}
-              chapters={chaptersForTree}
-              activeChapterId={activeChapterId}
-              done={state.done}
-              onNavigate={() => setDrawerOpen(false)}
-              onRequestOutline={requestOutline}
-            />
-          )}
+          <ContentTree
+            parts={parts}
+            chapters={chaptersForTree}
+            activeChapterId={activeChapterId}
+            done={state.done}
+            onNavigate={() => setDrawerOpen(false)}
+            onRequestOutline={requestOutline}
+          />
         </div>
 
         {/* Footer: reading settings live here on small screens */}
