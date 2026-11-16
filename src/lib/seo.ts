@@ -45,7 +45,7 @@ function chapterDescription(ch: ChapterData): string {
   const title = clean(ch.title);
   switch (ch.kind) {
     case "project":
-      return `${title}. Build and run a complete Rust program step by step \u2014 functions, loops, decisions, error handling and a real crate from crates.io. Part of ${SITE_NAME}.`;
+      return `${title}. Build and run a complete Rust program step by step \u2014 functions, loops, decisions, error handling and tests. Part of ${SITE_NAME}.`;
     case "appendix":
       return `${title} \u2014 a plain-language Rust reference to keep open while you code. Part of the ${SITE_NAME} course.`;
     case "orientation":
@@ -65,16 +65,18 @@ export function chapterMetadata(ch: ChapterData): Metadata {
     alternates: { canonical: chapterPath(ch) },
     openGraph: {
       type: "article",
-      locale: "en_US",
+      locale: "en_GB",
       url: chapterUrl(ch),
       siteName: SITE_NAME,
       title,
       description: desc,
+      images: [{ url: "/og.png", width: 1200, height: 630 }],
     },
     twitter: {
       card: "summary_large_image",
       title,
       description: desc,
+      images: ["/og.png"],
     },
   };
 }

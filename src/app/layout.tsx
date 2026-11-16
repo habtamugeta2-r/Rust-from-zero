@@ -28,10 +28,11 @@ export const metadata: Metadata = {
   },
   openGraph: {
     type: "book",
+    locale: "en_GB",
     title: "Rust from Zero — The Complete Hands-On Guide",
     description: `Learn computer systems and Rust from scratch with plain language, architecture traces, ${EXERCISES} solved exercises, ${QUIZZES} quizzes and ${PROJECTS} hands-on projects.`,
     url: SITE_URL,
-    images: ["/og.png"],
+    images: [{ url: "/og.png", width: 1200, height: 630 }],
   },
   twitter: {
     card: "summary_large_image",
