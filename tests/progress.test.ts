@@ -49,7 +49,28 @@ test("progress: partial work scores the units it earned", () => {
   assert.equal(row.bookmarked, true);
 });
 
-test("progress: a finished chapter is at 100%", () => {
+test("progress: a chapter answered correctly is at 100%", () => {
+  const state: ProgressState = {
+    done: { vars: 1 },
+    quiz: {
+      "vars-q1": {
+        "0": { picked: 0, correct: true },
+        "1": { picked: 2, correct: true },
+      },
+    },
+    saved: { "vars-x1": 1, "vars-x2": 1 },
+    bookmarks: {},
+  };
+  const row = buildChapterProgress(META, state);
+  assert.equal(row.pct, 100);
+  const totals = summariseProgress([row]);
+  assert.equal(totals.pct, 100);
+  assert.equal(totals.accuracy, 100);
+  assert.equal(totals.minutesRead, 25);
+});
+
+test("progress: a wrong answer does not count towards completion", () => {
+  // Crediting any answer let a reader reach 100% by pressing random options.
   const state: ProgressState = {
     done: { vars: 1 },
     quiz: {
@@ -62,11 +83,10 @@ test("progress: a finished chapter is at 100%", () => {
     bookmarks: {},
   };
   const row = buildChapterProgress(META, state);
-  assert.equal(row.pct, 100);
+  // 5 units (chapter + 2 questions + 2 exercises), 4 earned.
+  assert.equal(row.pct, 80);
   const totals = summariseProgress([row]);
-  assert.equal(totals.pct, 100);
   assert.equal(totals.accuracy, 50);
-  assert.equal(totals.minutesRead, 25);
 });
 
 test("progress: totals with no answers give null accuracy", () => {
