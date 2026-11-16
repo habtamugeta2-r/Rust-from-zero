@@ -4,7 +4,7 @@
 @title Network Layers, Ethernet Frames, ARP, IP Routing & NAT
 @short Network layers, frames & IP
 @level intermediate
-@time 35
+@time 30
 @learn Trace packet encapsulation across Link (Ethernet/MAC), Network (IPv4/IPv6), Transport (TCP/UDP), and Application layers | Understand ARP address resolution, subnet masks (CIDR /24), default gateways, and NAT | Parse and construct Ethernet/IPv4 header bytes cleanly in Rust using big-endian network byte order | Contrast local LAN delivery (MAC hop-by-hop) vs global Internet routing (IP end-to-end)
 
 Writing application bytes to a TCP socket hands them to the operating system's networking stack. TCP provides an ordered byte stream; IP routes packets between networks; and a link layer such as Ethernet carries each packet over a local connection. The layers add their own headers and work together, though packet boundaries do not correspond one-for-one with application writes. The TCP and UDP transport details are in [TCP, UDP and kernel sockets](#tcp-udp-sockets-kernel).
@@ -97,7 +97,7 @@ Suppose your laptop (`192.168.1.42/24`, mask `255.255.255.0`) wants to reach two
 
 ## Network Byte Order (Big-Endian) & Parsing Real Headers in Rust
 
-Remember Part I when we noted x86-64 and ARM64 store `0x1234` in RAM little-endian (`[0x34, 0x12]`)? On the wire, **TCP/IP network protocols are universally Big-Endian** (`[0x12, 0x34]`, matching natural human left-to-right byte order)! Calling `u16::from_be_bytes` / `u16::to_be_bytes` converts wire bytes cleanly with zero platform ambiguity (compiling to a single `bswap` / `rev16` instruction!):
+Remember Part 1 when we noted x86-64 and ARM64 store `0x1234` in RAM little-endian (`[0x34, 0x12]`)? On the wire, **TCP/IP network protocols are universally Big-Endian** (`[0x12, 0x34]`, matching natural human left-to-right byte order)! Calling `u16::from_be_bytes` / `u16::to_be_bytes` converts wire bytes cleanly with zero platform ambiguity (compiling to a single `bswap` / `rev16` instruction!):
 
 ```rust run
 use std::net::Ipv4Addr;
@@ -207,7 +207,7 @@ Notice how `parse_ipv4(&[u8])` borrowed `&[u8]` without allocating a single `Vec
 :::
 
 :::exercise guided CIDR subnet matching by hand
-Given a host IP `10.20.4.18` with subnet mask `/22` (`255.255.252.0`), determine whether each destination is on the **same local subnet** (uses ARP directly) or routed through the **default gateway**:
+Given a host IP `10.20.4.18` with subnet mask `/22` (`255.255.252.0`), use [[CIDR|cidr]] prefix matching to determine whether each destination is on the **same local subnet** (uses ARP directly) or routed through the **default gateway**:
 1. `10.20.7.99`
 2. `10.20.8.5`
 ::hint
@@ -255,29 +255,29 @@ Every router hop decrements the packet's `TTL` (starting at e.g. `64`) by `1` an
 :::quiz Check your understanding
 ? As an HTTP packet travels across 12 routers from your laptop to a remote server, which header address changes at *every* router hop, and which stays unchanged (aside from NAT)?
 - IP changes every hop; Ethernet MAC stays unchanged
-+ Ethernet destination/source MAC changes at every hop; Destination IP remains the remote server
 - TCP destination port changes at every hop
++ Ethernet destination/source MAC changes at every hop; Destination IP remains the remote server
 - Neither changes anywhere
 = MAC addresses operate hop-by-hop across each local link, whereas IP carries end-to-end routing addresses.
 
 ? How does your operating system translate a local LAN IP like `192.168.1.1` into the 48-bit MAC address needed to build an Ethernet frame?
 - By querying DNS over UDP port 53
-+ Using **ARP** (Address Resolution Protocol) broadcast on the local LAN (or Neighbour Discovery on IPv6)
-- Reading `/etc/hosts`
 - Guessing from the last 6 bytes of IPv4
+- Reading `/etc/hosts`
++ Using **ARP** (Address Resolution Protocol) broadcast on the local LAN (or Neighbour Discovery on IPv6)
 = ARP asks the local LAN "who owns IP X?" and caches the replying MAC address in the kernel neighbour table.
 
 ? Why does `u16::from_be_bytes` matter when parsing IPv4/TCP packets on an x86-64 Linux server?
 - x86-64 cannot read unaligned bytes
-+ x86-64 is little-endian in RAM, whereas TCP/IP headers on the wire are universally big-endian ("network byte order")
-- IPv4 uses 32-bit floats
 - `from_be_bytes` decrypts TLS headers
+- IPv4 uses 32-bit floats
++ x86-64 is little-endian in RAM, whereas TCP/IP headers on the wire are universally big-endian ("network byte order")
 = Network protocols standardise on big-endian byte order, so little-endian CPUs swap byte order cleanly with `from_be_bytes` / `to_be_bytes`.
 
 ? Why is standard TCP payload capacity (`MSS`) typically ~1,460 bytes instead of 65,535 bytes on the public Internet?
 - Rust `TcpStream` buffers only 1,460 bytes
-+ Standard Ethernet **MTU** is `1,500` bytes minus `20`B IPv4 and `20`B TCP headers = `1,460` bytes
 - Linux pipes cap packets at 1,460 bytes
++ Standard Ethernet **MTU** is `1,500` bytes minus `20`B IPv4 and `20`B TCP headers = `1,460` bytes
 - Routers drop odd-sized payloads
 = Fitting cleanly inside the 1,500-byte Ethernet MTU prevents expensive IP fragmentation across routers.
 :::

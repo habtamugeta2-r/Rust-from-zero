@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 470" role="img" aria-labelledby="t d">
+  <title id="t">Crossing from user space (Ring 3) to kernel space (Ring 0) via syscall</title>
+  <desc id="d">A user program loads arguments into registers and runs syscall, trapping into the kernel entry point at Ring 0, executing sys_write, and returning via sysretq with RAX holding bytes written or negative errno.</desc>
+  <rect width="1200" height="470" rx="24" fill="#1C1A17"/>
+  <rect x="1" y="1" width="1198" height="468" rx="23" fill="none" stroke="#2D2A24" stroke-width="2"/>
+  <text x="48" y="58" font-family="system-ui, sans-serif" font-size="24" font-weight="700" fill="#ECE7DD">User space to kernel space: one syscall round trip</text>
+  <text x="48" y="86" font-family="system-ui, sans-serif" font-size="15" fill="#A49B88">User code cannot touch hardware directly. The CPU hardware gate enforces the privilege switch.</text>
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#E9743E"/></marker>
+    <marker id="at" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#2DD4BF"/></marker>
+  </defs>
+  <g font-family="system-ui, sans-serif">
+    <text x="70" y="136" font-size="14" font-weight="700" letter-spacing="1.5" fill="#E9743E">RING 3 · USER SPACE (UNPRIVILEGED)</text>
+    <rect x="48" y="150" width="340" height="222" rx="16" fill="#39231A" stroke="#E9743E" stroke-width="2"/>
+    <rect x="72" y="176" width="292" height="78" rx="10" fill="#181613" stroke="#E9743E"/>
+    <text x="90" y="204" font-family="ui-monospace, monospace" font-size="13.5" font-weight="700" fill="#ECE7DD">RAX = 1 (sys_write)</text>
+    <text x="90" y="226" font-family="ui-monospace, monospace" font-size="13" fill="#C2BBAF">RDI = fd · RSI = buf · RDX = len</text>
+    <text x="90" y="246" font-family="ui-monospace, monospace" font-size="13" fill="#A49B88">arg 4 uses R10 (not RCX)</text>
+    <rect x="72" y="274" width="292" height="74" rx="10" fill="#181613" stroke="#3E3930"/>
+    <text x="218" y="305" text-anchor="middle" font-weight="700" font-size="15" fill="#ECE7DD">Back in Rust std::io</text>
+    <text x="218" y="329" text-anchor="middle" font-family="ui-monospace, monospace" font-size="13" fill="#C2BBAF">RAX &lt; 0 → Err(errno)</text>
+
+    <rect x="436" y="150" width="286" height="222" rx="16" fill="#132B3A" stroke="#38BDF8" stroke-width="2"/>
+    <text x="579" y="182" text-anchor="middle" font-size="14" font-weight="700" letter-spacing="1.5" fill="#38BDF8">CPU PRIVILEGE GATE</text>
+    <rect x="460" y="200" width="238" height="68" rx="10" fill="#181613" stroke="#38BDF8"/>
+    <text x="579" y="226" text-anchor="middle" font-family="ui-monospace, monospace" font-size="14" font-weight="700" fill="#ECE7DD">syscall (x86-64)</text>
+    <text x="579" y="249" text-anchor="middle" font-size="12.5" fill="#38BDF8">RCX←RIP · R11←RFLAGS · CPL←0</text>
+    <rect x="460" y="282" width="238" height="66" rx="10" fill="#181613" stroke="#38BDF8"/>
+    <text x="579" y="308" text-anchor="middle" font-family="ui-monospace, monospace" font-size="14" font-weight="700" fill="#ECE7DD">sysretq</text>
+    <text x="579" y="331" text-anchor="middle" font-size="12.5" fill="#38BDF8">restores RIP/RFLAGS · CPL←3</text>
+
+    <text x="794" y="136" font-size="14" font-weight="700" letter-spacing="1.5" fill="#2DD4BF">RING 0 · LINUX KERNEL</text>
+    <rect x="772" y="150" width="380" height="222" rx="16" fill="#12322E" stroke="#2DD4BF" stroke-width="2"/>
+    <rect x="796" y="176" width="332" height="80" rx="10" fill="#181613" stroke="#2DD4BF"/>
+    <text x="962" y="206" text-anchor="middle" font-family="ui-monospace, monospace" font-size="14" font-weight="700" fill="#ECE7DD">entry_SYSCALL_64 (MSR_LSTAR)</text>
+    <text x="962" y="232" text-anchor="middle" font-size="13" fill="#C2BBAF">Saves user regs on kernel stack</text>
+    <rect x="796" y="274" width="332" height="74" rx="10" fill="#181613" stroke="#2DD4BF"/>
+    <text x="962" y="304" text-anchor="middle" font-family="ui-monospace, monospace" font-size="14" font-weight="700" fill="#2DD4BF">ksys_write() → VFS / TTY</text>
+    <text x="962" y="328" text-anchor="middle" font-size="13" fill="#C2BBAF">Validates user pointer · writes bytes</text>
+
+    <line x1="392" y1="226" x2="430" y2="226" stroke="#E9743E" stroke-width="2.5" marker-end="url(#ar)"/>
+    <line x1="726" y1="226" x2="766" y2="226" stroke="#E9743E" stroke-width="2.5" marker-end="url(#ar)"/>
+    <line x1="766" y1="312" x2="726" y2="312" stroke="#2DD4BF" stroke-width="2.5" marker-end="url(#at)"/>
+    <line x1="430" y1="312" x2="392" y2="312" stroke="#2DD4BF" stroke-width="2.5" marker-end="url(#at)"/>
+
+    <rect x="48" y="396" width="1104" height="48" rx="12" fill="#232019" stroke="#2D2A24"/>
+    <text x="72" y="426" font-size="14" fill="#C2BBAF">Hot read-only queries like <tspan font-family="ui-monospace, monospace" font-weight="700" fill="#ECE7DD">Instant::now()</tspan> skip this trap via <tspan font-weight="700" fill="#2DD4BF">vDSO</tspan> — reading a kernel-mapped clock page directly in Ring 3.</text>
+  </g>
+</svg>

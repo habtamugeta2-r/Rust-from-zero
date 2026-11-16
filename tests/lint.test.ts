@@ -392,3 +392,112 @@ test("lint: docs/stats fires on a stale README and is silent on a true one", () 
   });
   assert.ok(staleStart.includes("docs/stats"));
 });
+
+test("lint: link/chapter-number inspects raw markdown even when AST label is rewritten", () => {
+  const fixture = makeFixture({
+    "01-a.md": "See [Chapter 99](#b) for details.\n",
+    "02-b.md": "Back to [Chapter 1](#a).\n",
+  });
+  const guide = makeGuide([
+    chapter("a", "01-a.md", {
+      num: "01",
+      blocks: [
+        {
+          type: "paragraph",
+          children: [
+            // Simulate parser rewriting AST label to "Chapter 2" while raw markdown has [Chapter 99](#b)
+            {
+              type: "internalLink",
+              chapterId: "b",
+              children: [{ type: "text", text: "Chapter 2" }],
+            },
+          ],
+        },
+        { type: "callout", kind: "recap", blocks: [] },
+        { type: "quiz", quizId: "a-q1", questions: [{}] },
+        { type: "exercise", exerciseId: "a-x1" },
+      ],
+    }),
+    chapter("b", "02-b.md", { num: "02" }),
+  ]);
+  assert.ok(rulesFor(guide, fixture).includes("link/chapter-number"));
+
+  // Updating raw markdown to match target num clears the error
+  fs.writeFileSync(path.join(fixture.chaptersDir, "01-a.md"), "See [Chapter 2](#b) for details.\n");
+  assert.equal(rulesFor(guide, fixture).includes("link/chapter-number"), false);
+});
+
+test("lint: glossary/duplicate fires on repeated glossary keys", () => {
+  const fixture = makeFixture({
+    "90-glossary.md":
+      ":::glossary\nborrow :: first definition\nborrow :: duplicate definition\n:::\n",
+  });
+  const guide = makeGuide([
+    chapter("a", "01-a.md", {
+      blocks: [
+        {
+          type: "paragraph",
+          children: [
+            { type: "internalLink", chapterId: "b", children: [] },
+            { type: "internalLink", chapterId: "glossary", children: [] },
+          ],
+        },
+        { type: "callout", kind: "recap", blocks: [] },
+        { type: "quiz", quizId: "a-q1", questions: [{}] },
+        { type: "exercise", exerciseId: "a-x1" },
+      ],
+    }),
+    chapter("b", "02-b.md"),
+    chapter("glossary", "90-glossary.md", { kind: "appendix" }),
+  ]);
+  assert.ok(rulesFor(guide, fixture).includes("glossary/duplicate"));
+});
+
+test("lint: text/dismissive catches dismissive filler while allowing quoted or allowed phrases", () => {
+  const fixture = makeFixture({
+    "01-a.md": "You can simply run cargo build.\n",
+  });
+  assert.ok(rulesFor(cleanGuide(), fixture).includes("text/dismissive"));
+
+  fs.writeFileSync(
+    path.join(fixture.chaptersDir, "01-a.md"),
+    'Avoid saying "simply run" and ensure the invariant is obviously correct.\n',
+  );
+  assert.equal(rulesFor(cleanGuide(), fixture).includes("text/dismissive"), false);
+});
+
+test("lint: docs/roadmap-part-title checks roadmap part headings against guide parts", () => {
+  const fixture = makeFixture({
+    "00b-roadmap.md": "## Part 1 — Wrong title\n",
+  });
+  const guide = makeGuide(
+    [
+      chapter("roadmap", "00b-roadmap.md", {
+        kind: "orientation",
+        blocks: [
+          {
+            type: "paragraph",
+            children: [{ type: "internalLink", chapterId: "b", children: [] }],
+          },
+          { type: "callout", kind: "recap", blocks: [] },
+        ],
+      }),
+      chapter("b", "02-b.md", {
+        blocks: [
+          {
+            type: "paragraph",
+            children: [{ type: "internalLink", chapterId: "roadmap", children: [] }],
+          },
+          { type: "callout", kind: "recap", blocks: [] },
+          { type: "quiz", quizId: "b-q1", questions: [{}] },
+          { type: "exercise", exerciseId: "b-x1" },
+        ],
+      }),
+    ],
+    { parts: [{ key: "p1", title: "Foundations" }] },
+  );
+  assert.ok(rulesFor(guide, fixture).includes("docs/roadmap-part-title"));
+
+  fs.writeFileSync(path.join(fixture.chaptersDir, "00b-roadmap.md"), "## Part 1 — Foundations\n");
+  assert.equal(rulesFor(guide, fixture).includes("docs/roadmap-part-title"), false);
+});

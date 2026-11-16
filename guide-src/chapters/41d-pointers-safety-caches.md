@@ -4,7 +4,7 @@
 @title Pointers, Memory Safety Bugs & CPU Cache Locality
 @short Pointers, bugs & CPU caches
 @level intermediate
-@time 35
+@time 30
 @learn Contrast Rust references, raw pointers, and dangling/aliased pointers at the machine level | Reproduce and recognise the classic memory safety bugs Rust rules out (UAF, double free, overflow, race) | Trace L1/L2/L3 CPU cache lines (64 bytes), spatial/temporal locality, and AoS vs SoA | Avoid false sharing across CPU cores with cache-line padding
 
 The previous chapters introduced [virtual memory](#virtual-memory-address-spaces) and [heap allocation](#allocators-heap-internals). This chapter connects pointer use and data layout to CPU caches, then explains how Rust's safe type system can prevent some memory errors that are possible in C and C++. Performance depends on the workload and layout; memory safety also depends on unsafe code and library contracts.
@@ -287,8 +287,8 @@ Four `HotUser` structs fit cleanly inside a single 64-byte cache line (`4 * 16 =
 
 :::quiz Check your understanding
 ? Why does scanning a `Vec<u64>` beat walking a heap-allocated linked list (`Box<Node>`) even when both have the exact same asymptotic `O(n)` big-O complexity?
-- `Vec<u64>` skips virtual memory translation
 + Contiguous `Vec<u64>` reads 8 elements per 64-byte cache line and activates the CPU's linear prefetcher, whereas linked nodes trigger cache misses on every pointer hop
+- `Vec<u64>` skips virtual memory translation
 - Linked lists cannot be cached in L3 cache
 - `Box::new` forces a system call on every node
 = Big-O ignores constant latency multipliers: an L1 cache hit takes ~1 ns while a DRAM pointer-chase miss takes ~80 ns.
@@ -301,8 +301,8 @@ Four `HotUser` structs fit cleanly inside a single 64-byte cache line (`4 * 16 =
 = Only one owner holds responsibility for calling `drop`, and moved bindings become inaccessible statically.
 
 ? Two worker threads increment separate counters `a` and `b` millions of times per second inside a tight loop, yet adding the second thread makes total throughput slower. What is the most likely hardware culprit?
-- TLB exhaustion from huge pages
 + False sharing: `a` and `b` occupy the same 64-byte cache line, bouncing exclusive cache ownership between cores
+- TLB exhaustion from huge pages
 - Stack overflow into a guard page
 - Dynamic dispatch via vtable fat pointers
 = Placing each thread's counter on its own `#[repr(align(64))]` cache line stops MESI coherency ping-ponging.
@@ -310,7 +310,7 @@ Four `HotUser` structs fit cleanly inside a single 64-byte cache line (`4 * 16 =
 ? How wide is a single cache line on virtually all modern x86-64 desktop and server processors?
 - 8 bytes
 - 16 bytes
-+ 64 bytes
 - 4,096 bytes
++ 64 bytes
 = Standard CPU cache lines are 64 bytes wide (while virtual memory pages are 4,096 bytes / 4 KiB).
 :::

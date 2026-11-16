@@ -4,10 +4,10 @@
 @title Sockets, TCP State Machines, Congestion Control & UDP
 @short Sockets, TCP & UDP internals
 @level intermediate
-@time 35
+@time 30
 @learn Trace the exact Linux socket syscalls behind Rust TcpListener and TcpStream (socket, bind, listen, accept, connect) | Follow TCP's 3-way handshake, sequence/ACK numbers, sliding windows, and 4-way FIN teardown (TIME_WAIT / SO_REUSEADDR) | Contrast TCP's ordered byte stream (message framing pitfalls!) with UDP's datagram boundaries | Understand TCP congestion control (cwnd, slow start, BBR/CUBIC), Nagle's algorithm, and TCP_NODELAY
 
-The earlier [I/O chapter](#blocking-epoll-io-uring) introduced ways to wait for readiness across file descriptors. Here we focus on sockets: endpoints used to send or receive data over a network. On Linux, Rust's `TcpListener`, `TcpStream` and `UdpSocket` use operating-system socket services. We will follow TCP's connection state and contrast its byte stream with UDP's datagrams, then connect those behaviours to the [network layers](#network-layers-ethernet-ip).
+The earlier [I/O chapter](#blocking-epoll-io-uring) introduced ways to wait for readiness across file descriptors such as a network [[socket]]. Here we focus on sockets: endpoints used to send or receive data over a network. On Linux, Rust's `TcpListener`, `TcpStream` and `UdpSocket` use operating-system socket services. We will follow TCP's connection state and contrast its byte stream with UDP's datagrams, then connect those behaviours to the [network layers](#network-layers-ethernet-ip).
 
 Why can `TcpStream::read` return just 3 bytes when the client wrote 500 bytes in one `write_all`? Why does restarting a crashed server complain `Address already in use` (`EADDRINUSE`) unless `SO_REUSEADDR` is set? And why can `TCP_NODELAY` slash interactive latency by 40 milliseconds?
 
@@ -283,11 +283,11 @@ Think about **Head-of-Line (HoL) blocking** when packet #10 is lost while packet
 :::
 
 :::exercise challenge Computing Bandwidth-Delay Product (BDP) for a fast link
-Suppose a Rust tool streams backups from Addis Ababa to Frankfurt over a `1 Gbps` (`125 MB/s`) fiber link with `120 ms` (`0.12 s`) Round-Trip Time (RTT). How large must the TCP window (`rwnd` / `cwnd`) be so the sender doesn't stall waiting for ACKs?
+Suppose a Rust tool streams backups from Addis Ababa to Frankfurt over a `1 Gbps` (`125 MB/s`) fibre link with `120 ms` (`0.12 s`) Round-Trip Time (RTT). How large must the TCP window (`rwnd` / `cwnd`) be so the sender doesn't stall waiting for ACKs?
 ::hint
 Compute `BDP = Bandwidth (bytes/sec) × RTT (seconds)`!
 ::solution
-`125,000,000 bytes/s × 0.12 s = 15,000,000 bytes ≈ 15 MB`! If the kernel socket receive buffer or TCP window were capped at `64 KiB` (classic pre-window-scaling limit), the link would stall at `64 KiB / 0.12 s ≈ 533 KB/s` (**< 0.5% of fiber speed!**). TCP **Window Scaling** (RFC 7323) and Linux's auto-tuned `SO_RCVBUF` scale windows up to tens of megabytes automatically.
+`125,000,000 bytes/s × 0.12 s = 15,000,000 bytes ≈ 15 MB`! If the kernel socket receive buffer or TCP window were capped at `64 KiB` (classic pre-window-scaling limit), the link would stall at `64 KiB / 0.12 s ≈ 533 KB/s` (**< 0.5% of fibre speed!**). TCP **Window Scaling** (RFC 7323) and Linux's auto-tuned `SO_RCVBUF` scale windows up to tens of megabytes automatically.
 :::
 
 :::recap
@@ -299,15 +299,15 @@ Compute `BDP = Bandwidth (bytes/sec) × RTT (seconds)`!
 
 :::quiz Check your understanding
 ? A client calls `stream.write_all(b"HELLO")` and immediately calls `stream.write_all(b"WORLD")`. On the receiving server, what might one `stream.read(&mut buf)` return?
-- Always `"HELLO"` first, then `"WORLD"`
 + `"HELLOWORLD"`, or `"HEL"`, or `"HELLO"` — TCP makes zero message-boundary guarantees
+- Always `"HELLO"` first, then `"WORLD"`
 - An automatic `4`-byte length prefix
 - A UDP datagram error
 = TCP is a pure byte stream; consecutive writes may coalesce or split across MTU boundaries depending on kernel buffers and network timing.
 
 ? What is the difference between **flow control** (`rwnd`) and **congestion control** (`cwnd`) in TCP?
-- They are two names for `SO_REUSEADDR`
 + Flow control stops a fast sender from overflowing the *receiver's* kernel buffer (`SO_RCVBUF`), whereas congestion control avoids saturating *intermediate network routers*
+- They are two names for `SO_REUSEADDR`
 - Congestion control is used only by UDP
 - Flow control runs only during the 3-way handshake
 = TCP sends up to `min(cwnd, rwnd)` unacknowledged bytes, protecting both the destination host and the network path.

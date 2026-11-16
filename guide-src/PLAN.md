@@ -13,8 +13,8 @@ Deliverable: Next.js App Router web application (`src/`) built directly from
 `npm run typecheck`, and `npm run build` to verify and build.
 
 ## Reader routes
-- Core path: Parts 1–5 (chapters 01–26) + Part 8 Tooling (chapters 34–36). Essential Cargo, formatting, testing, and Clippy commands are introduced in chapter 02; chapters 34–36 provide the deeper workflow reference before Part 9 advanced topics (chapters 37–41).
-- After the core path, readers can follow goal-based routes in chapter 00 / the Home route selector (and `53-next.md`). Advanced language topics and ecosystem surveys (`49-apps`, `50-games-embedded`) remain optional deep dives.
+- Core path: Parts 3–4 (chapters 08–34, covering variables through collections, abstractions, Cargo, quality tooling, and testing strategies). Essential Cargo, formatting, testing, and Clippy commands are introduced in chapter 04; chapters 32–34 provide the deeper workflow reference before Part 5 advanced Rust, unsafe, FFI, and crate ecosystem chapters (chapters 35–45).
+- After the core path, readers can follow goal-based routes in chapter 00 / the Home route selector (`src/lib/guide-config.ts` `ROUTES`) and `53-next.md`. Advanced language topics and ecosystem surveys (`49-apps`, `50-games-embedded`) remain optional deep dives.
 
 ## Tooling (not persisted between messages — reinstall if /opt/rs is missing)
 - Rust toolchain lives in /opt/rs (RUSTUP_HOME=/opt/rs/rustup, CARGO_HOME=/opt/rs/cargo, `. /opt/rs/env.sh`).
@@ -93,11 +93,15 @@ exempt.
 
 ## Maintenance decisions (3.0.0)
 
-- **Appendix reading time is included in the published total.** The five appendices declare a
-  realistic `@time`, measured from their prose at 200 words per minute and rounded (glossary 25,
-  reference 10, compiler-errors 10, from-other-languages 10, under-the-hood 20). The parser's
-  `totalMinutes` sums **all** chapters, appendices included, and the README table follows it.
-  Appendices still do not count as tracked chapters for progress.
+- **Appendix reading time is included in the published total.** All 88 chapters declare `@time`
+  derived from prose word count (~200 wpm) plus 3 min per exercise and 1 min per quiz question,
+  rounded to 5-minute increments (`min 10`). The parser's `totalMinutes` sums **all** chapters,
+  appendices included, and the README table follows it. Appendices still do not count as tracked
+  chapters for progress.
+- **Content lint rules in `src/lib/content-lint.ts`** also enforce raw-markdown `[Chapter N](#id)`
+  number accuracy (`link/chapter-number`), unique glossary entries (`glossary/duplicate`), absence
+  of dismissive filler (`text/dismissive`), and alignment between `00b-roadmap.md` part headings
+  and `guide-config.ts` (`docs/roadmap-part-title`).
 - **Published numbers come from `npm run stats`.** The README statistics table is checked by the
   `docs/stats` lint rule; regenerating the table is pasting the output of `npm run stats`.
 - **Tests are permanent.** `npm test` runs `node:test` via `tsx` over `tests/`: a parser fixture

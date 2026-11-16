@@ -1,5 +1,7 @@
 # One-pass review & upgrade brief — v3.0.0
 
+> **Historical note:** This brief drove the completed v3.0.0 release. Current guide statistics, part numbering (15 parts + 5 appendices), and lint rules have evolved since v3.0.0; see [`../CHANGELOG.md`](../CHANGELOG.md) and run `npm run stats` for current ground truth.
+
 > **How to use this file.** Paste everything below the line into a fresh agent
 > session (or hand it to a reviewer). It is written as an instruction set, not a
 > wish list: every task has a gate you can run, and every number in "Ground

@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 470" role="img" aria-labelledby="t d">
+  <title id="t">How an async function becomes a polled state machine</title>
+  <desc id="d">The compiler turns an async function into a state-machine enum. An executor calls poll(); if not ready it returns Pending and a Waker reschedules it when I/O completes.</desc>
+  <rect width="1200" height="470" rx="24" fill="#1C1A17"/>
+  <rect x="1" y="1" width="1198" height="468" rx="23" fill="none" stroke="#2D2A24" stroke-width="2"/>
+  <text x="48" y="58" font-family="system-ui, sans-serif" font-size="24" font-weight="700" fill="#ECE7DD">Inside async/await: a compiler-generated state machine</text>
+  <text x="48" y="86" font-family="system-ui, sans-serif" font-size="15" fill="#A49B88">Futures do nothing until polled. Each .await is a pause point saved as an enum variant.</text>
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#E9743E"/></marker>
+    <marker id="at" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#2DD4BF"/></marker>
+    <marker id="ab" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#38BDF8"/></marker>
+  </defs>
+  <g font-family="system-ui, sans-serif">
+    <rect x="48" y="140" width="244" height="190" rx="16" fill="#39231A" stroke="#E9743E" stroke-width="2"/>
+    <text x="170" y="176" text-anchor="middle" font-size="14" font-weight="700" letter-spacing="1.5" fill="#E9743E">EXECUTOR (TOKIO)</text>
+    <rect x="74" y="196" width="192" height="52" rx="10" fill="#181613" stroke="#E9743E"/>
+    <text x="170" y="227" text-anchor="middle" font-family="ui-monospace, monospace" font-size="14" font-weight="700" fill="#ECE7DD">fut.poll(&amp;mut cx)</text>
+    <text x="170" y="280" text-anchor="middle" font-size="13.5" fill="#C2BBAF">Drives ready tasks;</text>
+    <text x="170" y="302" text-anchor="middle" font-size="13.5" fill="#C2BBAF">parks waiting tasks.</text>
+
+    <rect x="356" y="140" width="526" height="190" rx="16" fill="#181613" stroke="#3E3930" stroke-width="2"/>
+    <text x="619" y="174" text-anchor="middle" font-size="14" font-weight="700" letter-spacing="1.5" fill="#ECE7DD">GENERATED FUTURE ENUM (PINNED IN MEMORY)</text>
+    <rect x="380" y="196" width="144" height="72" rx="10" fill="#232019" stroke="#3E3930"/>
+    <text x="452" y="224" text-anchor="middle" font-weight="700" font-size="14" fill="#ECE7DD">State 0 · Start</text>
+    <text x="452" y="248" text-anchor="middle" font-size="12.5" fill="#A49B88">before 1st .await</text>
+
+    <rect x="546" y="196" width="156" height="72" rx="10" fill="#132B3A" stroke="#38BDF8" stroke-width="2"/>
+    <text x="624" y="224" text-anchor="middle" font-weight="700" font-size="14" fill="#ECE7DD">State 1 · Wait</text>
+    <text x="624" y="248" text-anchor="middle" font-size="12.5" fill="#38BDF8">holds live locals</text>
+
+    <rect x="724" y="196" width="136" height="72" rx="10" fill="#12322E" stroke="#2DD4BF" stroke-width="2"/>
+    <text x="792" y="224" text-anchor="middle" font-weight="700" font-size="14" fill="#ECE7DD">State 2 · Done</text>
+    <text x="792" y="248" text-anchor="middle" font-size="12.5" fill="#2DD4BF">Poll::Ready(v)</text>
+
+    <line x1="526" y1="232" x2="542" y2="232" stroke="#E9743E" stroke-width="2" marker-end="url(#ar)"/>
+    <line x1="704" y1="232" x2="720" y2="232" stroke="#2DD4BF" stroke-width="2" marker-end="url(#at)"/>
+    <text x="619" y="306" text-anchor="middle" font-size="13.5" fill="#C2BBAF">Stores only live variables — no extra OS thread or 2 MiB stack.</text>
+
+    <rect x="946" y="140" width="206" height="190" rx="16" fill="#132B3A" stroke="#38BDF8" stroke-width="2"/>
+    <text x="1049" y="176" text-anchor="middle" font-size="14" font-weight="700" letter-spacing="1.5" fill="#38BDF8">REACTOR / OS</text>
+    <text x="1049" y="214" text-anchor="middle" font-size="14" font-weight="700" fill="#ECE7DD">epoll / timer</text>
+    <text x="1049" y="242" text-anchor="middle" font-size="13" fill="#C2BBAF">Packet or timer fires</text>
+    <rect x="968" y="262" width="162" height="44" rx="10" fill="#181613" stroke="#38BDF8"/>
+    <text x="1049" y="289" text-anchor="middle" font-family="ui-monospace, monospace" font-size="13.5" font-weight="700" fill="#38BDF8">waker.wake()</text>
+
+    <line x1="296" y1="210" x2="350" y2="210" stroke="#E9743E" stroke-width="2.5" marker-end="url(#ar)"/>
+    <text x="323" y="198" text-anchor="middle" font-size="12" font-weight="700" fill="#E9743E">poll</text>
+    <path d="M 624 270 L 624 356 L 170 356 L 170 336" fill="none" stroke="#38BDF8" stroke-width="2.5" marker-end="url(#ab)"/>
+    <text x="397" y="376" text-anchor="middle" font-size="13" font-weight="700" fill="#38BDF8">Poll::Pending — yields thread immediately</text>
+    <path d="M 1049 334 L 1049 412 L 120 412 L 120 336" fill="none" stroke="#2DD4BF" stroke-width="2.5" marker-end="url(#at)"/>
+    <text x="585" y="432" text-anchor="middle" font-size="13" font-weight="700" fill="#2DD4BF">When ready, Waker puts the task back on the run queue to be polled again</text>
+  </g>
+</svg>

@@ -1,10 +1,10 @@
 @id sync-interrupts-signals
 @part p6
 @kind chapter
-@title Kernel Synchronization, Hardware Interrupts & POSIX Signals
+@title Kernel Synchronisation, Hardware Interrupts & POSIX Signals
 @short Interrupts, signals & futex
 @level intermediate
-@time 35
+@time 30
 @learn Distinguish hardware interrupts (IRQ), CPU exceptions (trap/fault/abort), and POSIX signals | Explain how Linux Mutex and Condvar work via futex (fast uncontended atomic vs kernel sleep) | Understand async-signal safety and why Rust forbids heap allocations in raw signal handlers | Handle Ctrl+C / SIGTERM cleanly in production Rust programs via atomic flags or signal-hook/tokio
 
 A key press, network packet or `Ctrl+C` can arrive while a program is doing other work. The operating system and processor coordinate interrupts, signals and thread synchronisation so the program can respond. Their timing depends on hardware and workload. This chapter follows those mechanisms and explains why only a small set of operations is safe inside a low-level signal handler.
@@ -145,7 +145,7 @@ How does Linux stop one runaway process or container from opening ten million fi
    - `RLIMIT_NOFILE` (`ulimit -n`): maximum open file descriptors (e.g. `1024` or `65536`; exceeding it returns `EMFILE`).
    - `RLIMIT_STACK` (`ulimit -s`): maximum main-thread `[stack]` size (typically `8 MiB`).
    - `RLIMIT_AS` / `RLIMIT_CORE`: virtual address space cap and core-dump file cap.
-2. **Control groups ([[cgroup]], `/sys/fs/cgroup`):** While namespaces ([Chapter 48](#processes-threads-scheduling)) isolate *what a container sees*, **`cgroups` v2** cap *how much hardware a group of processes may consume*:
+2. **Control groups ([[cgroup]], `/sys/fs/cgroup`):** While namespaces ([Chapter 53](#processes-threads-scheduling)) isolate *what a container sees*, **`cgroups` v2** cap *how much hardware a group of processes may consume*:
    - **`memory.max`:** Hard physical RAM ceiling for the container. Exceeding it wakes the kernel **OOM killer**, which terminates the offending process with an uncatchable `SIGKILL` (`exit status 137`).
    - **`cpu.max`:** Bandwidth quota (for example `200000 100000` = at most 2.0 CPU cores per 100 ms period). Note that `std::thread::available_parallelism()` in modern Rust checks cgroup CPU quotas on Linux so thread pools do not spawn 64 threads inside a 2-CPU container!
 
@@ -171,9 +171,9 @@ Max stack size            8388608              unlimited            bytes
 Max open files            1048576              1048576              files
 ```
 
-## Putting Part VI together: Linux architecture end-to-end
+## Putting Part 8 together: Linux architecture end-to-end
 
-Every piece of Part VI fits into one unified operating-system picture:
+Every piece of Part 8 fits into one unified operating-system picture:
 
 ```text
   Ring 3 User Space:   [ Your Rust Code ] ──► [ std / libc / vDSO ]
@@ -267,14 +267,14 @@ Pairing `Ordering::Release` on `store` with `Ordering::Acquire` on `load` guaran
 
 ? Why can `SIGKILL` (`kill -9`) terminate a deadlocked process immediately even when `SIGTERM` cannot?
 - `SIGKILL` runs inside the process's main thread
-+ The kernel forbids catching, blocking, or ignoring `SIGKILL` (and `SIGSTOP`)—the kernel tears down the process directly without entering any user handler
-- `SIGKILL` clears the `futex` wait queue first
 - `SIGKILL` overwrites `.text` with zeros
+- `SIGKILL` clears the `futex` wait queue first
++ The kernel forbids catching, blocking, or ignoring `SIGKILL` (and `SIGSTOP`)—the kernel tears down the process directly without entering any user handler
 = `SIGKILL` and `SIGSTOP` are handled directly inside the kernel without giving user space a handler chance.
 
 ? Why does calling `println!` or `Vec::push` inside a raw Unix `sigaction` signal handler risk instant deadlock?
-- `println!` does not compile in `no_std`
 + The signal may have interrupted the very same thread while it was already holding the allocator or stdout lock
+- `println!` does not compile in `no_std`
 - Signal handlers have a 16-byte stack limit
 - Rust drops `Stdout` during signals
 = Interrupting a thread mid-`malloc` or mid-`StdoutLock` and re-entering the same non-reentrant lock deadlocks the thread against itself.

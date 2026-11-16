@@ -4,12 +4,12 @@
 @title Streams, File Descriptors, Pipes & Buffering Internals
 @short Streams, FDs & buffering
 @level intermediate
-@time 35
+@time 30
 @learn Explain Unix's "everything is a file descriptor" model via FD table, open file description, and inode | Contrast stdin (0), stdout (1), stderr (2), pipes, sockets, and regular files | Understand read/write buffering (BufReader/BufWriter/LineWriter) vs kernel page cache | Observe dup/redirection and RAII Drop closing file descriptors safely in Rust
 
 Rust's `Write` trait lets code send bytes to different destinations through a common interface. On Unix, a **[[file descriptor]] (FD)** is a small integer handle used to refer to an open file, pipe, socket or device. These resources do not all behave identically, but the shared interface makes it possible to write reusable I/O code and reason about buffering separately.
 
-In this chapter we open the Linux kernel's three-table file descriptor diagram, trace what `dup2` / shell redirection (`> out.txt 2>&1`) actually rewires, and see how user-space buffering (`BufReader`, `LineWriter`, `BufWriter`) interacts with the kernel's buffer and disk cache. When one thread cannot afford to wait on a slow descriptor, [blocking, `epoll` and `io_uring`](#blocking-epoll-io-uring) shows the alternatives.
+In this chapter we open the Linux kernel's three-table file descriptor diagram, trace what `dup2` / shell redirection (`> out.txt 2>&1`) actually rewires, and see how user-space buffering (`BufReader`, `LineWriter`, `BufWriter`) interacts with the kernel's [[buffer]] and disk cache. When one thread cannot afford to wait on a slow descriptor, [blocking, `epoll` and `io_uring`](#blocking-epoll-io-uring) shows the alternatives.
 
 :::analogy Coat-check claim tickets
 When you open a file, connect a TCP socket, or create a pipe, the kernel hands your process an integer coat-check ticket: **`3`**, **`4`**, **`5`**. Your code never receives a direct pointer to the kernel's inode or socket struct—every `read(fd, ...)` or `write(fd, ...)` passes back that ticket number, and the kernel looks up which file, pipe, or socket stands behind ticket `3` inside *your process's* private coat-check ledger.
@@ -167,29 +167,29 @@ If the background child inherited a duplicate open FD for `w` during `fork()` + 
 :::quiz Check your understanding
 ? In Linux's three-table FD architecture, what lives in the Open File Description table rather than inside the process's FD array?
 - Only the integer `0, 1, 2`
-+ Current read/write byte **file offset**, status flags (`O_APPEND`, `O_NONBLOCK`), and reference count
 - The ASCII filename path string
++ Current read/write byte **file offset**, status flags (`O_APPEND`, `O_NONBLOCK`), and reference count
 - User-space `BufReader` bytes
 = Multiple FDs (from `dup` or `fork`) can point to the same Open File Description and share its current file offset and flags.
 
 ? What is the difference between `buf_writer.flush()` and `file.sync_all()`?
 - They are identical aliases
-+ `flush()` empties user-space buffers into the OS kernel page cache via `write()`, whereas `sync_all()` (`fsync`) forces the kernel to flush dirty pages and metadata to physical disk
 - `sync_all()` only flushes `stdout`
++ `flush()` empties user-space buffers into the OS kernel page cache via `write()`, whereas `sync_all()` (`fsync`) forces the kernel to flush dirty pages and metadata to physical disk
 - `flush()` closes the file descriptor automatically
 = `write()` returns once bytes reach kernel RAM; durable persistence across power failure requires `fsync`/`fdatasync`.
 
 ? Why does Rust's `std::fs::File` open files with `O_CLOEXEC` by default?
-- To compress files automatically on close
 + To prevent newly opened FDs from leaking into child processes spawned concurrently via `Command::new`
+- To compress files automatically on close
 - To bypass the kernel page cache
 - To enable non-blocking async I/O automatically
 = Without `O_CLOEXEC`, forked child processes inherit every open FD (keeping pipes open and leaking sensitive files across `execve`).
 
 ? Why should you always call `writer.flush()?` explicitly on a `BufWriter` before dropping it?
 - Otherwise Rust leaks the `8 KiB` heap buffer
-+ `Drop::drop` cannot return `Result`, so any `ENOSPC`/`EIO` failure during `BufWriter`'s automatic drop-time flush is silently ignored
 - `BufWriter` never flushes on drop
++ `Drop::drop` cannot return `Result`, so any `ENOSPC`/`EIO` failure during `BufWriter`'s automatic drop-time flush is silently ignored
 - Calling `flush()` automatically triggers `fsync()`
 = Explicit `writer.flush()?` catches I/O errors that `Drop` has no way to propagate.
 :::

@@ -22,46 +22,48 @@ table disagrees with that measurement.
 | Appendices | 5 |
 | Projects | 9 |
 | Code blocks | 1,329 |
-| Rust code fences | 1,005 |
+| Rust code fences | 1,007 |
 | Exercises | 274 |
 | Quiz questions | 379 |
 | Captured outputs | 104 |
-| Search entries | 17,718 |
+| Search entries | 17,768 |
 | Glossary terms | 253 |
-| Glossary terms linked from prose | 207 |
-| Cross-links (inbound edges) | 1,132 |
-| Words of prose | 224,134 |
-| Declared reading time (minutes) | 4,558 |
+| Glossary terms linked from prose | 253 |
+| Cross-links (inbound edges) | 1,137 |
+| Words of prose | 224,482 |
+| Declared reading time (minutes) | 3,800 |
 
 Exercises carry a hint and a worked solution; quiz questions carry an
 explanation of the answer. Declared reading time sums the `@time` of all 88
-chapters, appendices included (the five appendices declare reading time from
-3.0.0). Stack: Next.js 16 App Router, React 19, TypeScript, Tailwind CSS v4,
-Shiki.
+chapters, appendices included, derived from prose word count plus exercises
+and quiz questions. Stack: Next.js 16 App Router, React 19, TypeScript,
+Tailwind CSS v4, Shiki.
 
 Every chapter follows the same rhythm: the idea in plain words, an analogy,
 comparison tables, runnable examples and machine-level walkthroughs, exercises,
 a quiz, and a recap. Verified Rust examples are compiled and checked against
 printed output by `guide-src/tools/check.py` (Rust Edition 2024).
 
-## What the guide covers (13 Parts + 5 Appendices)
+## What the guide covers (15 Parts + 5 Appendices)
 
 Explore the full dependency graph in the **[Complete Learning Roadmap](./guide-src/chapters/00b-roadmap.md)** (`#roadmap`) or filter by route (**Core Rust**, **Systems & internals**, **CLI tools**, **Web & APIs**, **Optional surveys**) directly on the home page:
 
 - **Welcome (`00-start`, `00b-roadmap`):** How to study with the 10-stage systems lens, plus the complete chapter-by-chapter dependency map
-- **Part I — Understanding computers from the inside:** why Rust exists, hardware architecture (CPU, ALU, registers, caches, DRAM, buses), bits/bytes/two's complement/IEEE-754/UTF-8/endianness, and setting up Rust + Linux inspection tools
-- **Part II — From source code to machine instructions:** `rustc` pipeline (lexing, AST, HIR, MIR, LLVM IR), code generation, x86-64/ARM64 assembly, machine opcodes, object files, linking, and ELF segments
-- **Part III — Rust language and compiler internals:** syntax, ownership, borrowing, slices, structs, enums, collections, modules, errors, generics, traits, lifetimes, closures, iterators, smart pointers, advanced traits, typestates, macros, `unsafe`, FFI, memory layout, standard-library internals (`RawVec`, `Vec`, `String`, `Box`, `RcBox`, `UnsafeCell`, `MaybeUninit`, provenance), idioms, and 4 progressive projects
-- **Part IV — Memory management and organisation:** virtual address spaces, 4-level page tables, MMU/TLB, `/proc/self/maps`, real allocators (`GlobalAlloc`, slabs, `jemalloc`/`mimalloc`, writing a bump allocator), safety bugs, and 64-byte CPU cache locality & false sharing
-- **Part V — How programs execute:** `fork`/`execve`, `ld-linux`, GOT/PLT, `_start` to `std::rt::lang_start`, System V AMD64 vs AAPCS64 calling conventions, stack frames, and a complete 10-layer end-to-end execution trace
-- **Part VI — Operating system internals:** Ring 3 vs Ring 0, Linux `syscall` ABI, `vDSO`, processes vs threads (`clone`), EEVDF scheduling, context switching, hardware IRQs, POSIX signals, and `futex`
-- **Part VII — Input and output (I/O):** file descriptors, pipes, `BufReader`/`BufWriter`, non-blocking `EAGAIN`, `epoll`, and `io_uring`
-- **Part VIII — CPU architecture and instruction execution:** CISC vs RISC ISAs, flags & `cmov`, 5-stage pipelines, branch prediction, superscalar OoO execution & Spectre, MESI coherency, store buffers, `Acquire`/`Release`, and SIMD vectorisation
-- **Part IX — Concurrency and asynchronous programming:** threads, `Arc`/`Mutex`/atomics, `async`/`.await`, async state-machine lowering, `Pin`, Tokio work-stealing scheduler, async chat server project, and Rayon/Tokio/Tower patterns
-- **Part X — Networking and communication:** Ethernet/MAC/ARP, IPv4/IPv6/CIDR/NAT, TCP/UDP sockets, framing, congestion control, DNS, TLS 1.3, HTTP/1.1–3 packet trace, Axum web servers, and observability/OpenTelemetry
-- **Part XI — Storage and file systems:** HDD vs NAND SSD FTL/wear leveling/NVMe `blk-mq`, VFS inodes/dentries, Linux Page Cache, crash-safe `rename()`/`fsync()`, `mmap`, SQLx/Diesel/SeaORM databases, and URL-shortener API project
-- **Part XII — Practical system programming with Rust:** Cargo workspaces, `rustfmt`/Clippy/CI, testing strategies, `clap` CLI project, performance profiling & flame graphs, a pure-Rust **Linux `/proc` & ELF64 systems inspector lab**, and the full-stack library capstone project
-- **Part XIII — Applied Rust ecosystem and next steps:** crate selection, Serde, WebAssembly/Tauri/GUI apps, Bevy/`no_std`/data science, and continuing paths
+- **Part 1 — Understanding computers from the inside:** why Rust exists, hardware architecture (CPU, ALU, registers, caches, DRAM, buses), bits/bytes/two's complement/IEEE-754/UTF-8/endianness, and setting up Rust + Linux inspection tools
+- **Part 2 — From source code to machine instructions:** `rustc` pipeline (lexing, AST, HIR, MIR, LLVM IR), code generation, x86-64/ARM64 assembly, machine opcodes, object files, linking, and ELF segments
+- **Part 3 — Rust foundations and ownership:** variables, types, functions, control flow, stack/heap memory, ownership, borrowing, slices/strings, structs, enums, patterns, collections, and two CLI projects
+- **Part 4 — Modular Rust, abstractions, and tooling:** modules/crates, error handling, generics, traits, lifetimes, unit/integration testing, closures, iterators, Cargo workspaces, quality tooling (`rustfmt`/`clippy`/CI), testing strategies, and two projects
+- **Part 5 — Advanced Rust, unsafe, and everyday crates:** smart pointers, advanced traits, typestate design, macros, `unsafe`, FFI, memory layout, standard-library internals (`RawVec`, `Vec`, `String`, `Box`, `RcBox`, `UnsafeCell`, `MaybeUninit`, provenance), idioms, crate selection, and Serde
+- **Part 6 — Memory management and organisation:** virtual address spaces, 4-level page tables, MMU/TLB, `/proc/self/maps`, real allocators (`GlobalAlloc`, slabs, `jemalloc`/`mimalloc`, writing a bump allocator), safety bugs, and 64-byte CPU cache locality & false sharing
+- **Part 7 — How programs execute:** `fork`/`execve`, `ld-linux`, GOT/PLT, `_start` to `std::rt::lang_start`, System V AMD64 vs AAPCS64 calling conventions, stack frames, and a complete 10-layer end-to-end execution trace
+- **Part 8 — Operating system internals:** Ring 3 vs Ring 0, Linux `syscall` ABI, `vDSO`, processes vs threads (`clone`), EEVDF scheduling, context switching, hardware IRQs, POSIX signals, and `futex`
+- **Part 9 — Input and output (I/O):** file descriptors, pipes, `BufReader`/`BufWriter`, non-blocking `EAGAIN`, `epoll`, and `io_uring`
+- **Part 10 — CPU architecture and instruction execution:** CISC vs RISC ISAs, flags & `cmov`, 5-stage pipelines, branch prediction, superscalar OoO execution & Spectre, MESI coherency, store buffers, `Acquire`/`Release`, and SIMD vectorisation
+- **Part 11 — Concurrency and asynchronous programming:** threads, `Arc`/`Mutex`/atomics, `async`/`.await`, async state-machine lowering, `Pin`, Tokio work-stealing scheduler, async chat server project, and Rayon/Tokio/Tower patterns
+- **Part 12 — Networking and communication:** Ethernet/MAC/ARP, IPv4/IPv6/CIDR/NAT, TCP/UDP sockets, framing, congestion control, DNS, TLS 1.3, HTTP/1.1–3 packet trace, Axum web servers, and observability/OpenTelemetry
+- **Part 13 — Storage and file systems:** HDD vs NAND SSD FTL/wear leveling/NVMe `blk-mq`, VFS inodes/dentries, Linux Page Cache, crash-safe `rename()`/`fsync()`, `mmap`, SQLx/Diesel/SeaORM databases, and URL-shortener API project
+- **Part 14 — Practical system programming with Rust:** `clap` CLI project, performance profiling & flame graphs, a pure-Rust **Linux `/proc` & ELF64 systems inspector lab**, and the full-stack library capstone project
+- **Part 15 — Applied Rust ecosystem and next steps:** WebAssembly/Tauri/GUI apps, Bevy/`no_std`/data science, and continuing paths
 - **Appendices (`A`–`E`):** Searchable glossary, Rust & Linux/ABI quick reference tables, real compiler error catalogue, translation guides from Python, JS/TS, Java/C#, Go, and C/C++, and a from-source-to-silicon end-to-end compiler/OS/CPU walkthrough (`94-under-the-hood`)
 
 ## What it deliberately does not cover
@@ -212,9 +214,9 @@ python3 guide-src/tools/check.py --projects # rebuild & test all multi-file and 
 `verify:content` is two gates: the parser refuses malformed chapters (unknown
 glossary term, exercise without a solution, link to a chapter that does not
 exist), and `src/lib/content-lint.ts` enforces the house style and teaching
-structure — British spelling, no `TODO`/`FIXME` in visible text, objectives +
+structure — British spelling, no dismissive filler (`simply`/`just`/…), no `TODO`/`FIXME` in visible text, objectives +
 recap + quiz + exercises on every tracked chapter (project chapters included),
-declared reading times that agree with the prose, unique titles, an entry for
+declared reading times that agree with the prose, unique titles, no duplicate glossary definitions, accurate raw-markdown `[Chapter N](#id)` labels, matching `00b-roadmap.md` part headings, an entry for
 every chapter in the link graph in both directions (a chapter nobody links to
 and a chapter that links nowhere both fail), only the routes the app actually
 serves, and a README statistics table that matches `npm run stats`. It warns

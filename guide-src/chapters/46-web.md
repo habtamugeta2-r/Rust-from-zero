@@ -3,7 +3,7 @@
 @title Web servers with Axum
 @short Web servers with Axum
 @level intermediate
-@time 100
+@time 80
 @learn Explain requests, responses, methods and status codes | Write a web server with routes and handlers in Axum | Read paths, query strings, headers, JSON and real-time streams with extractors | Share state, load layered configuration and protect secrets | Add authentication, authorisation, security headers and rate limits | Choose between REST, gRPC and GraphQL, and compare Axum with Actix Web and Rocket
 
 A **web server** receives requests and sends responses, often while handling many clients over time. Frameworks such as Axum provide routing and request extraction on top of HTTP libraries and operating-system I/O. Rust's type system can prevent some memory errors, but availability, correctness and security still depend on application design, configuration and testing.
@@ -14,7 +14,7 @@ A guest (the client) hands an order slip (the request) to the waiter. The slip s
 
 ## How the web works
 
-The [concurrency ecosystem chapter](#async-ecosystem) introduced HTTP from the client's side, and the preceding chapters in Part X traced TCP, sockets, DNS, and TLS down to kernel buffers. A web framework handles the server end cleanly.
+The [concurrency ecosystem chapter](#async-ecosystem) introduced HTTP from the client's side, and the preceding chapters in Part 12 traced TCP, sockets, DNS, and TLS down to kernel buffers. A web framework handles the server end cleanly.
 
 A **URL** names what the client wants:
 
@@ -84,7 +84,7 @@ You will build exactly this API later in the chapter.
 
 ## A first server
 
-A **web framework** is a library that does the common work of a server: it reads requests, finds the right function, and writes responses. This chapter uses **Axum**, the framework made by the Tokio team. It is the most widely used one today, it has little magic, and it is built on **Tokio** for the async runtime and **tower** for the layer stack around each service, both from [chapter 60](#async-ecosystem). The third ingredient is **Serde**, which turns structs into JSON and back; it gets a full chapter of its own later ([chapter 78](#serde)), so here is the part this chapter needs:
+A **web framework** is a library that does the common work of a server: it reads requests, finds the right function, and writes responses. This chapter uses **Axum**, the framework made by the Tokio team. It is the most widely used one today, it has little magic, and it is built on **Tokio** for the async runtime and **tower** for the layer stack around each service, both from [chapter 65](#async-ecosystem). The third ingredient is **Serde**, which turns structs into JSON and back; it gets a full chapter of its own later ([chapter 45](#serde)), so here is the part this chapter needs:
 
 :::plain Serde in one box
 `#[derive(Serialize)]` on a struct generates code that writes it into a data format, and `#[derive(Deserialize)]` generates the code that reads it back. A format crate such as `serde_json` supplies the actual bytes. Field names become JSON keys, `Option<T>` becomes `null` for `None`, and `#[serde(rename_all = "snake_case")]` rewrites the keys in bulk. In Axum, a handler returning `Json<T>` needs `T: Serialize`; a handler taking `Json<T>` as an argument needs `T: Deserialize`. That is the entire integration.
@@ -169,7 +169,7 @@ async fn send(app: &Router, method: &str, path: &str, body: &str) {
 }
 ```
 
-A `Router` is a tower `Service`, and `oneshot` calls a service with one request. There is no network involved: the request is a value, and so is the response. The helper is part of every example below and is not printed again. The same technique is how Axum servers are tested, and [chapter 69](#project-api) uses it for that.
+A `Router` is a tower `Service`, and `oneshot` calls a service with one request. There is no network involved: the request is a value, and so is the response. The helper is part of every example below and is not printed again. The same technique is how Axum servers are tested, and [chapter 74](#project-api) uses it for that.
 
 ## Extractors: what a handler needs
 
@@ -572,7 +572,7 @@ GET /notes -> 200 OK  [{"id":2,"text":"call Sara at five"}]
 What to take from this program:
 
 - **Routes.** `get(list_notes).post(create_note)` puts two methods on one path. The five handlers are the five rows of the REST table above.
-- **State.** `.with_state(AppState::default())` gives the state to the router. `AppState` is `Clone` and holds an `Arc<Mutex<Store>>`, the sharing tool from [chapter 56](#shared-state). In the next chapters, a database pool takes the place of the `Mutex`.
+- **State.** `.with_state(AppState::default())` gives the state to the router. `AppState` is `Clone` and holds an `Arc<Mutex<Store>>`, the sharing tool from [chapter 61](#shared-state). In the next chapters, a database pool takes the place of the `Mutex`.
 - **Separate input and output types.** `NoteInput` is what a client may send. `Note` is what the server stores and returns. The client cannot choose an id, because `NoteInput` has no such field.
 - **One error type.** `ApiError` lists what can go wrong, and its `IntoResponse` implementation is the one place that decides status codes and messages. Handlers return `Result<…, ApiError>` and use `?` and `ok_or` as in any Rust code. Errors are JSON, like everything else in the API.
 - **A function `app()`** that builds the router, apart from `main`. Tests can call it too.
@@ -679,7 +679,7 @@ with key -> 200 OK
 
 ### Limits every public server needs
 
-A server on the internet receives requests that are slow, huge, or far too many, by accident or on purpose. Without limits, a single client can use up its memory or its connections. The chat server of [chapter 59](#project-chat) left this open. Here are the tools:
+A server on the internet receives requests that are slow, huge, or far too many, by accident or on purpose. Without limits, a single client can use up its memory or its connections. The chat server of [chapter 64](#project-chat) left this open. Here are the tools:
 
 | Risk | Limit | Tool |
 |---|---|---|
@@ -895,13 +895,13 @@ async fn handle_socket(mut socket: WebSocket) {
 }
 ```
 
-Notice `.into()` on `format!("echo: {text}")`: Axum 0.8 stores text frames in `Utf8Bytes`, converted cheaply from `String` or `&'static str`. The room server of [chapter 59](#project-chat) maps onto this with almost no changes: the `Arc<Mutex<Rooms>>` and the `broadcast::Sender<String>` become the application state, and each socket task subscribes to the broadcast channel and forwards what it receives.
+Notice `.into()` on `format!("echo: {text}")`: Axum 0.8 stores text frames in `Utf8Bytes`, converted cheaply from `String` or `&'static str`. The room server of [chapter 64](#project-chat) maps onto this with almost no changes: the `Arc<Mutex<Rooms>>` and the `broadcast::Sender<String>` become the application state, and each socket task subscribes to the broadcast channel and forwards what it receives.
 
 Three practical rules:
 
 - **Send a heartbeat.** A ping every thirty seconds keeps idle connections alive through load balancers, which cut connections they consider dead after a minute or two of silence.
 - **Bound the input.** `Message::Text` has a maximum size, set on the upgrade, and you should also cap the length of a chat line.
-- **Decide where the state lives.** In-memory rooms mean two server instances do not see each other's messages. Either keep one instance, use sticky sessions, or move the fan-out to Redis pub/sub or NATS ([chapter 60](#async-ecosystem)).
+- **Decide where the state lives.** In-memory rooms mean two server instances do not see each other's messages. Either keep one instance, use sticky sessions, or move the fan-out to Redis pub/sub or NATS ([chapter 65](#async-ecosystem)).
 
 ### Server-sent events
 
@@ -1276,8 +1276,8 @@ async fn register(Json(body): Json<RegisterRequest>) -> Result<StatusCode, (Stat
 Four details that decide whether validation works in practice:
 
 - **Normalise before you validate.** Trim whitespace and lower-case e-mail addresses before validating and storing.
-- **Reject unknown fields** with `#[serde(deny_unknown_fields)]` on request types ([chapter 78](#serde)).
-- **Keep the database constraints.** `NOT NULL`, `UNIQUE`, and `CHECK` constraints catch races ([chapter 68](#databases)).
+- **Reject unknown fields** with `#[serde(deny_unknown_fields)]` on request types ([chapter 45](#serde)).
+- **Keep the database constraints.** `NOT NULL`, `UNIQUE`, and `CHECK` constraints catch races ([chapter 73](#databases)).
 - **Return 422 Unprocessable Content with field messages**, never raw SQL errors.
 
 ### Security headers
@@ -1420,13 +1420,13 @@ Whichever mechanism you choose, the shape is the same:
 **More rules:**
 
 - **Keep secrets out of the code.** Load keys and database URLs from environment variables or a secret manager.
-- **Never build SQL from strings.** [Chapter 68](#databases) shows parameterised queries.
+- **Never build SQL from strings.** [Chapter 73](#databases) shows parameterised queries.
 - **Do not show internals.** Log details with `tracing` on the server; return a neutral message to clients.
 - **Keep dependencies current**, and run `cargo audit` and `cargo deny`.
 
 ## Configuration and secrets
 
-Reading `std::env::var` one field at a time works for three variables. Once a service has database timeouts, cookie domains, OTLP endpoints, and feature flags, **layered configuration** gives one clear precedence order ([chapter 73](#cli) covers the same pattern for CLIs):
+Reading `std::env::var` one field at a time works for three variables. Once a service has database timeouts, cookie domains, OTLP endpoints, and feature flags, **layered configuration** gives one clear precedence order ([chapter 75](#cli) covers the same pattern for CLIs):
 
 **CLI flags > environment variables (`APP_*`) > environment file (`config/prod.toml`) > base defaults (`config/default.toml`)**
 
@@ -1466,7 +1466,7 @@ fn load_settings() -> Result<Settings, figment::Error> {
 | Style | Transport / format | Best for | Main Rust crate |
 |---|---|---|---|
 | **REST** | HTTP + JSON | Public APIs, CRUD services, web & mobile clients | `axum` |
-| **gRPC** | HTTP/2 + Protobuf | Low-latency service-to-service RPCs and streaming ([chapter 60](#async-ecosystem)) | `tonic` |
+| **gRPC** | HTTP/2 + Protobuf | Low-latency service-to-service RPCs and streaming ([chapter 65](#async-ecosystem)) | `tonic` |
 | **GraphQL** | Single HTTP `POST /graphql` + schema | Complex nested UI views where clients choose fields without over-fetching | `async-graphql` |
 
 GraphQL shines when a dashboard needs user profile + recent orders + billing status in one round trip without adding bespoke REST endpoints. **`async-graphql`** (paired with `async-graphql-axum`) derives the GraphQL schema directly from Rust structs and methods:
@@ -1493,7 +1493,7 @@ async fn graphql_handler(State(schema): State<AppSchema>, req: GraphQLRequest) -
 }
 ```
 
-If you adopt GraphQL on relational tables, pair resolvers with `async_graphql::dataloader::DataLoader` to batch ID lookups—otherwise nested GraphQL lists trigger the same N+1 SQL query problem described in [chapter 68](#databases).
+If you adopt GraphQL on relational tables, pair resolvers with `async_graphql::dataloader::DataLoader` to batch ID lookups—otherwise nested GraphQL lists trigger the same N+1 SQL query problem described in [chapter 73](#databases).
 
 ## Other frameworks
 
@@ -1625,7 +1625,7 @@ CMD ["/usr/local/bin/myserver"]
 An `ENV API_KEY=…` line, or a credentials file copied into the build stage, stays in the image for ever: anyone who can pull the image can read it, and deleting the file in a later layer does not help, because the earlier layer is still there. Pass secrets at run time — Docker secrets, Kubernetes `Secret` objects, or the secret manager of the host — and let the program read them from the environment when it starts. If a secret has ever been committed by mistake, rotate it; a rewrite of the history does not reach the copies that were already fetched. The [configuration section](#cli) of the CLI chapter covers where values should come from.
 :::
 
-**Cross-compilation.** The server does not have to run on the same kind of machine it is built on. `rustup target add x86_64-unknown-linux-musl` followed by `cargo build --release --target x86_64-unknown-linux-musl` produces a statically linked Linux binary ([chapter 70](#cargo)). A container built from that binary needs almost nothing inside it, which keeps images small and startup fast.
+**Cross-compilation.** The server does not have to run on the same kind of machine it is built on. `rustup target add x86_64-unknown-linux-musl` followed by `cargo build --release --target x86_64-unknown-linux-musl` produces a statically linked Linux binary ([chapter 32](#cargo)). A container built from that binary needs almost nothing inside it, which keeps images small and startup fast.
 
 **Nix.** Teams that want every build to be byte-identical use Nix: it pins the Rust version, the system libraries and the crate versions, and builds in a sandbox. Tools such as `crane`, `naersk` or `fenix` turn a `Cargo.lock` into a Nix derivation, and `nix develop` gives every contributor the same toolchain. The price is learning Nix itself; for a single service, the Dockerfile above is simpler.
 
@@ -1655,28 +1655,28 @@ The final image contains your program and a minimal system, with no compiler and
 :::quiz Check your understanding
 ? A handler has the signature `async fn show(Path(id): Path<u32>) -> String`. A client requests `/items/abc`. What happens?
 - The handler runs with `id` equal to 0
-- The server panics
 + Axum answers 400 Bad Request, and the handler is not called
+- The server panics
 - The compiler reports an error
 = The extractor fails to convert `abc` into a `u32`, and its rejection becomes the response. The handler only ever sees valid values.
 
 ? Which status code fits a successful `POST` that created a new resource?
 - 200 OK
-+ 201 Created
-- 204 No Content
 - 302 Found
+- 204 No Content
++ 201 Created
 = 201 says that something new exists now. The response usually contains the new resource, or its address.
 
 ? How do handlers get access to shared data such as a database pool?
 - Through a global `static mut` variable
 - Each handler opens its own
-+ The router holds a state value (`with_state`), and handlers receive it with the `State<T>` extractor
 - Through a hidden parameter of `main`
++ The router holds a state value (`with_state`), and handlers receive it with the `State<T>` extractor
 = The state must be `Clone` and is usually built from `Arc`s, so that handing it out is cheap.
 
 ? Why must an extractor such as `Json<T>` be the last parameter of a handler?
-- Because of alphabetical order
 + It consumes the request body, which can be read only once
+- Because of alphabetical order
 - Because JSON is slow
 - It is only a style rule
 = Extractors for the path, the query and the headers only look at the request. A body extractor takes the body, so it has to come last.
@@ -1684,15 +1684,15 @@ The final image contains your program and a minimal system, with no compiler and
 ? What should a server store to be able to check passwords?
 - The password itself, in a protected file
 - The password, encrypted with a secret key
-+ A salted hash made by a slow password hash function such as Argon2
 - A plain SHA-256 hash of the password
++ A salted hash made by a slow password hash function such as Argon2
 = A slow, salted hash cannot be reversed, and guessing is expensive. Fast hashes such as SHA-256 can be tried billions of times per second.
 
 ? Why compare API keys using `subtle::ConstantTimeEq` over SHA-256 hashes instead of plain `==`?
 - Because `==` is not implemented on strings in Rust
-+ Because `==` returns early on the first mismatched byte, leaking matching prefix bytes via timing differences
-- Because `subtle` automatically rotates the API key on every request
 - Because `==` runs on a separate thread
+- Because `subtle` automatically rotates the API key on every request
++ Because `==` returns early on the first mismatched byte, leaking matching prefix bytes via timing differences
 = Timing side-channels let an attacker measure tiny response-time differences to guess secrets byte by byte. Hashing plus constant-time comparison removes both length and prefix leaks.
 
 ? Why wrap fields like `database_url` and `jwt_secret` in `secrecy::SecretString` instead of plain `String` inside a `Settings` struct?
@@ -1710,23 +1710,23 @@ The final image contains your program and a minimal system, with no compiler and
 = `401` means "I do not know who you are"; `403` means "I know, and the answer is no". `404` is sometimes used deliberately to hide the existence of a resource, but that is a decision, not the default.
 
 ? Why is a token-based API not vulnerable to cross-site request forgery?
-- Because tokens are encrypted
-- Because tokens expire quickly
 + Because the browser does not attach an `Authorization` header to a request made by another site
+- Because tokens expire quickly
+- Because tokens are encrypted
 - Because tokens are stored in a cookie
 = CSRF works by making the browser send credentials that it attaches automatically — a cookie. A header that your JavaScript adds explicitly is not attached by another origin's page, so the forged request arrives unauthenticated.
 
 ? What is the mistake in verifying a JWT with the algorithm taken from the token's own header?
-- Nothing; that is what the header is for
 + An attacker can choose the algorithm, including `none` or a confusion between HS256 and RS256
+- Nothing; that is what the header is for
 - It makes verification slower
 - It breaks the signature
 = Always fix the algorithm in the verifier (`Validation::new(Algorithm::HS256)`). Letting the token choose is the classic JWT vulnerability.
 
 ? Which combination is the sane default for a server-rendered web application?
 - An API key stored in `localStorage`
-- A JWT in a cookie without `HttpOnly`, so the front end can read it
 + A server-side session, in a random cookie marked `HttpOnly`, `Secure` and `SameSite=Lax`
+- A JWT in a cookie without `HttpOnly`, so the front end can read it
 - A session id in a URL parameter
 = The cookie flags remove whole classes of attack: `HttpOnly` blocks theft by scripts, `Secure` blocks plain-HTTP leaks, `SameSite=Lax` blocks cross-site posting. A session id in a URL leaks through logs, bookmarks and `Referer` headers.
 :::

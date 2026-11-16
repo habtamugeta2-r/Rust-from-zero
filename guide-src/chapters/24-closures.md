@@ -1,9 +1,9 @@
 @id closures
-@part p3
+@part p3b
 @title Closures: functions you can carry around
 @short Closures
 @level intermediate
-@time 45
+@time 40
 @learn Write closures and pass them to functions | Explain how a closure captures values from its surroundings | Tell `Fn`, `FnMut` and `FnOnce` apart and know when `move` is needed | Return closures from functions and store them in structs
 
 The expressions `|x| *x > 2` and `|n| n * 2` are **[[closure]]s**: values that behave like functions and can capture names from their surrounding scope. Closures are useful when an operation is small and local, such as a predicate passed to `filter` or a transformation passed to `map`. This chapter explains how captures affect what a closure can do.
@@ -155,7 +155,7 @@ fn main() {
 6 11
 ```
 
-`make_adder` is a function that builds functions. Each closure it returns carries its own `n`. `move` is needed in two typical places: when a closure is **returned** from a function, and when it is handed to a **new thread** ([chapter 55](#threads)).
+`make_adder` is a function that builds functions. Each closure it returns carries its own `n`. `move` is needed in two typical places: when a closure is **returned** from a function, and when it is handed to a **new thread** ([chapter 60](#threads)).
 
 :::plain What a closure really is
 There is no magic. For each closure, the compiler creates a hidden struct with one field per captured variable, and one method that contains the body. `make_adder(5)` returns a struct holding the number 5. Calling the closure calls the method. That is why closures are exactly as fast as ordinary functions, and why each closure has its own unique type that has no name you can write.
@@ -315,28 +315,28 @@ fn main() {
 ? What can a closure do that an ordinary function cannot?
 - Take parameters
 - Return a value
-+ Use variables from the scope in which it is defined
 - Be called more than once
++ Use variables from the scope in which it is defined
 = Capturing its environment is the defining feature of a closure. An `fn` item can only use its parameters and global items.
 
 ? What does `move` do in `move |x| x + n`?
 - It moves the closure to the heap
-- It makes the closure run faster
 + It makes the closure take ownership of the variables it uses, here `n`
+- It makes the closure run faster
 - It makes `x` mutable
 = Without `move`, the closure would borrow `n`. With it, the closure owns its own copy and can live longer than the scope where `n` was defined.
 
 ? A function calls the closure it receives several times, and the closure adds to a counter outside. Which bound must the parameter have?
 - `Fn()`
-+ `FnMut()`
 - `FnOnce()`
++ `FnMut()`
 - `fn()`
 = The closure changes a captured variable, so it is not `Fn`. It is called more than once, so `FnOnce` is not enough. `FnMut` fits.
 
 ? Why can the closures `|| 1` and `|| 2` not be stored in a `Vec` directly, without `Box<dyn Fn() -> i32>`?
 - Closures cannot be stored at all
-+ Every closure has its own unique type, and a `Vec` needs one element type
 - They return different numbers
++ Every closure has its own unique type, and a `Vec` needs one element type
 - A `Vec` can only hold numbers and text
 = Even closures that look alike have distinct, unnameable types. A trait object gives them a common type.
 
@@ -348,8 +348,8 @@ println!("{total}");
 add(5);
 ```
 - Closures cannot change variables
-- `add` should not be `mut`
 + `add` holds a mutable borrow of `total` until its last use, so `total` cannot be read in between
+- `add` should not be `mut`
 - `n` has no type
 = The closure borrows `total` mutably from its creation to its last call. Reading `total` in that stretch breaks the borrowing rules. Move the `println!` after the last call.
 :::
@@ -460,7 +460,7 @@ One sorting routine, three orders, each chosen by a small closure. `Reverse` is 
 :::exercise challenge Remember results
 Some calculations are slow. Write a struct `Cache<F>` that wraps a function `F: Fn(u64) -> u64` and remembers every result in a `HashMap`, so that the function is run only once per input. Give it a method `get(&mut self, input: u64) -> u64`. Prove that it works by counting how often the wrapped function really runs.
 ::hint
-The struct has two fields: `function: F` and `results: HashMap<u64, u64>`. In `get`, look in the map first. If the input is not there, call `(self.function)(input)`, store the result and return it. To count the calls from outside, the wrapped closure cannot change a plain counter, because the bound is `Fn`. Use a `std::cell::Cell<u32>`, which allows changing a value through a shared reference (more about it in [chapter 32](#smart-pointers)).
+The struct has two fields: `function: F` and `results: HashMap<u64, u64>`. In `get`, look in the map first. If the input is not there, call `(self.function)(input)`, store the result and return it. To count the calls from outside, the wrapped closure cannot change a plain counter, because the bound is `Fn`. Use a `std::cell::Cell<u32>`, which allows changing a value through a shared reference (more about it in [chapter 35](#smart-pointers)).
 ::solution
 ```rust run
 use std::cell::Cell;

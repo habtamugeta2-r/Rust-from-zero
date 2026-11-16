@@ -1,10 +1,10 @@
 @id project-search
-@part p3
+@part p3b
 @kind project
 @title Project: a file search tool
 @short Project: search tool
 @level intermediate
-@time 120
+@time 90
 @learn Read command-line arguments | Structure a program as a library with a thin `main` | Return borrowed results with a lifetime | Report errors on the error stream and through exit codes | Develop a function test-first
 
 In this project you build `finder`, a small command-line search tool inspired by `grep`. It reads a query and a file, then prints matching lines. The implementation separates argument handling, search logic and error reporting so the core behaviour can be tested independently of the terminal.
@@ -643,24 +643,24 @@ In `run`, call `collect_files` for each path from the command line, then loop ov
 
 :::quiz Check your understanding
 ? The search logic lives in `src/lib.rs` and `src/main.rs` stays thin. Why does the project split the crate that way?
-- Because a library crate always runs faster than a binary crate
 + Because the library can be tested directly, and `main` only handles arguments, messages and exit codes
+- Because a library crate always runs faster than a binary crate
 - Because Rust forbids logic in `main.rs`
 - Because `src/lib.rs` is the only file Cargo compiles
 = Cargo compiles both, but only a library crate can be imported by a test. Keeping the logic in the library lets the tests call it without starting a process, and leaves `main` as a thin wrapper that talks to the outside world.
 
 ? The search function returns `Vec<Match<'a>>` instead of `Vec<Match>`. What does the lifetime buy you?
-+ The results borrow the file contents instead of copying every matched line
+- The results are sorted by line number
 - The results can outlive the file
 - The function accepts any number of arguments
-- The results are sorted by line number
++ The results borrow the file contents instead of copying every matched line
 = `Match<'a>` says the matches borrow from the input with lifetime `'a`. Each result is a view into the text that was already read, so a large file is not copied into a second buffer to return the hits.
 
 ? The tool prints matches with `println!` and problems with `eprintln!`, then sets an exit code. Why does the split matter?
 - Because `eprintln!` is faster than `println!`
-+ Because results belong on standard output and problems on standard error, so a pipeline can separate them, and the exit code tells other programs whether it worked
-- Because standard error cannot hold more than one line
 - Because the exit code is set by the operating system
+- Because standard error cannot hold more than one line
++ Because results belong on standard output and problems on standard error, so a pipeline can separate them, and the exit code tells other programs whether it worked
 = A shell pipeline reads standard output and sends standard error to the screen. Keeping results and problems apart lets `minigrep file | head` work, and a non-zero exit code is how one program tells another that something went wrong.
 
 ? What does `map_err` do before `?` passes an error on?

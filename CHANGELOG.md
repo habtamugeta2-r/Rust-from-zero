@@ -20,6 +20,35 @@ they change continuously.
   true), branches collapse independently or all at once, the reader's
   arrangement persists across reloads, and the branch containing the
   section being read opens and highlights itself as they scroll.
+- **Six new chapter diagrams and full dark-mode SVG plates.** Added figures
+  for `Option` niche layout (`13-enums`), static vs dynamic trait dispatch
+  (`20-traits`), `async` state machines (`32-async`), struct padding and field
+  reordering (`40-memory-layout`), `syscall` Ring 3/Ring 0 privilege crossings
+  (`41h-kernel-syscalls-processes`), and blocking vs `epoll` vs `io_uring`
+  (`41l-blocking-epoll-io-uring`). All 14 SVG diagrams ship matching warm
+  charcoal `-dark.svg` plates that follow the theme toggle and revert to light
+  plates when printing.
+- **Two interactive memory steppers** for `Vec<T>` heap reallocation
+  (`15-collections`) and `Arc<Mutex<T>>` lock sharing across threads
+  (`31-shared-state`).
+- **Component & route tests** in `tests/components.test.ts` and new content-lint
+  rules (`link/chapter-number` over raw markdown, `glossary/duplicate`,
+  `text/dismissive`, `docs/roadmap-part-title`) in `src/lib/content-lint.ts`.
+
+### Changed
+
+- **Split Part 3 into Parts 3–5** (15 numbered parts + 5 appendices) and
+  resequenced Cargo/quality-tooling/testing chapters into Part 4 and idioms,
+  crates, and Serde into Part 5 ahead of dependent chapters; aligned part
+  level badges to modal chapter levels and synchronised `00b-roadmap.md`,
+  `00-start.md`, and cross-references across all 88 chapters.
+- **Rebalanced all 379 quiz questions** evenly across options A–D
+  (`A: 95, B: 95, C: 95, D: 94`), derived realistic `@time` across all 88
+  chapters (`3,800` min total), linked 100% of glossary terms (`253/253`) from
+  prose, and enforced British spelling and non-dismissive phrasing.
+- **Fixed `inlinePlainText` `routeLink` handling** in `src/lib/guide-parser.ts`,
+  corrected `94-under-the-hood.md` AST operands and monomorphisation timing, and
+  resolved `npm audit` `minimatch` advisories via `overrides` in `package.json`.
 
 ## 3.2.0 — pictures everywhere they earn their place
 

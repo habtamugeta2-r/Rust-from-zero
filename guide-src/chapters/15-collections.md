@@ -3,18 +3,18 @@
 @title Collections: lists, maps and sets
 @short Collections
 @level beginner
-@time 50
+@time 45
 @learn Store any number of values in a `Vec` and work with them safely | Look things up by a key with `HashMap` | Keep unique values in a `HashSet` | Choose the right collection for a task | Handle ownership of the values inside a collection
 
 An array has a fixed length, while many tasks need a set of values that grows or shrinks as the program runs. Rust's standard library offers several **collections** for those jobs. A `Vec` stores an ordered sequence, a `HashMap` looks up values by key, and a `HashSet` tracks unique values. Their operations and trade-offs differ, so the right choice depends on how you use the data.
 
 :::plain The three collections in one paragraph
-A **`Vec<T>`** is a growable array of same-typed values stored contiguously, so indexing is fast and the data is cache-friendly. A **`HashMap<K, V>`** looks values up by key in roughly constant time, at the cost of unordered iteration. A **`BTreeMap<K, V>`** keeps its keys sorted, so iteration is ordered and range queries are cheap, at a small constant factor in speed. Choosing between them is a question about iteration order and access pattern, not about which one is "better".
+A **[[Vec|vec]]** (`Vec<T>`) is a growable array of same-typed values stored contiguously, so indexing is fast and the data is cache-friendly. A **[[HashMap|hashmap]]** (`HashMap<K, V>`) looks values up by key in roughly constant time, at the cost of unordered iteration. A **`BTreeMap<K, V>`** keeps its keys sorted, so iteration is ordered and range queries are cheap, at a small constant factor in speed. Choosing between them is a question about iteration order and access pattern, not about which one is "better".
 :::
 
 ## `Vec`: a list that grows
 
-A `Vec<T>` (say "vector") is a growable list of values that all have the same type `T`. It is by far the most used collection in Rust.
+A `Vec<T>` (say "vector") is a growable list of values that all have the same type `T`. It is by far the most used [[collection]] in Rust.
 
 ```rust run
 fn main() {
@@ -170,6 +170,22 @@ fn main() {
 ```
 
 When the block is full, the vector asks for a bigger block (usually twice the size), moves all elements there, and frees the old one. That is the moment that made the borrow checker reject `numbers.push(4)` while a reference to an element existed, in [chapter 15](#borrowing). Because the size doubles each time, moving happens rarely, and `push` is fast on average. If you know roughly how many elements are coming, `Vec::with_capacity(n)` reserves the room at once.
+
+:::stepper How `Vec<T>` grows and reallocates on the heap
+```rust
+fn main() {
+    let mut v = Vec::with_capacity(2);
+    v.push(10);
+    v.push(20);
+    v.push(30);
+}
+```
+2 | [main] v = ->#1 len 0 cap 2 !new | #1 = [_, _] !new | `Vec::with_capacity(2)` reserves a 2-slot buffer on the heap. Length is `0`, capacity is `2`.
+3 | [main] v = ->#1 len 1 cap 2 | #1 = [10, _] | `v.push(10)` writes into slot 0 of the existing buffer — no allocation needed.
+4 | [main] v = ->#1 len 2 cap 2 | #1 = [10, 20] | `v.push(20)` fills slot 1. The heap block is now completely full (`len == cap`).
+5 | [main] v = ->#2 len 3 cap 4 !new | #1 = [10, 20] !freed; #2 = [10, 20, 30, _] !new | No room left! `Vec` allocates a larger buffer (`#2`, capacity `4`), moves `[10, 20]`, writes `30`, updates `v.ptr` to `#2`, and frees `#1`. Any old `&v[0]` would now dangle.
+6 | - | #2 = [10, 20, 30, _] !freed | `v` goes out of scope at the closing brace, and buffer `#2` is freed automatically.
+:::
 
 ### Ownership of the elements
 
@@ -572,14 +588,14 @@ The ideas are the same everywhere. Rust's versions differ in three ways: every e
 :::quiz Check your understanding
 ? What is the difference between `v[10]` and `v.get(10)` on a vector with 3 elements?
 - There is none
-- `v[10]` returns `None` and `v.get(10)` panics
 + `v[10]` panics, and `v.get(10)` returns `None`
+- `v[10]` returns `None` and `v.get(10)` panics
 - Both return 0
 = Indexing is for cases where an invalid index is a bug. `get` returns an `Option`, so the program can handle a missing element.
 
 ? Which loop lets you change the elements of `v` in place?
-- `for x in &v`
 + `for x in &mut v`
+- `for x in &v`
 - `for x in v`
 - `for x in v.len()`
 = `&mut v` gives a mutable reference to each element, which you change with `*x = ...`. `&v` only reads, and `v` consumes the vector.
@@ -592,9 +608,9 @@ The ideas are the same everywhere. Rust's versions differ in three ways: every e
 = `entry` finds the place for the key, `or_insert(0)` fills it if it is empty and returns a mutable reference to the value, and `+= 1` increments it.
 
 ? You need to print names in alphabetical order with a number for each. Which collection gives you that order without sorting?
-- `HashMap<String, u32>`
-- `HashSet<String>`
 + `BTreeMap<String, u32>`
+- `HashSet<String>`
+- `HashMap<String, u32>`
 - `VecDeque<String>`
 = A `BTreeMap` always keeps its keys sorted. A `HashMap` returns its pairs in an arbitrary order.
 

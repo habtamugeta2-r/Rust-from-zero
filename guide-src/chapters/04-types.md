@@ -3,7 +3,7 @@
 @title Basic data types: numbers, truth values, characters and groups
 @short Basic data types
 @level beginner
-@time 35
+@time 45
 @learn Choose the right number type and explain what the names like `i32` and `u8` mean | Calculate with whole numbers and decimals, and convert between them | Work with true/false values and single characters | Group several values in a tuple or an array | Explain what Rust does when a number gets too big or an index is out of range
 
 A **[[type]]** tells Rust what a value represents and which operations make sense for it. For example, integer values can be added, while text is handled with text operations. A type also determines a value's representation and layout; some types, such as slices, need context to determine their size.
@@ -11,7 +11,7 @@ A **[[type]]** tells Rust what a value represents and which operations make sens
 ## Why types matter
 
 :::plain Type, value, and width in one paragraph
-A **type** is a promise about what a value is and what you may do with it: `i32` is a whole number stored in 32 bits, `f64` is a decimal, `bool` is `true` or `false`, `char` is one Unicode character. The **width** (the `32` in `i32`) sets both the range of values and the memory each one takes, which is why `u8` stops at 255 and `i32` does not. Rust fixes every value's type at compile time, so a mistake like adding text to a number is caught before the program runs, and a runtime overflow or bad index panics instead of quietly corrupting something.
+A **type** is a promise about what a value is and what you may do with it: `i32` is a whole number stored in 32 bits, `f64` is a decimal, `bool` is `true` or `false`, `char` is one Unicode [[character]]. The **width** (the `32` in `i32`) sets both the range of values and the memory each one takes, which is why `u8` stops at 255 and `i32` does not. Rust fixes every value's type at compile time, so a mistake like adding text to a number is caught before the program runs, and a runtime overflow or bad index panics instead of quietly corrupting something.
 :::
 
 :::analogy Types are like containers
@@ -89,6 +89,8 @@ fn main() {
 ```output
 8100000000 255 10 7
 ```
+
+Any number written directly in source code like `7u8` or `0xFF` is called a **[[literal]]**.
 
 ### Arithmetic
 
@@ -273,7 +275,7 @@ fn main() {
 44
 ```
 
-Converting to a *bigger* type is always safe. Converting to a *smaller* type with `as` can silently change the value, as the last lines show (300 − 256 = 44). Later you will meet safer conversions that report the problem instead ([chapter 34](#type-system)).
+Converting to a *bigger* type is always safe. Converting to a *smaller* type with `as` can silently change the value, as the last lines show (300 − 256 = 44). Later you will meet safer conversions that report the problem instead ([chapter 37](#type-system)).
 
 :::compare Why so strict?
 C, Java and JavaScript convert between number types automatically in many places, and the rules are complicated enough to cause real bugs: a large number quietly squeezed into a small type, or decimals quietly dropped. In Rust every conversion is visible in the code. You type a little more, and you can always see what happens.
@@ -468,16 +470,16 @@ fn main() {
 :::quiz Check your understanding
 ? Which of these values fits in a `u8`?
 - `-5`
-+ `200`
 - `256`
++ `200`
 - `3.5`
 = A `u8` holds whole numbers from 0 to 255. It cannot be negative (the `u` means unsigned), 256 is one too big, and 3.5 is not a whole number.
 
 ? What does `println!("{}", 9 / 2);` print?
 - `4.5`
 - `5`
-+ `4`
 - It does not compile
++ `4`
 = Both numbers are integers, so the result is an integer and the decimals are cut off. For 4.5 you would write `9.0 / 2.0`.
 
 ? Which line compiles?
@@ -489,15 +491,15 @@ fn main() {
 
 ? An array has 4 elements. What is the index of the last one?
 - 4
-+ 3
 - 5
++ 3
 - 0
 = Indexes start at 0, so four elements have the indexes 0, 1, 2 and 3. The last index is always the length minus one.
 
 ? What is the difference between `'x'` and `"x"`?
 - There is none
-- `'x'` is text and `"x"` is a number
 + `'x'` is a single character (`char`) and `"x"` is a string
+- `'x'` is text and `"x"` is a number
 - `"x"` can only hold letters
 = Single quotes make a `char`, which is always exactly one character. Double quotes make a string, which can hold any number of characters.
 :::

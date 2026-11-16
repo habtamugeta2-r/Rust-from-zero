@@ -4,7 +4,7 @@
 @title Project: a personal library with a web API and a CLI
 @short Capstone project
 @level advanced
-@time 240
+@time 95
 @learn Plan a program in layers: HTTP, rules, storage | Share one data model between a web API and a command-line tool | Store books in SQLite with SQLx | Import and export JSON with Serde | Handle errors uniformly with thiserror and anyhow | Test the API and the CLI without a network | Prepare the program for a server
 
 This capstone combines tools introduced earlier—Axum, SQLx, clap, Serde and Rust error-handling crates—in a personal library manager. The same application rules support both a web API and a command-line interface. You will add and search books, update their status, and import or export data, while keeping HTTP, domain logic and storage responsibilities distinct.
@@ -43,13 +43,13 @@ Both the command and the web API talk to the same database. The command-line too
 
 The project brings together the practical tools and backend stack:
 
-- **Axum** for HTTP ([chapter 64](#web))
-- **SQLx** with SQLite for storage ([chapter 68](#databases))
-- **Serde** for JSON ([chapter 78](#serde))
-- **clap** for the command line ([chapter 73](#cli))
+- **Axum** for HTTP ([chapter 69](#web))
+- **SQLx** with SQLite for storage ([chapter 73](#databases))
+- **Serde** for JSON ([chapter 45](#serde))
+- **clap** for the command line ([chapter 75](#cli))
 - **thiserror** and **anyhow** for errors ([chapter 23](#errors))
-- **tracing** for logs ([chapter 77](#crates))
-- **tokio** for the async runtime ([chapter 60](#async-ecosystem))
+- **tracing** for logs ([chapter 44](#crates))
+- **tokio** for the async runtime ([chapter 65](#async-ecosystem))
 
 It also keeps the promises of the tooling chapters: format, lint, test, document, and a CI-style checklist at the end.
 
@@ -273,7 +273,7 @@ impl Rating {
 }
 ```
 
-`NewBook` is what a client may send. `Book` is what the store returns — it adds the id and the creation date that the client never chooses. This separation, first seen with notes in [chapter 64](#web), keeps the client from inventing ids.
+`NewBook` is what a client may send. `Book` is what the store returns — it adds the id and the creation date that the client never chooses. This separation, first seen with notes in [chapter 69](#web), keeps the client from inventing ids.
 
 Now the one error type for the whole program. `thiserror` writes the `Display` and `Error` implementations; `#[from]` lets `?` convert SQLx errors.
 
@@ -793,11 +793,11 @@ pub fn router() -> Router<AppState> {
 }
 ```
 
-`LibraryError::into_response` is the one place that decides status codes and bodies. Database errors are logged with their details but the client sees only a neutral message — the security rule from [chapter 64](#web).
+`LibraryError::into_response` is the one place that decides status codes and bodies. Database errors are logged with their details but the client sees only a neutral message — the security rule from [chapter 69](#web).
 
 ## Step 6: settings and `main`
 
-Settings come from environment variables, never from the source code. For multi-environment config files, `.env` loading, and `secrecy::SecretString` redaction, see [chapter 64](#web) and [the configuration section](#cli) of the CLI chapter; for separating `/health/live` and `/health/ready`, see [chapter 65](#observability). `main` wires everything together: logging, the store, the router, and the server.
+Settings come from environment variables, never from the source code. For multi-environment config files, `.env` loading, and `secrecy::SecretString` redaction, see [chapter 69](#web) and [the configuration section](#cli) of the CLI chapter; for separating `/health/live` and `/health/ready`, see [chapter 70](#observability). `main` wires everything together: logging, the store, the router, and the server.
 
 ```rust proj=library file=src/config.rs
 use std::env;
@@ -1044,7 +1044,7 @@ The web API and the CLI see the same books because they share one `Library` and 
 
 ## Step 7: test the whole API
 
-The tests hand requests straight to the router, exactly as in [chapter 64](#web). No network port is opened, so the tests run in milliseconds.
+The tests hand requests straight to the router, exactly as in [chapter 69](#web). No network port is opened, so the tests run in milliseconds.
 
 ```rust proj=library file=tests/api.rs
 use axum::body::to_bytes;
@@ -1204,9 +1204,9 @@ Test that asking for 1 book from a database with 3 returns exactly 1, and that a
 :::
 
 :::exercise challenge Protect the writes
-Add an API key. `POST /books`, `PATCH /books/{id}` and `DELETE /books/{id}` require the header `x-api-key` to match the `API_KEY` environment variable. Reading stays open. Use Axum middleware from [chapter 64](#web), and keep the key out of the source code.
+Add an API key. `POST /books`, `PATCH /books/{id}` and `DELETE /books/{id}` require the header `x-api-key` to match the `API_KEY` environment variable. Reading stays open. Use Axum middleware from [chapter 69](#web), and keep the key out of the source code.
 ::hint
-Write a `require_key` middleware function like the one in [chapter 64](#web). Put the write routes in their own router with `.route_layer(middleware::from_fn(require_key))`. Read `API_KEY` in `Config` and pass it into `AppState`.
+Write a `require_key` middleware function like the one in [chapter 69](#web). Put the write routes in their own router with `.route_layer(middleware::from_fn(require_key))`. Read `API_KEY` in `Config` and pass it into `AppState`.
 ::solution
 ```rust
 // In config.rs, `pub api_key: Option<String>` is already read from `env::var("API_KEY").ok()`.
@@ -1256,22 +1256,22 @@ ALTER TABLE books ADD COLUMN last_visited TEXT;
 
 :::quiz Check your understanding
 ? The web API and the command-line tool share one data model. What does that give the reader?
-+ Both interfaces see the same books, so a change through one is visible through the other
-- The program compiles twice as fast
 - The CLI can call the HTTP routes
+- The program compiles twice as fast
++ Both interfaces see the same books, so a change through one is visible through the other
 - The database becomes optional
 = One model means one set of rules about what a book is. The two front ends are thin, and there is no second copy of the data to keep in step.
 
 ? When does the project use `thiserror`, and when `anyhow`?
-+ `thiserror` for the library's precise error enum, `anyhow` for the application's quick context
 - `thiserror` for the database, `anyhow` for the tests
++ `thiserror` for the library's precise error enum, `anyhow` for the application's quick context
 - `anyhow` for the library, `thiserror` for the binary
 - They are interchangeable
 = A library should tell its caller exactly which thing went wrong, so it defines an enum with `thiserror`. A binary that only prints a message can add context cheaply with `anyhow` and does not need a closed list of failures.
 
 ? Settings and secrets come from environment variables, and a missing secret stops the program at the start. Why fail at the start rather than at the first request?
-+ The failure happens while nothing is half-done, and the message names the missing variable
 - Environment variables are faster to read
++ The failure happens while nothing is half-done, and the message names the missing variable
 - Rust cannot read a file at run time
 - The program cannot start without a database
 = Starting up is the one moment when no work has been done yet, so a configuration mistake costs nothing. Later, the same mistake would arrive in the middle of a request.
@@ -1299,4 +1299,4 @@ ALTER TABLE books ADD COLUMN last_visited TEXT;
 
 ## What comes next
 
-You have reached the end of Part XII and the last of the eight core application projects. You now know how to trace Rust down to hardware, OS syscalls, networking, and storage, and how to build command-line tools, web services, and database-backed software. Head to Part XIII ([Crates](#crates)–[Where to go from here](#next)) for the ecosystem surveys and next steps.
+You have reached the end of Part 14 and the last of the core application projects. You now know how to trace Rust down to hardware, OS syscalls, networking, and storage, and how to build command-line tools, web services, and database-backed software. Head to Part 15 ([Apps with a user interface](#apps)–[Where to go from here](#next)) for the ecosystem surveys and next steps.

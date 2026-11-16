@@ -4,7 +4,7 @@
 @title Storage Hardware: HDD, NAND SSD, NVMe Queues & Block I/O
 @short Storage hardware & NVMe
 @level intermediate
-@time 35
+@time 30
 @learn Contrast HDD mechanical seek latency with NAND Flash SSD pages/blocks and NVMe multi-queue PCIe lanes | Explain SSD FTL (Flash Translation Layer), write amplification, TRIM/discard, and wear leveling | Trace a block request through Linux blk-mq, DMA scatter-gather lists, and hardware NVMe submission/completion queues | Understand power-loss hazards (disk write caches, fsync barriers, checksums) for databases
 
 A file write passes through several layers: a Rust API, the operating system's file system and caches, and eventually a storage device such as a hard disk or NVMe SSD. A successful `write_all` does not by itself promise that data has reached durable media, and a database commit's guarantees depend on its configuration and sync behaviour. This chapter traces the storage path; [file systems, the page cache and `mmap`](#filesystems-cache-mmap) covers the layer above it.
@@ -145,9 +145,9 @@ If a write tears mid-way across sectors, the beginning contains **new** payload 
 :::quiz Check your understanding
 ? Why can overwriting a single 4 KiB block in place on an SSD trigger several times more internal NAND writes (**write amplification**)?
 - NVMe SSDs encrypt every byte 4 times
-+ NAND Flash cannot overwrite cells in place; it writes the updated page elsewhere and later copies live neighbours out before erasing an entire multi-megabyte block
-- Linux always writes files twice
 - PCIe lanes duplicate every packet
+- Linux always writes files twice
++ NAND Flash cannot overwrite cells in place; it writes the updated page elsewhere and later copies live neighbours out before erasing an entire multi-megabyte block
 = Page-write / block-erase granularity mismatch inside NAND Flash requires out-of-place writes and background garbage collection.
 
 ? What happens when the Linux OS sends a **`TRIM` (`BLKDISCARD`)** command after deleting a large file?
@@ -159,15 +159,15 @@ If a write tears mid-way across sectors, the beginning contains **new** payload 
 
 ? Why did NVMe introduce up to 64,000 hardware submission/completion queues compared to legacy SATA/AHCI's single queue?
 - To hold 64,000 separate files open
-+ So every CPU core submits and completes I/O lock-free in its own queue (`blk-mq`) without spinning on a single global hardware queue lock
-- Because SATA cables only have 1 wire
 - To eliminate RAM completely
+- Because SATA cables only have 1 wire
++ So every CPU core submits and completes I/O lock-free in its own queue (`blk-mq`) without spinning on a single global hardware queue lock
 = Per-core submission/completion queues scale cleanly to dozens of cores and >1,000,000 IOPS.
 
 ? After `file.write_all(bytes)` returns `Ok(())`, why is data STILL not guaranteed safe across a sudden power cut?
 - Rust buffers every `File` automatically in user space
-+ `write()` copies into the kernel page cache (and drives often buffer writes in volatile drive DRAM cache) until `fsync()`/`sync_all()` flushes barriers down to non-volatile media
-- SSDs only persist writes every 10 minutes
 - `write_all` skips checksums
+- SSDs only persist writes every 10 minutes
++ `write()` copies into the kernel page cache (and drives often buffer writes in volatile drive DRAM cache) until `fsync()`/`sync_all()` flushes barriers down to non-volatile media
 = Both OS page caches and disk write caches require explicit `fsync`/`sync_all` flush commands for crash durability.
 :::

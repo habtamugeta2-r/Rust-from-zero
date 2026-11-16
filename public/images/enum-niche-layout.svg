@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 470" role="img" aria-labelledby="t d">
+  <title id="t">Option in memory: tag plus value versus niche optimisation</title>
+  <desc id="d">Option&lt;u32&gt; needs a separate tag word and takes 8 bytes, while Option&lt;&amp;u32&gt; uses address zero for None and fits in one 8-byte pointer.</desc>
+  <rect width="1200" height="470" rx="24" fill="#FCFBF8"/>
+  <rect x="1" y="1" width="1198" height="468" rx="23" fill="none" stroke="#E5E0D5" stroke-width="2"/>
+  <text x="48" y="58" font-family="system-ui, sans-serif" font-size="24" font-weight="700" fill="#1C1915">How Option sits in memory — no null pointer needed</text>
+  <text x="48" y="86" font-family="system-ui, sans-serif" font-size="15" fill="#6F6659">When a type already forbids a bit pattern (such as a zero address), Rust reuses it for None.</text>
+  <g font-family="system-ui, sans-serif">
+    <text x="72" y="140" font-size="14" font-weight="700" letter-spacing="1.5" fill="#BC4114">OPTION&lt;u32&gt; · EVERY BIT PATTERN IS VALID · 8 BYTES</text>
+    <rect x="48" y="156" width="530" height="206" rx="16" fill="#F7E8DE" stroke="#BC4114" stroke-width="2"/>
+    <g font-family="ui-monospace, monospace" font-size="15">
+      <rect x="74" y="182" width="120" height="58" rx="10" fill="#FFFFFF" stroke="#BC4114"/>
+      <text x="134" y="208" text-anchor="middle" font-weight="700" fill="#BC4114">tag = 0</text>
+      <text x="134" y="228" text-anchor="middle" font-size="12" fill="#6F6659">None</text>
+      <rect x="206" y="182" width="346" height="58" rx="10" fill="#F3F0E9" stroke="#D2CABB" stroke-dasharray="6 4"/>
+      <text x="379" y="216" text-anchor="middle" fill="#6F6659">unused (4 bytes)</text>
+
+      <rect x="74" y="256" width="120" height="58" rx="10" fill="#FFFFFF" stroke="#BC4114"/>
+      <text x="134" y="282" text-anchor="middle" font-weight="700" fill="#BC4114">tag = 1</text>
+      <text x="134" y="302" text-anchor="middle" font-size="12" fill="#6F6659">Some</text>
+      <rect x="206" y="256" width="346" height="58" rx="10" fill="#FFFFFF" stroke="#D2CABB"/>
+      <text x="379" y="291" text-anchor="middle" font-weight="700" fill="#1C1915">payload: 42_u32 (4 bytes)</text>
+    </g>
+    <text x="74" y="344" font-size="13.5" fill="#45403A">All 2³² numbers are valid u32s, so Rust stores a separate tag.</text>
+
+    <text x="646" y="140" font-size="14" font-weight="700" letter-spacing="1.5" fill="#0F766E">OPTION&lt;&amp;u32&gt; · NICHE OPTIMISATION · 8 BYTES</text>
+    <rect x="622" y="156" width="530" height="206" rx="16" fill="#E6F2F0" stroke="#0F766E" stroke-width="2"/>
+    <g font-family="ui-monospace, monospace" font-size="15">
+      <rect x="648" y="182" width="478" height="58" rx="10" fill="#FFFFFF" stroke="#0F766E"/>
+      <text x="887" y="207" text-anchor="middle" font-weight="700" fill="#1C1915">0x0000_0000_0000_0000</text>
+      <text x="887" y="228" text-anchor="middle" font-size="12" fill="#0F766E">None — references are never null, so 0 means None</text>
+
+      <rect x="648" y="256" width="478" height="58" rx="10" fill="#FFFFFF" stroke="#0F766E"/>
+      <text x="887" y="281" text-anchor="middle" font-weight="700" fill="#1C1915">0x0000_7ffd_9a10_4b20</text>
+      <text x="887" y="302" text-anchor="middle" font-size="12" fill="#0F766E">Some(&amp;val) — any non-zero aligned pointer</text>
+    </g>
+    <text x="648" y="344" font-size="13.5" fill="#45403A">Same 8-byte footprint as a C pointer, yet safe at compile time.</text>
+
+    <rect x="48" y="388" width="1104" height="52" rx="12" fill="#F3F0E9" stroke="#E5E0D5"/>
+    <text x="72" y="420" font-size="14.5" fill="#45403A">You must <tspan font-weight="700" fill="#1C1915">match</tspan> or unwrap before reading the value — the compiler never lets <tspan font-family="ui-monospace, monospace" fill="#B3261E">None</tspan> be dereferenced.</text>
+  </g>
+</svg>

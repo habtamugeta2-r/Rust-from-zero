@@ -3,7 +3,7 @@
 @title Apps with a user interface: WebAssembly, Tauri and native windows
 @short Apps and WebAssembly
 @level intermediate
-@time 100
+@time 65
 @learn Explain what WebAssembly is and what a module may and may not do | Compile a Rust function for the browser and call it from JavaScript | Change a web page from Rust, by hand and with the framework Leptos | Recognise the same ideas in Yew and Dioxus | Describe how a Tauri app divides the work between a web page and Rust | Tell apart the three designs of native GUI libraries, with egui, iced and Slint | Choose a toolkit for a given kind of app
 
 A program can present its interface in a browser, in a desktop window or in a native graphical toolkit. Rust can participate in each approach, but the architecture and boundary between Rust and the UI differ. This chapter compares WebAssembly-based browser code, desktop webview shells and native GUI libraries so you can choose a direction for a project.
@@ -33,14 +33,14 @@ Imagine you hire a brilliant calculator, a person who computes anything you ask 
 Three properties shape everything that follows:
 
 - **A module can only compute.** By itself it cannot read a file, open a network connection or change the page. It may call the functions that the surrounding program hands to it, the **imports**, and it offers functions of its own, the **exports**. The surrounding program is called the **host**. In a browser, the host is the page with its JavaScript. A closed box like this is called a **sandbox**.
-- **Only numbers cross the border.** A Wasm function takes numbers and returns numbers. A text or a struct must be copied into the memory of the module, and then its address and length are passed. You met this problem in [chapter 37](#ffi), and the solution is the same: generated **glue code**.
+- **Only numbers cross the border.** A Wasm function takes numbers and returns numbers. A text or a struct must be copied into the memory of the module, and then its address and length are passed. You met this problem in [chapter 40](#ffi), and the solution is the same: generated **glue code**.
 - **Rust needs no helper inside the module.** There is no garbage collector to ship, so the files are small. The first module of this chapter has 16 kilobytes.
 
 The tools:
 
 | Tool | What it does |
 |---|---|
-| target `wasm32-unknown-unknown` | lets `rustc` produce Wasm. In this target triple ([chapter 70](#cargo)), `wasm32` is the processor, and the two `unknown`s say: no vendor, no operating system |
+| target `wasm32-unknown-unknown` | lets `rustc` produce Wasm. In this target triple ([chapter 32](#cargo)), `wasm32` is the processor, and the two `unknown`s say: no vendor, no operating system |
 | crate `wasm-bindgen` | generates the glue: Rust code on one side of the border, a JavaScript file on the other |
 | program `wasm-pack` | one command that runs Cargo, the glue generator and a size optimiser, and puts the result into a folder `pkg` |
 
@@ -53,7 +53,7 @@ cargo install wasm-pack
 
 ### A Rust function for a web page
 
-Create a library with `cargo new --lib wasm_hello`. The manifest asks for a `cdylib`, the kind of library that a foreign host loads ([chapter 37](#ffi)):
+Create a library with `cargo new --lib wasm_hello`. The manifest asks for a `cdylib`, the kind of library that a foreign host loads ([chapter 40](#ffi)):
 
 ```toml proj=wasm_hello file=Cargo.toml
 [package]
@@ -173,7 +173,7 @@ export function greet(name) {
 }
 ```
 
-This is the hand-written FFI of [chapter 37](#ffi), written for you by a tool.
+This is the hand-written FFI of [chapter 40](#ffi), written for you by a tool.
 :::
 
 Now the page. Put this file next to `Cargo.toml`:
@@ -563,7 +563,7 @@ What does a framework cost in download size? Measured for the counters above, as
 | Leptos | 210 KB | 54 KB |
 | Yew | 338 KB | 93 KB |
 
-These are the sizes with default settings. The size settings of [chapter 70](#cargo) (`opt-level = "z"`, `lto = true`) make them smaller. Most of the size is the framework itself, which is paid for only once.
+These are the sizes with default settings. The size settings of [chapter 32](#cargo) (`opt-level = "z"`, `lto = true`) make them smaller. Most of the size is the framework itself, which is paid for only once.
 
 ### One language on both sides
 
@@ -767,14 +767,14 @@ How the two halves talk:
 - `#[tauri::command]` puts a function on the menu. The page calls it by name with `invoke("file_stats", { path: … })`.
 - The arguments travel as JSON, and Serde fills the Rust parameters from it. The return value travels back the same way: `FileStats` derives `Serialize` and arrives as a JavaScript object with the fields `lines`, `words` and `bytes`.
 - `invoke` returns a promise. `Ok(value)` fulfils it, and `Err(message)` rejects it, which lands in the `catch` block. The error type must be serialisable, and a `String` is the simplest choice.
-- `State<'_, History>` is data that lives as long as the app. It is registered once with `.manage(…)`, and any command can ask for it as a parameter. Several commands may run at the same moment, so the data sits in a `Mutex` ([chapter 56](#shared-state)).
+- `State<'_, History>` is data that lives as long as the app. It is registered once with `.manage(…)`, and any command can ask for it as a parameter. Several commands may run at the same moment, so the data sits in a `Mutex` ([chapter 61](#shared-state)).
 - `generate_handler![…]` is the menu itself. A function that is not listed there cannot be called from the page.
 
 :::warn Names change their style at the border
 JavaScript names are written in camelCase, and Tauri converts the names of arguments. A Rust parameter `file_path` must be passed from JavaScript as `filePath`. With the wrong spelling, the call is rejected with this message: "invalid args `filePath` for command `file_stats`: command file_stats missing required key filePath".
 :::
 
-Treat the page like a client on the network. Check every argument inside the command, as you do in a web handler ([chapter 64](#web)). Tauri adds a second line of defence, the **capabilities**: the files in `src-tauri/capabilities` list which built-in features of Tauri a window may use, such as file dialogs, notifications or the clipboard. What is not listed is refused. Most of these features come as plug-in crates with names like `tauri-plugin-dialog`.
+Treat the page like a client on the network. Check every argument inside the command, as you do in a web handler ([chapter 69](#web)). Tauri adds a second line of defence, the **capabilities**: the files in `src-tauri/capabilities` list which built-in features of Tauri a window may use, such as file dialogues, notifications or the clipboard. What is not listed is refused. Most of these features come as plug-in crates with names like `tauri-plugin-dialog`.
 
 `cargo tauri build` produces the installers for the system it runs on. For the example, the package for Debian and Ubuntu came to 1.8 MB, with a program of 5 MB inside. The package names the WebKitGTK library of the system as a requirement, which is exactly why it can be this small.
 
@@ -935,7 +935,7 @@ fn main() -> Result<(), slint::PlatformError> {
 - `text: "Clicks: " + root.count;` is a **binding**: a formula as in the spreadsheet. When `count` changes, the text follows.
 - Simple reactions stay in the markup: `clicked => { root.count += 1; }`.
 - `callback reset();` declares an event that the Rust side handles. The macro generates `on_reset`, which takes a closure.
-- The closure must not own the window, because the window owns the closure, and the two would keep each other alive for ever. `as_weak()` gives a weak handle, the same idea as `Weak` in [chapter 32](#smart-pointers).
+- The closure must not own the window, because the window owns the closure, and the two would keep each other alive for ever. `as_weak()` gives a weak handle, the same idea as `Weak` in [chapter 35](#smart-pointers).
 
 Slint was designed for devices with small screens and little memory as well as for desktops, and the same markup can be used from C++, JavaScript and Python. Read its licence before you use it in a product: Slint is offered under the GPL, under a free licence with conditions, and under a paid one. egui and iced use the permissive MIT licence (egui also Apache-2.0), like most Rust crates.
 
@@ -950,7 +950,7 @@ Slint was designed for devices with small screens and little memory as well as f
 These projects do not all promise the same stability. The egui documentation warns that it is under heavy development and that releases may include breaking changes. The iced project describes itself as experimental and its own documentation may assume advanced Rust knowledge. Before adopting either for a long-lived product, check the exact release's changelog, minimum supported Rust version, supported platforms, and migration policy. The examples here teach their core models; they are not a guarantee of API stability.
 :::
 
-More names you will meet: `gtk4` with `relm4` on top binds the GTK toolkit of the GNOME desktop. `cxx-qt` connects Rust to the Qt toolkit. And `ratatui` builds full-screen interfaces inside a terminal ([chapter 73](#cli)).
+More names you will meet: `gtk4` with `relm4` on top binds the GTK toolkit of the GNOME desktop. `cxx-qt` connects Rust to the Qt toolkit. And `ratatui` builds full-screen interfaces inside a terminal ([chapter 75](#cli)).
 
 :::compare GUI libraries elsewhere
 egui is modelled on Dear ImGui, a C++ library that is popular for tools in game studios. The Elm architecture of iced is the idea behind Redux in the JavaScript world. The markup of Slint will remind you of QML from Qt, and its bindings of SwiftUI and Jetpack Compose. In C++, C# or Swift, one toolkit usually dominates a platform. Rust has no such standard yet, and several good candidates.
@@ -995,27 +995,27 @@ Whichever toolkit you choose, put the rules of your program into plain functions
 ? What can a WebAssembly module do without any help from its host?
 - Read files in the folder it was loaded from
 - Change the web page it runs in
-+ Compute, using its own memory
 - Send network requests to the server it came from
++ Compute, using its own memory
 = A module is a sandbox. Files, the network and the page are reachable only through functions that the host passes in as imports. This is what `web-sys` and WASI do.
 
 ? Why does the hand-written counter call `on_click.forget()`?
 - To make the closure run faster
-- Because closures cannot be dropped in Wasm
 + The page keeps calling the closure after `start` has returned, so it must not be dropped at the end of the function
+- Because closures cannot be dropped in Wasm
 - To remove the event listener again
 = JavaScript holds only a reference to the closure and knows nothing about Rust ownership. Without `forget`, the closure would be dropped at the end of `start`, and the next click would fail.
 
 ? In the Leptos counter, what happens when `set_count.update(…)` runs?
 - The function `Counter` runs again and builds a new page
-- The browser reloads the page
 + Only the places in the page that read `count` are updated
+- The browser reloads the page
 - Nothing, until the next click
 = A signal knows its readers. The component function ran once, and afterwards the signal updates exactly the text node and the closure that use it.
 
 ? Why is a Tauri app much smaller than an Electron app?
-- Rust code is compressed more strongly
 + It uses the webview that the operating system already has, where Electron ships a whole browser
+- Rust code is compressed more strongly
 - It downloads the browser when it first starts
 - It cannot show pictures
 = The window of a Tauri app is drawn by the system's own web component. The app contains only your page and the compiled Rust program.
@@ -1023,8 +1023,8 @@ Whichever toolkit you choose, put the rules of your program into plain functions
 ? Which sentence describes an immediate mode library such as egui?
 - Widgets are objects that are created once and changed through callbacks
 - Every change of the state is a message for one `update` function
-+ The code describes the whole window again for every frame, and a button reports its click in the same call that draws it
 - The interface is written in a separate markup language
++ The code describes the whole window again for every frame, and a button reports its click in the same call that draws it
 = The second answer is the Elm architecture of iced, and the last one is Slint. In egui, `if ui.button("…").clicked()` both draws and asks.
 :::
 

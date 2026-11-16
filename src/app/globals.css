@@ -492,8 +492,7 @@ body {
 }
 
 /* Chapter figures: self-contained diagram plates with a quiet caption.
-   The plate keeps its paper background in both themes, like a printed
-   figure pasted into the page — that contrast is deliberate. */
+   Light and dark SVG plates swap cleanly with the active theme. */
 .guide-figure {
   margin: 1.75rem 0;
   overflow: hidden;
@@ -507,6 +506,21 @@ body {
   display: block;
   width: 100%;
   height: auto;
+}
+
+.guide-figure img.guide-figure-dark,
+.guide-lightbox img.guide-figure-dark {
+  display: none;
+}
+
+.dark .guide-figure img.guide-figure-light,
+.dark .guide-lightbox img.guide-figure-light {
+  display: none;
+}
+
+.dark .guide-figure img.guide-figure-dark,
+.dark .guide-lightbox img.guide-figure-dark {
+  display: block;
 }
 
 .guide-figure figcaption {
@@ -840,6 +854,16 @@ body {
   .app-sidebar,
   .chapter-aside,
   .app-scrim {
+    display: none !important;
+  }
+
+  .guide-figure img.guide-figure-light,
+  .guide-lightbox img.guide-figure-light {
+    display: block !important;
+  }
+
+  .guide-figure img.guide-figure-dark,
+  .guide-lightbox img.guide-figure-dark {
     display: none !important;
   }
 

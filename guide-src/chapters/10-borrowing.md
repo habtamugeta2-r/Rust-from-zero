@@ -3,7 +3,7 @@
 @title References and borrowing
 @short References and borrowing
 @level beginner
-@time 45
+@time 40
 @learn Let a function use a value without taking ownership of it | Tell shared references (`&`) from mutable references (`&mut`) and use each | State the borrowing rules and explain which bugs they prevent | Read and fix the borrow checker's most common error messages
 
 Imagine asking a mechanic to inspect your car: you want them to look at it without transferring ownership. A function often needs the same arrangement with a value. Rust calls temporary access without taking ownership a **borrow**; a reference represents that access.
@@ -220,7 +220,7 @@ Why would that be dangerous? A `Vec` stores its elements in one block on the hea
 In C++ the equivalent code compiles without complaint, and the program then reads freed memory. The bug even has a name there: *iterator invalidation*. It may seem to work in testing and crash, or silently produce garbage, in production. Java and Python avoid the crash with a garbage collector, but have a related problem: changing a list while looping over it gives an error at run time or wrong results. Rust rejects the program at compile time.
 :::
 
-The "many readers or one writer" rule also prevents **data races**: two parts of a program changing the same data at the same time. You will see in [Part IX](#threads) that this makes programs that run on several processor cores far safer in Rust than in other languages.
+The "many readers or one writer" rule also prevents **data races**: two parts of a program changing the same data at the same time. You will see in [Part 11](#threads) that this makes programs that run on several processor cores far safer in Rust than in other languages.
 
 :::details Under the hood: references are addresses with LLVM `noalias` superpowers
 In machine code, `&T` and `&mut T` are just plain 64-bit memory addresses (one machine word, unless `T` is a slice or `dyn Trait`). What makes them special is what the borrow checker guarantees *before* LLVM optimises the code: every `&T` is guaranteed non-null and aligned, and every `&mut T` is annotated `noalias` in LLVM IR, letting the optimiser cache reads in CPU registers without worrying that another pointer quietly rewrote the same address.
@@ -280,7 +280,7 @@ fn main() {
 ```error auto
 ```
 
-When several names lead to the same value, programmers call it **aliasing**. Every memory bug in this chapter has the same shape: one name changes or frees the data while another name still looks at it.
+When several names lead to the same value, programmers call it **[[aliasing]]**. Every memory bug in this chapter has the same shape: one name changes or frees the data while another name still looks at it.
 
 :::key One sentence to remember
 A value may be reachable through several names, or it may be changed. Never both at the same moment.
@@ -363,14 +363,14 @@ When the borrow checker rejects your code, it has usually found a real problem, 
 :::quiz Check your understanding
 ? What does `&name` do?
 - It copies `name`
-- It moves `name`
 + It creates a reference to `name`, so the value can be used without taking ownership
+- It moves `name`
 - It makes `name` mutable
 = `&` borrows. The owner stays the owner, and the reference only allows access for a while.
 
 ? Which combination is allowed at the same moment for one value?
-+ Three shared references
 - One shared reference and one mutable reference
++ Three shared references
 - Two mutable references
 - One mutable reference and two shared references
 = Any number of readers may exist together. A writer must be alone.
@@ -382,9 +382,9 @@ let first = &list[0];
 list.push(4);
 println!("{first}");
 ```
-- `push` needs an owned value
-- A `Vec` cannot be changed after it is created
 + `push` needs a mutable borrow of `list` while the shared borrow `first` is still in use. The push could move the elements and leave `first` dangling
+- A `Vec` cannot be changed after it is created
+- `push` needs an owned value
 - `first` is not declared with `mut`
 = The shared reference is used after the push, so both borrows would be active together. Growing the vector can move its data to a new place in memory.
 

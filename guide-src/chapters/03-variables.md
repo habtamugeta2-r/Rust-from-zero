@@ -3,10 +3,10 @@
 @title Variables: giving names to values
 @short Variables and mutability
 @level beginner
-@time 25
+@time 40
 @learn Store a value under a name with `let` and use it | Explain why Rust variables cannot change unless you write `mut` | Use shadowing, scopes and constants correctly | Read the compiler errors that variables cause
 
-When a value is used more than once, repeating it by hand makes changes error-prone. A variable gives a value a name so later code can refer to it. In Rust, `let` creates a binding; the value's type is checked, and the binding is immutable unless you explicitly choose `mut`. This chapter starts with those rules and builds towards scopes and constants.
+When a value is used more than once, repeating it by hand makes changes error-prone. A [[variable]] gives a value a name so later code can refer to it. In Rust, `let` creates a [[binding]]; the value's type is checked, and its [[mutability]] is off by default unless you explicitly choose `mut`. This chapter starts with those rules and builds towards scopes and constants.
 
 ## Your first variable
 
@@ -221,7 +221,7 @@ fn main() {
 A block is a room. Things you bring into the room stay in the room, and when you leave, they are cleared away. From inside you can look out through the window and see what is in the bigger room around you. From outside you cannot see in.
 :::
 
-Shadowing inside a block lasts only until the block ends. Predict the output before you read it:
+[[Shadowing|shadowing]] inside a block lasts only until the block ends. Predict the output before you read it:
 
 ```rust run
 fn main() {
@@ -287,7 +287,7 @@ An hour has 3600 seconds.
 Constants give a meaning to "magic numbers". `price * VAT_RATE` explains itself. `price * 15` does not.
 
 :::details `const` and `static`
-You will sometimes meet a second keyword, `static`. Both `const` and `static` hold a value that lasts for the whole program, but they do it in different ways. A `const` is a fixed value that the compiler copies into every place it is used. A `static` lives in one fixed spot in memory for the program's lifetime, so it has an address of its own — a difference that only matters in the rare cases where you need a place in memory, not just a value. There is also a `static mut`, a shared value that may change. That is a deliberate exception to Rust's usual caution, and you should treat one the same way you would treat a variable that every part of the program can reach and rewrite. For almost everything in this guide, `const` is the right tool.
+You will sometimes meet a second keyword for a [[static]] value, `static`. Both `const` and `static` hold a value that lasts for the whole program, but they do it in different ways. A `const` is a fixed value that the compiler copies into every place it is used. A `static` lives in one fixed spot in memory for the program's lifetime, so it has an address of its own — a difference that only matters in the rare cases where you need a place in memory, not just a value. There is also a `static mut`, a shared value that may change. That is a deliberate exception to Rust's usual caution, and you should treat one the same way you would treat a variable that every part of the program can reach and rewrite. For almost everything in this guide, `const` is the right tool.
 :::
 
 :::details Under the hood: registers, stack slots, and `mut`
@@ -328,16 +328,16 @@ fn main() {
 }
 ```
 - `2`
-+ `4`
 - `104`
++ `4`
 - It does not compile
 = The second `let` shadows `n` with 2 × 2 = 4. The `let` inside the block creates another `n` (104), but that one disappears when the block ends. Outside, `n` is still 4. (The compiler will warn that the inner `n` is never used.)
 
 ? Which name follows Rust's style for a normal variable?
 - `PlayerScore`
 - `playerScore`
-+ `player_score`
 - `PLAYER_SCORE`
++ `player_score`
 = Variables use snake_case. `SCREAMING_SNAKE_CASE` is for constants, and the capitalised styles are used for other things you will meet later.
 
 ? When should you use `const` instead of `let`?

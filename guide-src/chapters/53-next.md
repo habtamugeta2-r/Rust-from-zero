@@ -4,7 +4,7 @@
 @title Where to go from here
 @short Where to go from here
 @level all
-@time 25
+@time 50
 @learn Choose what to study next, by goal and by level | Find the best book or course for each topic | Practise with small tasks and with real projects | Stay up to date and take part in the Rust community
 
 This guide introduced Rust, computer-systems foundations and practical projects; it is a starting point, not an endpoint. Use this chapter to choose what to study next, find resources for a particular topic, practise with new projects, and keep up with changes in the Rust ecosystem.
@@ -96,11 +96,11 @@ Every ecosystem has corners that a guide starting from zero cannot teach honestl
 | Blockchain and Web3 (`solana`, `anchor`) | Domain-specific, fast-moving, and needs a blockchain mental model before Rust helps | the [Solana developer docs](https://solana.com/developers) |
 | Writing a full custom OS kernel from scratch (`blog_os`, Rust for Linux) | This guide teaches hardware, virtual memory, syscalls, and OS internals from user space; writing an entire bootable kernel requires a dedicated book | [Writing an OS in Rust](https://os.phil-opp.com) and *Operating Systems: Three Easy Pieces* |
 | Robotics (ROS 2 bindings) | The hard part is robotics, not Rust | [`r2r`](https://docs.rs/r2r) and the ROS 2 tutorials |
-| High-frequency trading and market data | Latency engineering at that level is its own discipline, and much of it is closed-source | measure first: [chapter 74](#performance) |
+| High-frequency trading and market data | Latency engineering at that level is its own discipline, and much of it is closed-source | measure first: [chapter 76](#performance) |
 | Cloud-provider SDKs (`aws-sdk-*`, `azure_*`, `google-cloud-*`) | Each vendor ships its own generated SDK and its own documentation; the pattern is the same for all of them | the vendor's Rust SDK docs, and [`object_store`](https://docs.rs/object_store) for a vendor-neutral API |
-| GraphQL and full-screen terminal UIs (`async-graphql`, `ratatui`) | Real subjects with their own books. This guide names them, says when they are the right choice, and stops there rather than half-teaching them | the crate books linked in the table above and in [chapter 73](#cli) |
+| GraphQL and full-screen terminal UIs (`async-graphql`, `ratatui`) | Real subjects with their own books. This guide names them, says when they are the right choice, and stops there rather than half-teaching them | the crate books linked in the table above and in [chapter 75](#cli) |
 
-Everything else you meet in [chapter 77](#crates) is either taught in a chapter or described with advice about when to choose it. If you find a crate that is only a name in a table, that is a gap worth reporting.
+Everything else you meet in [chapter 44](#crates) is either taught in a chapter or described with advice about when to choose it. If you find a crate that is only a name in a table, that is a gap worth reporting.
 
 ## Practice
 
@@ -140,7 +140,7 @@ Code to learn from, once your own projects raise questions:
 
 - A new stable version of Rust appears **every six weeks**. Run `rustup update` now and then. The [Rust blog](https://blog.rust-lang.org) explains what each version brings.
 - **[This Week in Rust](https://this-week-in-rust.org)** is a weekly newsletter: articles, new crates, events, jobs.
-- A new **edition** arrives about every three years. `cargo fix --edition` does most of the moving ([chapter 70](#cargo)).
+- A new **edition** arrives about every three years. `cargo fix --edition` does most of the moving ([chapter 32](#cargo)).
 - Talks from conferences such as RustConf, EuroRust and RustNation are published as videos.
 
 This guide was tested with Rust 1.100. Rust keeps old code working, so the examples will compile with later versions. Crates outside the standard library move faster. When an example with a crate no longer compiles, look at the changelog of that crate first.
@@ -178,7 +178,7 @@ This exercise trains the habit of making your confusion precise. The goal is not
 
 ## Giving back
 
-Open-source projects need more than code. Good first contributions are a fix in the documentation of a crate after it confused you, a missing example, a test for a reported bug, or a clear bug report with a small program that shows the problem. Many projects mark suitable tasks with a label such as "good first issue". And when you have written a tool that others could use, publish it ([chapter 70](#cargo)).
+Open-source projects need more than code. Good first contributions are a fix in the documentation of a crate after it confused you, a missing example, a test for a reported bug, or a clear bug report with a small program that shows the problem. Many projects mark suitable tasks with a label such as "good first issue". And when you have written a tool that others could use, publish it ([chapter 32](#cargo)).
 
 :::exercise practice Write a question worth answering
 Think of the last problem you could not solve. Write the forum post you would send: what you wanted, the smallest program that shows the problem, the full compiler message, and what you expected instead. Do not send it anywhere.
@@ -221,37 +221,37 @@ Do this once and you are a contributor to the Rust ecosystem, which is a differe
 
 :::quiz Check your understanding
 ? How often does Rust publish a new stable release?
-- Once a year
 + Every six weeks
+- Once a year
 - Every three years
 - Whenever the version number reaches a round number
 = Rust ships a stable release every six weeks. **Editions** — batches of opt-in language changes — arrive roughly every three years, so "a new version" and "a new edition" are different events.
 
 ? Your program compiles today. A new stable release arrives. What happens to it?
 - It stops compiling until you move to the new edition
-+ It keeps compiling: stable releases are backwards compatible, and editions are opt-in
 - It compiles only after `cargo update`
++ It keeps compiling: stable releases are backwards compatible, and editions are opt-in
 - Nothing at all, unless you also upgrade your crates
 = Backwards compatibility is the promise: code that compiles on one stable release keeps compiling on later ones. Moving to a new edition is a separate, opt-in step in `Cargo.toml`, helped by `cargo fix --edition`.
 
 ? Two crates do the same job. Which signal tells you the most?
-- The longer README
-- Which one a search engine ranks first
 + When it was last released, whether issues get answered, and whether the docs contain worked examples
+- Which one a search engine ranks first
+- The longer README
 - The shorter name
 = Popularity is a proxy, not evidence. A recent release, a maintainer who answers issues, and documentation with real examples tell you what the next year of your project will feel like.
 
 ? Which is the best first contribution to the ecosystem?
 - Rewriting a crate's core algorithm
-+ Fixing a confusing sentence in documentation that confused you an hour ago
-- Opening an issue that says "does not work"
 - Asking a maintainer to add the feature you want
-= Start where your own confusion was. A documentation fix is small, obviously useful, and almost always welcome; the larger contributions come later, once you know the code.
+- Opening an issue that says "does not work"
++ Fixing a confusing sentence in documentation that confused you an hour ago
+= Start where your own confusion was. A documentation fix is small, immediately useful, and almost always welcome; the larger contributions come later, once you know the code.
 
 ? This guide says a topic is "out of scope". What does that mean in practice?
-- The topic does not matter
-- The topic is only for experts
 + The topic is named with a reason and a direction, and this guide deliberately does not pretend to teach it
+- The topic is only for experts
+- The topic does not matter
 - The topic is covered in a later edition of the guide
 = The coverage policy is written down in [chapter 0](#start) and applied here: taught, named with advice, or declared out of scope. A declared gap is honest; a silent one is a trap for the reader.
 :::

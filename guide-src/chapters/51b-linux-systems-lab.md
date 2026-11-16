@@ -4,8 +4,8 @@
 @title Linux Systems Lab: Process & Runtime Inspector
 @short Linux systems inspector lab
 @level intermediate
-@time 45
-@learn Combine Parts I-XI systems concepts into a working Linux /proc & syscall diagnostic tool in Rust | Parse ELF headers, /proc/self/maps segments, /proc/self/status kernel metrics, /proc/net/tcp sockets and FD tables from scratch | Count every heap allocation with a global allocator and inspect the same program with readelf, strace, perf, gdb and Valgrind | Verify systems invariants (alignment, page masks, endianness, RAII cleanup) with deterministic unit tests
+@time 85
+@learn Combine Parts 1–13 systems concepts into a working Linux /proc & syscall diagnostic tool in Rust | Parse ELF headers, /proc/self/maps segments, /proc/self/status kernel metrics, /proc/net/tcp sockets and FD tables from scratch | Count every heap allocation with a global allocator and inspect the same program with readelf, strace, perf, gdb and Valgrind | Verify systems invariants (alignment, page masks, endianness, RAII cleanup) with deterministic unit tests
 
 This lab combines ideas from the hardware, compiler, memory, operating-system and storage chapters in a practical Linux program. You will inspect process metadata and executable files, parse selected `/proc` entries, and compare what your program reports with established command-line tools. Each inspection is scoped to Linux interfaces, which can vary across kernel versions and environments.
 
@@ -44,7 +44,7 @@ We structure our systems lab cleanly as three small, focused modules that compos
 
 Notice how cleanly every part connects directly to chapters you just finished:
 - `elf_probe` uses exact byte offsets from **[Chapter 7](#linking-elf)** and `from_le_bytes` / `from_be_bytes` from **[Chapter 3](#bits-bytes-representation)**.
-- `proc_maps` parses the exact `r--p` / `r-xp` / `rw-p` virtual memory areas and `4 KiB` page counts from **[Chapter 41](#virtual-memory-address-spaces)**.
+- `proc_maps` parses the exact `r--p` / `r-xp` / `rw-p` virtual memory areas and `4 KiB` page counts from **[Chapter 46](#virtual-memory-address-spaces)**.
 - `proc_status` reads the exact `task_struct` metrics from **[Chapters 47 & 48](#kernel-syscalls-processes)** (`kernel-syscalls-processes` and [`processes-threads-scheduling`](#processes-threads-scheduling)).
 
 ## Step 1: Zero-Copy ELF64 Header Inspector
@@ -253,7 +253,7 @@ fn main() {
 
 ## Step 2c: Counting every allocation with a global allocator
 
-Parts IV and VI explained the allocator from the outside. This lab shows it from the inside, with about thirty lines: a `#[global_allocator]` that wraps `System` and counts every call. It compiles on stable Rust and needs no crate:
+Parts 6 and 8 explained the allocator from the outside. This lab shows it from the inside, with about thirty lines: a `#[global_allocator]` that wraps `System` and counts every call. It compiles on stable Rust and needs no crate:
 
 ```rust run nocmp
 use std::alloc::{GlobalAlloc, Layout, System};
@@ -479,23 +479,23 @@ Inside the `{ ... }` scope while `_f` is alive, `/proc/self/fd` rises by **`+1`*
 
 ? Why does `sysinspect` open `/proc/self/exe` rather than trusting `std::env::args().next()` to inspect its own binary?
 - `args[0]` is always encrypted
-+ `args[0]` is just an arbitrary string passed by the parent shell (`execve` can lie about `argv[0]`), whereas `/proc/self/exe` is a kernel symlink straight to the running binary's actual inode
-- `/proc/self/exe` skips the OS page cache
 - `env::args()` requires `unsafe`
+- `/proc/self/exe` skips the OS page cache
++ `args[0]` is just an arbitrary string passed by the parent shell (`execve` can lie about `argv[0]`), whereas `/proc/self/exe` is a kernel symlink straight to the running binary's actual inode
 = The kernel's `/proc/self/exe` link always identifies the exact running executable file reliably.
 
 ? What does finding an `rwxp` mapping inside `/proc/<pid>/maps` tell a security auditor?
-- The process has zero heap allocations
 + A memory page is simultaneously **writable and executable**, violating W^X hardening
+- The process has zero heap allocations
 - ASLR is enabled cleanly
 - The stack guard page is active
 = Standard safe Rust programs keep code `r-xp` and data `rw-p`, never `rwxp`.
 
 ? In our lab's `parse_elf_header` function, why did it check `bytes[5]` (`1` vs `2`) before reading `e_type` and `e_entry`?
 - To measure CPU clock speed
-+ Because ELF supports both little-endian (`1`, x86-64/ARM64) and big-endian (`2`, older SPARC/PowerPC/MIPS) binaries, changing how 16-bit and 64-bit integers decode
-- To detect whether the binary uses tokio
 - To count open file descriptors
+- To detect whether the binary uses tokio
++ Because ELF supports both little-endian (`1`, x86-64/ARM64) and big-endian (`2`, older SPARC/PowerPC/MIPS) binaries, changing how 16-bit and 64-bit integers decode
 = Reading the ELF data-encoding byte at offset `5` ensures integers decode properly across both little- and big-endian architectures.
 :::
 
