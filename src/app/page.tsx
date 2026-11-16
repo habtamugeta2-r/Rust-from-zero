@@ -187,6 +187,13 @@ export default function HomePage() {
             Let&apos;s get started <ArrowRight size={16} />
           </Link>
         </div>
+        <div className="landing-container landing-attribution">
+          <a href="https://github.com/rust-lang/rust-artwork/tree/master/logo">Rust logo</a> by the
+          Rust Project, used under{" "}
+          <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>; recolored and used
+          as a browser icon. Rust from Zero is an independent guide and is not endorsed by the Rust
+          Project.
+        </div>
       </footer>
     </div>
   );

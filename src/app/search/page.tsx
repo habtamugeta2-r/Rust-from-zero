@@ -71,7 +71,7 @@ export default async function SearchPage({
         </label>
         <button
           type="submit"
-          className="inline-flex h-11 shrink-0 items-center gap-2 rounded-well bg-[var(--g-accent)] px-4 font-sans text-sm font-bold text-white shadow-card transition-colors hover:bg-[var(--g-accent-hover)]"
+          className="inline-flex h-11 shrink-0 items-center gap-2 rounded-well bg-[var(--g-accent)] px-4 font-sans text-sm font-bold text-[var(--g-on-accent)] shadow-card transition-colors hover:bg-[var(--g-accent-hover)]"
         >
           Search
         </button>

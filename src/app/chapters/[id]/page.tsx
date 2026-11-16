@@ -12,6 +12,7 @@ import { hasTableOfContents } from "@/lib/headings";
 import { loadChapter, loadGuide } from "@/lib/guide-parser";
 import type { ChapterSummary } from "@/lib/guide-types";
 import { chapterJsonLd, chapterMetadata } from "@/lib/seo";
+import { partHref } from "@/lib/navigation";
 
 export function generateStaticParams() {
   const guide = loadGuide();
@@ -73,7 +74,14 @@ export default async function ChapterPage({ params }: { params: Promise<{ id: st
                 </Link>
               </li>
               <li aria-hidden="true">/</li>
-              <li className="max-w-full truncate">{chapter.partTitle}</li>
+              <li className="max-w-full truncate">
+                <Link
+                  href={partHref(chapter.partTitle)}
+                  className="hover:text-[var(--g-accent)] hover:underline"
+                >
+                  {chapter.partTitle}
+                </Link>
+              </li>
               <li aria-hidden="true">/</li>
               <li className="max-w-full truncate text-[var(--g-ink2)]" aria-current="page">
                 {chapter.short}
@@ -82,7 +90,7 @@ export default async function ChapterPage({ params }: { params: Promise<{ id: st
           </nav>
 
           {/* Chapter header */}
-          <header className="mb-9 border-b border-[var(--g-line)] pb-7">
+          <header id="chapter-top" className="mb-9 border-b border-[var(--g-line)] pb-7">
             <div className="flex flex-wrap items-center gap-x-3 gap-y-2 font-sans text-xs font-semibold">
               <span className="chapter-eyebrow">{eyebrow}</span>
               <span className="hidden text-[var(--g-ink3)] sm:inline">{chapter.partTitle}</span>
@@ -95,7 +103,7 @@ export default async function ChapterPage({ params }: { params: Promise<{ id: st
               )}
             </div>
 
-            <h1 className="mt-5 font-sans text-[34px] leading-[1.12] font-semibold tracking-[-0.045em] text-balance text-[var(--g-ink)] sm:text-[46px]">
+            <h1 className="chapter-title mt-5 font-sans text-[34px] leading-[1.12] font-semibold tracking-[-0.045em] text-balance text-[var(--g-ink)] sm:text-[46px]">
               {chapter.title}
             </h1>
 
@@ -104,7 +112,7 @@ export default async function ChapterPage({ params }: { params: Promise<{ id: st
                 <div className="mb-3 text-[11px] font-bold tracking-[0.08em] text-[var(--g-ink3)] uppercase">
                   In this chapter you will learn
                 </div>
-                <ul className="grid gap-x-6 gap-y-2 text-sm leading-relaxed text-[var(--g-ink2)] sm:grid-cols-2">
+                <ul className="chapter-objectives-list grid gap-x-6 gap-y-2 text-sm leading-relaxed text-[var(--g-ink2)] sm:grid-cols-2">
                   {chapter.learnNodes.map((nodes, i) => (
                     <li key={i} className="flex items-start gap-2.5">
                       <CheckCircle2

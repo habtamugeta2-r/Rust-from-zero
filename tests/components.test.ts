@@ -13,6 +13,7 @@ import { GlossaryDirectory } from "../src/components/GlossaryDirectory";
 import { GuideFigure } from "../src/components/GuideFigure";
 import { GuideStateProvider } from "../src/components/GuideStateProvider";
 import { InlineRenderer } from "../src/components/InlineRenderer";
+import { LandingMobileNav } from "../src/components/LandingMobileNav";
 import { MemoryStepper } from "../src/components/MemoryStepper";
 import { QuizWidget } from "../src/components/QuizWidget";
 import { loadGuide } from "../src/lib/guide-parser";
@@ -20,6 +21,16 @@ import { loadGuide } from "../src/lib/guide-parser";
 function withState(node: React.ReactNode) {
   return renderToStaticMarkup(React.createElement(GuideStateProvider, { children: node }));
 }
+
+test("component: mobile landing navigation exposes all core destinations", () => {
+  const html = renderToStaticMarkup(React.createElement(LandingMobileNav));
+  assert.match(html, /<details/);
+  assert.match(html, /<summary/);
+  assert.match(html, /aria-label="Mobile navigation"/);
+  for (const href of ["/chapters", "/chapters/roadmap", "/progress", "/chapters/start"]) {
+    assert.ok(html.includes(`href="${href}"`), `missing ${href}`);
+  }
+});
 
 test("component: GuideFigure renders light and dark SVG plates plus lightbox", () => {
   const html = renderToStaticMarkup(

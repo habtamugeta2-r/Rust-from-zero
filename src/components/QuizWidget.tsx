@@ -118,6 +118,7 @@ export function QuizWidget({
                   return (
                     <button
                       key={oi}
+                      data-reading-option
                       type="button"
                       disabled={isAnswered}
                       aria-describedby={isAnswered ? promptId : undefined}

@@ -6,6 +6,7 @@ import { ArrowRight, Bookmark, Check, Clock } from "lucide-react";
 import { useGuideState } from "./GuideStateProvider";
 import { buildChapterProgress, type ChapterMeta, type ChapterProgress } from "@/lib/progress";
 import { LEVEL_LABELS } from "@/lib/guide-config";
+import { partAnchor } from "@/lib/navigation";
 
 const KIND_LABELS: Record<ChapterMeta["kind"], string> = {
   chapter: "Chapter",
@@ -39,9 +40,9 @@ export function ChaptersIndex({ chapters }: { chapters: ChapterMeta[] }) {
   return (
     <div className="curriculum-groups">
       {groups.map((group) => (
-        <section key={group.partTitle} aria-labelledby={`part-${slug(group.partTitle)}`}>
+        <section key={group.partTitle} aria-labelledby={partAnchor(group.partTitle)}>
           <div className="curriculum-group-heading">
-            <h2 id={`part-${slug(group.partTitle)}`}>{group.partTitle}</h2>
+            <h2 id={partAnchor(group.partTitle)}>{group.partTitle}</h2>
             <span>
               {group.items.length} {group.items.length === 1 ? "entry" : "entries"}
             </span>
@@ -114,11 +115,4 @@ export function ChaptersIndex({ chapters }: { chapters: ChapterMeta[] }) {
       ))}
     </div>
   );
-}
-
-function slug(text: string): string {
-  return text
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "");
 }

@@ -37,6 +37,7 @@
   --g-line: #dfe5e0;
   --g-line2: #c7d1ca;
   --g-accent: #b74d2d;
+  --g-on-accent: #ffffff;
   --g-accent-hover: #913a21;
   --g-accent-soft: #f6e8e0;
   /* Secondary accent (teal) — diagrams, progress, “correct”, systems topics.
@@ -69,6 +70,7 @@
   --g-line: #31413d;
   --g-line2: #43554f;
   --g-accent: #e9743e;
+  --g-on-accent: #1c1a17;
   --g-accent-hover: #f5854f;
   --g-accent-soft: #39231a;
   --g-accent-2: #2dd4bf;
@@ -940,8 +942,8 @@ body {
 .landing-header { border-bottom: 1px solid var(--g-line); background: var(--g-bg); }
 .landing-header-inner { width: min(100% - 3rem, 1320px); min-height: 76px; margin: auto; display: flex; align-items: center; gap: 3rem; }
 .landing-brand { display: inline-flex; align-items: center; gap: 10px; white-space: nowrap; font-size: 16px; font-weight: 700; letter-spacing: -.04em; }
-.landing-brand-mark { display: grid; place-items: center; width: 35px; height: 35px; border-radius: 6px; background: #263c37; color: #fff; font-family: var(--font-serif); font-size: 22px; line-height: 1; }
-.landing-brand-mark span, .landing-footer strong span { color: #df805e; }
+.landing-brand-mark { display: inline-block; width: 35px; height: 35px; background: var(--g-ink); mask: url("/images/rust-logo.svg") center / contain no-repeat; }
+.landing-footer strong span { color: #df805e; }
 .landing-brand-light { font-weight: 400; }
 .landing-nav { display: flex; align-items: center; justify-content: center; gap: 2.25rem; flex: 1; color: var(--g-ink2); font-size: 13px; font-weight: 500; }
 .landing-nav a, .landing-text-link { transition: color .2s; }
@@ -1062,3 +1064,47 @@ body {
   .curriculum-row-arrow { display: none; }
   .curriculum-row > span:nth-last-of-type(1) { font-size: 10px; }
 }
+
+.landing-footer .landing-attribution { display: block; padding-top: 0; color: #afc0b5; font-size: 11px; line-height: 1.6; }
+.landing-footer .landing-attribution a { display: inline; color: inherit; font-size: inherit; font-weight: 400; text-decoration: underline; text-underline-offset: 2px; }
+
+/* Small-screen navigation remains a native, keyboard-accessible disclosure. */
+.landing-mobile-menu { display: none; position: relative; }
+.landing-mobile-menu summary { display: grid; place-items: center; width: 40px; height: 40px; border: 1px solid var(--g-line2); border-radius: 5px; color: var(--g-ink); cursor: pointer; list-style: none; }
+.landing-mobile-menu summary::-webkit-details-marker { display: none; }
+.landing-mobile-menu summary:hover { background: var(--g-sunken); }
+.landing-menu-close-icon, .landing-mobile-menu[open] .landing-menu-open-icon { display: none; }
+.landing-mobile-menu[open] .landing-menu-close-icon { display: block; }
+.landing-mobile-nav { position: absolute; z-index: 40; top: calc(100% + 12px); right: 0; width: min(270px, calc(100vw - 2.5rem)); padding: 8px; border: 1px solid var(--g-line2); border-radius: 6px; background: var(--g-surface); box-shadow: var(--g-shadow-pop); }
+.landing-mobile-nav a { display: block; padding: 13px 12px; border-radius: 4px; color: var(--g-ink); font-size: 14px; font-weight: 500; }
+.landing-mobile-nav a:hover { background: var(--g-sunken); }
+.landing-mobile-nav .landing-mobile-start { margin-top: 4px; background: var(--g-ink); color: var(--g-bg); font-weight: 700; }
+.landing-mobile-start span { float: right; }
+@media (max-width: 767px) {
+  .landing-mobile-menu { display: block; }
+  .landing-header-cta { display: none; }
+}
+@media (max-width: 380px) {
+  .landing-header-inner { gap: .5rem; }
+  .landing-header-actions { gap: 2px; }
+  .landing-brand { font-size: 14px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .landing-path-list a, .curriculum-row-arrow { transition: none; }
+}
+
+/* Reading size controls change chapter content, not the application chrome. */
+.reading-size-controls { display: flex; flex-shrink: 0; align-items: center; overflow: hidden; border: 1px solid var(--g-line); border-radius: 8px; background: var(--g-surface); }
+.reading-size-controls button { display: grid; width: 32px; height: 36px; place-items: center; color: var(--g-ink2); font-size: 12px; font-weight: 700; cursor: pointer; }
+.reading-size-controls button:hover:not(:disabled) { background: var(--g-sunken); color: var(--g-ink); }
+.reading-size-controls button:disabled { opacity: .4; cursor: not-allowed; }
+.reading-size-controls output { min-width: 25px; color: var(--g-ink3); font-size: 11px; text-align: center; font-variant-numeric: tabular-nums; }
+.guide-prose .code-scroll pre, .guide-prose textarea[data-reading-code] { font-size: calc(var(--guide-fs) * .7222); }
+.guide-prose .table-pane table { font-size: calc(var(--guide-fs) * .8056); }
+.guide-prose [data-reading-option], .guide-prose [data-reading-checklist], .guide-prose [data-reading-summary] { font-size: calc(var(--guide-fs) * .8333); }
+.guide-prose .guide-figure figcaption { font-size: calc(var(--guide-fs) * .78); }
+
+.chapter-title { font-size: calc(var(--guide-fs) * 1.9); }
+.chapter-objectives-list { font-size: calc(var(--guide-fs) * .78); }
+@media (min-width: 640px) { .chapter-title { font-size: calc(var(--guide-fs) * 2.55); } }

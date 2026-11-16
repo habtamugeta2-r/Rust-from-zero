@@ -27,11 +27,13 @@
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@tailwindcss/postcss": "^4.3.5",
+    "@types/jsdom": "^30.0.0",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "eslint": "^10.15.0",
     "eslint-config-prettier": "^10.1.8",
+    "jsdom": "^31.0.1",
     "prettier": "^3.10.1",
     "tailwindcss": "^4.3.5",
     "tsx": "^4.23.15",

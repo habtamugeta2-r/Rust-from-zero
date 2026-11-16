@@ -43,7 +43,7 @@ export default function NotFound() {
       <div className="mt-8 flex flex-wrap gap-3 font-sans">
         <Link
           href="/"
-          className="inline-flex items-center gap-2 rounded-well bg-[var(--g-accent)] px-5 py-2.5 text-sm font-bold text-white shadow-card transition-colors hover:bg-[var(--g-accent-hover)]"
+          className="inline-flex items-center gap-2 rounded-well bg-[var(--g-accent)] px-5 py-2.5 text-sm font-bold text-[var(--g-on-accent)] shadow-card transition-colors hover:bg-[var(--g-accent-hover)]"
         >
           Go home
         </Link>

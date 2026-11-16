@@ -36,7 +36,7 @@ export default function GlobalError({
         <button
           type="button"
           onClick={reset}
-          className="rounded-well bg-[var(--g-accent)] px-5 py-2.5 text-sm font-bold text-white shadow-card transition-colors hover:bg-[var(--g-accent-hover)]"
+          className="rounded-well bg-[var(--g-accent)] px-5 py-2.5 text-sm font-bold text-[var(--g-on-accent)] shadow-card transition-colors hover:bg-[var(--g-accent-hover)]"
         >
           Try again
         </button>
