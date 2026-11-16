@@ -136,6 +136,8 @@ export function buildChapterProgress(meta: ChapterMeta, state: ProgressState): C
   const exerciseSolved = meta.exercises.filter((id) => state.saved[id]).length;
   const done = Boolean(state.done[meta.id]);
 
+  // A question counts towards completion only when it was answered correctly.
+  // Crediting any answer let a reader reach 100% by pressing random options.
   const units = 1 + quizTotal + exerciseTotal;
   const earned = (done ? 1 : 0) + Math.min(quizCorrect, quizTotal) + exerciseSolved;
 

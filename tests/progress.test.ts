@@ -66,6 +66,25 @@ test("progress: incorrect quiz answers do not count toward completion", () => {
   assert.equal(totals.pct, 0);
 });
 
+test("progress: a wrong answer does not count when other work is complete", () => {
+  const state: ProgressState = {
+    done: { vars: 1 },
+    quiz: {
+      "vars-q1": {
+        "0": { picked: 0, correct: true },
+        "1": { picked: 2, correct: false },
+      },
+    },
+    saved: { "vars-x1": 1, "vars-x2": 1 },
+    bookmarks: {},
+  };
+  const row = buildChapterProgress(META, state);
+  // 5 units (chapter + 2 questions + 2 exercises), 4 earned.
+  assert.equal(row.pct, 80);
+  const totals = summariseProgress([row]);
+  assert.equal(totals.accuracy, 50);
+});
+
 test("progress: a finished chapter is at 100%", () => {
   const state: ProgressState = {
     done: { vars: 1 },
@@ -202,16 +221,25 @@ test("progress: exports reject invalid indices, non-integer settings, zero marke
       version: 1,
       state,
     });
-  const invalidStates = [
+  const invalidStates: unknown[] = [
     { quiz: { "vars-q1": { "0": { picked: -1 } } } },
     { quiz: { "vars-q1": { "0": { picked: 1.5 } } } },
+    { quiz: { "vars-q1": { "0": { picked: Number.MAX_SAFE_INTEGER + 1 } } } },
+    { quiz: { "vars-q1": { "0": { picked: 0, correct: "yes" } } } },
     { quiz: { "vars-q1": { "-1": { picked: 0 } } } },
+    { quiz: { "vars-q1": { "01": { picked: 0 } } } },
     { quiz: [] },
+    { quiz: { ["__proto__"]: {} } },
     { done: [] },
+    { done: { constructor: 1 } },
+    { done: { ["__proto__"]: 1 } },
+    { done: { ["a".repeat(201)]: 1 } },
     { saved: { "vars-x1": 0 } },
     { bookmarks: { vars: -1 } },
     { done: { vars: 1.5 } },
+    { fs: 14 },
     { fs: 18.5 },
+    { fs: 25 },
     { fs: "18" },
   ];
   for (const state of invalidStates) {

@@ -227,8 +227,11 @@ export function CommandPalette({
       return;
     }
 
-    // Arrows and Enter drive the highlight only while the field has focus; on a
-    // row, Enter and Space keep their native meaning for that row.
+    // The listbox is owned by the input, so the rows are `option`s inside it and
+    // must not take DOM focus: Tab moves through the field and the close button
+    // only, while arrows, Home/End and Enter drive the highlight. This is the
+    // WAI-ARIA combobox pattern; tabbing onto individual results instead would
+    // take focus off the combobox and break `aria-activedescendant`.
     if (event.target !== inputRef.current) return;
 
     if (event.key === "ArrowDown") {
@@ -241,6 +244,16 @@ export function CommandPalette({
       setActive((i) =>
         items.length === 0 ? 0 : (i - 1 + items.length) % items.length
       );
+      return;
+    }
+    if (event.key === "Home") {
+      event.preventDefault();
+      setActive(0);
+      return;
+    }
+    if (event.key === "End") {
+      event.preventDefault();
+      setActive(Math.max(0, items.length - 1));
       return;
     }
     if (event.key === "Enter") {
@@ -289,14 +302,15 @@ export function CommandPalette({
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Search chapters, sections and terms…"
+            // WAI-ARIA 1.2 combobox: the input is the combobox, it owns the
+            // listbox, and it points at the active option by id rather than
+            // moving DOM focus into the list.
             role="combobox"
             aria-label="Search the guide"
-            aria-autocomplete="list"
-            aria-expanded={open}
+            aria-expanded={true}
             aria-controls="palette-listbox"
-            aria-activedescendant={
-              activeItem ? `palette-option-${activeItem.id}` : undefined
-            }
+            aria-autocomplete="list"
+            aria-activedescendant={activeItem ? `palette-option-${activeItem.id}` : undefined}
             aria-describedby="palette-hint"
             autoComplete="off"
             autoCorrect="off"
@@ -349,13 +363,12 @@ export function CommandPalette({
             if (item.kind === "hit") {
               const { hit } = item;
               return (
-                <li
-                  key={item.id}
-                  id={`palette-option-${item.id}`}
-                  role="option"
-                  aria-selected={isActive}
-                >
+                <li key={item.id}>
                   <Link
+                    id={`palette-option-${item.id}`}
+                    role="option"
+                    aria-selected={isActive}
+                    tabIndex={-1}
                     ref={(node) => {
                       itemRefs.current[index] = node;
                     }}
@@ -364,7 +377,6 @@ export function CommandPalette({
                     }`}
                     onClick={close}
                     onMouseMove={() => setActive(index)}
-                    tabIndex={-1}
                     className={shared}
                   >
                     <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded bg-[var(--g-surface)] font-mono text-[10px] font-bold text-[var(--g-ink3)] ring-1 ring-[var(--g-line2)]">
@@ -398,20 +410,18 @@ export function CommandPalette({
 
             const Icon = item.icon;
             return (
-              <li
-                key={item.id}
-                id={`palette-option-${item.id}`}
-                role="option"
-                aria-selected={isActive}
-              >
+              <li key={item.id}>
                 <button
+                  id={`palette-option-${item.id}`}
+                  role="option"
+                  aria-selected={isActive}
+                  tabIndex={-1}
                   ref={(node) => {
                     itemRefs.current[index] = node;
                   }}
                   type="button"
                   onClick={item.run}
                   onMouseMove={() => setActive(index)}
-                  tabIndex={-1}
                   className={shared}
                 >
                   <span className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded bg-[var(--g-surface)] text-[var(--g-ink2)] ring-1 ring-[var(--g-line2)]">
