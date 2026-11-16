@@ -26,7 +26,7 @@ table disagrees with that measurement.
 | Exercises | 274 |
 | Quiz questions | 379 |
 | Captured outputs | 104 |
-| Search entries | 14,417 |
+| Search entries | 17,718 |
 | Glossary terms | 253 |
 | Glossary terms linked from prose | 207 |
 | Cross-links (inbound edges) | 1,132 |
