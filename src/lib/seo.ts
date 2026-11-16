@@ -10,9 +10,6 @@ export const SITE_NAME = "Rust from Zero";
 export const SITE_TAGLINE =
   "Computer systems, Rust internals, and systems programming from the inside out";
 
-/** The one social card every page shares; it lives in `public/`. */
-export const OG_IMAGE = "/og.png";
-
 /** Stable "first published" date for the whole guide. */
 const PUBLISHED = "2026-11-14";
 /** Re-derived at build time so `dateModified` stays fresh on each deploy. */
@@ -44,69 +41,18 @@ function chapterUrl(ch: ChapterSummary): string {
   return `${SITE_URL}${chapterPath(ch)}`;
 }
 
-/**
- * Descriptions are derived from the chapter's own objectives and prose, not
- * from a sentence written for one chapter and pasted into every project.
- * "A real crate from crates.io" was true of the API project and false of the
- * `std`-only Linux lab, which builds its inspector with no external
- * dependencies at all.
- */
 function chapterDescription(ch: ChapterData): string {
   const title = clean(ch.title);
-  const objective = ch.learn.map(clean).find((item) => item.length > 12);
   switch (ch.kind) {
-    case "project": {
-      // The first objective says what the project builds; the rest of the
-      // sentence says what a project chapter always offers.
-      const build = objective
-        ? objective.replace(/[.\u2026]+$/, "")
-        : "a complete Rust program, step by step";
-      const stack = usesThirdPartyCrates(ch)
-        ? "with the crates real programs use"
-        : "without leaving the standard library";
-      return `Project: ${lowerFirst(build)}, ${stack}. Part of ${SITE_NAME}.`;
-    }
+    case "project":
+      return `${title}. Build and run a complete Rust program step by step \u2014 functions, loops, decisions, error handling and a real crate from crates.io. Part of ${SITE_NAME}.`;
     case "appendix":
       return `${title} \u2014 a plain-language Rust reference to keep open while you code. Part of the ${SITE_NAME} course.`;
     case "orientation":
       return `${title}. A plain-English introduction to the Rust programming language with everyday analogies and real compiler output. Part of ${SITE_NAME}.`;
-    default: {
-      const summary = objective
-        ? ` Learn ${lowerFirst(objective.replace(/[.\u2026]+$/, ""))}.`
-        : "";
-      return `${title}. A plain-English, hands-on Rust lesson with real compiler output, worked exercises, a quiz and everyday analogies.${summary} Part of ${SITE_NAME}.`;
-    }
+    default:
+      return `${title}. A plain-English, hands-on Rust lesson with real compiler output, worked exercises, a quiz and everyday analogies. Part of ${SITE_NAME}.`;
   }
-}
-
-function lowerFirst(text: string): string {
-  return text.charAt(0).toLowerCase() + text.slice(1);
-}
-
-/**
- * Whether a chapter's listings actually depend on crates outside the standard
- * library. A dependency means a `Cargo.toml` block in the chapter, so the
- * answer comes from the content rather than a per-chapter exception list.
- */
-function usesThirdPartyCrates(ch: ChapterData): boolean {
-  let found = false;
-  const visit = (node: unknown): void => {
-    if (found || !node || typeof node !== "object") return;
-    if (Array.isArray(node)) {
-      for (const child of node) visit(child);
-      return;
-    }
-    const record = node as Record<string, unknown>;
-    if (record.type === "code" && record.lang === "toml" && typeof record.code === "string") {
-      if (/\[dependencies\]/.test(record.code)) found = true;
-    }
-    for (const [key, value] of Object.entries(record)) {
-      if (key === "parent") continue;
-      visit(value);
-    }
-  };
-  visit(ch.blocks);
-  return found;
 }
 
 /** Per-chapter <title>, description, canonical, Open Graph and Twitter card. */
@@ -119,19 +65,16 @@ export function chapterMetadata(ch: ChapterData): Metadata {
     alternates: { canonical: chapterPath(ch) },
     openGraph: {
       type: "article",
-      // The guide is written in British English throughout.
-      locale: "en_GB",
+      locale: "en_US",
       url: chapterUrl(ch),
       siteName: SITE_NAME,
       title,
       description: desc,
-      images: [{ url: OG_IMAGE, width: 1200, height: 630, alt: SITE_NAME }],
     },
     twitter: {
       card: "summary_large_image",
       title,
       description: desc,
-      images: [OG_IMAGE],
     },
   };
 }
@@ -144,7 +87,7 @@ export function chapterJsonLd(ch: ChapterData): object[] {
     "@type": ["Article", "LearningResource"],
     headline: clip(clean(ch.title), 110),
     description: clip(chapterDescription(ch), 200),
-    inLanguage: "en-GB",
+    inLanguage: "en",
     datePublished: PUBLISHED,
     dateModified: TODAY,
     isAccessibleForFree: true,
@@ -203,7 +146,7 @@ export function courseJsonLd(
       300,
     ),
     url: SITE_URL,
-    inLanguage: "en-GB",
+    inLanguage: "en",
     isAccessibleForFree: true,
     provider: { "@type": "Organization", name: SITE_NAME, url: SITE_URL },
     hasCourseSection: parts

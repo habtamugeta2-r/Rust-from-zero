@@ -66,13 +66,13 @@ Languages such as Java, Python, JavaScript and Go avoid most of these bugs with 
 
 So for a long time programmers had to choose:
 
-| | Fast and in full control | Safe from memory bugs |
+| | Fast and in full control | [[Memory safety|memory safety]] |
 |---|---|---|
 | C, C++ | Yes | No. Safety depends on the programmer never making a mistake |
 | Java, Python, JavaScript, Go | Less. The garbage collector costs time and memory | Yes |
 | **Rust** | **Yes** | **Yes** |
 
-Rust gets both by using a new idea called **ownership**. The Rust compiler checks a set of rules about who is responsible for each value and which references may use it. In safe Rust, these checks prevent important classes of memory misuse before the program runs. Rust does not need a tracing garbage collector to enforce those rules, though it still performs allocations and other work at run time. You will learn ownership in [Part 3](#ownership); it is central to understanding the language.
+Rust gets both by using a new idea called **ownership**. The Rust compiler checks a set of rules about who is responsible for each value and which references may use it. In safe Rust, these [[memory safety]] checks prevent important classes of memory misuse before the program runs. Rust does not need a tracing garbage collector to enforce those rules, though it still performs allocations and other work at run time. You will learn ownership in [Part 3](#ownership); it is central to understanding the language.
 
 :::key Rust's promise
 In safe Rust, many memory mistakes are rejected by the compiler before a program runs. This does not rule out logic errors, failures in unsafe code or libraries, or every possible memory-related defect; it narrows the kinds of mistakes ordinary safe code can express.
@@ -165,30 +165,30 @@ Yes, with the right guide. Rust asks you to learn a few ideas early that other l
 :::quiz Check your understanding
 ? What does a compiler do?
 - It runs your program one line at a time
-+ It translates your source code into a program the computer can run, and checks it for mistakes first
 - It finds and deletes unused memory while the program runs
++ It translates your source code into a program the computer can run, and checks it for mistakes first
 - It lets you type code with colours
 = A compiler translates the whole program ahead of time. Running code line by line is what an interpreter does, and cleaning up memory during the run is the job of a garbage collector.
 
 ? Why can a mistake caught at compile time be called a "cheap" mistake?
++ Because it is found on the programmer's computer, before any user ever runs the program
 - Because the compiler is free software
 - Because compile-time mistakes are never serious
-+ Because it is found on the programmer's computer, before any user ever runs the program
 - Because the compiler repairs the mistake by itself
 = The earlier a bug is found, the less harm it does. A compile-time error never reaches your users. Rust is designed to move as many mistakes as possible to compile time.
 
 ? How does Rust avoid memory bugs without a garbage collector?
-- It never uses memory
++ The compiler enforces ownership rules that prove memory is used correctly before the program runs
 - It asks the programmer to be very careful
 - It checks memory while the program runs and pauses when needed
-+ The compiler enforces ownership rules that prove memory is used correctly before the program runs
+- It never uses memory
 = Ownership rules are checked at compile time, so the finished program needs no helper to watch its memory. You will learn these rules in Part 3.
 
 ? Which statement about Rust is true?
-+ Rust's compiler is strict, which makes the start harder but the finished programs more reliable
 - Rust programs are usually slower than Python programs
 - Rust can only be used for operating systems
 - Rust is owned and controlled by a single company
++ Rust's compiler is strict, which makes the start harder but the finished programs more reliable
 = Rust trades a steeper learning curve for speed and reliability. It is used for many kinds of software and is developed by an open community, supported by the Rust Foundation.
 :::
 

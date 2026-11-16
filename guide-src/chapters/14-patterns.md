@@ -3,10 +3,10 @@
 @title Pattern matching in depth
 @short Pattern matching in depth
 @level beginner
-@time 35
+@time 30
 @learn Recognise every place where Rust uses patterns | Take apart tuples, structs, enums, arrays and references with one pattern | Use ranges, alternatives, guards and bindings in `match` | Combine conditions with `if let` chains | Avoid accidentally moving values out while matching
 
-A `match` arm, an `if let`, and `let (a, b) = pair` all use patterns. A **pattern** describes a shape to test or destructure: when it matches, Rust can bind names to some or all of the value's parts. Whether that binding copies, moves or borrows depends on the pattern and the value. This chapter gathers the forms and shows how to choose safely.
+A `match` arm, an `if let`, and `let (a, b) = pair` all use patterns. A **[[pattern]]** describes a shape to test or destructure: when it matches, Rust can bind names to some or all of the value's parts. Whether that binding copies, moves or borrows depends on the pattern and the value. This chapter gathers the forms and shows how to choose safely.
 
 :::plain Patterns and exhaustiveness in one paragraph
 A **pattern** is a shape that a value is tested against, and the same syntax works in `match`, `if let`, `while let`, `let`, and function parameters. Patterns can bind parts of a value (`Some(n)`), ignore parts (`_`), add conditions (**guards**, `Some(n) if n > 0`), and destructure structs, tuples and enums. The compiler requires [[match]] to be **exhaustive**: every possible value must fit some arm, which is how adding a new enum variant turns into a compile error at every place that must handle it.
@@ -433,9 +433,9 @@ Older mainstream languages have only a `switch` statement, which compares a valu
 
 :::quiz Check your understanding
 ? Which pattern can be used in a plain `let` statement without `else`?
-+ `(a, b)`
 - `Some(x)`
 - `Ok(value)`
++ `(a, b)`
 - `[first]` on a slice
 = A plain `let` needs a pattern that always fits. A tuple pattern fits every tuple of that size. The others can fail to fit, so they need `if let`, `match` or `let … else`.
 
@@ -455,17 +455,17 @@ match n {
 = 7 is not in the range 1 to 5, so the first arm does not fit. The second arm fits any value and its guard is true for 7.
 
 ? Why does `match &name { Some(n) => ... }` leave `name` usable afterwards, when `name` is an `Option<String>`?
++ Because matching on a reference binds `n` as a reference, so nothing is moved out
 - Because `String` is `Copy`
 - Because `match` always clones
-+ Because matching on a reference binds `n` as a reference, so nothing is moved out
 - It does not. `name` is moved
 = Matching through `&name` only borrows. The bound names become references to the parts.
 
 ? What does the pattern `[first, .., last]` fit?
 - Only slices with exactly two elements
++ Slices with at least two elements
 - Slices of any length, including empty ones
 - Only arrays, not slices
-+ Slices with at least two elements
 = `first` and `last` each need an element, and `..` stands for zero or more elements in between.
 :::
 

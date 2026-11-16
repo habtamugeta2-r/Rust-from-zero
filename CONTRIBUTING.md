@@ -1,15 +1,10 @@
 # Contributing to Rust from Zero
 
 Thank you for helping. This guide has one unusual rule that shapes everything
-else: **code that claims an output has really produced it.** Every complete
-Rust program (`run`, `wrap`, `panic`) is compiled and run by
-`guide-src/tools/check.py` and its captured stdout must match the `output`
-block below it; every `fail` listing must produce the diagnostic it shows, on
-the line numbers it shows; `check` listings must compile. Listings that need
-crates from crates.io are built separately with `--ext`, and a project made of
-several files is rebuilt with `--projects`. A listing deliberately left
-unverified is not printed with output. A change that breaks that promise is
-worse than no change.
+else: **every Rust example is compiled and run, and the output printed in the
+guide is the output that program really produced.** Compiler messages are real
+diagnostics, on real line numbers. A change that breaks that promise is worse
+than no change.
 
 ## Get set up
 
@@ -65,7 +60,7 @@ captured-output mechanism.
    for each), a quiz of at least four questions, and a recap.
 4. **Be honest about limits.** If a topic is only named and not taught, say so,
    and point somewhere useful. Do not let a crate appear once in a table with no
-   advice about when to choose it. `76-next.md` holds the written coverage
+   advice about when to choose it. `53-next.md` holds the written coverage
    policy: taught, named with advice, or declared out of scope with a reason.
 5. **Prose, not marketing.** No "simply", no "just", no claims that cannot be
    checked. Numbers that appear in the guide (example counts, versions) come
@@ -124,9 +119,9 @@ the landing page, `[label](/chapters)`, `[label](/progress)` or `[label](/search
 A link belongs in a sentence that needs it, not in a bolted-on list at the end of a chapter.
 
 `npm run verify:content` runs the parser *and* `src/lib/content-lint.ts`, which fails on: American
-spelling, a `TODO`/`FIXME`/`TBD` in visible text, a tracked chapter without three objectives, a
+spelling, dismissive phrasing (`simply`/`just`/…), a `TODO`/`FIXME`/`TBD` in visible text, a tracked chapter without three objectives, a
 recap, a quiz or exercises (project chapters need a quiz too), a declared `@time` below 60% of the chapter's own reading time,
-duplicate titles or ids, a chapter no other chapter links to, a chapter that links to no other
+duplicate titles, ids or glossary keys, stale raw-markdown `[Chapter N](#id)` numbers, mismatched `00b-roadmap.md` part headings, a chapter no other chapter links to, a chapter that links to no other
 chapter, a link to a chapter id or route that does not exist, and a README statistics table that
 disagrees with `npm run stats`. It warns on an unexpected captured output that no `auto` block
 references; the three retained historical exceptions are listed in

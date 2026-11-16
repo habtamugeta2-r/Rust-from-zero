@@ -3,7 +3,7 @@
 @title Enums, `Option` and `match`
 @short Enums and Option
 @level beginner
-@time 45
+@time 40
 @learn Define a type whose value is one of several named possibilities | Attach different data to each possibility | Handle every case safely with `match`, `if let` and `let … else` | Use `Option` instead of null, and explain why that prevents a whole class of crashes
 
 A struct groups fields that exist together; an enum represents one case chosen from several alternatives. A traffic signal can be red, yellow or green, and a search can return a result or no result. Rust's **[[enum]]** type names those alternatives and can attach different data to each one. `Option` is an enum used to represent a value that may be absent.
@@ -178,7 +178,9 @@ Most languages solve this with a special value called `null` (`None` in Python, 
 **Rust has no null.** A value of type `String` is always a real string. If something may be missing, the type has to say so.
 :::
 
-The way to say so is an enum from the standard library, `Option`:
+![Diagram comparing Option<u32> with a tag byte versus Option<&u32> using address zero as None](/images/enum-niche-layout.svg "`Option<T>` tracks whether a value is present in its type; for references and pointers, Rust reuses the null bit pattern for `None` with zero extra bytes.")
+
+The way to say so is the standard library's [[Option|option]] enum (`Option<T>`):
 
 ```rust
 enum Option<T> {
@@ -382,23 +384,23 @@ In C, C++ and Java (in its basic form), an enum is a list of named constants. It
 
 :::quiz Check your understanding
 ? What is special about Rust's enums compared with enums in C or Java?
++ Each variant can carry its own data
 - They can only hold numbers
 - They cannot be used with `match`
 - They are stored on the heap
-+ Each variant can carry its own data
 = A Rust enum variant can hold values, and different variants can hold different types and numbers of values.
 
 ? What happens if a `match` on an enum does not cover one of the variants?
-+ The program does not compile
 - That case is skipped when the program runs
 - The program panics when it reaches that case
 - The last arm is used for it
++ The program does not compile
 = `match` must be exhaustive. The compiler reports error E0004 and names the missing variant.
 
 ? A function returns `Option<String>`. What does that tell you?
 - It always returns a string
-+ It returns either `Some(text)` or `None`, and the caller must handle both before using the text
 - It may crash
++ It returns either `Some(text)` or `None`, and the caller must handle both before using the text
 - It returns an empty string when there is nothing
 = An `Option<String>` is not a `String`. The compiler makes the caller deal with the `None` case.
 
@@ -411,9 +413,9 @@ In C, C++ and Java (in its basic form), an enum is a list of named constants. It
 
 ? When is `if let` a better choice than `match`?
 - When all variants must be handled
++ When only one pattern is interesting and the rest needs little or no code
 - When the value is a number
 - Never. They are unrelated
-+ When only one pattern is interesting and the rest needs little or no code
 = `if let` is a shorter way to write a `match` that cares about one pattern. For several cases, `match` is clearer and keeps the exhaustiveness check.
 :::
 

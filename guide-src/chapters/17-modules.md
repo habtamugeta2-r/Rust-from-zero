@@ -1,9 +1,9 @@
 @id modules
-@part p3
+@part p3b
 @title Organising code: packages, crates and modules
 @short Modules and crates
 @level intermediate
-@time 40
+@time 35
 @learn Explain what packages, crates and modules are | Group code into modules and control what is visible from outside | Refer to items with paths and shorten them with `use` | Split a program into several files | Build a library and a program in the same package
 
 Keeping all code in one file can make a growing program harder to navigate and its dependencies harder to see. Rust lets you divide code into named modules, group related items, and control which items other parts of the crate may use. Modules are part of the language's visibility system, not only a way to split files.
@@ -47,7 +47,7 @@ pizza made from fresh dough
 ```
 
 - `mod kitchen { ... }` creates a module. Its contents are reached from outside with a **path**: `kitchen::make_pizza`.
-- `pub` (for "public") makes an item usable from outside its module.
+- `pub` (for "public") makes an [[item]] usable from outside its module.
 - `prepare_dough` has no `pub`. It is **private**: only code inside `kitchen` (and inside modules nested in it) can use it.
 
 **Everything in Rust is private unless you write `pub`.** Trying to reach a private item from outside is a compile error:
@@ -416,7 +416,7 @@ You already used an external crate in the guessing game. The mechanism is the sa
 rand = "0.10"
 ```
 
-After `cargo add rand` has written that line into `Cargo.toml`, the crate's name is available as the first step of a path: `rand::random_range(1..=100)`. The standard library is also a crate, called `std`, that is always available. [Chapter 35](#cargo) covers Cargo in depth, and [chapter 77](#crates) shows how to find and judge crates.
+After `cargo add rand` has written that line into `Cargo.toml`, the crate's name is available as the first step of a path: `rand::random_range(1..=100)`. The standard library is also a crate, called `std`, that is always available. [Chapter 32](#cargo) covers Cargo in depth, and [chapter 44](#crates) shows how to find and judge crates.
 
 :::compare Module systems in other languages
 - **Python and JavaScript:** every file is automatically a module, and the files import each other. Rust is different: files become part of the crate only through `mod` declarations, which form one tree from the crate root.
@@ -443,29 +443,29 @@ After `cargo add rand` has written that line into `Cargo.toml`, the crate's name
 
 ? A struct is declared `pub struct User { name: String }` in a module. What can code outside that module do?
 - Create it with `User { name: ... }` and read `name`
-- Nothing. The struct is private
 + Name the type `User`, but neither read `name` nor create a `User` with struct syntax
+- Nothing. The struct is private
 - Read `name` but not change it
 = `pub` on the struct makes only the type public. The field has no `pub`, so it is private. Outside code needs public functions such as `User::new` and getters.
 
 ? What does the line `mod network;` in `src/main.rs` do?
 - It imports a crate called `network` from the internet
 - It creates an empty module
-- It makes the module public
 + It declares a module `network` whose contents are in `src/network.rs` (or `src/network/mod.rs`)
+- It makes the module public
 = `mod name;` with a semicolon tells the compiler to load the module from a file with that name.
 
 ? In a module `crate::shop::report`, what does `super::stock::count()` refer to?
-+ `crate::shop::stock::count`
 - `crate::stock::count`
++ `crate::shop::stock::count`
 - `crate::shop::report::stock::count`
 - A function of the standard library
 = `super` is the parent module of the current one. The parent of `shop::report` is `shop`, so the path is `shop::stock::count`.
 
 ? Why would you put most of a program's code into `src/lib.rs` and keep `src/main.rs` small?
 - Programs run faster that way
-+ The library part is easier to test and can be reused by other programs
 - Cargo requires it
++ The library part is easier to test and can be reused by other programs
 - Because `main.rs` cannot contain structs
 = A library crate has a clear public API, can be tested directly, and can serve several programs. `main.rs` then only connects it to the outside world.
 :::

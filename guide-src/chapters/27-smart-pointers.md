@@ -1,9 +1,9 @@
 @id smart-pointers
-@part p3b
+@part p3c
 @title Smart pointers: `Box`, `Rc`, `RefCell` and friends
 @short Smart pointers
 @level advanced
-@time 55
+@time 45
 @learn Put data on the heap with `Box` and build recursive types | Explain what `Deref` and `Drop` do | Share ownership with `Rc` and break cycles with `Weak` | Change data behind a shared reference with `Cell` and `RefCell` | Pick the right pointer type for a task
 
 A reference such as `&T` gives temporary access to a value without owning it. A **smart pointer** is a type whose pointer-like behaviour is combined with ownership or another capability, such as shared ownership or runtime borrowing checks. `Box`, `Rc` and `RefCell` provide different trade-offs; this chapter compares them and shows when each is useful.
@@ -21,7 +21,7 @@ A smart pointer is like a keycard that both opens a room and keeps track of who 
 | `Box<T>` | one owner, data on the heap |
 | `Rc<T>` | several owners, read-only, one thread |
 | `RefCell<T>` | borrowing rules checked while the program runs, not at compile time |
-| `Arc<T>`, `Mutex<T>` | the same ideas, safe to use from several threads ([chapter 59](#shared-state)) |
+| `Arc<T>`, `Mutex<T>` | the same ideas, safe to use from several threads ([chapter 61](#shared-state)) |
 
 :::analogy A visitor badge vs a shared locker key
 A normal reference (`&T`) is a visitor badge: it lets you read what is in a room, but it cannot keep the building open after the owner locks up and leaves. A smart pointer like `Box<T>` or `Rc<T>` is a deed or shared key card that actually keeps the data alive until the last holder steps out and closes the door.
@@ -29,7 +29,7 @@ A normal reference (`&T`) is a visitor badge: it lets you read what is in a room
 
 ## `Box<T>`: a value on the heap
 
-`Box::new(value)` moves a value to the heap and gives you a pointer to it. The box is the single owner. When the box goes out of scope, the heap memory is freed.
+`Box::new(value)` moves a value to the heap and gives you a pointer to it. The [[box]] is the single owner. When the box goes out of scope, the heap memory is freed.
 
 ```rust run
 fn main() {
@@ -214,7 +214,7 @@ cleaning up first
 - Values are dropped at the end of their scope, in the **reverse** order of their creation.
 - `drop(value)` is an ordinary function that takes ownership of its argument and lets it go out of scope immediately.
 
-You will rarely write `Drop` yourself. You benefit from it all the time: it is how a `File` closes itself, how a `Vec` frees its memory, and how a lock releases itself ([chapter 59](#shared-state)).
+You will rarely write `Drop` yourself. You benefit from it all the time: it is how a `File` closes itself, how a `Vec` frees its memory, and how a lock releases itself ([chapter 61](#shared-state)).
 
 :::compare RAII
 Tying a resource (memory, a file, a lock, a network connection) to a value, so that the resource is released when the value dies, is a technique from C++ with the awkward name **RAII** ("resource acquisition is initialization"). In Java, Python or Go you write `try … finally`, `with` or `defer` each time, and can forget it. In Rust the clean-up is attached to the type once, and then it cannot be forgotten.
@@ -271,7 +271,7 @@ Three things to remember:
 
 - **`Rc::clone(&a)` is cheap.** It copies a pointer and adds one to a number. By convention it is written as `Rc::clone(&a)` and not `a.clone()`, so that readers see at once that no data is copied.
 - **The value is read-only.** An `Rc<T>` gives out only shared references. With several owners, a `&mut` would break the borrowing rules.
-- **One thread only.** The counter is not protected against simultaneous changes. The compiler refuses to send an `Rc` to another thread. `Arc` is the thread-safe version.
+- **One thread only.** The counter is not protected against simultaneous changes. The compiler refuses to send an [[Rc|rc]] (`Rc<T>`) to another thread. `Arc` is the thread-safe version.
 
 :::compare `Rc` is a small garbage collector
 Reference counting is how Python and Swift manage *all* their objects, and what `std::shared_ptr` does in C++. In Rust it is something you choose for the few values that need it. Everything else keeps the cheaper single-owner model.
@@ -511,7 +511,7 @@ A `Cow<str>` can be used like a `&str` through `Deref`. The `'_` in the return t
 | several owners that can change the value | `Rc<RefCell<T>>` |
 | a pointer back to an owner, without owning | `Weak<T>` |
 | to change a small `Copy` field through `&self` | `Cell<T>` |
-| the same across threads | `Arc<T>`, `Arc<Mutex<T>>` ([chapter 59](#shared-state)) |
+| the same across threads | `Arc<T>`, `Arc<Mutex<T>>` ([chapter 61](#shared-state)) |
 
 The order of this table is also the order of preference. Plain references and single ownership are the simplest and the fastest, and the compiler checks them completely. Reach for `Rc` and `RefCell` when the shape of your data truly demands shared ownership.
 
@@ -527,15 +527,15 @@ The order of this table is also the order of preference. Plain references and si
 
 :::quiz Check your understanding
 ? Why does `enum List { Node(i32, List), End }` not compile, while `Node(i32, Box<List>)` does?
-+ The compiler needs a known size. A type that directly contains itself would be infinitely large, and a `Box` is a pointer of fixed size
 - Enums cannot contain themselves in any form
-- `Box` makes the list faster
 - The first version needs a lifetime
+- `Box` makes the list faster
++ The compiler needs a known size. A type that directly contains itself would be infinitely large, and a `Box` is a pointer of fixed size
 = A `Box<List>` has the size of one pointer, whatever it points to, so the size of `List` can be calculated.
 
 ? What does `Rc::clone(&a)` do?
-- It copies the data that `a` points to
 + It creates another pointer to the same data and increases the owner count
+- It copies the data that `a` points to
 - It moves the data to another thread
 - It makes the data mutable
 = Cloning an `Rc` is cheap. The data exists once, and is freed when the last `Rc` is dropped.
@@ -543,8 +543,8 @@ The order of this table is also the order of preference. Plain references and si
 ? What happens when `borrow_mut()` is called on a `RefCell` while a `borrow()` is still active?
 - A compile error
 - The call waits until the other borrow ends
-+ The program panics
 - The data is copied
++ The program panics
 = `RefCell` enforces the borrowing rules at run time. A violation is a panic, not a compile error.
 
 ? Two values hold an `Rc` to each other and nothing else refers to them. What happens?
@@ -555,9 +555,9 @@ The order of this table is also the order of preference. Plain references and si
 = Reference counting cannot free cycles. Make one of the two directions a `Weak` pointer.
 
 ? In which order are the local variables of a function dropped?
-+ In the reverse order of their creation
 - In the order they were created
 - In alphabetical order
++ In the reverse order of their creation
 - In no defined order
 = The variable declared last is dropped first. Later variables may refer to earlier ones, so they must go first.
 :::
@@ -838,5 +838,5 @@ Three things in this small program come up again and again in Rust:
 2. **`as_ref()` and `as_deref()` to look without taking.** `peek` and the iterator only borrow. The iterator holds `Option<&Node<T>>`: the node it will give out next.
 3. **A drop that does not call itself.** Without the `impl Drop`, Rust would drop the first node, which drops the second node inside it, which drops the third, a million calls deep. Tried without it, this program stopped with `thread 'main' has overflowed its stack`. The loop unlinks each node before it is dropped, so every node is dropped alone.
 
-For real work, use a `Vec`: `push` and `pop` do the same job, and the values sit side by side in memory, which is much faster to walk through ([chapter 74](#performance)). A linked list is worth writing once, because it trains exactly the moves that the borrow checker asks for.
+For real work, use a `Vec`: `push` and `pop` do the same job, and the values sit side by side in memory, which is much faster to walk through ([chapter 76](#performance)). A linked list is worth writing once, because it trains exactly the moves that the borrow checker asks for.
 :::

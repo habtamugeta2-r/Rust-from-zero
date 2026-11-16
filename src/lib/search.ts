@@ -27,23 +27,6 @@ import type { SearchEntry, SearchHit } from "./guide-types";
 const SNIPPET_BEFORE = 36;
 const SNIPPET_AFTER = 64;
 
-/**
- * Limits that keep one request cheap. The index is 14k entries, so every word
- * is matched against all of them: an unbounded query is a free denial of
- * service on a shared deployment, and a longer one was never more useful.
- */
-export const MAX_QUERY_LENGTH = 120;
-/** Distinct query words considered. Eight is already a very narrow phrase. */
-export const MAX_QUERY_WORDS = 8;
-/**
- * Longest single token kept. No word the guide indexes is this long; a
- * 110-character blob is a paste accident (a hash, a URL), and building a
- * regular expression from it would be the only cost it ever adds.
- */
-export const MAX_TOKEN_LENGTH = 40;
-/** Shortest query the API will answer, matching the palette's own threshold. */
-export const MIN_QUERY_LENGTH = 2;
-
 export interface SearchOptions {
   /** Hard cap on returned hits. */
   limit?: number;
@@ -86,58 +69,24 @@ interface Match {
   strength: number;
 }
 
+function wordPrefixIndex(lower: string, word: string): { index: number; surface: string } | null {
+  const pattern = new RegExp(`(^|[^a-z0-9])(${escapeRegExp(word)}[a-z0-9]*)`, "i");
+  const found = pattern.exec(lower);
+  if (!found) return null;
+  return { index: found.index + found[1].length, surface: found[2] };
+}
+
 function escapeRegExp(text: string): string {
   return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
-
-/** A word's two boundary patterns, built once and reused for every entry. */
-interface WordPatterns {
-  whole: RegExp;
-  prefix: RegExp;
-}
-
-/**
- * Compiled patterns, keyed by word. Building a `RegExp` per entry per query
- * word was the whole cost of a search: the index is 14k entries, so a
- * three-word query built tens of thousands of identical patterns. There are
- * only ever a few hundred distinct words (the query words and their synonyms),
- * so one cache makes the loop a set of `exec` calls.
- */
-const PATTERN_CACHE = new Map<string, WordPatterns>();
-/** Bound on the cache, so a bot cannot grow it with arbitrary long queries. */
-const PATTERN_CACHE_LIMIT = 500;
-
-function patternsFor(word: string): WordPatterns {
-  const cached = PATTERN_CACHE.get(word);
-  if (cached) return cached;
-  const escaped = escapeRegExp(word);
-  const patterns: WordPatterns = {
-    whole: new RegExp(`(^|[^a-z0-9])(${escaped})(?![a-z0-9])`, "i"),
-    prefix: new RegExp(`(^|[^a-z0-9])(${escaped}[a-z0-9]*)`, "i"),
-  };
-  if (PATTERN_CACHE.size >= PATTERN_CACHE_LIMIT) PATTERN_CACHE.clear();
-  PATTERN_CACHE.set(word, patterns);
-  return patterns;
-}
-
-/** Distinct patterns currently cached. Exported so the limit can be tested. */
-export function patternCacheSize(): number {
-  return PATTERN_CACHE.size;
-}
-
-/**
- * Below this length a token is too common as a fragment (`os` inside *cost*,
- * `pin` inside *spinner*) for an infix match to mean anything, so short tokens
- * must match a word boundary or a word prefix.
- */
-const MIN_INFIX_LENGTH = 4;
 
 /** Best match of one query word (with synonyms) against one entry. */
 function matchWord(entry: SearchEntry, queryWord: string): Match | null {
   let best: Match | null = null;
   for (const word of expandWord(queryWord)) {
-    const patterns = patternsFor(word);
-    const whole = patterns.whole.exec(entry.lower);
+    const whole = new RegExp(`(^|[^a-z0-9])(${escapeRegExp(word)})(?![a-z0-9])`, "i").exec(
+      entry.lower,
+    );
     if (whole) {
       const candidate: Match = {
         surface: whole[2],
@@ -147,17 +96,12 @@ function matchWord(entry: SearchEntry, queryWord: string): Match | null {
       if (!best || candidate.strength > best.strength) best = candidate;
       continue;
     }
-    const prefix = patterns.prefix.exec(entry.lower);
+    const prefix = wordPrefixIndex(entry.lower, word);
     if (prefix) {
-      const candidate: Match = {
-        surface: prefix[2],
-        index: prefix.index + prefix[1].length,
-        strength: 2,
-      };
+      const candidate: Match = { surface: prefix.surface, index: prefix.index, strength: 2 };
       if (!best || candidate.strength > best.strength) best = candidate;
       continue;
     }
-    if (word.length < MIN_INFIX_LENGTH) continue;
     const index = entry.lower.indexOf(word);
     if (index >= 0) {
       const candidate: Match = {
@@ -169,26 +113,6 @@ function matchWord(entry: SearchEntry, queryWord: string): Match | null {
     }
   }
   return best;
-}
-
-/**
- * The distinct words of a query, lower-cased and capped: the first
- * {@link MAX_QUERY_LENGTH} characters, at most {@link MAX_QUERY_WORDS} distinct
- * words. Truncation cuts at a word boundary where it can, so a long paste does
- * not end in half a word.
- */
-export function queryWords(query: string): string[] {
-  let text = query.trim();
-  if (text.length > MAX_QUERY_LENGTH) {
-    text = text.slice(0, MAX_QUERY_LENGTH);
-    const lastSpace = text.lastIndexOf(" ");
-    if (lastSpace > MAX_QUERY_LENGTH * 0.5) text = text.slice(0, lastSpace);
-  }
-  const words = text
-    .toLowerCase()
-    .split(/\s+/)
-    .filter((word) => word.length > 0 && word.length <= MAX_TOKEN_LENGTH);
-  return Array.from(new Set(words)).slice(0, MAX_QUERY_WORDS);
 }
 
 function snippet(
@@ -224,7 +148,7 @@ export function searchEntries(
   query: string,
   options: SearchOptions = {},
 ): SearchHit[] {
-  const words = queryWords(query);
+  const words = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
   if (words.length === 0) return [];
 
   const limit = options.limit ?? 40;

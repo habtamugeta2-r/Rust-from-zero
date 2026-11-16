@@ -163,8 +163,8 @@ In C, pointer casts can easily misread float bytes as integers or read past a st
 :::quiz Check your understanding
 ? What is `0x2A` in decimal and binary?
 - 32 and `0b0010_0000`
-+ 42 and `0b0010_1010`
 - 26 and `0b0001_1010`
++ 42 and `0b0010_1010`
 - 44 and `0b0010_1100`
 = `2 * 16 + 10 = 42`, and `2 = 0010`, `A (10) = 1010`, giving `0010_1010`.
 
@@ -177,16 +177,16 @@ In C, pointer casts can easily misread float bytes as integers or read past a st
 
 ? On a little-endian machine, how are the 4 bytes of `0x01020304_u32` stored from lowest address to highest address?
 - `[01, 02, 03, 04]`
-- `[02, 01, 04, 03]`
 - `[40, 30, 20, 10]`
+- `[02, 01, 04, 03]`
 + `[04, 03, 02, 01]`
 = Little-endian puts the least-significant byte (`0x04`) at the lowest memory address first.
 
 ? Why can the CPU tell a sequence of machine instructions apart from ordinary text bytes in memory?
-+ The program counter (`PC`) points to instruction bytes for the control unit to fetch and decode, whereas data addresses are read by load instructions
 - Instructions use 9-bit bytes while text uses 8-bit bytes
-- Instructions are stored exclusively inside the CPU forever and never in RAM
 - ASCII text is encrypted in hardware
+- Instructions are stored exclusively inside the CPU forever and never in RAM
++ The program counter (`PC`) points to instruction bytes for the control unit to fetch and decode, whereas data addresses are read by load instructions
 = In RAM, both instructions and data are 8-bit bytes; role depends on whether the CPU fetches them via the instruction pointer or loads them as data (assisted by OS page execution permissions).
 :::
 

@@ -155,30 +155,30 @@ Notice `/proc/self/exe` is a Linux kernel link pointing straight to the running 
 :::quiz Check your understanding
 ? Which ELF section holds string literals like `"Habtamu"` and read-only constant tables?
 - `.text`
-+ `.rodata`
-- `.bss`
 - `.plt`
+- `.bss`
++ `.rodata`
 = `.rodata` stores read-only constant data, separated from writable `.data` and executable `.text`.
 
 ? Why does a large zero-initialised static array (`static BUF: [u8; 1_000_000] = [0; 1_000_000];`) barely increase the size of the compiled file on disk?
 - Because Rust compresses arrays with gzip inside `.text`
-- Because `.bss` variables are deleted unless debugged
 + Because zero-initialised globals live in `.bss`, which stores only a size in the header rather than a million zero bytes on disk
+- Because `.bss` variables are deleted unless debugged
 - Because the array is moved into `libc.so.6`
 = The `.bss` section occupies zero bytes in the file payload; the OS loader maps zero-filled memory pages for its `MemSiz` at startup.
 
 ? What is the key structural difference between ELF section headers and ELF program headers?
 - Section headers are only for ARM64, while program headers are only for x86-64
++ Section headers describe fine-grained linker/debugger sections (`.text`, `.symtab`), while program headers describe coarse page-aligned memory segments (`PT_LOAD`) for the OS loader
 - Program headers store source code comments
 - Section headers are encrypted by the kernel
-+ Section headers describe fine-grained linker/debugger sections (`.text`, `.symtab`), while program headers describe coarse page-aligned memory segments (`PT_LOAD`) for the OS loader
 = Linkers and debuggers inspect sections (`readelf -S`), while the kernel ELF loader maps `PT_LOAD` segments (`readelf -l`) directly into virtual memory.
 
 ? Why does `rustc` mangle symbol names before putting them into object files?
-+ Because module paths, impl blocks, and monomorphised generics create distinct functions that share short Rust names, while object-file symbol tables require flat unique names
 - To stop users from reading source files
-- Because ELF magic numbers forbid lowercase ASCII letters
 - To speed up keyboard input
+- Because ELF magic numbers forbid lowercase ASCII letters
++ Because module paths, impl blocks, and monomorphised generics create distinct functions that share short Rust names, while object-file symbol tables require flat unique names
 = Name mangling encodes crate, module, and concrete generic types into unique ASCII linker identifiers that `nm -C` can demangle back into readable paths.
 :::
 

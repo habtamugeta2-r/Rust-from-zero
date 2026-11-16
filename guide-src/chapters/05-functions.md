@@ -3,7 +3,7 @@
 @title Functions: naming a piece of work
 @short Functions
 @level beginner
-@time 35
+@time 30
 @learn Write your own functions and call them | Pass values into a function and get a result back | Explain the difference between a statement and an expression | Document a function with comments that tools can read
 
 As a program grows, repeating the same steps makes changes harder and hides the shape of the task. A **[[function]]** gives a named operation its own inputs and result. You can call it from places where it is in scope, and read the surrounding code in terms of what the function does rather than how each step works.
@@ -239,16 +239,16 @@ fn mystery(a: i32) -> i32 {
 }
 ```
 - Nothing, because there is no `return`
-- `a * 2`
 + `b + 1`, the last expression without a semicolon
+- `a * 2`
 - It does not compile
 = The value of the final expression is returned automatically. With `a` = 5 the result is 11.
 
 ? Which one is a statement, not an expression?
-- `3 + 4`
-- `area(2, 5)`
-- `{ 3 + 4 }`
 + `let total = 3 + 4;`
+- `area(2, 5)`
+- `3 + 4`
+- `{ 3 + 4 }`
 = A `let` line does something (it creates a variable) but produces no value. The other three all produce a value.
 
 ? Why must parameter types be written in a function signature?
@@ -260,9 +260,9 @@ fn mystery(a: i32) -> i32 {
 
 ? Why does returning a value usually make a function easier to reuse?
 - Because a function can print only once
-+ Because the caller can decide what to do with the result and combine it with other work
 - Because return values are stored on the stack automatically
 - Because printing values is faster than computing them
++ Because the caller can decide what to do with the result and combine it with other work
 = A function that returns a value can be used in expressions, assigned to variables, or tested. That makes it composable.
 :::
 

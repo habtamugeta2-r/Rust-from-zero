@@ -29,6 +29,7 @@ export function GuideFigure({
   }, [open]);
 
   const close = useCallback(() => setOpen(false), []);
+  const darkSrc = src.endsWith(".svg") ? src.replace(/\.svg$/, "-dark.svg") : null;
 
   return (
     <figure className="guide-figure">
@@ -38,7 +39,22 @@ export function GuideFigure({
         onClick={() => setOpen(true)}
         aria-label={`Enlarge figure: ${alt}`}
       >
-        <img src={src} alt={alt} loading="lazy" decoding="async" />
+        <img
+          src={src}
+          alt={alt}
+          className={darkSrc ? "guide-figure-light" : undefined}
+          loading="lazy"
+          decoding="async"
+        />
+        {darkSrc ? (
+          <img
+            src={darkSrc}
+            alt={alt}
+            className="guide-figure-dark"
+            loading="lazy"
+            decoding="async"
+          />
+        ) : null}
         <span className="guide-figure-zoom no-print" aria-hidden="true">
           <Expand className="h-3.5 w-3.5" />
           Enlarge
@@ -73,7 +89,8 @@ export function GuideFigure({
             <X className="h-4 w-4" aria-hidden="true" />
           </button>
         </div>
-        <img src={src} alt={alt} />
+        <img src={src} alt={alt} className={darkSrc ? "guide-figure-light" : undefined} />
+        {darkSrc ? <img src={darkSrc} alt={alt} className="guide-figure-dark" /> : null}
         {caption ? <p className="guide-lightbox-caption">{caption}</p> : null}
       </dialog>
     </figure>

@@ -258,7 +258,7 @@ fn main() {
 | `Hash` | use as a key in a `HashMap` or `HashSet` | needs `Eq`. Equal values must have equal hashes, which the derived versions guarantee |
 | `Default` | `Type::default()` and `..Default::default()` | numbers become 0, text empty, `bool` false, `Option` `None`. For an enum, mark one variant with `#[default]` |
 
-A common full set for a small value type is `#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Default)]`. Crates add more: `Serialize` and `Deserialize` from serde ([chapter 78](#serde)), `Error` from thiserror ([chapter 23](#errors)), `Parser` from clap ([chapter 73](#cli)).
+A common full set for a small value type is `#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Default)]`. Crates add more: `Serialize` and `Deserialize` from serde ([chapter 45](#serde)), `Error` from thiserror ([chapter 23](#errors)), `Parser` from clap ([chapter 75](#cli)).
 
 ## `Option` and `Result`: which method?
 
@@ -342,7 +342,7 @@ Without an operating system, a program uses `core` (everything that needs neithe
 
 ## HTTP status codes
 
-HTTP status codes are part of every web service, and the numbers matter to clients. The ones a Rust web service sends, in practice ([chapter 67](#web)):
+HTTP status codes are part of every web service, and the numbers matter to clients. The ones a Rust web service sends, in practice ([chapter 69](#web)):
 
 | Code | Name | Meaning | When a server sends it |
 |---|---|---|---|
@@ -370,11 +370,11 @@ The two that are most often confused are **401** and **403**: authentication ver
 
 The full list, with the official definitions, is in [RFC 9110](https://www.rfc-editor.org/rfc/rfc9110).
 
-## Computer systems & Linux internals quick reference
+## Computer Systems & Linux Internals Quick Reference
 
 Quick lookup tables for [Part 1](#hardware-architecture), [Part 2](#compilation-pipeline), [Parts 6–10](#virtual-memory-address-spaces), and [the Linux Systems Lab](#linux-systems-lab):
 
-### Calling conventions & Linux `syscall` registers
+### Calling Conventions & Linux `syscall` Registers
 
 | Slot | x86-64 System V C Call | x86-64 Linux `syscall` | ARM64 (AArch64) C Call | ARM64 Linux `svc #0` |
 |---|---|---|---|---|
@@ -388,7 +388,7 @@ Quick lookup tables for [Part 1](#hardware-architecture), [Part 2](#compilation-
 | Return | `RAX` (+ `RDX`) | `RAX` (`-4095..-1` = `-errno`) | `X0` (+ `X1`) | `X0` |
 | Callee-saved | `RBX, RBP, R12–R15` | all preserved except `RCX, R11` | `X19–X28, X29, X30` | preserved |
 
-### Essential Linux binary & process inspection commands
+### Essential Linux Binary & Process Inspection Commands
 
 | Command | Purpose |
 |---|---|
@@ -406,9 +406,9 @@ Quick lookup tables for [Part 1](#hardware-architecture), [Part 2](#compilation-
 - The basic types, with sizes and ranges: [chapter 9](#types).
 - All patterns: [chapter 19](#patterns).
 - The most used iterator methods: [chapter 30](#iterators).
-- Which smart pointer for which job: [chapter 32](#smart-pointers).
+- Which smart pointer for which job: [chapter 35](#smart-pointers).
 - Naming rules: [chapter 43](#idioms).
-- The Cargo commands: [chapter 35](#cargo).
+- The Cargo commands: [chapter 32](#cargo).
 - The common compiler errors and their repairs: [the errors appendix](#errors-ref).
 
 ## Authoritative and current sources

@@ -27,13 +27,6 @@ export interface RouteMeta {
   chapters: string[] | null;
 }
 
-/** The slice of a glossary entry the hover tooltip needs. */
-export interface GlossaryTipItem {
-  key: string;
-  term: string;
-  definitionPlain: string;
-}
-
 export interface GlossaryEntry {
   key: string;
   term: string;
@@ -103,13 +96,7 @@ export type BlockNode =
       lang: string;
       label: string;
       code: string;
-      /**
-       * Whether this block has a runnable wrapper (`fullCode`) different from
-       * the visible code. The wrapper itself is fetched on demand from
-       * `GET /api/playground`, because carrying it inside the chapter made the
-       * RSC payload as large as the page itself.
-       */
-      hasFullCode: boolean;
+      fullCode?: string;
       filename?: string;
       isContinuation: boolean;
       kind: string;
@@ -123,7 +110,7 @@ export type BlockNode =
     }
   | { type: "flame"; caption: InlineNode[]; roots: FlameNode[] }
   | { type: "figure"; src: string; alt: string; caption: InlineNode[] }
-  | { type: "callout"; kind: CalloutKind; title?: InlineNode[]; blocks: BlockNode[] }
+  | { type: "callout"; kind: CalloutKind; id?: string; title?: InlineNode[]; blocks: BlockNode[] }
   | { type: "details"; title: InlineNode[]; blocks: BlockNode[] }
   | { type: "quiz"; quizId: string; title: InlineNode[]; questions: QuizQuestion[] }
   | {
@@ -148,6 +135,35 @@ export interface HeadingItem {
   text: string;
 }
 
+/**
+ * One node of a chapter's internal content graph.
+ *
+ * The sidebar renders a chapter as a tree of these: a section (`##`) holds
+ * its subsections (`###`), which hold their key points — a `####` detail,
+ * a `:::key` callout, an exercise, a quiz, a checklist or a recap. Every
+ * node's `id` is the DOM anchor of the block it came from inside the
+ * chapter page, so a node is also a deep link: `/chapters/<id>#<node id>`.
+ * `children` is always present (empty for leaves) so renderers and tests
+ * never have to null-check the graph.
+ */
+export type ContentNodeKind =
+  | "section"
+  | "subsection"
+  | "detail"
+  | "key"
+  | "recap"
+  | "exercise"
+  | "quiz"
+  | "checklist";
+
+export interface ContentNode {
+  /** DOM anchor id inside the chapter page (a heading id, `exerciseId`, …). */
+  id: string;
+  label: string;
+  kind: ContentNodeKind;
+  children: ContentNode[];
+}
+
 export interface ChapterSummary {
   id: string;
   num: string;
@@ -160,6 +176,8 @@ export interface ChapterSummary {
   time: number;
   learn: string[];
   file: string;
+  /** The chapter broken down into its internal content graph. */
+  outline: ContentNode[];
 }
 
 export interface ChapterData extends ChapterSummary {
@@ -202,29 +220,6 @@ export interface SearchHit {
   after: string;
 }
 
-/**
- * The slice of a part the client shell needs: its identity, for the sidebar
- * heading. The blurb and level are server-side facts and stay out of the
- * serialised payload.
- */
-export interface PartNav {
-  key: string;
-  partLabel: string;
-  partTitle: string;
-}
-
-/**
- * The slice of a chapter the client shell needs: enough to draw a sidebar row,
- * tick it as read and count progress. Titles and numbering, no prose.
- */
-export interface ChapterProgressInput {
-  id: string;
-  num: string;
-  part: string;
-  kind: string;
-  short: string;
-}
-
 export interface LoadedGuide {
   parts: PartMeta[];
   routes: RouteMeta[];
@@ -234,11 +229,5 @@ export interface LoadedGuide {
   glossary: Record<string, GlossaryEntry>;
   stats: GuideStats;
   searchIndex: SearchEntry[];
-  /**
-   * Runnable wrappers (`fullCode`) keyed by the SHA-1 of the block they wrap.
-   * Served on demand by `GET /api/playground`, so the wrapper of every listing
-   * is not shipped inside every page that renders it.
-   */
-  wrappers: Record<string, string>;
   warnings: string[];
 }

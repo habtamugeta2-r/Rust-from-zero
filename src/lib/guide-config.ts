@@ -18,24 +18,24 @@ export const RAW_PARTS: Omit<PartMeta, "partLabel" | "partTitle">[] = [
   },
   {
     key: "p3",
-    title: "Core Rust fundamentals",
+    title: "Rust foundations and ownership",
     level: "Beginner",
     blurb:
-      "Variables and mutability, types, functions, control flow, ownership, borrowing, slices and text, structs, enums, patterns and collections — the syntax and the ownership model every later chapter assumes, with a small project after each stage.",
+      "Variables, data types, functions, control flow, stack and heap memory, ownership, borrowing, slices, structs, enums, patterns, collections, and two guided projects.",
   },
   {
     key: "p3b",
-    title: "Abstraction and architecture",
+    title: "Modular Rust, abstractions, and tooling",
     level: "Intermediate",
     blurb:
-      "Modules, error handling, generics, traits, lifetimes, closures, iterators, smart pointers, advanced traits and the type system: how a Rust program is organised once the syntax is familiar.",
+      "Modules, error handling, generics, traits, lifetimes, testing, closures, iterators, Cargo workflows, formatting and Clippy, testing strategies, and two projects.",
   },
   {
     key: "p3c",
-    title: "Advanced Rust",
+    title: "Advanced Rust, unsafe, and everyday crates",
     level: "Advanced",
     blurb:
-      "Declarative and procedural macros, unsafe Rust and its invariants, the C ABI and FFI, memory layout, the standard library's internals, and the idioms that separate working code from idiomatic code.",
+      "Smart pointers, advanced traits, type-driven design, macros, unsafe Rust, FFI, memory layout, standard-library internals, idioms, everyday crates, and Serde.",
   },
   {
     key: "p4",
@@ -98,14 +98,14 @@ export const RAW_PARTS: Omit<PartMeta, "partLabel" | "partTitle">[] = [
     title: "Practical system programming with Rust",
     level: "Intermediate",
     blurb:
-      "Cargo workflows, quality tooling, testing strategies, CLI utilities, performance profiling, hands-on Linux inspection labs (GDB, objdump, readelf, strace, perf, /proc), and capstone.",
+      "CLI utilities with Clap, performance profiling, hands-on Linux inspection labs (GDB, objdump, readelf, strace, perf, /proc), and the full-stack library capstone.",
   },
   {
     key: "p13",
     title: "Applied Rust ecosystem and next steps",
     level: "Intermediate",
     blurb:
-      "Crate selection, Serde data formats, UI/WebAssembly/Tauri, games and embedded systems, and where to continue your journey.",
+      "UI/WebAssembly/Tauri, games and embedded systems, and where to continue your journey.",
   },
   {
     key: "app",
@@ -198,7 +198,7 @@ export const ROUTES: RouteMeta[] = [
     id: "all",
     label: "All chapters",
     summary:
-      "The complete 13-part curriculum: computer systems from hardware up, Rust internals, and 9 hands-on projects.",
+      "The complete 15-part curriculum: computer systems from hardware up, Rust internals, and 9 hands-on projects.",
     chapters: null,
   },
   {
@@ -300,10 +300,6 @@ export const LANG_LABELS: Record<string, string> = {
   asm: "Assembly",
   llvm: "LLVM IR",
   mir: "Rust MIR",
-  protobuf: "Protocol Buffers",
-  // `flame` is not a code fence at all — it is the flame-graph directive — but
-  // it reaches the label lookup on the way through, and "FLAME" read badly.
-  flame: "Flame graph",
   diff: "Diff",
 };
 

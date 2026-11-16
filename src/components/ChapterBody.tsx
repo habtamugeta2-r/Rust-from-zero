@@ -13,7 +13,7 @@ import {
 import { CALLOUT_LABELS } from "@/lib/guide-config";
 import type { BlockNode, CalloutKind } from "@/lib/guide-types";
 import { highlightCode, highlightRustLines } from "@/lib/highlight";
-import { codeHash, inlinePlainText } from "@/lib/guide-parser";
+import { inlinePlainText } from "@/lib/guide-parser";
 import { ChecklistWidget } from "./ChecklistWidget";
 import { CodeBlock } from "./CodeBlock";
 import { ExerciseCard } from "./ExerciseCard";
@@ -23,22 +23,6 @@ import { GlossaryDirectory } from "./GlossaryDirectory";
 import { InlineRenderer } from "./InlineRenderer";
 import { MemoryStepper } from "./MemoryStepper";
 import { QuizWidget } from "./QuizWidget";
-
-/**
- * What Copy puts on the clipboard for a shell listing: the commands without the
- * `$ ` prompt and without the `  # ` trailing comment, so a pasted block runs.
- */
-function shellCopyText(code: string): string {
-  const commands = code
-    .split("\n")
-    .filter((line) => line.startsWith("$ "))
-    .map((line) => {
-      const rest = line.slice(2);
-      const idx = rest.indexOf("  # ");
-      return idx >= 0 ? rest.slice(0, idx) : rest;
-    });
-  return commands.length > 0 ? commands.join("\n") : code;
-}
 
 /* Kind colours live in globals.css (.guide-callout[data-kind=…]) so the
    eight tints are design tokens, not palette classes scattered here. */
@@ -180,24 +164,16 @@ async function renderBlock(
       );
 
     case "code": {
-      // Shell listings copy their commands, not the `$` prompt or a trailing
-      // `# comment`, which is what a reader actually wants pasted.
-      const copyPayload =
-        block.isOutput || block.isError
-          ? undefined
-          : block.lang === "sh"
-            ? shellCopyText(block.code)
-            : block.code;
       const highlightedHtml = await highlightCode(block.code, block.lang);
+      const copyPayload =
+        block.isOutput || block.isError ? undefined : block.code;
       return (
         <CodeBlock
           key={key}
-          html={highlightedHtml}
           lang={block.lang}
           label={block.label}
-          copyText={copyPayload}
-          codeHash={codeHash(block.code)}
-          hasFullCode={block.hasFullCode}
+          rawCode={copyPayload}
+          fullCode={block.fullCode}
           filename={block.filename}
           isContinuation={block.isContinuation}
           kind={block.kind}
@@ -207,7 +183,9 @@ async function renderBlock(
           isSoft={block.isSoft}
           isOutput={block.isOutput}
           isError={block.isError}
-        />
+        >
+          <div dangerouslySetInnerHTML={{ __html: highlightedHtml }} />
+        </CodeBlock>
       );
     }
 
@@ -239,7 +217,7 @@ async function renderBlock(
     case "callout": {
       const Icon = CALLOUT_ICONS[block.kind];
       return (
-        <aside key={key} role="note" className="guide-callout" data-kind={block.kind}>
+        <aside key={key} id={block.id} role="note" className="guide-callout" data-kind={block.kind}>
           <div className="guide-callout-label mb-2 flex items-center gap-2 font-sans text-xs font-bold tracking-[0.06em] uppercase">
             <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
             <span>{CALLOUT_LABELS[block.kind]}</span>
@@ -317,6 +295,7 @@ async function renderBlock(
       return (
         <ChecklistWidget
           key={key}
+          checklistId={block.checklistId}
           items={block.items.map((it) => ({
             id: it.id,
             content: <InlineRenderer nodes={it.children} />,

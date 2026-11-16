@@ -3,10 +3,10 @@
 @title Ownership: one owner for every value
 @short Ownership and moves
 @level beginner
-@time 45
+@time 40
 @learn State the three rules of ownership | Explain what a move is and why the old variable can no longer be used | Decide when to move, when to clone, and which types are copied automatically | Follow ownership as values go into functions and come back out
 
-A library needs to know who is responsible for each copy of a book and when it can be returned to the shelves. A program also needs clear responsibility for the values it uses. Rust calls this rule system **ownership**: it lets ordinary values be cleaned up without a tracing garbage collector. The examples below show how moving a value changes which part of the program owns it.
+A library needs to know who is responsible for each [[copy]] of a book and when it can be returned to the shelves. A program also needs clear responsibility for the values it uses. Rust calls this rule system **ownership**: it lets ordinary values be cleaned up without a tracing garbage collector. The examples below show how moving a value changes which part of the program owns it.
 
 ## The three rules
 
@@ -256,7 +256,7 @@ one two
 :::
 
 :::details Dropping a value early
-A value is normally dropped at the end of its scope. To drop it sooner, pass it to the function `drop`. It takes ownership of its argument and does nothing else, so the value's life ends right there.
+A value is normally [[dropped|drop]] at the end of its scope. To drop it sooner, pass it to the function `drop`. It takes ownership of its argument and does nothing else, so the value's life ends right there.
 
 ```rust run
 fn main() {
@@ -312,9 +312,9 @@ let b = a;
 println!("{a} {b}");
 ```
 - Because numbers are stored on the heap
++ Because `i32` is a `Copy` type: it lives only on the stack and is cheap to copy, so it is copied instead of moved
 - Because `println!` is special
 - Because the compiler does not check numbers
-+ Because `i32` is a `Copy` type: it lives only on the stack and is cheap to copy, so it is copied instead of moved
 = `Copy` types are duplicated on assignment. There is no heap data, so nothing could be freed twice.
 
 ? When is the heap memory of the `String` in this program freed?
@@ -334,9 +334,9 @@ fn consume(text: String) {}
 
 ? What does `.clone()` do for a `String`?
 - It creates a second owner for the same heap data
-+ It allocates new heap memory and copies the characters, giving an independent second text
 - It moves the text
 - It converts the `String` into a `Copy` type
++ It allocates new heap memory and copies the characters, giving an independent second text
 = After a clone there are two separate texts, each with its own owner. Changing or dropping one does not affect the other.
 :::
 

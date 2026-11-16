@@ -138,29 +138,29 @@ Compare `-C opt-level=0` (verbose stack spills, overflow panic checks, frame poi
 
 :::quiz Check your understanding
 ? What is "register spilling" during code generation?
-- Erasing all CPU registers on program exit
 + Temporarily saving local values onto the stack in RAM because more values are live at once than the CPU has physical registers
+- Erasing all CPU registers on program exit
 - Sending register contents over a network socket
 - Turning 64-bit registers into 8-bit bytes
 = CPUs have only 16–31 general-purpose registers; when live variables exceed that count, the register allocator spills extra values to stack slots.
 
 ? In Intel-syntax x86-64 assembly (`mov eax, 42`), which operand is the destination?
-- `42` (the second operand)
 - `rip`
+- `42` (the second operand)
 + `eax` (the first operand)
 - Both operands are added together
 = In Intel syntax, destination always comes first (`op dst, src`); AT&T syntax reverses this order.
 
 ? How many bytes does a single ARM64 (`AArch64`) instruction occupy in memory compared with an x86-64 instruction?
 - ARM64 instructions vary from 1 to 15 bytes, while x86-64 is always 4 bytes
-- Both architectures use fixed 8-byte instructions
 - Instructions are stored as UTF-8 text strings
+- Both architectures use fixed 8-byte instructions
 + Every standard ARM64 instruction is fixed at 4 bytes, whereas x86-64 instructions vary from 1 to 15 bytes
 = Fixed 4-byte RISC instructions simplify instruction fetch and decode on ARM64, whereas x86-64 uses compact variable-length encodings (like `0xc3` for 1-byte `ret`).
 
 ? In `objdump -d` output (`1160: 8d 04 37   lea eax, [rdi+rsi*1]`), what are `8d 04 37`?
-+ The actual hexadecimal machine code bytes that live in memory and enter the CPU decoder
 - Line numbers in `src/main.rs`
++ The actual hexadecimal machine code bytes that live in memory and enter the CPU decoder
 - Virtual RAM addresses of local variables
 - Compiler error codes
 = The middle column in `objdump -d` shows the raw instruction bytes encoded in the `.text` section.

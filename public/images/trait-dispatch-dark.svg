@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 470" role="img" aria-labelledby="t d">
+  <title id="t">Static dispatch versus dynamic dispatch with trait objects</title>
+  <desc id="d">Static dispatch emits one specialised copy per concrete type and calls it directly, while dyn Trait uses a two-word fat pointer (data pointer and vtable pointer) for runtime lookup.</desc>
+  <rect width="1200" height="470" rx="24" fill="#1C1A17"/>
+  <rect x="1" y="1" width="1198" height="468" rx="23" fill="none" stroke="#2D2A24" stroke-width="2"/>
+  <text x="48" y="58" font-family="system-ui, sans-serif" font-size="24" font-weight="700" fill="#ECE7DD">Static dispatch vs dynamic dispatch (&amp;dyn Trait)</text>
+  <text x="48" y="86" font-family="system-ui, sans-serif" font-size="15" fill="#A49B88">Generics resolve at compile time; trait objects pay one pointer indirection to mix types at run time.</text>
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#E9743E"/></marker>
+    <marker id="at" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#2DD4BF"/></marker>
+  </defs>
+  <g font-family="system-ui, sans-serif">
+    <text x="70" y="136" font-size="14" font-weight="700" letter-spacing="1.5" fill="#2DD4BF">STATIC DISPATCH · impl Shape / &lt;T: Shape&gt;</text>
+    <rect x="48" y="152" width="490" height="232" rx="16" fill="#12322E" stroke="#2DD4BF" stroke-width="2"/>
+    <rect x="74" y="178" width="204" height="72" rx="10" fill="#181613" stroke="#2DD4BF"/>
+    <text x="176" y="208" text-anchor="middle" font-family="ui-monospace, monospace" font-size="14" font-weight="700" fill="#ECE7DD">draw(&amp;circle)</text>
+    <text x="176" y="232" text-anchor="middle" font-size="12.5" fill="#2DD4BF">direct call · inlinable</text>
+    <rect x="74" y="268" width="204" height="72" rx="10" fill="#181613" stroke="#2DD4BF"/>
+    <text x="176" y="298" text-anchor="middle" font-family="ui-monospace, monospace" font-size="14" font-weight="700" fill="#ECE7DD">draw(&amp;rect)</text>
+    <text x="176" y="322" text-anchor="middle" font-size="12.5" fill="#2DD4BF">direct call · inlinable</text>
+
+    <rect x="314" y="178" width="200" height="72" rx="10" fill="#181613" stroke="#3E3930"/>
+    <text x="414" y="208" text-anchor="middle" font-family="ui-monospace, monospace" font-size="13.5" font-weight="700" fill="#ECE7DD">Circle::area()</text>
+    <text x="414" y="230" text-anchor="middle" font-size="12" fill="#A49B88">monomorphised</text>
+    <rect x="314" y="268" width="200" height="72" rx="10" fill="#181613" stroke="#3E3930"/>
+    <text x="414" y="298" text-anchor="middle" font-family="ui-monospace, monospace" font-size="13.5" font-weight="700" fill="#ECE7DD">Rect::area()</text>
+    <text x="414" y="320" text-anchor="middle" font-size="12" fill="#A49B88">monomorphised</text>
+    <line x1="280" y1="214" x2="308" y2="214" stroke="#2DD4BF" stroke-width="2.5" marker-end="url(#at)"/>
+    <line x1="280" y1="304" x2="308" y2="304" stroke="#2DD4BF" stroke-width="2.5" marker-end="url(#at)"/>
+    <text x="74" y="366" font-size="13.5" fill="#C2BBAF">Zero runtime cost; larger binary if many types.</text>
+
+    <text x="588" y="136" font-size="14" font-weight="700" letter-spacing="1.5" fill="#E9743E">DYNAMIC DISPATCH · &amp;dyn Shape (16-BYTE FAT POINTER)</text>
+    <rect x="566" y="152" width="586" height="232" rx="16" fill="#39231A" stroke="#E9743E" stroke-width="2"/>
+    <rect x="592" y="178" width="212" height="58" rx="10" fill="#181613" stroke="#E9743E"/>
+    <text x="698" y="213" text-anchor="middle" font-family="ui-monospace, monospace" font-size="14" font-weight="700" fill="#ECE7DD">data_ptr →</text>
+    <rect x="592" y="246" width="212" height="58" rx="10" fill="#181613" stroke="#E9743E"/>
+    <text x="698" y="281" text-anchor="middle" font-family="ui-monospace, monospace" font-size="14" font-weight="700" fill="#ECE7DD">vtable_ptr →</text>
+
+    <rect x="854" y="172" width="272" height="62" rx="10" fill="#181613" stroke="#3E3930"/>
+    <text x="990" y="199" text-anchor="middle" font-family="ui-monospace, monospace" font-size="14" font-weight="700" fill="#ECE7DD">Circle { radius: 1.0 }</text>
+    <text x="990" y="221" text-anchor="middle" font-size="12" fill="#A49B88">concrete data (stack or heap)</text>
+
+    <rect x="854" y="246" width="272" height="96" rx="10" fill="#132B3A" stroke="#38BDF8"/>
+    <text x="990" y="272" text-anchor="middle" font-size="12.5" font-weight="700" fill="#38BDF8">Circle's vtable in .rodata</text>
+    <text x="990" y="295" text-anchor="middle" font-family="ui-monospace, monospace" font-size="12.5" fill="#ECE7DD">drop · size · align</text>
+    <text x="990" y="317" text-anchor="middle" font-family="ui-monospace, monospace" font-size="12.5" fill="#ECE7DD">area: fn(&amp;Circle) → f64</text>
+    <line x1="808" y1="207" x2="848" y2="207" stroke="#E9743E" stroke-width="2.5" marker-end="url(#ar)"/>
+    <line x1="808" y1="275" x2="848" y2="275" stroke="#E9743E" stroke-width="2.5" marker-end="url(#ar)"/>
+    <text x="592" y="366" font-size="13.5" fill="#C2BBAF">One copy of caller code; mixes any Shape in one Vec.</text>
+
+    <rect x="48" y="402" width="1104" height="44" rx="10" fill="#232019" stroke="#2D2A24"/>
+    <text x="72" y="429" font-size="14" fill="#C2BBAF">Default to <tspan font-weight="700" fill="#2DD4BF">impl Trait</tspan> / generics; reach for <tspan font-weight="700" fill="#E9743E">dyn Trait</tspan> when a collection holds different concrete types.</text>
+  </g>
+</svg>

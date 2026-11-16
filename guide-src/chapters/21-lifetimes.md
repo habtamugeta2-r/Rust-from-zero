@@ -3,7 +3,7 @@
 @title Lifetimes: how long references stay valid
 @short Lifetimes
 @level intermediate
-@time 50
+@time 45
 @learn Explain what a lifetime is and why the compiler tracks it | Read and write lifetime annotations such as `'a` | Know when annotations are needed and when the compiler fills them in | Put references into structs | Recognise `'static` and avoid misusing it
 
 A reference is useful only while the value it points to remains valid. The compiler checks that relationship; a **lifetime** describes the region in which a reference may be used. Non-lexical lifetimes let many borrows end after their last use rather than at the end of the surrounding block. This analysis applies across Rust editions; lifetime annotations describe relationships the compiler cannot infer from a function's signature alone. The borrowing rules are introduced in [the references chapter](#borrowing); [the compiler-pipeline chapter](#compilation-pipeline) explains where borrow checking fits.
@@ -226,7 +226,7 @@ fn main() {
 yes hello
 ```
 
-You will also see `'static` as a bound on a type: `T: 'static`. It means "`T` contains no borrowed data that could expire", which is true for all owned types such as `String`, `Vec<u8>` and `i32`. A new thread, for instance, requires that of the data you give to it, because the thread might run longer than the function that started it ([chapter 58](#threads)).
+You will also see `'static` as a bound on a type: `T: 'static`. It means "`T` contains no borrowed data that could expire", which is true for all owned types such as `String`, `Vec<u8>` and `i32`. A new thread, for instance, requires that of the data you give to it, because the thread might run longer than the function that started it ([chapter 60](#threads)).
 
 :::warn `'static` is rarely the fix
 When a lifetime error appears, the compiler sometimes mentions `'static`, and it is tempting to write it everywhere until the errors stop. This almost never solves the real problem. It demands that the data lives for ever, which you usually cannot provide. Ask instead: who should own this data, and how long does it need to live?
@@ -335,7 +335,7 @@ A short guide for lifetime errors, from the simplest remedy to the more involved
 3. **Own the data in structs**: `String` in place of `&str`.
 4. **Clone** when the data is small or the code runs rarely. A clone that removes a difficult lifetime problem is a good trade. You can optimise later, when measurements show that it matters.
 5. **Store an index or a key, not a reference**, when one part of a data structure must refer to another part. For example, keep the position of an element in a `Vec`, and look it up when needed.
-6. **Shared ownership** with `Rc` or `Arc` when several parts of the program truly need to own the same value ([chapter 32](#smart-pointers)).
+6. **Shared ownership** with `Rc` or `Arc` when several parts of the program truly need to own the same value ([chapter 35](#smart-pointers)).
 
 :::compare Lifetimes in other languages
 - **C and C++** have the same problem and leave the checking to the programmer. Returning a pointer to a local variable compiles (perhaps with a warning), and using it is undefined behaviour. A large share of the security holes in C and C++ programs are exactly these "use after free" bugs.
@@ -360,16 +360,16 @@ Lifetimes such as `'a` exist **solely inside the compiler** and take **zero byte
 :::quiz Check your understanding
 ? What does a lifetime annotation like `'a` do?
 + It describes how the validity of references relates, so that the compiler can check it
-- It makes a value live longer
 - It tells the compiler when to free memory
+- It makes a value live longer
 - It slows the program down slightly
 = Annotations are descriptions for the borrow checker. They do not exist in the finished program and never change how long anything lives.
 
 ? Why does `fn longest(a: &str, b: &str) -> &str` need annotations, while `fn first_word(text: &str) -> &str` does not?
 - `longest` has a longer body
-+ With one reference parameter, the result can only borrow from that one. With two, the compiler cannot know which one the result borrows from
-- Functions with two parameters always need annotations
 - `first_word` returns a copy
+- Functions with two parameters always need annotations
++ With one reference parameter, the result can only borrow from that one. With two, the compiler cannot know which one the result borrows from
 = The elision rules cover the case of exactly one reference parameter. With two candidates and no `self`, you must say how the result relates to them.
 
 ? Can this function be fixed by adding lifetime annotations?
@@ -387,14 +387,14 @@ fn make() -> &String {
 
 ? What does `struct Parser<'a> { input: &'a str }` tell you?
 - The parser owns its input
++ A `Parser` borrows its input and cannot be used after the input has gone away
 - The parser lives for the whole program
 - The input can be changed through the parser
-+ A `Parser` borrows its input and cannot be used after the input has gone away
 = The lifetime parameter ties the struct to the data it references. The compiler will not let the struct outlive that data.
 
 ? Which values have the lifetime `'static`?
-+ String literals such as `"hello"`, and other data stored in the program itself
 - All `String`s
++ String literals such as `"hello"`, and other data stored in the program itself
 - Everything stored on the heap
 - Local variables in `main`
 = A string literal is part of the program file and is therefore valid for the whole run. A local variable in `main` is dropped when `main` ends, which is not quite the same.

@@ -3,10 +3,10 @@
 @title Generics: code that works for many types
 @short Generics
 @level intermediate
-@time 35
+@time 30
 @learn Remove duplicated code by writing a function once for many types | Define generic structs, enums and methods | Read and write the `<T>` notation with confidence | Explain why generic code in Rust is as fast as hand-written code
 
-Types such as `Vec<i32>` and `Option<String>` use a type parameter to say what kind of value they contain. **Generics** let you write a function or data type in terms of parameters, then use it with concrete types. This chapter shows how to declare those parameters and how trait bounds express the operations generic code requires.
+Types such as `Vec<i32>` and `Option<String>` use a type parameter to say what kind of value they contain. **[[Generics|generic]]** let you write a function or data type in terms of parameters, then use it with concrete types. This chapter shows how to declare those parameters and how trait bounds express the operations generic code requires.
 
 ## The problem: the same code twice
 
@@ -214,13 +214,13 @@ The form `::<Type>` is nicknamed the **[[turbofish]]**, because `::<>` looks a l
 
 ## Generics cost nothing at run time
 
-When you call `largest` with `i32`, with `f64` and with `char`, the compiler generates three separate versions of the function, each made for one type, exactly as if you had written `largest_i32`, `largest_f64` and `largest_char` by hand. This process is called **monomorphization** (roughly: "making into single forms").
+When you call `largest` with `i32`, with `f64` and with `char`, the compiler generates three separate versions of the function, each made for one type, exactly as if you had written `largest_i32`, `largest_f64` and `largest_char` by hand. This process is called **monomorphisation** (roughly: "making into single forms").
 
 The result: generic code runs exactly as fast as code written for one specific type. You pay nothing when the program runs. The price is paid at compile time (more code to generate) and in the size of the finished program.
 
 :::compare Generics in other languages
 - **Java and C#:** also have generics with `<T>`. Java removes the type information when compiling ("type erasure") and stores everything as general objects, which costs some speed and memory for simple types like numbers.
-- **C++:** templates work much like Rust's generics and are also monomorphized. A C++ template is only checked when it is used with a concrete type, which can give very long error messages. Rust checks a generic function once, against its trait bounds, and reports problems at the definition.
+- **C++:** templates work much like Rust's generics and are also monomorphised. A C++ template is only checked when it is used with a concrete type, which can give very long error messages. Rust checks a generic function once, against its trait bounds, and reports problems at the definition.
 - **Go:** added generics in version 1.18 (2022), after ten years without them.
 - **Python and JavaScript:** have no need for generics at run time, because any variable can hold any type. The type checkers for these languages (mypy, TypeScript) have generics for the same reason as Rust: to describe "the same type in, the same type out".
 :::
@@ -265,16 +265,16 @@ Grid { cells: [[0, 0, 0], [0, 0, 0]] }
 - Functions, structs, enums and `impl` blocks can be generic.
 - A trait bound such as `T: PartialOrd` limits the blank to types with a certain ability, and allows you to use that ability inside.
 - The compiler usually infers the types. If not, annotate the variable or use the turbofish `::<T>`.
-- Monomorphization creates one specialised copy per type used, so generics have no run-time cost.
+- Monomorphisation creates one specialised copy per type used, so generics have no run-time cost.
 - `const N: usize` makes a value, such as an array length, a parameter.
 :::
 
 :::quiz Check your understanding
 ? What does the `<T>` in `fn first<T>(list: &[T]) -> &T` declare?
 - A variable called `T`
++ A type parameter: a placeholder for a type that is chosen at each call
 - A trait
 - A constant
-+ A type parameter: a placeholder for a type that is chosen at each call
 = `T` stands for a type. Each call of `first` fills it in, for example with `i32` or `String`.
 
 ? Why does this function not compile?
@@ -283,23 +283,23 @@ fn double<T>(x: T) -> T {
     x + x
 }
 ```
-+ Not every type supports `+`. A trait bound is needed that guarantees `T` can be added
 - Generic functions cannot return values
 - `T` must be written as `i32`
 - `x` is used twice
++ Not every type supports `+`. A trait bound is needed that guarantees `T` can be added
 = Without a bound, `T` could be any type, and the compiler only allows operations that every type has. The bound `T: std::ops::Add<Output = T> + Copy` would make it work.
 
-? What is monomorphization?
+? What is monomorphisation?
 - Checking types while the program runs
-+ Generating a separate, specialised copy of generic code for each concrete type it is used with
 - Converting all values to one common type
++ Generating a separate, specialised copy of generic code for each concrete type it is used with
 - Removing unused functions
 = The compiler turns one generic definition into several concrete ones, so the running program has no extra work to do.
 
 ? Which line uses the turbofish correctly?
 - `let n = "5".parse<i32>().unwrap();`
-- `let n = "5".parse(i32).unwrap();`
 + `let n = "5".parse::<i32>().unwrap();`
+- `let n = "5".parse(i32).unwrap();`
 - `let n = "5".<i32>parse().unwrap();`
 = The type goes after `::` and inside angle brackets, between the function name and the parentheses.
 :::

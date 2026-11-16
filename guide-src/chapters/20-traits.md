@@ -3,7 +3,7 @@
 @title Traits: shared behaviour
 @short Traits
 @level intermediate
-@time 50
+@time 45
 @learn Define a trait and implement it for your own types | Write functions that accept any type with a certain ability | Use the standard traits (`Debug`, `Display`, `Clone`, `PartialEq`, `Ord`, `Default`, `From`) | Store values of different types together with `dyn Trait` | Explain how traits replace inheritance
 
 Two different types may support the same operation without sharing a common parent class. A **trait** names a set of behaviour that types can implement. Rust uses traits for familiar operations such as formatting and comparison, and generic functions can require the traits they need through bounds. This chapter builds from implementations to trait bounds and dynamic dispatch.
@@ -192,7 +192,7 @@ The real type returned here is long and awkward to write. The caller only needs 
 
 ### What the returned type is allowed to borrow: `use<…>`
 
-An `impl Trait` return type is an opaque type, and an opaque type has to say which lifetimes it depends on. Since the **2024 edition** the rule is the simple one: **the hidden type may capture every lifetime in scope**. Before 2024 it captured only the ones the body used, which caused the opposite problem — a returned iterator that *did* borrow something failed to compile until you added a lifetime nobody could see in the signature.
+An `impl Trait` return type is an opaque type, and an opaque type has to say which lifetimes it depends on. Since the **2024 edition** the rule is the simple one: **the hidden type may capture every lifetime in scope**. Before 2024 it captured only the ones it appeared to need, which caused the opposite problem — a returned iterator that *did* borrow something failed to compile until you added a lifetime nobody could see in the signature.
 
 The new rule is easier to explain and occasionally too generous: capturing a lifetime ties the returned value to a borrow it does not really need. When that happens, say precisely what the return type captures with a `use<…>` list — an empty `use<>` means "captures nothing":
 
@@ -221,7 +221,7 @@ Without `use<>`, edition 2024 would make the return type depend on the borrow of
 
 Two rules of thumb:
 
-- **You rarely need to write `use<…>`.** Write it when the compiler complains that a value is borrowed for too long, or when you are returning a closure or iterator that owns everything it uses.
+- **You rarely need to write `use<…>`.** Write it when the compiler complains that a value is borrowed for too long, or when you are returning a closure or iterator that clearly owns everything it uses.
 - **List what the type really needs.** `use<'a>` for one lifetime, `use<'a, T>` when a generic type parameter is also involved. In edition 2024 all type parameters are captured by default, so a `use<…>` list must mention every type parameter the hidden type uses — the compiler checks this and tells you which one is missing.
 
 
@@ -471,7 +471,7 @@ total area 9.93
 ```
 
 - **`dyn Shape`** means "a value of some type that implements `Shape`, and which type is only known while the program runs". Such a value is called a **[[trait object]]**.
-- Different shapes have different sizes, so they cannot sit directly in a vector. **`Box::new(value)`** puts each value on the heap and keeps a pointer to it. All the pointers have the same size. [Chapter 32](#smart-pointers) covers `Box` in detail.
+- Different shapes have different sizes, so they cannot sit directly in a vector. **`Box::new(value)`** puts each value on the heap and keeps a pointer to it. All the pointers have the same size. [Chapter 35](#smart-pointers) covers `Box` in detail.
 - When `shape.area()` is called, the program looks up at run time which `area` belongs to this value. This is called **dynamic dispatch**. Generic code decides at compile time (**[[static dispatch]]**).
 
 | | Generics (`impl Trait`, `<T: Trait>`) | Trait objects (`dyn Trait`) |
@@ -482,6 +482,8 @@ total area 9.93
 | Program size | one copy of the code per type | one copy in total |
 
 Use generics by default, and `dyn Trait` when you need to mix types in one place.
+
+![Diagram comparing static dispatch via monomorphised generics with dynamic dispatch via a two-word dyn Trait fat pointer and vtable](/images/trait-dispatch.svg "Static dispatch calls each concrete method directly; `&dyn Trait` pairs a data pointer with a vtable pointer.")
 
 :::details Under the hood: fat pointers `(data_ptr, vtable_ptr)`
 A `&dyn Shape` or `Box<dyn Shape>` is two machine words wide (16 bytes on 64-bit targets): a **data pointer** to the concrete struct on the stack or heap, plus a **vtable pointer** to a read-only table generated in `.rodata` containing that concrete type's `drop_in_place`, size, alignment, and function pointers for `Shape::area` and `Shape::name`. Calling `shape.area()` loads the function pointer from the vtable and performs an indirect jump—fast, yet preventing LLVM from inlining across the dynamic call boundary.
@@ -547,9 +549,9 @@ fn main() {
 :::quiz Check your understanding
 ? What does a trait definition contain?
 - The fields that a struct must have
++ The methods that a type must provide to have a certain ability, optionally with default bodies
 - A list of types
 - Variables that are shared between types
-+ The methods that a type must provide to have a certain ability, optionally with default bodies
 = A trait describes behaviour: method signatures, some of which may come with a default implementation. It never contains fields.
 
 ? What does the parameter `item: &impl Summary` accept?
@@ -561,22 +563,22 @@ fn main() {
 
 ? You wrote `impl From<Meters> for Feet`. What else do you get?
 - `Feet` can now be printed
-+ `meters.into()` converts to `Feet` wherever the target type is known
 - `Feet` can be converted back to `Meters`
++ `meters.into()` converts to `Feet` wherever the target type is known
 - Nothing
 = The standard library implements `Into<B> for A` automatically for every `From<A> for B`. The reverse conversion needs its own `impl`.
 
 ? Why is `impl std::fmt::Display for Vec<i32>` not allowed in your crate?
-- `Vec` cannot be printed
-- `Display` cannot be implemented by hand
 + Neither the trait nor the type is defined in your crate (the orphan rule)
+- `Display` cannot be implemented by hand
+- `Vec` cannot be printed
 - Generic types cannot implement traits
 = At least one of the two must be local. Otherwise two crates could implement the same trait for the same type differently. Wrap the vector in your own struct to get around it.
 
 ? When do you need `Box<dyn Shape>` and not a generic `T: Shape`?
 - When speed matters most
-- When the trait has default methods
 - Always. Generics do not work with traits
+- When the trait has default methods
 + When one collection has to hold values of different types that all implement `Shape`
 = A `Vec<T>` holds one type. Trait objects let each element be a different concrete type, at the cost of a run-time lookup per call.
 :::

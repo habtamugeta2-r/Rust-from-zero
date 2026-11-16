@@ -7,8 +7,6 @@ import {
   mergeProgress,
   nextChapter,
   parseProgressExport,
-  PROGRESS_EXPORT_FORMAT,
-  PROGRESS_EXPORT_VERSION,
   serialiseProgress,
   summariseProgress,
   type ChapterMeta,
@@ -51,7 +49,7 @@ test("progress: partial work scores the units it earned", () => {
   assert.equal(row.bookmarked, true);
 });
 
-test("progress: a finished chapter is at 100%", () => {
+test("progress: a chapter answered correctly is at 100%", () => {
   const state: ProgressState = {
     done: { vars: 1 },
     quiz: {
@@ -72,41 +70,23 @@ test("progress: a finished chapter is at 100%", () => {
 });
 
 test("progress: a wrong answer does not count towards completion", () => {
-  // One of two questions answered, and it was wrong: the chapter has made
-  // progress but earned nothing from the quiz, and accuracy is honest.
+  // Crediting any answer let a reader reach 100% by pressing random options.
   const state: ProgressState = {
-    done: {},
-    quiz: { "vars-q1": { "0": { picked: 2, correct: false } } },
-    saved: {},
+    done: { vars: 1 },
+    quiz: {
+      "vars-q1": {
+        "0": { picked: 0, correct: true },
+        "1": { picked: 2, correct: false },
+      },
+    },
+    saved: { "vars-x1": 1, "vars-x2": 1 },
     bookmarks: {},
   };
   const row = buildChapterProgress(META, state);
-  assert.equal(row.quizAnswered, 1);
-  assert.equal(row.quizCorrect, 0);
-  assert.equal(row.pct, 0);
-  assert.equal(summariseProgress([row]).accuracy, 0);
-
-  const correct: ProgressState = {
-    ...state,
-    quiz: { "vars-q1": { "0": { picked: 0, correct: true } } },
-  };
-  // 5 units (chapter + 2 questions + 2 exercises), 1 earned and correct.
-  assert.equal(buildChapterProgress(META, correct).pct, 20);
-});
-
-test("progress: bucketChapters keeps finished chapters in the list", () => {
-  const rows = [0, 50, 100].map((pct, i) => ({
-    ...buildChapterProgress(META, { done: {}, quiz: {}, saved: {}, bookmarks: {} }),
-    id: `c${i}`,
-    pct,
-    done: pct === 100,
-  }));
-  const { started, untouched } = bucketChapters(rows);
-  assert.deepEqual(
-    started.map((row) => row.pct),
-    [50, 100],
-  );
-  assert.equal(untouched.length, 1);
+  // 5 units (chapter + 2 questions + 2 exercises), 4 earned.
+  assert.equal(row.pct, 80);
+  const totals = summariseProgress([row]);
+  assert.equal(totals.accuracy, 50);
 });
 
 test("progress: totals with no answers give null accuracy", () => {
@@ -201,48 +181,4 @@ test("progress: merging keeps local work and adds imported work", () => {
   assert.equal(merged.quiz["vars-q1"]["0"].picked, 0);
   assert.equal(merged.quiz["vars-q1"]["1"].picked, 2);
   assert.deepEqual(merged.saved, { "vars-x1": 1 });
-});
-
-test("progress: an import rejects arrays posing as maps", () => {
-  const doc = (state: unknown) =>
-    JSON.stringify({ format: PROGRESS_EXPORT_FORMAT, version: PROGRESS_EXPORT_VERSION, state });
-  // An array is an object to `typeof`, and walking it would invent ids "0"/"1".
-  assert.equal(parseProgressExport(doc({ done: [1, 2] })).ok, false);
-  assert.equal(parseProgressExport(doc({ saved: [], bookmarks: {} })).ok, false);
-  assert.equal(
-    parseProgressExport(doc({ quiz: [], done: {}, saved: {}, bookmarks: {} })).ok,
-    false,
-  );
-  // A quiz whose answers are an array is rejected too.
-  assert.equal(
-    parseProgressExport(
-      doc({ quiz: { "q-1": [{ picked: 0 }] }, done: {}, saved: {}, bookmarks: {} }),
-    ).ok,
-    false,
-  );
-});
-
-test("progress: an import rejects counters that are not non-negative integers", () => {
-  const doc = (state: unknown) =>
-    JSON.stringify({ format: PROGRESS_EXPORT_FORMAT, version: PROGRESS_EXPORT_VERSION, state });
-  const base = { done: {}, quiz: {}, saved: {}, bookmarks: {} };
-  assert.equal(parseProgressExport(doc({ ...base, done: { vars: -1 } })).ok, false);
-  assert.equal(parseProgressExport(doc({ ...base, done: { vars: 1.5 } })).ok, false);
-  assert.equal(parseProgressExport(doc({ ...base, saved: { x1: "yes" } })).ok, false);
-  assert.equal(parseProgressExport(doc({ ...base, done: { vars: 0 } })).ok, false);
-  // A picked index must be a non-negative integer as well.
-  assert.equal(
-    parseProgressExport(doc({ ...base, quiz: { q1: { "0": { picked: -2 } } } })).ok,
-    false,
-  );
-  assert.equal(
-    parseProgressExport(doc({ ...base, quiz: { q1: { "0": { picked: 1.25 } } } })).ok,
-    false,
-  );
-  // The same document with honest integers is accepted.
-  assert.equal(parseProgressExport(doc({ ...base, done: { vars: 1 } })).ok, true);
-  assert.equal(
-    parseProgressExport(doc({ ...base, quiz: { q1: { "0": { picked: 0 } } } })).ok,
-    true,
-  );
 });

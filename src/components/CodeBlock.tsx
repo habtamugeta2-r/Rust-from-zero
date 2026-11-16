@@ -1,35 +1,16 @@
-import React from "react";
-import { CodeBlockActions } from "./CodeBlockActions";
+"use client";
 
-/**
- * One code listing, rendered on the server.
- *
- * The frame, the label chips and the highlighted code are all Server Component
- * output. The only client component is {@link CodeBlockActions} — two buttons —
- * and it is a *sibling* of the code, not its parent.
- *
- * That distinction is the whole optimisation: a `"use client"` wrapper forces
- * everything inside it into the Flight payload, so a client `CodeBlock` that
- * received the Shiki markup as a child element had to have that markup
- * serialised into the RSC stream *as well as* rendered into the HTML — the
- * largest chapter pages carried their listings twice. With the buttons as a
- * sibling, the markup never crosses the client boundary and appears once.
- */
+import React, { useEffect, useRef, useState } from "react";
+import { Check, Copy, Play } from "lucide-react";
+import { useGuideState } from "./GuideStateProvider";
+
 export interface CodeBlockProps {
   lang: string;
   label: string;
-  /** The text Copy puts on the clipboard (absent for output and diagnostics). */
-  copyText?: string;
-  /** SHA-1 of the raw code, used to fetch the runnable wrapper on demand. */
-  codeHash?: string;
-  /**
-   * Whether a runnable wrapper exists beyond the visible code. The wrapper
-   * itself is fetched from `/api/playground` when Run is pressed.
-   */
-  hasFullCode?: boolean;
+  rawCode?: string;
+  fullCode?: string;
   filename?: string;
   isContinuation: boolean;
-  /** The block's flags: `run`, `wrap`, `check`, `fail`, `panic`, `test`, … */
   kind: string;
   isExt: boolean;
   noPlay: boolean;
@@ -37,20 +18,68 @@ export interface CodeBlockProps {
   isSoft: boolean;
   isOutput: boolean;
   isError: boolean;
-  /** Already-highlighted markup from `highlightCode()`. */
-  html: string;
-}
-
-/** Whether this block can be opened in the Rust Playground. */
-function canPlayInPlayground(props: CodeBlockProps, rawCode: string): boolean {
-  if (props.lang !== "rust" || props.isExt || props.noPlay) return false;
-  if (props.kind === "run" || props.kind === "wrap") return true;
-  return props.kind === "panic" && rawCode.includes("fn main");
+  children: React.ReactNode;
 }
 
 export function CodeBlock(props: CodeBlockProps) {
+  const { showToast } = useGuideState();
+  const [copied, setCopied] = useState(false);
+  const resetTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(
+    () => () => {
+      if (resetTimer.current) clearTimeout(resetTimer.current);
+    },
+    []
+  );
+
+  const canPlay =
+    props.lang === "rust" &&
+    (props.kind === "run" ||
+      props.kind === "wrap" ||
+      (props.kind === "panic" && (props.rawCode ?? "").includes("fn main"))) &&
+    !props.isExt &&
+    !props.noPlay;
+
   const isIntentionalFailure = props.kind === "fail" || props.kind === "panic";
-  const rawCode = props.copyText ?? "";
+
+  const getCopyText = (): string => {
+    const code = props.rawCode ?? "";
+    if (props.lang === "sh") {
+      const cmds = code
+        .split("\n")
+        .filter((l) => l.startsWith("$ "))
+        .map((l) => {
+          const rest = l.slice(2);
+          const idx = rest.indexOf("  # ");
+          return idx >= 0 ? rest.slice(0, idx) : rest;
+        });
+      if (cmds.length > 0) return cmds.join("\n");
+    }
+    return code;
+  };
+
+  const handleCopy = async () => {
+    const text = getCopyText();
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      if (resetTimer.current) clearTimeout(resetTimer.current);
+      resetTimer.current = setTimeout(() => setCopied(false), 1600);
+    } catch {
+      showToast(
+        "Copying is blocked here. Select the code and press Ctrl+C (Cmd+C on Mac)."
+      );
+    }
+  };
+
+  const handlePlay = () => {
+    const mode = props.isRelease ? "release" : "debug";
+    const payload = props.fullCode ?? getCopyText();
+    const url = `https://play.rust-lang.org/?version=stable&mode=${mode}&edition=2024&code=${encodeURIComponent(payload)}`;
+    window.open(url, "_blank", "noopener,noreferrer");
+    showToast("Opening the Rust Playground in a new tab (requires internet).");
+  };
 
   const borderTone = props.isError
     ? "border-red-300/80 dark:border-red-900/70"
@@ -70,7 +99,7 @@ export function CodeBlock(props: CodeBlockProps) {
       ? "bg-amber-50/90 dark:bg-amber-950/35"
       : "bg-[var(--g-code-head)]";
 
-  const showActions = props.copyText !== undefined && !props.isOutput && !props.isError;
+  const showActions = !props.isOutput && !props.isError;
 
   return (
     <figure
@@ -84,7 +113,9 @@ export function CodeBlock(props: CodeBlockProps) {
         <span className="flex items-center gap-2 font-semibold tracking-[0.08em] text-[var(--g-ink3)] uppercase">
           <span
             className={`h-2 w-2 shrink-0 rounded-full ${
-              props.lang === "rust" ? "bg-[var(--g-accent)]" : "bg-[var(--g-line2)]"
+              props.lang === "rust"
+                ? "bg-[var(--g-accent)]"
+                : "bg-[var(--g-line2)]"
             }`}
             aria-hidden="true"
           />
@@ -117,14 +148,38 @@ export function CodeBlock(props: CodeBlockProps) {
         )}
 
         {showActions && (
-          <CodeBlockActions
-            copyText={props.copyText ?? ""}
-            codeHash={props.codeHash}
-            hasFullCode={props.hasFullCode}
-            canPlay={canPlayInPlayground(props, rawCode)}
-            isRelease={props.isRelease}
-            label={`${props.label} code`}
-          />
+          <span className="no-print ml-auto flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={handleCopy}
+              title="Copy this code"
+              aria-label={copied ? "Copied to clipboard" : "Copy this code"}
+              className="inline-flex items-center gap-1.5 rounded-md border border-[var(--g-line2)] bg-[var(--g-surface)] px-2.5 py-1 text-[11.5px] font-semibold text-[var(--g-ink2)] transition-colors hover:border-[var(--g-accent)] hover:text-[var(--g-ink)]"
+            >
+              {copied ? (
+                <Check
+                  className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400"
+                  aria-hidden="true"
+                />
+              ) : (
+                <Copy className="h-3.5 w-3.5" aria-hidden="true" />
+              )}
+              <span className="hidden sm:inline">{copied ? "Copied" : "Copy"}</span>
+            </button>
+
+            {canPlay && (
+              <button
+                type="button"
+                onClick={handlePlay}
+                title="Open this example in the online Rust Playground"
+                aria-label="Run this example in the Rust Playground"
+                className="inline-flex items-center gap-1.5 rounded-md bg-[var(--g-accent)] px-3 py-1 text-[11.5px] font-bold text-white transition-colors hover:bg-[var(--g-accent-hover)]"
+              >
+                <Play className="h-3 w-3 fill-current" aria-hidden="true" />
+                <span className="hidden sm:inline">Run</span>
+              </button>
+            )}
+          </span>
         )}
       </figcaption>
 
@@ -135,8 +190,13 @@ export function CodeBlock(props: CodeBlockProps) {
         tabIndex={0}
         role="group"
         aria-label={`${props.label} code`}
-        dangerouslySetInnerHTML={{ __html: props.html }}
-      />
+      >
+        {props.children}
+      </div>
+
+      <span role="status" aria-live="polite" className="sr-only">
+        {copied ? "Copied to clipboard" : ""}
+      </span>
     </figure>
   );
 }

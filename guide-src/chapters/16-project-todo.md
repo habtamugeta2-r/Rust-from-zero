@@ -4,7 +4,7 @@
 @title Project: a to-do list for the terminal
 @short Project: to-do list
 @level beginner
-@time 40
+@time 90
 @learn Design the data of a program with structs and enums before writing logic | Keep a list of structs in a `Vec` and change it through methods | Turn a line of text into a command with `match` | Separate "understanding the input" from "doing the work"
 
 This project turns the types and control-flow tools from the earlier chapters into a small terminal to-do list. You will model a task with a struct, store tasks in a `Vec`, represent commands with an enum, then match each command to the operation it requests. The list lives in memory for this project, so it resets when the program exits.
@@ -509,7 +509,7 @@ Ok(Command::Undo(id)) => {
 }
 ```
 
-Instead of a copy of `mark_done`, the solution has one method `set_done(id, done)` that covers both directions, and `mark_done(id)` can now delegate to `self.set_done(id, true)`. The three number commands also share the same parsing shape, so a small helper function for it is a good idea. Removing repetition like this is called **refactoring**: improving the structure of code without changing what it does.
+Instead of a copy of `mark_done`, the solution has one method `set_done(id, done)` that covers both directions, and `mark_done(id)` now becomes a call to `self.set_done(id, true)`. The three number commands also share the same parsing shape, so a small helper function for it is a good idea. Removing repetition like this is called **refactoring**: improving the structure of code without changing what it does.
 :::
 
 :::exercise practice A summary line
@@ -629,23 +629,23 @@ For the command, `parse` has to split the rest of the line once more: `rest.spli
 
 ? Why does the command parser use `match` on a tuple such as `(Command, String)`?
 - Tuples are faster to match than structs
+- It makes the argument optional
 - Rust requires tuples in `match` arms
 + It lets one match look at the command and its argument together, including nested patterns for `Result`
-- It makes the argument optional
 = A tuple pattern matches several values in one arm, so `match (command, argument)` can bind both at once. Nested patterns take a `Result` and an enum apart in the same arm, which keeps the parser short and total.
 
 ? The task list lives inside a struct with methods rather than in a plain `Vec` passed around. Why?
 - Methods run faster than free functions
++ A struct with methods keeps the data and the rules for changing it in one place
 - A `Vec` cannot be stored inside a struct
 - It lets the program skip the borrow checker
-+ A struct with methods keeps the data and the rules for changing it in one place
 = Hiding the `Vec` behind a struct means only the methods can change it, so the rules about adding, completing and removing tasks stay in one file. The rest of the program cannot bypass them.
 
 ? The project separates the function that understands the input from the function that does the work. What is the benefit?
-+ The work functions take data and return data, so they are easy to test and reuse
 - The input function is the only one that can print, so output is easy to redirect
-- The input function runs faster
 - The work functions no longer need error handling
+- The input function runs faster
++ The work functions take data and return data, so they are easy to test and reuse
 = Pure functions that only translate or calculate can be tested without a terminal, and reused for a different display. The only impure parts—reading, writing, saving—stay at the edges.
 :::
 

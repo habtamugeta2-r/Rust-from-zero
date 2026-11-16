@@ -22,22 +22,22 @@ table disagrees with that measurement.
 | Appendices | 5 |
 | Projects | 9 |
 | Code blocks | 1,329 |
-| Rust code fences | 1,005 |
+| Rust code fences | 1,007 |
 | Exercises | 274 |
 | Quiz questions | 379 |
 | Captured outputs | 104 |
-| Search entries | 17,331 |
-| Glossary terms | 258 |
-| Glossary terms linked from prose | 207 |
-| Cross-links (inbound edges) | 1,139 |
-| Words of prose | 225,673 |
-| Declared reading time (minutes) | 3,760 |
+| Search entries | 14,421 |
+| Glossary terms | 253 |
+| Glossary terms linked from prose | 253 |
+| Cross-links (inbound edges) | 1,137 |
+| Words of prose | 224,482 |
+| Declared reading time (minutes) | 3,800 |
 
 Exercises carry a hint and a worked solution; quiz questions carry an
 explanation of the answer. Declared reading time sums the `@time` of all 88
-chapters, appendices included (the five appendices declare reading time from
-3.0.0). Stack: Next.js 16 App Router, React 19, TypeScript, Tailwind CSS v4,
-Shiki.
+chapters, appendices included, derived from prose word count plus exercises
+and quiz questions. Stack: Next.js 16 App Router, React 19, TypeScript,
+Tailwind CSS v4, Shiki.
 
 Every chapter follows the same rhythm: the idea in plain words, an analogy,
 comparison tables, runnable examples and machine-level walkthroughs, exercises,
@@ -51,9 +51,9 @@ Explore the full dependency graph in the **[Complete Learning Roadmap](./guide-s
 - **Welcome (`00-start`, `00b-roadmap`):** How to study with the 10-stage systems lens, plus the complete chapter-by-chapter dependency map
 - **Part 1 — Understanding computers from the inside:** why Rust exists, hardware architecture (CPU, ALU, registers, caches, DRAM, buses), bits/bytes/two's complement/IEEE-754/UTF-8/endianness, and setting up Rust + Linux inspection tools
 - **Part 2 — From source code to machine instructions:** `rustc` pipeline (lexing, AST, HIR, MIR, LLVM IR), code generation, x86-64/ARM64 assembly, machine opcodes, object files, linking, and ELF segments
-- **Part 3 — Core Rust fundamentals:** variables, types, functions, control flow, the stack and the heap, ownership, borrowing, strings and slices, structs, enums, patterns, collections, modules, and error handling, with a number-guessing game and a terminal to-do list along the way
-- **Part 4 — Abstraction and architecture:** generics, traits, lifetimes, testing, closures, iterators, smart pointers, advanced traits, typestates, plus the Cargo workspaces, quality tooling and testing strategies every later project assumes, with a file-search tool and a sales-report project
-- **Part 5 — Advanced Rust:** declarative and procedural macros, `unsafe`, FFI, memory layout, standard-library internals (`RawVec`, `Vec`, `String`, `Box`, `RcBox`, `UnsafeCell`, `MaybeUninit`, provenance), and idioms
+- **Part 3 — Rust foundations and ownership:** variables, types, functions, control flow, stack/heap memory, ownership, borrowing, slices/strings, structs, enums, patterns, collections, and two CLI projects
+- **Part 4 — Modular Rust, abstractions, and tooling:** modules/crates, error handling, generics, traits, lifetimes, unit/integration testing, closures, iterators, Cargo workspaces, quality tooling (`rustfmt`/`clippy`/CI), testing strategies, and two projects
+- **Part 5 — Advanced Rust, unsafe, and everyday crates:** smart pointers, advanced traits, typestate design, macros, `unsafe`, FFI, memory layout, standard-library internals (`RawVec`, `Vec`, `String`, `Box`, `RcBox`, `UnsafeCell`, `MaybeUninit`, provenance), idioms, crate selection, and Serde
 - **Part 6 — Memory management and organisation:** virtual address spaces, 4-level page tables, MMU/TLB, `/proc/self/maps`, real allocators (`GlobalAlloc`, slabs, `jemalloc`/`mimalloc`, writing a bump allocator), safety bugs, and 64-byte CPU cache locality & false sharing
 - **Part 7 — How programs execute:** `fork`/`execve`, `ld-linux`, GOT/PLT, `_start` to `std::rt::lang_start`, System V AMD64 vs AAPCS64 calling conventions, stack frames, and a complete 10-layer end-to-end execution trace
 - **Part 8 — Operating system internals:** Ring 3 vs Ring 0, Linux `syscall` ABI, `vDSO`, processes vs threads (`clone`), EEVDF scheduling, context switching, hardware IRQs, POSIX signals, and `futex`
@@ -63,12 +63,12 @@ Explore the full dependency graph in the **[Complete Learning Roadmap](./guide-s
 - **Part 12 — Networking and communication:** Ethernet/MAC/ARP, IPv4/IPv6/CIDR/NAT, TCP/UDP sockets, framing, congestion control, DNS, TLS 1.3, HTTP/1.1–3 packet trace, Axum web servers, and observability/OpenTelemetry
 - **Part 13 — Storage and file systems:** HDD vs NAND SSD FTL/wear leveling/NVMe `blk-mq`, VFS inodes/dentries, Linux Page Cache, crash-safe `rename()`/`fsync()`, `mmap`, SQLx/Diesel/SeaORM databases, and URL-shortener API project
 - **Part 14 — Practical system programming with Rust:** `clap` CLI project, performance profiling & flame graphs, a pure-Rust **Linux `/proc` & ELF64 systems inspector lab**, and the full-stack library capstone project
-- **Part 15 — Applied Rust ecosystem and next steps:** crate selection, Serde, WebAssembly/Tauri/GUI apps, Bevy/`no_std`/data science, and continuing paths
+- **Part 15 — Applied Rust ecosystem and next steps:** WebAssembly/Tauri/GUI apps, Bevy/`no_std`/data science, and continuing paths
 - **Appendices (`A`–`E`):** Searchable glossary, Rust & Linux/ABI quick reference tables, real compiler error catalogue, translation guides from Python, JS/TS, Java/C#, Go, and C/C++, and a from-source-to-silicon end-to-end compiler/OS/CPU walkthrough (`94-under-the-hood`)
 
 ## What it deliberately does not cover
 
-"Everything in computing" is unbounded, so this guide maintains a clear coverage boundary declared in [Where to go from here](./guide-src/chapters/76-next.md): blockchain/Web3 (`solana`, `anchor`), writing a complete standalone bootable OS kernel from scratch (`blog_os`, Rust for Linux kernel drivers), robotics (`ROS 2`), high-frequency trading, and provider-specific cloud SDKs beyond S3-compatible patterns are pointed cleanly to dedicated follow-on references.
+"Everything in computing" is unbounded, so this guide maintains a clear coverage boundary declared in [Where to go from here](./guide-src/chapters/53-next.md): blockchain/Web3 (`solana`, `anchor`), writing a complete standalone bootable OS kernel from scratch (`blog_os`, Rust for Linux kernel drivers), robotics (`ROS 2`), high-frequency trading, and provider-specific cloud SDKs beyond S3-compatible patterns are pointed cleanly to dedicated follow-on references.
 
 ## Run locally
 
@@ -156,12 +156,8 @@ suggested topics instead. Around it sit the things a reader needs to stay
 oriented:
 
 - **Command palette** (`src/components/CommandPalette.tsx`) — the single search
-  surface, reachable from the header, the sidebar button, the home page, or `/`
-  and `⌘K`. It is a WAI-ARIA combobox: the field owns the listbox and names the
-  highlighted option through `aria-activedescendant`, so arrow keys, `Home`,
-  `End` and `Enter` drive the list while focus stays in the field. `Esc` closes
-  and returns focus to the trigger. The sidebar has no search input of its own;
-  its button opens this palette, which is what its `/` badge always meant.
+  surface, reachable from the header, the home page, or `/` and `⌘K`. Arrow keys
+  move, `Enter` opens, `Esc` closes and returns focus to the trigger.
 - **`/search`** — the same hits, but as a linkable page: grouped by chapter, with
   suggested topics when the query is empty.
 - **`/chapters`** — the chapter index: grouped by part, with kind, level,
@@ -218,18 +214,15 @@ python3 guide-src/tools/check.py --projects # rebuild & test all multi-file and 
 `verify:content` is two gates: the parser refuses malformed chapters (unknown
 glossary term, exercise without a solution, link to a chapter that does not
 exist), and `src/lib/content-lint.ts` enforces the house style and teaching
-structure — British spelling, no `TODO`/`FIXME` in visible text, no `[chapter
-N](#id)` label that disagrees with the chapter's live number, objectives + recap
-+ quiz + exercises on every tracked chapter (project chapters included),
-declared reading times that agree with the prose, unique titles, an entry for
+structure — British spelling, no dismissive filler (`simply`/`just`/…), no `TODO`/`FIXME` in visible text, objectives +
+recap + quiz + exercises on every tracked chapter (project chapters included),
+declared reading times that agree with the prose, unique titles, no duplicate glossary definitions, accurate raw-markdown `[Chapter N](#id)` labels, matching `00b-roadmap.md` part headings, an entry for
 every chapter in the link graph in both directions (a chapter nobody links to
 and a chapter that links nowhere both fail), only the routes the app actually
-serves, roadmap part headings that match `guide-config.ts`, and a README
-statistics table that matches `npm run stats`. It warns on a captured output no
-`auto` block references, on reader-facing filler such as "just run", and reports
-glossary-link coverage, cross-link count and long sentences without failing on
-them. Every lint rule has a permanent test in `tests/lint.test.ts` that injects
-its fault.
+serves, and a README statistics table that matches `npm run stats`. It warns
+on a captured output no `auto` block references, and reports glossary-link
+coverage, cross-link count and long sentences without failing on them. Every
+lint rule has a permanent test in `tests/lint.test.ts` that injects its fault.
 
 CI is one file, [`.github/workflows/build.yml`](./.github/workflows/build.yml):
 the `guide` job (deploy config, content, lint, tests, typecheck, build, audit)

@@ -7,7 +7,7 @@ import type { InlineNode } from "@/lib/guide-types";
 import { useGuideState } from "./GuideStateProvider";
 
 export function InlineRenderer({ nodes }: { nodes: InlineNode[] }) {
-  const { showGlossaryTip, hideGlossaryTip, cancelHideGlossaryTip, activeTipKey } = useGuideState();
+  const { showGlossaryTip, hideGlossaryTip, activeTipKey } = useGuideState();
 
   return (
     <>
@@ -52,22 +52,9 @@ export function InlineRenderer({ nodes }: { nodes: InlineNode[] }) {
                 type="button"
                 data-glossary-term={node.key}
                 title={`Glossary: ${node.text}`}
-                // The popover opens 8px away, so leaving the word must not close
-                // it instantly: the delay lets the pointer cross the gap, and
-                // re-entering the word cancels the close.
-                onMouseEnter={(e) => {
-                  cancelHideGlossaryTip();
-                  showGlossaryTip(node.key, e.currentTarget);
-                }}
+                onMouseEnter={(e) => showGlossaryTip(node.key, e.currentTarget)}
                 onMouseLeave={hideGlossaryTip}
-                // A reader who tabs onto the word keeps the definition open
-                // while they read it; blur (moving focus elsewhere) closes it
-                // after the same grace period, which also allows tabbing into
-                // the popover's "Glossary →" link.
-                onFocus={(e) => {
-                  cancelHideGlossaryTip();
-                  showGlossaryTip(node.key, e.currentTarget);
-                }}
+                onFocus={(e) => showGlossaryTip(node.key, e.currentTarget)}
                 onBlur={hideGlossaryTip}
                 onClick={(e) => {
                   if (activeTipKey === node.key) hideGlossaryTip();

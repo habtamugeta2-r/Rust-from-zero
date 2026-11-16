@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { GuideShell } from "@/components/GuideShell";
-import { GuideStateProvider } from "@/components/GuideStateProvider";
+import { GuideStateProvider, type GlossaryTipItem } from "@/components/GuideStateProvider";
 import { loadGuide } from "@/lib/guide-parser";
 import { websiteJsonLd } from "@/lib/seo";
 import "./globals.css";
@@ -65,6 +65,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   const guide = loadGuide();
+  const slimGlossary: Record<string, GlossaryTipItem> = {};
+  for (const [k, v] of Object.entries(guide.glossary)) {
+    slimGlossary[k] = {
+      key: v.key,
+      term: v.term,
+      definitionPlain: v.definitionPlain,
+    };
+  }
 
   const jsonLd = [
     {
@@ -102,21 +110,8 @@ export default function RootLayout({
         >
           Skip to content
         </a>
-        <GuideStateProvider>
-          <GuideShell
-            parts={guide.parts.map(({ key, partLabel, partTitle }) => ({
-              key,
-              partLabel,
-              partTitle,
-            }))}
-            chapters={guide.summaries.map(({ id, num, part, kind, short }) => ({
-              id,
-              num,
-              part,
-              kind,
-              short,
-            }))}
-          >
+        <GuideStateProvider glossary={slimGlossary}>
+          <GuideShell parts={guide.parts} chapters={guide.summaries}>
             {children}
           </GuideShell>
         </GuideStateProvider>

@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 470" role="img" aria-labelledby="t d">
+  <title id="t">Arc and Mutex together: shared ownership, guarded access</title>
+  <desc id="d">Arc lets many threads own the same value and counts the owners. The Mutex inside lets only one thread touch the value at a time.</desc>
+  <rect width="1200" height="470" rx="24" fill="#1C1A17"/>
+  <rect x="1" y="1" width="1198" height="468" rx="23" fill="none" stroke="#2D2A24" stroke-width="2"/>
+  <text x="48" y="58" font-family="system-ui, sans-serif" font-size="24" font-weight="700" fill="#ECE7DD">Two tools, two different jobs</text>
+  <text x="48" y="86" font-family="system-ui, sans-serif" font-size="15" fill="#A49B88">Arc answers “who owns it?” Mutex answers “who may touch it right now?”</text>
+  <defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#E9743E"/></marker></defs>
+  <g font-family="system-ui, sans-serif">
+    <g font-family="ui-monospace, monospace" font-size="16">
+      <rect x="48" y="150" width="250" height="56" rx="12" fill="#FFFFFF" stroke="#D2CABB" stroke-width="2"/><text x="70" y="185" fill="#11100E" stroke="#3E3930" stroke-width="1.5">thread A · clone</text>
+      <rect x="48" y="222" width="250" height="56" rx="12" fill="#FFFFFF" stroke="#D2CABB" stroke-width="2"/><text x="70" y="257" fill="#11100E" stroke="#3E3930" stroke-width="1.5">thread B · clone</text>
+      <rect x="48" y="294" width="250" height="56" rx="12" fill="#181613" stroke="#3E3930" stroke-width="2" stroke-dasharray="6 5"/><text x="70" y="329" fill="#A49B88">thread C · waiting</text>
+    </g>
+    <path d="M302 178 C 380 178, 400 210, 452 224" fill="none" stroke="#E9743E" stroke-width="2.5" marker-end="url(#ar)"/>
+    <path d="M302 250 L452 250" stroke="#E9743E" stroke-width="2.5" marker-end="url(#ar)"/>
+    <path d="M302 322 C 380 322, 400 290, 452 276" fill="none" stroke="#E9743E" stroke-width="2.5" stroke-dasharray="5 6" marker-end="url(#ar)"/>
+
+    <rect x="460" y="140" width="330" height="220" rx="16" fill="#39231A" stroke="#E9743E" stroke-width="2"/>
+    <text x="484" y="176" font-size="14" font-weight="700" letter-spacing="2" fill="#E9743E">ARC · OWNERSHIP</text>
+    <text x="484" y="206" font-size="15" fill="#C2BBAF">owners: 3 — freed when it reaches 0</text>
+    <rect x="484" y="226" width="282" height="110" rx="12" fill="#132B3A" stroke="#38BDF8" stroke-width="2"/>
+    <text x="504" y="258" font-size="13.5" font-weight="700" letter-spacing="1.5" fill="#38BDF8">MUTEX · ACCESS</text>
+    <text x="504" y="288" font-family="ui-monospace, monospace" font-size="16" fill="#ECE7DD">counter = 41 (locked)</text>
+    <text x="504" y="316" font-size="14" fill="#C2BBAF">one lock() guard at a time</text>
+
+    <rect x="838" y="176" width="314" height="148" rx="16" fill="#12322E" stroke="#2DD4BF" stroke-width="2"/>
+    <text x="862" y="214" font-size="15" font-weight="700" fill="#2DD4BF">✓ Send + Sync, checked</text>
+    <text x="862" y="248" font-size="14.5" fill="#C2BBAF">If the value cannot cross threads,</text>
+    <text x="862" y="272" font-size="14.5" fill="#C2BBAF">the compiler says so — before it runs.</text>
+    <text x="862" y="302" font-size="14.5" fill="#C2BBAF">No data race reaches production.</text>
+  </g>
+  <text x="600" y="424" font-family="system-ui, sans-serif" font-size="14" font-style="italic" fill="#A49B88" text-anchor="middle">Arc without Mutex shares reading. Mutex without Arc cannot outlive one thread. Together: shared, mutable, safe.</text>
+</svg>

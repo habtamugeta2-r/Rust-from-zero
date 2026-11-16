@@ -101,7 +101,7 @@ What will surprise you:
 - **There is no base class to put shared code in.** See the worked example below.
 - **Values are not references by default.** A struct sits directly where it is declared, on the stack or inside another struct. A heap allocation is something you ask for, with `Box`, `Vec` or `String`.
 - **No run time to start, and nothing to install on the target machine.** The result of a build is one program file.
-- **Dependency injection frameworks are rare.** Pass what a function needs as a parameter, as a trait if tests need a fake ([chapter 37](#testing-strategies)).
+- **Dependency injection frameworks are rare.** Pass what a function needs as a parameter, as a trait if tests need a fake ([chapter 34](#testing-strategies)).
 
 ## From C and C++
 
@@ -255,7 +255,7 @@ Which of the first two to choose? If *you* know all the kinds, and new *operatio
 The other three words of object-oriented programming translate like this:
 
 - **Encapsulation** is done by modules, not by classes. Fields are private to the module unless marked `pub` ([chapter 22](#modules)).
-- **Polymorphism** has three forms: generics (decided at compile time, fastest), `dyn Trait` (decided at run time, allows mixed lists), and enums ([chapter 25](#traits), [chapter 33](#advanced-traits)).
+- **Polymorphism** has three forms: generics (decided at compile time, fastest), `dyn Trait` (decided at run time, allows mixed lists), and enums ([chapter 25](#traits), [chapter 36](#advanced-traits)).
 - **Inheritance of implementation** does not exist. Where you would have overridden one method of a large base class, pass the varying part in: as a closure, or as a value of a trait ([chapter 29](#closures)).
 
 ## Habits to leave behind, and habits to keep

@@ -12,21 +12,16 @@ import React, {
 import Link from "next/link";
 import { nextThemeMode, type ThemeMode } from "@/lib/theme";
 import { mergeProgress, type ExportableProgressState } from "@/lib/progress";
-import { usePageGlossary } from "./GlossaryTipContext";
-import type { GlossaryTipItem } from "@/lib/guide-types";
-
-export type { GlossaryTipItem };
 
 const STORAGE_KEY = "rust-guide-v1";
 
-/**
- * Grace period before the glossary tooltip closes, in milliseconds. Long
- * enough to cross the 8px gap between the word and the popover with a mouse;
- * short enough that it does not linger over unrelated prose.
- */
-const GLOSSARY_CLOSE_DELAY = 180;
-
 export type { ThemeMode };
+
+export interface GlossaryTipItem {
+  key: string;
+  term: string;
+  definitionPlain: string;
+}
 
 export interface QuizAnswer {
   picked: number;
@@ -77,10 +72,7 @@ interface GuideContextValue {
   stepFontSize: (delta: number) => void;
   showToast: (msg: string) => void;
   showGlossaryTip: (key: string, target: HTMLElement) => void;
-  /** Close the tooltip after a short grace period (see the implementation). */
   hideGlossaryTip: () => void;
-  /** Cancel a pending close, because the pointer came back. */
-  cancelHideGlossaryTip: () => void;
   activeTipKey: string | null;
 }
 
@@ -115,24 +107,13 @@ function normaliseQuiz(raw: unknown): Record<string, Record<string, QuizAnswer>>
   return out;
 }
 
-/**
- * A plain object, never an array.
- *
- * `typeof [] === "object"`, so a stored `"done": [1,2]` — from a corrupt write
- * or a hand-edited export — used to be accepted as a map and then serialised
- * back as `{"0":1,"1":2}`, quietly inventing chapter ids "0" and "1".
- */
-function isPlainObject(value: unknown): value is Record<string, unknown> {
-  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
-}
-
 function normaliseState(raw: unknown): SavedState {
-  const s = (isPlainObject(raw) ? raw : {}) as Partial<SavedState>;
+  const s = (raw && typeof raw === "object" ? raw : {}) as Partial<SavedState>;
   return {
-    done: isPlainObject(s.done) ? (s.done as Record<string, number>) : {},
-    saved: isPlainObject(s.saved) ? (s.saved as Record<string, number>) : {},
+    done: s.done && typeof s.done === "object" ? s.done : {},
+    saved: s.saved && typeof s.saved === "object" ? s.saved : {},
     quiz: normaliseQuiz(s.quiz),
-    bookmarks: isPlainObject(s.bookmarks) ? (s.bookmarks as Record<string, number>) : {},
+    bookmarks: s.bookmarks && typeof s.bookmarks === "object" ? s.bookmarks : {},
     last: typeof s.last === "string" ? s.last : undefined,
     theme: s.theme === "dark" || s.theme === "light" || s.theme === "system" ? s.theme : undefined,
     fs: typeof s.fs === "number" ? s.fs : undefined,
@@ -156,15 +137,13 @@ function applyTheme(mode: ThemeMode) {
   return resolved;
 }
 
-/**
- * Reading progress, theme and the glossary tooltip, for the whole document.
- *
- * The provider is mounted once in the root layout, so its props are part of
- * every page's RSC payload; it therefore carries no page data at all. Glossary
- * definitions arrive through {@link GlossaryTipContext}, which each page fills
- * with the handful of terms its own prose uses.
- */
-export function GuideStateProvider({ children }: { children: React.ReactNode }) {
+export function GuideStateProvider({
+  glossary,
+  children,
+}: {
+  glossary: Record<string, GlossaryTipItem>;
+  children: React.ReactNode;
+}) {
   const [state, setState] = useState<SavedState>(emptyState);
   const [persistent, setPersistent] = useState(true);
   const [themeMode, setThemeModeState] = useState<ThemeMode>("system");
@@ -173,8 +152,6 @@ export function GuideStateProvider({ children }: { children: React.ReactNode }) 
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const [tip, setTip] = useState<TipState | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  /** Definitions fetched on demand, so a term is fetched at most once. */
-  const fetchedTips = useRef(new Map<string, GlossaryTipItem>());
 
   // Hydrate saved state cleanly after mount
   useEffect(() => {
@@ -383,85 +360,29 @@ export function GuideStateProvider({ children }: { children: React.ReactNode }) 
     [fontSize, persistState, showToast],
   );
 
-  const glossary = usePageGlossary();
-
-  /**
-   * Show the definition for `key`. The page supplies the definitions it
-   * references; anything else (a term linked from a callout the extractor did
-   * not see, or a client-side search result) is fetched once and cached in a
-   * ref, so a reader pays for a definition only when they ask for it.
-   */
   const showGlossaryTip = useCallback(
     (key: string, target: HTMLElement) => {
-      const resolve = (entry: GlossaryTipItem) => {
-        const r = target.getBoundingClientRect();
-        const vw = document.documentElement.clientWidth;
-        // The tooltip is 20rem wide but never wider than the viewport; clamp by
-        // its real half-width so long definitions cannot hang off the edge.
-        const width = Math.min(320, vw - 32);
-        const half = width / 2;
-        const centre = r.left + r.width / 2;
-        const x = Math.min(Math.max(16 + half, centre), vw - 16 - half);
-        const above = r.bottom + 180 > window.innerHeight && r.top > 180;
-        const y = above ? r.top - 8 : r.bottom + 8;
-        setTip({ entry, x, y, above });
-      };
-
-      const known = glossary[key] ?? fetchedTips.current.get(key);
-      if (known) {
-        resolve(known);
-        return;
-      }
-      void fetch(`/api/glossary?term=${encodeURIComponent(key)}`)
-        .then((res) => (res.ok ? res.json() : null))
-        .then((body: { entry?: GlossaryTipItem } | null) => {
-          if (!body?.entry) return;
-          fetchedTips.current.set(key, body.entry);
-          resolve(body.entry);
-        })
-        .catch(() => {
-          // No definition available: the word stays a dotted underline and
-          // the glossary page is still one link away.
-        });
+      const entry = glossary[key];
+      if (!entry) return;
+      const r = target.getBoundingClientRect();
+      const vw = document.documentElement.clientWidth;
+      // The tooltip is 20rem wide but never wider than the viewport; clamp by
+      // its real half-width so long definitions cannot hang off the edge.
+      const width = Math.min(320, vw - 32);
+      const half = width / 2;
+      const centre = r.left + r.width / 2;
+      const x = Math.min(Math.max(16 + half, centre), vw - 16 - half);
+      const above = r.bottom + 180 > window.innerHeight && r.top > 180;
+      const y = above ? r.top - 8 : r.bottom + 8;
+      setTip({ entry, x, y, above });
     },
     [glossary],
   );
 
-  /**
-   * Dismiss the definition, after a short grace period.
-   *
-   * The tooltip floats 8px below the word, so crossing that gap fires
-   * `mouseleave` on the trigger a moment before `mouseenter` reaches the
-   * popover — and closing immediately made the "Glossary →" link inside it
-   * impossible to click with a mouse. The delay gives the pointer time to
-   * arrive; anything that re-enters the trigger or the popover cancels it.
-   */
-  const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const cancelHideGlossaryTip = useCallback(() => {
-    if (hideTimer.current) {
-      clearTimeout(hideTimer.current);
-      hideTimer.current = null;
-    }
-  }, []);
-  const hideGlossaryTip = useCallback(() => {
-    cancelHideGlossaryTip();
-    hideTimer.current = setTimeout(() => {
-      hideTimer.current = null;
-      setTip(null);
-    }, GLOSSARY_CLOSE_DELAY);
-  }, [cancelHideGlossaryTip]);
-  const hideGlossaryTipNow = useCallback(() => {
-    cancelHideGlossaryTip();
-    setTip(null);
-  }, [cancelHideGlossaryTip]);
-
-  useEffect(() => () => cancelHideGlossaryTip(), [cancelHideGlossaryTip]);
+  const hideGlossaryTip = useCallback(() => setTip(null), []);
 
   useEffect(() => {
     if (!tip) return;
-    // Scrolling repositions the word but not the standalone popover, so it
-    // closes — immediately, and without the grace period, because a reader who
-    // scrolls has already moved on.
     const onScroll = () => setTip(null);
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") setTip(null);
@@ -472,7 +393,7 @@ export function GuideStateProvider({ children }: { children: React.ReactNode }) 
       const target = e.target as HTMLElement | null;
       if (target?.closest('[role="tooltip"]')) return;
       if (target?.closest("[data-glossary-term]")) return;
-      hideGlossaryTipNow();
+      setTip(null);
     };
     window.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("keydown", onKey);
@@ -482,7 +403,7 @@ export function GuideStateProvider({ children }: { children: React.ReactNode }) 
       window.removeEventListener("keydown", onKey);
       document.removeEventListener("pointerdown", onPointerDown);
     };
-  }, [tip, hideGlossaryTipNow]);
+  }, [tip]);
 
   const value = useMemo<GuideContextValue>(
     () => ({
@@ -506,7 +427,6 @@ export function GuideStateProvider({ children }: { children: React.ReactNode }) 
       showToast,
       showGlossaryTip,
       hideGlossaryTip,
-      cancelHideGlossaryTip,
       activeTipKey: tip?.entry.key ?? null,
     }),
     [
@@ -530,7 +450,6 @@ export function GuideStateProvider({ children }: { children: React.ReactNode }) 
       showToast,
       showGlossaryTip,
       hideGlossaryTip,
-      cancelHideGlossaryTip,
       tip,
     ],
   );
@@ -548,18 +467,13 @@ export function GuideStateProvider({ children }: { children: React.ReactNode }) 
             transform: tip.above ? "translate(-50%, -100%)" : "translate(-50%, 0)",
           }}
           className="no-print fixed z-50 w-80 max-w-[calc(100vw-2rem)] rounded-well border border-[var(--g-line2)] bg-[var(--g-surface)] p-3.5 text-sm shadow-pop"
-          onMouseEnter={cancelHideGlossaryTip}
           onMouseLeave={hideGlossaryTip}
-          // A keyboard user can Tab into the popover; the pointer events above
-          // are irrelevant to them, so focus keeps it open and blur closes it.
-          onFocus={cancelHideGlossaryTip}
-          onBlur={hideGlossaryTip}
         >
           <div className="mb-1 flex items-center justify-between gap-2">
             <span className="font-semibold text-[var(--g-accent)]">{tip.entry.term}</span>
             <Link
               href="/chapters/glossary"
-              onClick={hideGlossaryTipNow}
+              onClick={hideGlossaryTip}
               className="text-xs font-medium text-[var(--g-ink3)] hover:text-[var(--g-accent)]"
             >
               Glossary →

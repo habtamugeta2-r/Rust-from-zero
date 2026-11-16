@@ -1,26 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
-import { MIN_QUERY_LENGTH, searchGuide } from "@/lib/search";
+import { searchGuide } from "@/lib/search";
 
 /**
  * JSON search for the command palette.
  *
  * Ranking lives in `@/lib/search` and is shared with the `/search` page, so a
  * query returns the same hits wherever it is asked.
- *
- * Both query parameters are parsed defensively. `?limit=` (present but empty)
- * is a common accident, and a bare `Number("")` is 0, which would clamp to a
- * single hit; a one-character query is below the threshold the palette itself
- * uses, so the API answers it with no hits rather than a flood of matches.
  */
 export function GET(request: NextRequest) {
   const q = (request.nextUrl.searchParams.get("q") ?? "").trim();
-  const rawLimit = request.nextUrl.searchParams.get("limit");
-  const parsed = rawLimit ? Number(rawLimit) : Number.NaN;
+  // `get` returns null when the parameter is absent — Number(null) is 0, so the
+  // default has to be chosen before coercing.
+  const limitParam = request.nextUrl.searchParams.get("limit");
+  const parsed = limitParam === null ? Number.NaN : Number(limitParam);
   const limit = Number.isFinite(parsed)
     ? Math.min(60, Math.max(1, Math.round(parsed)))
     : 40;
 
-  const hits = q.length < MIN_QUERY_LENGTH ? [] : searchGuide(q, { limit });
+  const hits = searchGuide(q, { limit });
 
   return NextResponse.json(
     { query: q, hits },

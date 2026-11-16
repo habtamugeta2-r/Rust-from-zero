@@ -1,9 +1,9 @@
 @id type-system
-@part p3b
+@part p3c
 @title The type system as a design tool
 @short Type system
 @level advanced
-@time 55
+@time 45
 @learn Convert between types safely with `From`, `TryFrom`, `FromStr` and `AsRef` | Use newtypes and type aliases to make code clearer and safer | Explain the never type, zero-sized types and dynamically sized types | Encode rules in types so that wrong programs do not compile (the typestate pattern) | Apply "parse, don't validate" and "make invalid states unrepresentable"
 
 Types describe values, but they can also encode rules about which program states are representable. A carefully chosen type may make some invalid operations difficult or impossible to express through safe APIs. Type checking happens during compilation, but types do not replace tests or prove that the program meets every requirement. This chapter explores the design trade-offs.
@@ -245,7 +245,7 @@ Newtypes do three jobs:
 
 1. **Keep apart values with different meanings** (ids, units of measurement, kinds of text).
 2. **Guarantee a property**: with a private field and a checking constructor, as in the `Celsius` exercise of [chapter 22](#modules).
-3. **Allow trait implementations** for foreign types ([chapter 33](#advanced-traits)).
+3. **Allow trait implementations** for foreign types ([chapter 36](#advanced-traits)).
 
 :::note A famous unit mix-up
 In 1999, NASA lost the Mars Climate Orbiter, a spacecraft worth more than 300 million dollars. One piece of software produced a force in pound-seconds, and another expected newton-seconds. Both were plain numbers. With one type per unit, such a program does not compile.
@@ -644,22 +644,22 @@ The check happens once, at the edge of the program. From then on, the type `Emai
 :::quiz Check your understanding
 ? What does `300_i32 as u8` produce?
 - A compile error
++ 44, because the value is cut down to the lowest 8 bits
 - A panic
 - 255
-+ 44, because the value is cut down to the lowest 8 bits
 = `as` never fails. It keeps the lowest 8 bits: 300 − 256 = 44. Use `u8::try_from(300)` to get an error value in such a case.
 
 ? Why is there `i64::from(x)` for an `i32`, but no `i32::from(x)` for an `i64`?
-+ `From` is only implemented for conversions that always succeed without loss. An `i64` may not fit into an `i32`
 - An oversight in the standard library
-- `i32` is older than `i64`
 - `From` only works with strings
+- `i32` is older than `i64`
++ `From` is only implemented for conversions that always succeed without loss. An `i64` may not fit into an `i32`
 = For the direction that can fail, the standard library offers `TryFrom`, which returns a `Result`.
 
 ? What is the difference between `type Metres = f64;` and `struct Metres(f64);`?
 - There is none
-+ The alias is only another name for `f64`. The struct is a new, distinct type that cannot be mixed up with other `f64` values
 - The alias is faster
++ The alias is only another name for `f64`. The struct is a new, distinct type that cannot be mixed up with other `f64` values
 - The struct uses more memory
 = An alias gives no protection: `Metres` and `f64` are interchangeable. A newtype is checked by the compiler and has the same size as its content.
 
@@ -671,10 +671,10 @@ The check happens once, at the edge of the program. From then on, the type `Emai
 = An expression of type `!` never produces a value, so it can stand wherever any type is required.
 
 ? In the typestate pattern, why do the transition methods take `self` by value?
++ The old state is consumed, so no one can go on using the object in its previous state
 - It is faster
 - Methods cannot take `&self` in generic types
 - To allow cloning
-+ The old state is consumed, so no one can go on using the object in its previous state
 = Moving `self` into the method ends the life of the old state. The only thing the caller has afterwards is the value of the new type.
 :::
 
@@ -773,7 +773,7 @@ Err("'soon' is not a duration")
 Err("'71582789h' is too large")
 ```
 
-Implementing `FromStr` plugs the type into the standard `.parse()` method, and into every library that builds on it. The command-line parser `clap` ([chapter 73](#cli)), for example, can accept a `Minutes` argument directly. The `if let … else if let … else` chain produces a pair, which is taken apart in the same `let`. `checked_mul` turns an out-of-range hour count into an error instead of allowing an overflow.
+Implementing `FromStr` plugs the type into the standard `.parse()` method, and into every library that builds on it. The command-line parser `clap` ([chapter 75](#cli)), for example, can accept a `Minutes` argument directly. The `if let … else if let … else` chain produces a pair, which is taken apart in the same `let`. `checked_mul` turns an out-of-range hour count into an error instead of allowing an overflow.
 :::
 
 :::exercise practice Remove the impossible states

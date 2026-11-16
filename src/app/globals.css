@@ -211,6 +211,40 @@ body {
 }
 
 /* ------------------------------------------------------------------ */
+/* Sidebar content map: the tree that breaks each chapter into its     */
+/* sections, subsections and key content blocks. The vertical rail and */
+/* the horizontal tick on every row are the graph's edges — they make  */
+/* parent → child visible instead of leaving depth to indentation.     */
+/* ------------------------------------------------------------------ */
+
+.content-tree-children {
+  position: relative;
+  margin-left: 0.9rem;
+  padding-left: 0.55rem;
+  border-left: 1px solid var(--g-line);
+}
+
+/* A chapter's outline hangs one step further right, under its title. */
+.content-tree-chapter {
+  margin-left: 1.35rem;
+  margin-bottom: 0.35rem;
+}
+
+.content-tree-children > li {
+  position: relative;
+}
+
+.content-tree-children > li::before {
+  content: "";
+  position: absolute;
+  top: 0.85rem;
+  left: -0.55rem;
+  width: 0.55rem;
+  height: 1px;
+  background: var(--g-line);
+}
+
+/* ------------------------------------------------------------------ */
 /* Chapter page: reading column + "On this page" rail                  */
 /* ------------------------------------------------------------------ */
 
@@ -409,8 +443,7 @@ body {
 }
 
 /* Chapter figures: self-contained diagram plates with a quiet caption.
-   The plate keeps its paper background in both themes, like a printed
-   figure pasted into the page — that contrast is deliberate. */
+   Light and dark SVG plates swap cleanly with the active theme. */
 .guide-figure {
   margin: 1.75rem 0;
   overflow: hidden;
@@ -424,6 +457,21 @@ body {
   display: block;
   width: 100%;
   height: auto;
+}
+
+.guide-figure img.guide-figure-dark,
+.guide-lightbox img.guide-figure-dark {
+  display: none;
+}
+
+.dark .guide-figure img.guide-figure-light,
+.dark .guide-lightbox img.guide-figure-light {
+  display: none;
+}
+
+.dark .guide-figure img.guide-figure-dark,
+.dark .guide-lightbox img.guide-figure-dark {
+  display: block;
 }
 
 .guide-figure figcaption {
@@ -757,6 +805,16 @@ body {
   .app-sidebar,
   .chapter-aside,
   .app-scrim {
+    display: none !important;
+  }
+
+  .guide-figure img.guide-figure-light,
+  .guide-lightbox img.guide-figure-light {
+    display: block !important;
+  }
+
+  .guide-figure img.guide-figure-dark,
+  .guide-lightbox img.guide-figure-dark {
     display: none !important;
   }
 

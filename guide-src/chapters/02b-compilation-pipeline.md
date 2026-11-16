@@ -9,7 +9,7 @@
 Turning `let sum = a + b;` into a running program involves several stages, much like translating a document before printing it: each stage changes the representation and makes particular checks or transformations possible. Rust's compiler, `rustc`, does not translate source text directly into the final instructions in one step. This chapter follows the main intermediate forms and explains what each contributes.
 
 :::note A gentle tour before Part 3
-In Part 2 (Chapters 5–7), we open the hood of `rustc` so you can see how source text turns into a runnable program. Whenever a compiler stage mentions a Rust concept you have not met yet—such as *traits*, *generics*, or the *borrow checker*—do not worry about memorising it now: [Part 3](#variables) teaches every single one from zero starting in [Chapter 8](#variables).
+In Part 2 ([Chapter 5](#compilation-pipeline)–[Chapter 7](#linking-elf)), we open the hood of `rustc` so you can see how source text turns into a runnable program. Whenever a compiler stage mentions a Rust concept you have not met yet—such as *traits*, *generics*, or the *borrow checker*—do not worry about memorising it now: [Part 3](#variables) teaches every single one from zero starting in [Chapter 8](#variables).
 :::
 
 ## Starting point: languages, compilation, and interpretation
@@ -111,7 +111,7 @@ Ident("i32") Brace('{')    Ident("a")  Plus('+')    Ident("b")  Brace('}')
 
 Notice that the lexer knows nothing about grammar or types yet: if you swap `fn` and `add` around (`add fn`), the lexer happily emits tokens, and the next stage catches the grammar error.
 
-## Stage 2: parsing and the abstract syntax tree (AST)
+## Stage 2: Parsing and the Abstract Syntax Tree (AST)
 
 The **parser** checks grammar rules and arranges flat tokens into a nested hierarchy called an **Abstract Syntax Tree** (**[[AST]]**). In Rust, macro invocations such as `println!(...)` are also expanded right here at the AST level before later analysis begins:
 
@@ -209,31 +209,31 @@ Compare `-C opt-level=0` vs `-C opt-level=3` on `example.ll`: in debug mode (`op
 
 :::quiz Check your understanding
 ? Which compiler stage converts raw UTF-8 text into keywords, identifiers, and punctuation tokens?
-- MIR lowering
-+ Lexical analysis (lexer)
-- LLVM optimisation
 - Static linking
+- MIR lowering
+- LLVM optimisation
++ Lexical analysis (lexer)
 = The lexer scans characters into discrete tokens before the parser builds a syntax tree.
 
 ? At which intermediate representation does `rustc` execute the borrow checker?
-- Directly on raw UTF-8 characters
-- On the AST before macro expansion
 + On MIR (Mid-level Intermediate Representation)
+- On the AST before macro expansion
+- Directly on raw UTF-8 characters
 - Inside the linker after ELF creation
 = MIR flattens nested syntax into basic blocks and explicit control-flow edges, allowing the borrow checker and drop elaborator to verify every possible execution path.
 
 ? Why does `rustc --release` fold `add(10, 32)` directly into `42`?
++ Because LLVM performs inlining and constant folding on LLVM IR when optimisations are enabled
 - Because the CPU hardware executes arithmetic inside RAM before launching the binary
 - Because the lexer evaluates arithmetic expressions while reading tokens
 - Because Rust forbids function calls on literals
-+ Because LLVM performs inlining and constant folding on LLVM IR when optimisations are enabled
 = LLVM inlines small functions and folds compile-time-known constants during its optimisation passes.
 
 ? Why can LLVM apply stronger `noalias` optimisations to Rust `&mut T` references than to typical C pointers?
-+ Because the Rust borrow checker already proved at compile time that no other active pointer aliases `&mut T`
 - Because Rust disables CPU caches
-- Because C has no integer addition instruction
 - Because Rust programs always run in an interpreter
+- Because C has no integer addition instruction
++ Because the Rust borrow checker already proved at compile time that no other active pointer aliases `&mut T`
 = Rust's aliasing rules give LLVM mathematical permission to keep values in CPU registers without reloading memory after unrelated writes.
 :::
 

@@ -21,11 +21,10 @@ export const metadata: Metadata = {
  * the only thing the browser has to add is the reader's own saved state.
  */
 export default function ProgressPage() {
-  // Appendices are included: they carry no completion tracking, but a reader
-  // can bookmark one (the bookmark toast says "find it on your progress page"),
-  // so filtering them out here made that link a dead end.
   const guide = loadGuide();
-  const chapters: ChapterMeta[] = guide.chapters.map(collectChapterMeta);
+  const chapters: ChapterMeta[] = guide.chapters
+    .filter((chapter) => chapter.kind !== "appendix")
+    .map(collectChapterMeta);
 
   return (
     <div className="mx-auto w-full max-w-[var(--page-max)] px-5 py-10 sm:px-8 lg:py-14">

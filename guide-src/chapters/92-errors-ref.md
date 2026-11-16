@@ -317,8 +317,8 @@ The closure borrows `name`, and a new thread may run longer than the function th
 **Repairs:**
 
 - `move`: `thread::spawn(move || …)` gives the closure ownership.
-- To share with several threads: `Arc::clone` for each one, then `move` ([chapter 59](#shared-state)).
-- To really borrow: `thread::scope` ([chapter 58](#threads)).
+- To share with several threads: `Arc::clone` for each one, then `move` ([chapter 61](#shared-state)).
+- To really borrow: `thread::scope` ([chapter 60](#threads)).
 
 ## Types and traits
 
@@ -367,7 +367,7 @@ An operation needs a trait that the type does not have. This one code covers man
 - "the `?` operator can only be used in a function that returns `Result`": give the function (also `main`) the return type `Result<(), Box<dyn std::error::Error>>`.
 - "cannot add a float to an integer": convert one side, `count as f64 + 2.5`.
 - "the trait bound `T: …` is not satisfied": add the bound to your generic function ([chapter 24](#generics)).
-- "cannot be sent between threads safely": an `Rc` or `RefCell` crossed a thread. Use `Arc` and `Mutex` ([chapter 59](#shared-state)).
+- "cannot be sent between threads safely": an `Rc` or `RefCell` crossed a thread. Use `Arc` and `Mutex` ([chapter 61](#shared-state)).
 - "the size … cannot be known at compilation time": a `str` or `[T]` without `&`, or a `dyn Trait` without `Box`.
 
 ### E0599: no method with this name
@@ -412,7 +412,7 @@ Operators are traits: `==` is `PartialEq`, `<` is `PartialOrd`, `+` is `Add`. Yo
 **Repairs:**
 
 - `#[derive(PartialEq)]` for `==`, `#[derive(PartialOrd)]` for `<`.
-- Implement `std::ops::Add` for `+` ([chapter 33](#advanced-traits)).
+- Implement `std::ops::Add` for `+` ([chapter 36](#advanced-traits)).
 - In a generic function: add the bound, `T: PartialOrd`.
 
 ### E0282: type annotations needed
@@ -590,7 +590,7 @@ A `Folder` would contain a `Folder`, which contains a `Folder`, without end.
 
 **Repairs:**
 
-- Put the inner value behind a pointer: `Option<Box<Folder>>` ([chapter 32](#smart-pointers)).
+- Put the inner value behind a pointer: `Option<Box<Folder>>` ([chapter 35](#smart-pointers)).
 
 ### E0038: this trait cannot be used as `dyn`
 
@@ -612,13 +612,13 @@ fn main() {
 
 Behind a `dyn Shape` the concrete type is unknown, so a method that returns `Self` or has type parameters cannot be called through it.
 
-Rust changed the vocabulary here: what older books and forum answers call **object safety** is now **dyn compatibility**, and the compiler's own message uses the new phrase. A trait is dyn compatible when every method can be called through a fat pointer — no `Self` by value, no generic type parameters, no associated constants, and no associated types without a specified value. [Chapter 33](#advanced-traits) walks through the rules one by one.
+Rust changed the vocabulary here: what older books and forum answers call **object safety** is now **dyn compatibility**, and the compiler's own message uses the new phrase. A trait is dyn compatible when every method can be called through a fat pointer — no `Self` by value, no generic type parameters, no associated constants, and no associated types without a specified value. [Chapter 36](#advanced-traits) walks through the rules one by one.
 
 **Repairs:**
 
 - Add `where Self: Sized` to that method: it is then left out of the trait object.
 - Return `Box<dyn Shape>` in place of `Self`.
-- Or use generics (`impl Shape`) where you do not need a mixed list ([chapter 33](#advanced-traits)).
+- Or use generics (`impl Shape`) where you do not need a mixed list ([chapter 36](#advanced-traits)).
 
 ### E0117: a foreign trait for a foreign type
 
@@ -640,7 +640,7 @@ You may implement a trait only if the trait or the type is defined in your crate
 
 **Repairs:**
 
-- Wrap the type in a struct of your own: `struct Names(Vec<String>);`, and implement the trait for that ([chapter 33](#advanced-traits)).
+- Wrap the type in a struct of your own: `struct Names(Vec<String>);`, and implement the trait for that ([chapter 36](#advanced-traits)).
 - Or define your own trait and implement it for the foreign type.
 
 ## Unsafe and async
@@ -683,7 +683,7 @@ fn main() {
 **Repairs:**
 
 - Make the calling function `async`.
-- At the top: `#[tokio::main] async fn main()`, or `runtime.block_on(…)` ([chapter 60](#async)).
+- At the top: `#[tokio::main] async fn main()`, or `runtime.block_on(…)` ([chapter 62](#async)).
 - An async function that calls itself gives E0733: put the inner call in `Box::pin(…)`.
 
 ## Messages without a code
@@ -715,4 +715,4 @@ A warning does not stop the build, and it is nearly always right.
 | `value assigned … is never read` | the variable is overwritten before anyone looks at it |
 | `unused comparison`, `comparison is useless` | a test that is always true or always false, such as `x >= 0` for an unsigned number |
 
-`cargo clippy` adds several hundred more checks of this kind ([chapter 36](#quality-tools)).
+`cargo clippy` adds several hundred more checks of this kind ([chapter 33](#quality-tools)).

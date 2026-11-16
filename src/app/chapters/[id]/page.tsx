@@ -8,10 +8,8 @@ import { ChapterBookmark } from "@/components/ChapterBookmark";
 import { BlockList } from "@/components/ChapterBody";
 import { ChapterRail, ChapterTocTrigger } from "@/components/ChapterRail";
 import { InlineRenderer } from "@/components/InlineRenderer";
-import { GlossaryTipProvider } from "@/components/GlossaryTipContext";
-import { PageInfo } from "@/components/PageChrome";
 import { hasTableOfContents } from "@/lib/headings";
-import { glossaryTipsFor, loadChapter, loadGuide } from "@/lib/guide-parser";
+import { loadChapter, loadGuide } from "@/lib/guide-parser";
 import type { ChapterSummary } from "@/lib/guide-types";
 import { chapterJsonLd, chapterMetadata } from "@/lib/seo";
 
@@ -55,136 +53,123 @@ export default async function ChapterPage({ params }: { params: Promise<{ id: st
             ? "Before you start"
             : `Chapter ${chapter.num}`;
 
-  // Only the terms this chapter links: the definitions travel in this page's
-  // RSC payload, not in the layout's, so the cost is the prose's own glossary
-  // references rather than all 258 entries.
-  const glossary = glossaryTipsFor(chapter.id);
-
   return (
-    <PageInfo chapter={chapter} parts={[]}>
-      <GlossaryTipProvider glossary={glossary}>
-        <div className="chapter-page">
-          <script
-            type="application/ld+json"
-            dangerouslySetInnerHTML={{
-              __html: JSON.stringify(chapterJsonLd(chapter)).replace(/</g, "\\u003c"),
-            }}
+    <div className="chapter-page">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(chapterJsonLd(chapter)).replace(/</g, "\\u003c"),
+        }}
+      />
+
+      <div className="chapter-layout" data-rail={showRail ? "on" : "off"}>
+        <article className="chapter-article">
+          {/* Breadcrumb (visible + mirrors the BreadcrumbList schema) */}
+          <nav aria-label="Breadcrumb" className="mb-5 font-sans text-xs text-[var(--g-ink3)]">
+            <ol className="flex flex-wrap items-center gap-x-1.5 gap-y-1">
+              <li>
+                <Link href="/" className="hover:text-[var(--g-accent)]">
+                  Learn Rust
+                </Link>
+              </li>
+              <li aria-hidden="true">/</li>
+              <li className="max-w-full truncate">{chapter.partTitle}</li>
+              <li aria-hidden="true">/</li>
+              <li className="max-w-full truncate text-[var(--g-ink2)]" aria-current="page">
+                {chapter.short}
+              </li>
+            </ol>
+          </nav>
+
+          {/* Chapter header */}
+          <header className="mb-9 border-b border-[var(--g-line)] pb-7">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-2 font-sans text-xs font-semibold">
+              <span className="rounded-full bg-[var(--g-accent-soft)] px-3 py-1 text-[11px] font-bold tracking-wide text-[var(--g-accent)]">
+                {eyebrow}
+              </span>
+              <span className="hidden text-[var(--g-ink3)] sm:inline">{chapter.partTitle}</span>
+              <ChapterTocTrigger headings={chapter.headings} />
+              <ChapterBookmark chapterId={chapter.id} title={chapter.title} />
+              {chapter.time > 0 && (
+                <span className="ml-auto inline-flex items-center gap-1.5 text-[var(--g-ink3)]">
+                  <Clock className="h-3.5 w-3.5" aria-hidden="true" />~{chapter.time} min
+                </span>
+              )}
+            </div>
+
+            <h1 className="mt-3.5 font-sans text-[30px] leading-[1.14] font-bold tracking-[-0.02em] text-balance text-[var(--g-ink)] sm:text-[38px]">
+              {chapter.title}
+            </h1>
+
+            {chapter.learnNodes.length > 0 && (
+              <div className="relative mt-6 overflow-hidden rounded-card border border-[var(--g-line)] bg-[var(--g-surface)] p-5 font-sans shadow-card">
+                <span
+                  aria-hidden="true"
+                  className="absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-[var(--g-accent)] to-[var(--g-accent-2)]"
+                />
+                <div className="mb-3 text-[11px] font-bold tracking-[0.08em] text-[var(--g-ink3)] uppercase">
+                  In this chapter you will learn
+                </div>
+                <ul className="grid gap-x-6 gap-y-2 text-sm leading-relaxed text-[var(--g-ink2)] sm:grid-cols-2">
+                  {chapter.learnNodes.map((nodes, i) => (
+                    <li key={i} className="flex items-start gap-2.5">
+                      <CheckCircle2
+                        className="mt-0.5 h-4 w-4 shrink-0 text-[var(--g-accent)]"
+                        aria-hidden="true"
+                      />
+                      <span>
+                        <InlineRenderer nodes={nodes} />
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </header>
+
+          {/* Body */}
+          <div className="guide-prose min-w-0">
+            <BlockList blocks={chapter.blocks} />
+          </div>
+
+          {/* Completion action */}
+          <ChapterActions
+            chapterId={chapter.id}
+            chapterTitle={chapter.title}
+            trackDone={chapter.kind !== "appendix"}
           />
 
-          <div className="chapter-layout" data-rail={showRail ? "on" : "off"}>
-            <article className="chapter-article">
-              {/* Breadcrumb (visible + mirrors the BreadcrumbList schema) */}
-              <nav aria-label="Breadcrumb" className="mb-5 font-sans text-xs text-[var(--g-ink3)]">
-                <ol className="flex flex-wrap items-center gap-x-1.5 gap-y-1">
-                  <li>
-                    <Link href="/" className="hover:text-[var(--g-accent)]">
-                      Learn Rust
-                    </Link>
-                  </li>
-                  <li aria-hidden="true">/</li>
-                  <li className="max-w-full truncate">{chapter.partTitle}</li>
-                  <li aria-hidden="true">/</li>
-                  <li className="max-w-full truncate text-[var(--g-ink2)]" aria-current="page">
-                    {chapter.short}
-                  </li>
-                </ol>
-              </nav>
-
-              {/* Chapter header */}
-              <header className="mb-9 border-b border-[var(--g-line)] pb-7">
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-2 font-sans text-xs font-semibold">
-                  <span className="rounded-full bg-[var(--g-accent-soft)] px-3 py-1 text-[11px] font-bold tracking-wide text-[var(--g-accent)]">
-                    {eyebrow}
-                  </span>
-                  <span className="hidden text-[var(--g-ink3)] sm:inline">{chapter.partTitle}</span>
-                  <ChapterTocTrigger headings={chapter.headings} />
-                  <ChapterBookmark chapterId={chapter.id} title={chapter.title} />
-                  {chapter.time > 0 && (
-                    <span className="ml-auto inline-flex items-center gap-1.5 text-[var(--g-ink3)]">
-                      <Clock className="h-3.5 w-3.5" aria-hidden="true" />~{chapter.time} min
-                    </span>
-                  )}
-                </div>
-
-                <h1 className="mt-3.5 font-sans text-[30px] leading-[1.14] font-bold tracking-[-0.02em] text-balance text-[var(--g-ink)] sm:text-[38px]">
-                  {chapter.title}
-                </h1>
-
-                {chapter.learnNodes.length > 0 && (
-                  <div className="relative mt-6 overflow-hidden rounded-card border border-[var(--g-line)] bg-[var(--g-surface)] p-5 font-sans shadow-card">
-                    <span
-                      aria-hidden="true"
-                      className="absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-[var(--g-accent)] to-[var(--g-accent-2)]"
-                    />
-                    <div className="mb-3 text-[11px] font-bold tracking-[0.08em] text-[var(--g-ink3)] uppercase">
-                      In this chapter you will learn
-                    </div>
-                    <ul className="grid gap-x-6 gap-y-2 text-sm leading-relaxed text-[var(--g-ink2)] sm:grid-cols-2">
-                      {chapter.learnNodes.map((nodes, i) => (
-                        <li key={i} className="flex items-start gap-2.5">
-                          <CheckCircle2
-                            className="mt-0.5 h-4 w-4 shrink-0 text-[var(--g-accent)]"
-                            aria-hidden="true"
-                          />
-                          <span>
-                            <InlineRenderer nodes={nodes} />
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </header>
-
-              {/* Body */}
-              <div className="guide-prose min-w-0">
-                <BlockList blocks={chapter.blocks} />
-              </div>
-
-              {/* Completion action */}
-              <ChapterActions
-                chapterId={chapter.id}
-                chapterTitle={chapter.title}
-                trackDone={chapter.kind !== "appendix"}
+          {/* Prev / next */}
+          <nav
+            aria-label="Chapter pagination"
+            className="no-print mt-10 grid gap-3 border-t border-[var(--g-line)] pt-6 font-sans sm:grid-cols-2"
+          >
+            {prev ? (
+              <ChapterStepLink direction="previous" href={`/chapters/${prev.id}`} chapter={prev} />
+            ) : (
+              <ChapterStepLink
+                direction="previous"
+                href="/"
+                label="Overview"
+                title="Home & learning path"
               />
-
-              {/* Prev / next */}
-              <nav
-                aria-label="Chapter pagination"
-                className="no-print mt-10 grid gap-3 border-t border-[var(--g-line)] pt-6 font-sans sm:grid-cols-2"
-              >
-                {prev ? (
-                  <ChapterStepLink
-                    direction="previous"
-                    href={`/chapters/${prev.id}`}
-                    chapter={prev}
-                  />
-                ) : (
-                  <ChapterStepLink
-                    direction="previous"
-                    href="/"
-                    label="Overview"
-                    title="Home & learning path"
-                  />
-                )}
-
-                {next ? (
-                  <ChapterStepLink direction="next" href={`/chapters/${next.id}`} chapter={next} />
-                ) : (
-                  <ChapterStepLink direction="next" href="/" label="Finish" title="Back to home" />
-                )}
-              </nav>
-            </article>
-
-            {showRail && (
-              <aside className="chapter-aside no-print" aria-label="On this page">
-                <ChapterRail headings={chapter.headings} />
-              </aside>
             )}
-          </div>
-        </div>
-      </GlossaryTipProvider>
-    </PageInfo>
+
+            {next ? (
+              <ChapterStepLink direction="next" href={`/chapters/${next.id}`} chapter={next} />
+            ) : (
+              <ChapterStepLink direction="next" href="/" label="Finish" title="Back to home" />
+            )}
+          </nav>
+        </article>
+
+        {showRail && (
+          <aside className="chapter-aside no-print" aria-label="On this page">
+            <ChapterRail headings={chapter.headings} />
+          </aside>
+        )}
+      </div>
+    </div>
   );
 }
 

@@ -35,9 +35,8 @@ export default function HomePage() {
       title: "Run",
       body: (
         <>
-          {stats.codeBlocks} code listings. Every complete Rust program among
-          them was compiled and run with the real compiler, so the output you
-          see is the output it produced. Press{" "}
+          {stats.codeBlocks} code listings, and every Rust program among them
+          compiled and run with the real Rust compiler. Press{" "}
           <strong className="text-[var(--g-ink)]">Run</strong> on a complete
           example to open it in the free online Rust Playground.
         </>

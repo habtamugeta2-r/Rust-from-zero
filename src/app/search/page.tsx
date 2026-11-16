@@ -3,8 +3,6 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { ArrowRight, CornerDownLeft, Search as SearchIcon } from "lucide-react";
 import {
-  MAX_QUERY_LENGTH,
-  MIN_QUERY_LENGTH,
   SUGGESTED_QUERIES,
   groupHitsByChapter,
   searchGuide,
@@ -26,8 +24,8 @@ export default async function SearchPage({
 }) {
   const params = await searchParams;
   const raw = Array.isArray(params.q) ? params.q[0] : params.q;
-  const query = (raw ?? "").trim().slice(0, MAX_QUERY_LENGTH);
-  const hits = query.length >= MIN_QUERY_LENGTH ? searchGuide(query, { limit: 60 }) : [];
+  const query = (raw ?? "").trim().slice(0, 120);
+  const hits = query.length >= 2 ? searchGuide(query, { limit: 60 }) : [];
   const groups = groupHitsByChapter(hits);
   const chapterCount = groups.length;
   const guide = loadGuide();

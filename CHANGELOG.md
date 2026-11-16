@@ -4,68 +4,51 @@ All notable changes to the guide are recorded here. The version number tracks
 the web application in `package.json`; the chapters themselves are content, and
 they change continuously.
 
-## Unreleased — the curriculum audit
-
-A full technical, functional and pedagogical review of all 88 chapters. Every
-item below was measured on this tree, not inferred from a previous review.
-
-### Changed
-
-- **Part 3 was three parts wearing one badge.** Its 33 chapters ran from
-  `let mut` to macros and `unsafe`, so a single "Beginner" label was right for
-  the first third and wrong for the last. It is now Part 3 *Core Rust
-  fundamentals*, Part 4 *Abstraction and architecture* and Part 5 *Advanced
-  Rust*, with part levels that match the modal level of their chapters.
-- **Sequencing.** Cargo, quality tooling and testing strategies now precede the
-  async and web projects that assume them; Rust concurrency now precedes the
-  systems chapters that use `Send`/`Sync` and `epoll`; crates and Serde precede
-  the async ecosystem built on them. Files are renamed to match reading order,
-  but chapter ids are unchanged, so every existing URL still resolves.
-- **Declared reading time is derived, not assigned.** Sixty-six chapters were
-  retimed from their own prose, code, exercises and quizzes; the total falls
-  from 4,573 to 3,760 minutes, and the outliers that made the old number
-  meaningless (a 1,400-word lab and a 7,300-word chapter both declaring 35) are
-  gone.
-- **Quiz answers are evenly distributed.** B held 56.2% of the 379 answers and D
-  held 1.1%; a reader who always picked the second option scored over half the
-  bank. Option text is untouched — only positions moved — and the distribution
-  is now 95/95/95/94.
-
-### Fixed
-
-- `94-under-the-hood` placed monomorphisation in the HIR stage; HIR and MIR both
-  stay generic, and monomorphisation happens at code generation.
-- The same appendix's `imul eax, edi` comment described the operand order
-  backwards, and its `89 F8` note now explains the ModRM byte.
-- `link/chapter-number` could never fire: it read labels off the parsed AST,
-  which the parser had already rewritten. It now reads the raw markdown, and the
-  19 stale labels that had been hiding there are corrected.
-- Six American spellings survived the British-spelling sweep (`fiber`,
-  `catalog`, `honoring`, `serialization`), and 33 headings were Title Cased in a
-  sentence-case guide.
-- Reader-facing "just" and "simply" are gone from the places where they implied
-  a step was easy; a new warning catches the imperative forms.
-
-### Checked, nothing to change
-
-- **Duplicate ASCII diagrams.** The review reported duplicates. Compared all
-  163 fenced diagrams three ways — exact text, the sequence of box-drawing
-  characters, and the set of concepts each one names — and found no duplicate
-  pair. The highest word overlap between any two diagrams is 0.28 (the two
-  project walkthroughs, which share vocabulary because they are both web
-  services), and the only structural matches are unrelated `├──` trees. No
-  chapter lost a diagram.
+## Unreleased
 
 ### Added
 
-- `docs/roadmap-part-title` fails when a roadmap part heading and
-  `guide-config.ts` disagree, which is how they drifted in the first place.
-- `text/dismissive` warns on "just run", "simply write" and "obviously".
-- Tests for both, plus a structural test that fails if any quiz answer position
-  leaves the 15–35% band.
-- `guide-src/NEXT-VERSION-PROMPT.md` is rewritten for the current release: its
-  ground-truth table was two releases stale and half its "known drift" list had
-  already been fixed.
+- **The sidebar is now a full content map.** Every chapter expands in
+  place into its internal content graph — sections (`##`) hold their
+  subsections (`###`), which hold their key points (a `####` detail, a
+  `:::key` idea, an exercise, a quiz, a checklist, a recap) — drawn with
+  connector rails, depth icons and nested-topic counts, so the depth of
+  the whole guide is visible at a glance (the map header counts the
+  chapters and topics from the chapters themselves).
+  Every node deep-links to its anchor on the chapter page (key ideas,
+  exercises, quizzes and checklists gained stable anchors to make that
+  true), branches collapse independently or all at once, the reader's
+  arrangement persists across reloads, and the branch containing the
+  section being read opens and highlights itself as they scroll.
+- **Six new chapter diagrams and full dark-mode SVG plates.** Added figures
+  for `Option` niche layout (`13-enums`), static vs dynamic trait dispatch
+  (`20-traits`), `async` state machines (`32-async`), struct padding and field
+  reordering (`40-memory-layout`), `syscall` Ring 3/Ring 0 privilege crossings
+  (`41h-kernel-syscalls-processes`), and blocking vs `epoll` vs `io_uring`
+  (`41l-blocking-epoll-io-uring`). All 14 SVG diagrams ship matching warm
+  charcoal `-dark.svg` plates that follow the theme toggle and revert to light
+  plates when printing.
+- **Two interactive memory steppers** for `Vec<T>` heap reallocation
+  (`15-collections`) and `Arc<Mutex<T>>` lock sharing across threads
+  (`31-shared-state`).
+- **Component & route tests** in `tests/components.test.ts` and new content-lint
+  rules (`link/chapter-number` over raw markdown, `glossary/duplicate`,
+  `text/dismissive`, `docs/roadmap-part-title`) in `src/lib/content-lint.ts`.
+
+### Changed
+
+- **Split Part 3 into Parts 3–5** (15 numbered parts + 5 appendices) and
+  resequenced Cargo/quality-tooling/testing chapters into Part 4 and idioms,
+  crates, and Serde into Part 5 ahead of dependent chapters; aligned part
+  level badges to modal chapter levels and synchronised `00b-roadmap.md`,
+  `00-start.md`, and cross-references across all 88 chapters.
+- **Rebalanced all 379 quiz questions** evenly across options A–D
+  (`A: 95, B: 95, C: 95, D: 94`), derived realistic `@time` across all 88
+  chapters (`3,800` min total), linked 100% of glossary terms (`253/253`) from
+  prose, and enforced British spelling and non-dismissive phrasing.
+- **Fixed `inlinePlainText` `routeLink` handling** in `src/lib/guide-parser.ts`,
+  corrected `94-under-the-hood.md` AST operands and monomorphisation timing, and
+  resolved `npm audit` `minimatch` advisories via `overrides` in `package.json`.
 
 ## 3.2.0 — pictures everywhere they earn their place
 
