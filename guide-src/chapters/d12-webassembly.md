@@ -434,7 +434,7 @@ interruption, and has a component model implementation. Configure limits: a
 module that loops forever must be interrupted (`consume_fuel(true)` and
 `set_fuel`, or epochs with a ticker), memory must be capped, and only the
 imports you intend should be linked. The runtime is the security boundary;
-sandboxing is only as strong as the capability set you grant (chapter D6).
+sandboxing is only as strong as the capability set you grant ([chapter D6](#security-engineering)).
 
 ## 12.11 The Wasm Component Model and WIT
 

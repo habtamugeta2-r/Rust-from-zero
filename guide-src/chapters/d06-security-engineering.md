@@ -638,7 +638,7 @@ A process should hold only the capabilities it needs. Defence in depth:
   `seccomp` crate, `landlock` for filesystem access).
 - **Namespaces/cgroups**: containers, user namespaces, memory and CPU limits.
 - **Wasm sandbox**: run untrusted plugins in Wasmtime with an explicit
-  capability set and fuel/epoch limits (chapter D12).
+  capability set and fuel/epoch limits ([chapter D12](#webassembly)).
 - **Process isolation**: a separate service or worker for parsing untrusted
   files, with no network and a time limit.
 

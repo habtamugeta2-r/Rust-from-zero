@@ -13,7 +13,7 @@ HTTP, TLS, DNS, WebSockets, QUIC, gRPC, message brokers and the distributed
 patterns that keep a fleet healthy. The library's [network layers
 chapter](#network-layers-ethernet-ip), [TCP/UDP chapter](#tcp-udp-sockets-kernel),
 [DNS/HTTP/TLS trace](#dns-http-tls-trace) and [async chapter](#async) explain
-the kernel and protocol internals; chapter D4 applies all of this to backend
+the kernel and protocol internals; [chapter D4](#backend-development) applies all of this to backend
 services.
 
 :::analogy A postal system with receipts
@@ -146,7 +146,7 @@ store. Set total and connect timeouts; a default client can wait forever. Check
 the status before parsing; `error_for_status` turns 4xx/5xx into an error.
 Stream large bodies (`bytes_stream`) instead of `text()`, and bound the size you
 accept. For JSON, `response.json::<T>()` deserialises incrementally; validate
-afterwards (chapter D6).
+afterwards ([chapter D6](#security-engineering)).
 
 ```rust
 fn blocking_fetch(url: &str) -> Result<String, ureq::Error> {
@@ -289,7 +289,7 @@ privacy (use DoH/DoT for that).
 
 A WebSocket starts as an HTTP upgrade and then carries framed messages. Use
 `tokio-tungstenite` for clients and servers, or the framework integration from
-chapter D4.
+[chapter D4](#backend-development).
 
 ```rust
 use futures::{SinkExt, StreamExt};
@@ -487,12 +487,12 @@ Choose by access pattern: JSON when humans and browsers read it; protobuf for
 typed RPC and evolution; MessagePack when you want JSON-like flexibility with
 less size; FlatBuffers/Cap'n Proto when you must read fields without
 deserialising the whole message; Avro when a schema registry governs analytics.
-Every binary format needs versioning, a size limit and validation (chapter D6).
+Every binary format needs versioning, a size limit and validation ([chapter D6](#security-engineering)).
 
 ## 10.11 MQTT with `rumqttc` and brokers
 
 MQTT is a publish/subscribe protocol with QoS levels, retained messages, last
-will and sessions. It is the default for constrained IoT telemetry (chapter D8).
+will and sessions. It is the default for constrained IoT telemetry ([chapter D8](#embedded-iot)).
 
 ```rust
 use rumqttc::{AsyncClient, MqttOptions, QoS};
@@ -842,7 +842,7 @@ Opening a connection costs a TCP handshake, TLS handshake and, for HTTP/2, a
 settings exchange. Pool and reuse:
 
 - HTTP clients pool by origin automatically (`reqwest`).
-- Databases use a pool sized to the database's capacity (chapter D4).
+- Databases use a pool sized to the database's capacity ([chapter D4](#backend-development)).
 - gRPC uses one HTTP/2 connection with multiplexed streams; a channel is the
   pool.
 - Custom TCP protocols should keep connections open, with idle timeouts and a
@@ -944,7 +944,7 @@ fn main() {
 
 Design rules: fixed endianness, explicit lengths, a version field, a checksum
 (CRC32 or a hash), and a parser that never trusts a length. Fuzz the parser
-(chapter D6) and enforce limits before allocating. `nom` errors are composable;
+([chapter D6](#security-engineering)) and enforce limits before allocating. `nom` errors are composable;
 map them to protocol errors with the offset. For performance, parse zero-copy
 slices and avoid allocating until the frame is validated.
 

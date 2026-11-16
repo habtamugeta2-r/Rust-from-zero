@@ -13,7 +13,7 @@ and `proptest` are part of the everyday loop; Docker, Nix and `cargo-dist`
 decide what ships. This chapter is the operational handbook. The library's
 [cargo chapter](#cargo), [quality-tools chapter](#quality-tools) and
 [testing-strategies chapter](#testing-strategies) supply more depth on each
-tool; chapter D4 covers the service runtime side.
+tool; [chapter D4](#backend-development) covers the service runtime side.
 
 :::analogy A workshop with labelled drawers
 A good workshop does not make you a better craftsperson, but a missing label
@@ -620,7 +620,7 @@ interact. Cache aggressively but invalidate on `Cargo.lock` changes. Keep CI
 under ten minutes for the fast path; move slow fuzzing, coverage and cross
 builds to scheduled or labelled jobs. GitLab uses `.gitlab-ci.yml` with
 `cache:key:files: [Cargo.lock]` and a Rust image. Pin actions by SHA for
-security (chapter D6).
+security ([chapter D6](#security-engineering)).
 
 ## 9.14 Docker: multi-stage builds and minimal images
 
@@ -712,7 +712,7 @@ cargo dist build --artifacts all
 installers and GitHub release artefacts for Linux, macOS and Windows; `cargo-
 changelog` (or `git-cliff`) generates a changelog from conventional commits.
 Publish with trusted publishing/OIDC rather than a long-lived crates.io token
-where supported. Tag immutably and attach checksums plus an SBOM (chapter D6).
+where supported. Tag immutably and attach checksums plus an SBOM ([chapter D6](#security-engineering)).
 
 ## 9.17 Dependency management
 

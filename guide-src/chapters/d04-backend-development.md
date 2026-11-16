@@ -12,8 +12,8 @@ database layer; `tokio`, `tower` and `tracing` supply the runtime, middleware
 and observability. This chapter is the map of that ecosystem and a set of
 working recipes. The library's [web chapter](#web), [databases
 chapter](#databases), [API project](#project-api) and [observability
-chapter](#observability) go deeper on the systems side; chapter D2 supplies the
-async foundation, and chapter D6 covers the security properties in detail.
+chapter](#observability) go deeper on the systems side; [chapter D2](#async-concurrency) supplies the
+async foundation, and [chapter D6](#security-engineering) covers the security properties in detail.
 
 :::analogy A restaurant service, not a recipe book
 A backend is a kitchen during service: orders arrive (requests), a host seats
@@ -376,7 +376,7 @@ credentials; timeout outside the handler but inside tracing; compression
 outside the handler; rate limiting at the edge (a gateway or this layer) with a
 shared store for multiple replicas. `Allow-Origin: *` with credentials is
 invalid; list origins explicitly in production. Section 4.24 expands rate
-limiting, and chapter D6 covers CORS as a browser security control.
+limiting, and [chapter D6](#security-engineering) covers CORS as a browser security control.
 
 ## 4.6 Authentication: JWT, OAuth2, sessions and API keys
 
@@ -426,7 +426,7 @@ claim handles logout. Store browser sessions in `HttpOnly`, `Secure`,
 `SameSite=Lax` cookies, rotate the id on login, and protect state-changing
 requests with CSRF tokens or a strict `SameSite` policy. API keys are hashed at
 rest, shown once, scoped, and rotated. `axum-login`, `tower-sessions` and
-`oauth2` are the usual building blocks; chapter D6 covers password hashing and
+`oauth2` are the usual building blocks; [chapter D6](#security-engineering) covers password hashing and
 secret storage.
 
 ## 4.7 Authorisation: RBAC, ABAC and permission models
@@ -532,7 +532,7 @@ async fn count_users(pool: &PgPool) -> sqlx::Result<i64> {
 `sqlx` supports PostgreSQL, MySQL/MariaDB, SQLite and MSSQL through feature
 flags; the driver is pure Rust for Postgres and SQLite, so no client library is
 needed. Always bind parameters (`$1`, `?`) rather than formatting SQL; this is
-the primary defence against injection (chapter D6). `sqlx::query_as` with
+the primary defence against injection ([chapter D6](#security-engineering)). `sqlx::query_as` with
 `#[derive(FromRow)]` maps columns by name. Use `fetch_optional` for a lookup and
 `fetch_one` for an invariant that must hold. Diesel's query builder catches
 column and type errors at compile time and is synchronous, so use
@@ -821,7 +821,7 @@ directly; `clap` handles flags. Prefix environment variables (`APP_PORT`) to
 avoid collisions, document every variable, and keep secrets out of files and
 images. Validate ranges at start-up (`port != 0`, URLs parse) and print the
 effective configuration with secrets redacted. Section 9.14 covers deployment
-configuration and chapter D6 covers secret injection.
+configuration and [chapter D6](#security-engineering) covers secret injection.
 
 ## 4.16 Serialisation: `serde`, JSON, TOML, YAML, MessagePack and CBOR
 
@@ -873,7 +873,7 @@ produces readable tagged unions; `#[serde(flatten)]` composes common envelopes;
 unknown enum variants carefully: for forward compatibility use
 `#[serde(other)]` on a catch-all variant or an `Unknown` variant that preserves
 the raw value. Never deserialise untrusted input into a type whose invariants
-are unchecked (chapter D6); `serde` can deserialise a `u8` but not "a valid
+are unchecked ([chapter D6](#security-engineering)); `serde` can deserialise a `u8` but not "a valid
 email". YAML is not a safe configuration format for untrusted input; prefer
 JSON/TOML and disable YAML tags.
 

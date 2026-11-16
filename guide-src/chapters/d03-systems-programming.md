@@ -729,7 +729,7 @@ cross build --target aarch64-unknown-linux-musl --release
 a cross linker and needs no container; `musl` targets produce statically linked
 Linux binaries that run on any distribution with the same kernel ABI. For
 embedded, the target has no operating system, so `std` is unavailable and the
-program needs `#![no_std]` and a panic handler (chapter D8). Always test the
+program needs `#![no_std]` and a panic handler ([chapter D8](#embedded-iot)). Always test the
 produced artefact on the target or in an emulator (`qemu-user`), not only check
 that it compiled.
 
@@ -763,7 +763,7 @@ Rust ships `rust-gdb` and `rust-lldb` wrappers that load pretty-printers for
 keeps debug files separate for smaller deployed binaries. On Linux,
 `/proc/<pid>/maps` shows the address space, `strace -f` shows syscalls and
 `perf record` shows where time goes. The [Linux systems lab](#linux-systems-lab)
-walks through these tools; chapter D9 covers `cargo-flamegraph` and `divan`.
+walks through these tools; [chapter D9](#devops-tooling) covers `cargo-flamegraph` and `divan`.
 
 ## Exercises
 

@@ -12,7 +12,7 @@ frontier models; Rust excels at **inference**, **data processing**, **serving**,
 crates are good enough for production work, and the gap is narrowing. This
 chapter maps the ecosystem and shows the core workflows. It assumes you know
 what a tensor, a gradient and a token are; the [async chapter](#async-concurrency) supplies the
-foundation for serving, and chapter D12 covers Wasm deployment.
+foundation for serving, and [chapter D12](#webassembly) covers Wasm deployment.
 
 :::analogy A workshop with imported tools
 Training a frontier model is a research laboratory; deploying it is a workshop
@@ -274,7 +274,7 @@ fn main() {
 ```
 
 Decoding untrusted images is a security surface: bound the input size, set
-decoder limits, and fuzz the pipeline (chapter D6). Colour order (RGB vs BGR),
+decoder limits, and fuzz the pipeline ([chapter D6](#security-engineering)). Colour order (RGB vs BGR),
 resize interpolation, crop policy and normalisation constants must match
 training. For video, decode with `ffmpeg-next` or `gstreamer` and sample frames
 rather than loading the file into memory.
@@ -353,7 +353,7 @@ Production concerns: set timeouts and a maximum token budget; stream tokens to
 the client with SSE; handle `429` with backoff; log token usage and cost per
 request; never send secrets or personal data to a third party without a data
 processing agreement; treat model output as untrusted input (prompt injection
-is the new XSS (chapter D6)). For local models, use `llama-cpp-2`, `candle` examples or
+is the new XSS ([chapter D6](#security-engineering))). For local models, use `llama-cpp-2`, `candle` examples or
 `mistral.rs`, and quantise to fit the target. Retrieval augmentation is a
 pipeline: embed the query, retrieve chunks, build a prompt within the context
 window, cite sources, and evaluate the answers.

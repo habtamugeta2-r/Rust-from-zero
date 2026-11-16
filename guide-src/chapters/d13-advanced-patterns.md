@@ -12,7 +12,7 @@ without hiding logic, and the architectural patterns that keep a codebase
 changeable. It ends with the measurement tools that tell you whether any of it
 matters. The library's [advanced traits](#advanced-traits), [type
 system](#type-system), [macros](#macros) and [performance](#performance)
-chapters go deeper on each mechanism; chapter D1 establishes the language
+chapters go deeper on each mechanism; [chapter D1](#core-language) establishes the language
 basics this chapter assumes.
 
 :::analogy A building, not a pile of bricks
@@ -436,7 +436,7 @@ to catch drift. Never edit generated files by hand.
 
 A plugin system has three parts: a stable host interface, a registry and a
 lifecycle. In-process plugins use trait objects; out-of-process plugins use a
-protocol (gRPC, JSON-RPC) or a sandbox (Wasm, chapter D12).
+protocol (gRPC, JSON-RPC) or a sandbox (Wasm, [chapter D12](#webassembly)).
 
 ```rust
 use std::collections::HashMap;
@@ -778,7 +778,7 @@ fn main() {
 
 A flamegraph shows inclusive and exclusive time; look for wide plateaus, not
 single peaks. `perf stat` reports cycles, instructions, cache misses and branch
-misses; a high miss rate suggests a data-layout problem (chapter D3). Profile
+misses; a high miss rate suggests a data-layout problem ([chapter D3](#systems-programming)). Profile
 the release build with debug symbols (`debug = 1`) and the same features as
 production. Tokio applications need `tokio-console` for task-level insight;
 async tasks that block show up as long poll times.

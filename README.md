@@ -29,7 +29,7 @@ table disagrees with that measurement.
 | Search entries | 20,687 |
 | Glossary terms | 253 |
 | Glossary terms linked from prose | 253 |
-| Cross-links (inbound edges) | 1,230 |
+| Cross-links (inbound edges) | 1,259 |
 | Words of prose | 267,156 |
 | Declared reading time (minutes) | 5,030 |
 

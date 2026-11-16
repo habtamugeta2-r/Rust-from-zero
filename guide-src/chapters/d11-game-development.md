@@ -11,8 +11,8 @@ Fyrox offers a more traditional scene editor; macroquad, ggez and miniquad are
 lightweight frameworks for 2D; wgpu, vulkano and ash expose the GPU directly.
 This chapter is a tour of the architecture and the practical pieces you need to
 ship a small game. The library's [games and embedded
-survey](#games-embedded) is a shorter introduction; chapter D3 covers the systems
-foundations, and chapter D12 covers Wasm builds for the browser.
+survey](#games-embedded) is a shorter introduction; [chapter D3](#systems-programming) covers the systems
+foundations, and [chapter D12](#webassembly) covers Wasm builds for the browser.
 
 :::analogy A theatre company, not a script
 A traditional game engine is a script: objects update in the order you wrote.
