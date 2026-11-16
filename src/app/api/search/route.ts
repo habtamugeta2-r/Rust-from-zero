@@ -9,18 +9,16 @@ import { searchGuide } from "@/lib/search";
  */
 export function GET(request: NextRequest) {
   const q = (request.nextUrl.searchParams.get("q") ?? "").trim();
-  // `get` returns null when the parameter is absent — Number(null) is 0, so the
-  // default has to be chosen before coercing.
-  const limitParam = request.nextUrl.searchParams.get("limit");
-  const parsed = limitParam === null ? Number.NaN : Number(limitParam);
+  const rawLimit = request.nextUrl.searchParams.get("limit")?.trim() ?? "";
+  const parsed = rawLimit ? Number(rawLimit) : 40;
   const limit = Number.isFinite(parsed)
     ? Math.min(60, Math.max(1, Math.round(parsed)))
     : 40;
 
-  const hits = searchGuide(q, { limit });
+  const hits = q.length < 2 ? [] : searchGuide(q, { limit });
 
   return NextResponse.json(
-    { query: q, hits },
+    { query: q, hits, results: hits },
     {
       headers: {
         // The search index is static per deployment, so let the CDN cache it.
