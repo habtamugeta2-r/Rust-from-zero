@@ -14,6 +14,8 @@ In Part 2 ([Chapter 5](#compilation-pipeline)–[Chapter 7](#linking-elf)), we o
 
 ## Starting point: languages, compilation, and interpretation
 
+[Chapter 1](#what-is-rust) introduced the two ways to run a program — translate it whole before it runs, or interpret it as it runs — with a translator and an interpreter. This chapter assumes that distinction and goes inside the first of them: what the translator actually does, stage by stage. If the translator-versus-interpreter idea itself is new, read that section of chapter 1 first; everything below builds on it.
+
 Human minds think in names, functions, structures, and safety rules. CPU hardware executes raw numeric opcodes on fixed-width registers. The gap between those two worlds gives rise to **high-level languages** (abstracting away registers and memory wiring), **low-level languages** (assembly and hardware-close languages like C), and **machine code** (the raw binary bytes the CPU control unit decodes).
 
 :::analogy Translating blueprints at an architecture firm

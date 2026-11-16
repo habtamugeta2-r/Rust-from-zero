@@ -20,7 +20,7 @@ Learning systems programming is like learning to cook or to play an instrument. 
 
 ## What is in this guide
 
-Explore the full chapter-by-chapter dependency map in the **[Complete Learning Roadmap](#roadmap)**.
+This page has one job: to help you start. It explains how to study, how the interactive parts work, and how to choose a route. The **[Complete Learning Roadmap](#roadmap)** has the different job of listing every chapter, its prerequisites and its experiments. Read this page once, then use the roadmap as a map you return to.
 
 | | |
 |---|---|
@@ -31,6 +31,22 @@ Explore the full chapter-by-chapter dependency map in the **[Complete Learning R
 | Exercises & Quizzes | 313 worked exercises (each with hint + solution) and 444 instant-feedback quiz questions |
 
 Where the guide shows compiler diagnostics or captured output, those blocks come straight from `rustc` (Rust 2024 edition). Hardware, ELF, and Linux kernel experiments are written for `x86_64` and `ARM64` Linux environments with `rustc`, `cargo`, `objdump`, `readelf`, `nm`, `strace`, `rust-gdb`, `perf`, and `/proc`.
+
+## Two tracks cover some of the same ground — read one, use the other as a reference
+
+The guide has two spines, and they overlap on purpose:
+
+- **Parts 1–15, the library.** Short chapters in a strict order, from hardware and the compiler through the language to networking, storage and projects. Each idea is taught once, in depth, where it first appears.
+- **D1–D13, the Definitive Curriculum.** One long, self-contained chapter per domain: core language, async, systems, backend, blockchain, security, AI and ML, embedded, DevOps, networking, games, WebAssembly, and advanced patterns. Each one restates the language ideas it needs, then goes further into its domain.
+
+Because D1–D13 restate what they need, **you are not meant to read both spines from cover to cover.** Pick the spine that matches your goal, and treat the other as a reference you open when a chapter points you there:
+
+| Your goal | Read this spine | Use the other spine for |
+|---|---|---|
+| Learn Rust and how computers work, in order | Parts 1–15 | A D chapter when you want one domain, such as blockchain or games, in a single sitting |
+| Reach one domain quickly | The D chapters for that domain, starting with [D1](#core-language) if the language itself is new | The linked library chapters when you want the machine-level reason behind a rule |
+
+The same rule holds inside the library. A few ideas return at greater depth — the stack and the heap, what a future is, how to watch a running service. Each return visit states what it assumes you already know and what is new there. If a section feels familiar, look for that note: it tells you whether to read on or to skim to the new part.
 
 ## Choose your path: full systems journey or goal-based routes
 
@@ -53,7 +69,7 @@ You do not merely memorise syntax—you learn *why* the machine behaves the way 
 
 ## What this guide covers, and what it does not
 
-"Everything in computing" is vast, so this guide keeps a clean boundary. **User-space systems programming, computer architecture, compilation, memory, Linux OS mechanisms, I/O, networking, storage, and core Rust application engineering** are taught directly with working experiments. Specialised domains outside a single-book scope—such as blockchain/Web3, writing a complete standalone OS kernel from scratch, robotics control theory, and cloud-provider SDKs—are clearly separated and pointed to dedicated follow-on books in [the final chapter](#next).
+"Everything in computing" is vast, so this guide keeps a clean boundary. **User-space systems programming, computer architecture, compilation, memory, Linux OS mechanisms, I/O, networking, storage, and core Rust application engineering** are taught directly with working experiments. Blockchain and Web3, full-screen terminal interfaces, games, WebAssembly and embedded work are taught in the Definitive Curriculum (start with [D5](#blockchain-development) for blockchain). Writing a complete standalone OS kernel from scratch, robotics control theory, and cloud-provider SDKs beyond shared patterns stay outside the scope of one guide; [the final chapter](#next) points to a dedicated book for each.
 
 ## How a chapter is built
 
@@ -188,6 +204,7 @@ Being stuck is a normal part of programming. Professionals are stuck several tim
 At the end of each chapter there is a **Mark as complete** button. Completed chapters get a tick in the table of contents, and the bar at the top of the list fills up. Your progress, quiz answers and ticked exercises are saved in your browser on this device. Nothing is sent anywhere.
 
 :::recap
+- Pick one spine — Parts 1–15 or D1–D13 — and use the other as a reference. The overlap between them is deliberate.
 - Each chapter goes: idea, example, exercise, quiz.
 - Type the code, predict the result, then run it.
 - Try each exercise before opening the hint or the solution.

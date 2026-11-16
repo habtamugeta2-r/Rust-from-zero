@@ -14,6 +14,14 @@ chapter maps the ecosystem and shows the core workflows. It assumes you know
 what a tensor, a gradient and a token are; the [async chapter](#async-concurrency) supplies the
 foundation for serving, and [chapter D12](#webassembly) covers Wasm deployment.
 
+The library's only earlier treatment of this area is the data section of the
+[games, devices and data survey](#games-embedded), which introduces `ndarray`
+and Polars in a few pages. If you read that survey, treat §7.2 as the same
+ground at working depth and move quickly to the material with no survey
+counterpart: choosing a framework (§7.4), inference runtimes (§7.5), language
+and vision pipelines (§7.6–§7.7), embeddings and LLM clients (§7.8–§7.9), and
+training your own small model (§7.16–§7.17).
+
 :::analogy A workshop with imported tools
 Training a frontier model is a research laboratory; deploying it is a workshop
 that must run every day, at a predictable cost, on machines you control. Rust is

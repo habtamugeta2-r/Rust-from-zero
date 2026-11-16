@@ -16,6 +16,12 @@ and real-time frameworks (RTIC). This chapter covers the full path from a
 [games-and-embedded survey](#games-embedded) is a gentle introduction; chapter
 D3 covers the systems primitives used here.
 
+If the survey is still fresh, its ground is §8.1–§8.3 and the first peripheral
+examples: what `no_std` removes, the PAC–HAL–driver layers, and a fake pin for
+testing. Everything from Embassy and RTIC (§8.4–§8.5) onwards — DMA, low-power
+states, over-the-air updates, radios and debugging probes — is taught only
+here, so that is where returning readers should spend their time.
+
 :::analogy A microcontroller is a small factory
 A server can pause, allocate, retry and let an operator fix things. A
 microcontroller has one shift, a fixed amount of shelf space and a machine that

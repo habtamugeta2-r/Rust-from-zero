@@ -16,6 +16,15 @@ chapter](#network-layers-ethernet-ip), [TCP/UDP chapter](#tcp-udp-sockets-kernel
 the kernel and protocol internals; [chapter D4](#backend-development) applies all of this to backend
 services.
 
+Keep the division of labour straight. The library chapters explain how the
+stack *works* — packets, kernel buffers, handshake bytes. This chapter assumes
+that story and teaches how to *build with* the stack from Rust: clients and
+servers (§10.1–§10.3), the protocols above HTTP (§10.6–§10.10), brokers
+(§10.11–§10.14), and the resilience patterns (§10.16–§10.21) that only appear
+once several services must survive each other's failures. Readers arriving
+from the library can skim §10.1–§10.5 for the API shapes and slow down from
+WebSockets onwards.
+
 :::analogy A postal system with receipts
 A socket is an address and a mailbox. TCP adds a conversation with sequence
 numbers and receipts: bytes arrive in order or the sender learns they did not.

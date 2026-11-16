@@ -6,7 +6,7 @@
 @time 35
 @learn Emit structured JSON logs and spans with `tracing` and `tracing-subscriber` | Avoid async span bugs by using `.instrument()` instead of `.entered()` across `.await` | Propagate request IDs and W3C trace contexts across tasks and HTTP calls | Export distributed traces with OpenTelemetry and OTLP | Record counters, gauges, and histograms with `metrics` and serve `/metrics` | Separate `/health/live` and `/health/ready` probes cleanly
 
-For a small local program, `println!` or `dbg!` can help inspect what happened. In a concurrent service, interleaved output can be difficult to search or connect across components. **Observability** is the practice of exposing useful signals about a running system so that operators can investigate its behaviour. This chapter introduces structured logs, traces, metrics and health checks, and explains the questions each can answer.
+For a small local program, `println!` or `dbg!` can help inspect what happened. In a concurrent service, interleaved output can be difficult to search or connect across components. **Observability** is the practice of exposing useful signals about a running system so that operators can investigate its behaviour. The signals themselves — structured logs, traces, metrics and health checks — were introduced with the first services you ran; this chapter takes them to production depth and explains the failure modes that only appear there.
 
 **Observability** is designing a program so that operators can understand what is happening inside it purely from its external signals. In production Rust services, those signals rest on three pillars: structured logs, distributed traces, and numeric metrics — paired with health endpoints so load balancers know when an instance can take traffic.
 
@@ -19,6 +19,8 @@ Flying an aircraft at night without instruments and reading a crash note afterwa
 :::
 
 ## The three pillars: logs, traces, and metrics
+
+You first met these three signals in [the async ecosystem chapter](#async-ecosystem), as a checklist for a new service. This chapter is the second, deeper pass, so the table below is a recap rather than a new idea. What is new here is everything after it: composing a subscriber out of layers, the async span bug that corrupts traces, request identifiers and W3C context crossing service boundaries, an OpenTelemetry exporter, and health probes that a load balancer can trust. If the table already feels familiar, keep reading — the failure modes are the content of this chapter.
 
 | Pillar | What it answers | Example | Typical Rust crate |
 |---|---|---|---|

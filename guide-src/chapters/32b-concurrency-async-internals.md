@@ -9,6 +9,8 @@
 
 An `async fn` creates a future: a value that stores the state needed to resume the function when it is polled. The compiler generates a state machine for that future, but it does not by itself choose a runtime or guarantee that no allocation occurs. An executor decides when to poll tasks and how to wait for external events; Tokio, for example, uses its scheduler and operating-system facilities to do that work. This chapter opens those layers and distinguishes the language machinery from the runtime's choices.
 
+This chapter assumes the working knowledge of [async Rust](#async): writing `async fn`, spawning tasks, and using channels and timeouts. It does not teach that syntax again. Its subject is the layer underneath — the generated state machine, pinning, and the scheduler — so read it when the working knowledge is in place and the machinery itself has become the question.
+
 Opening that machinery makes `Pin`, `!Unpin`, "`Future` is not `Send`", and Tokio scheduling hiccups crystal clear forever.
 
 :::analogy Folding a paper bookmark vs keeping an extra desk

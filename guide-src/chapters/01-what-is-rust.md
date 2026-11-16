@@ -52,8 +52,8 @@ Imagine you wrote a speech in English and the audience speaks only Japanese.
 The **compiler** is the tool that turns your source code into a program the computer can run. For Rust this tool is called `rustc`. To **compile** is to do that translation. **[[Compile time]]** is the moment when the compiler is working. **[[Run time]]** (also written *runtime*) is the moment when the finished program is running. A mistake caught at compile time never reaches the people who use your program. That idea is central to Rust.
 :::
 
-:::note For the curious: the compiler's conveyor belt
-What exactly happens inside the compiler, and what exactly the processor does with the result? [The silicon appendix](#under-the-hood) traces one line of Rust through every station — tokens, syntax tree, the borrow checker, LLVM, machine code, the operating system's loader, and finally the fetch–decode–execute cycle of the CPU. It is an optional deep dive for when the basics feel comfortable.
+:::note Three depths for the same journey — choose one for now
+This section gives the idea in one page: a compiler translates the whole program before it runs. The same journey returns at two greater depths, and you only need the first depth today. Part 2, starting with [the compilation pipeline](#compilation-pipeline), opens each compiler stage and shows real intermediate output. Much later, the [from-source-to-silicon appendix](#under-the-hood) compresses the whole route onto one page as a revision map. Read the idea here, meet the stages in Part 2, and save the appendix for checking that the whole picture still holds together.
 :::
 
 ## Bugs, and the kind Rust was built to stop

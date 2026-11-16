@@ -505,6 +505,8 @@ In [the chat server project](#project-chat), this skeleton grows into a chat ser
 
 You can use async Rust without this section. It is here because knowing what is inside takes away the mystery.
 
+Keep the boundary in mind. This section explains the *idea* of a future, a waker and an executor with a hand-written example small enough to hold in your head. The next chapter, [async internals](#concurrency-async-internals), then does the engineering version: the state-machine `enum` the compiler actually emits, why self-referential futures need `Pin`, and how Tokio's work-stealing scheduler parks and wakes tasks. Read this section for the mental model; read that chapter when an error message mentions `Pin` or `Send`, or when a task stalls and you need to know why.
+
 **A future is a value with one method, `poll`.** Polling a future asks: "are you finished?" It answers `Poll::Ready(value)` or `Poll::Pending` ("not yet, I will let you know").
 
 ```rust
@@ -572,10 +574,10 @@ lift-off!
 
 `Countdown` answers `Pending` three times and then `Ready`. `block_on` is the simplest possible runtime: it polls in a loop until the future is done. A real runtime does not spin like this. It sleeps until a waker tells it that a task can make progress, and it manages many tasks and several threads. The principle is the same.
 
-:::plain What is `Pin`?
-The state machine behind an `async fn` may hold references to its own local variables. If such a value were moved to a different place in memory, those references would point to the old place. `Pin<&mut T>` is a pointer type that promises: "the value behind me will not be moved any more". `poll` requires it, so that self-referential futures are safe. In everyday code you never write `Pin` yourself. When you do need to pin something, the macro `pin!` (as above) or `Box::pin(...)` does it.
+:::plain What is `Pin`? The short answer
+A suspended `async fn` can hold a reference to one of its own local variables. Move that future to a new address and the reference still points at the old one. `Pin<&mut T>` is the promise that prevents this: "the value behind me stays at this address until it is dropped", and `poll` demands that promise. Ordinary types (numbers, strings, vectors) do not care where they live; they are **`Unpin`**, and `Pin` changes nothing for them.
 
-Most types do not care whether they are moved: numbers, strings, vectors. They carry the marker trait **`Unpin`**, and for them `Pin` changes nothing. The futures that `async` creates are the important types that are *not* `Unpin`. That is why some functions ask you to pin a future before you hand it over, and why the compiler sometimes says that a future "cannot be unpinned".
+For everyday code that is enough: you will rarely write `Pin` yourself, and the macro `pin!` (above) or `Box::pin(...)` makes the promise when a function asks for it. The full mechanism — a suspended future drawn in memory, and the dangling pointer a move would create — is worked through with diagrams in the [async internals](#concurrency-async-internals) chapter. Read it there when a "cannot be unpinned" error stops you.
 :::
 
 :::details Pinning structs and `pin-project-lite`

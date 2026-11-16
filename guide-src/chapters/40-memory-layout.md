@@ -296,7 +296,7 @@ The **vtable** ("virtual method table") is a small table that the compiler creat
 
 ## Where data lives
 
-A running program's memory has several regions:
+You met the stack and the heap in [the memory chapter](#memory), as the two places a program keeps its data. They return here with a sharper question. There, the question was *who tidies up*; here it is *which bytes sit in which region, and how many of them are there*. The regions of a running program are:
 
 | Region | Holds | Lifetime |
 |---|---|---|

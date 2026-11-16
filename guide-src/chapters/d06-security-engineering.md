@@ -15,6 +15,16 @@ service. This chapter is the working checklist, with code. Chapter D4 covers
 authentication and authorisation in a service context; this chapter covers the
 primitives and the process.
 
+The library touches security wherever it arises — memory safety in the
+[unsafe chapter](#unsafe), transport security in the [DNS, HTTP and TLS
+trace](#dns-http-tls-trace), dependency checks in [quality tools](#quality-tools).
+This chapter is the first place those scattered concerns are gathered into one
+threat-led pass, and it adds the topics the library does not teach elsewhere:
+cryptography chosen and used correctly (§6.6–§6.13), supply-chain verification
+(§6.14, §6.19–§6.20), fuzzing and formal verification (§6.15–§6.16), and secure
+deserialisation (§6.21). If you read the library first, start from those
+sections and use the rest as the checklist that joins them up.
+
 :::analogy A castle with many doors
 Memory safety is a strong wall, but a castle is only as secure as its doors:
 input parsing, SQL, HTML output, deserialisation, dependencies, secrets and

@@ -15,6 +15,15 @@ system](#type-system), [macros](#macros) and [performance](#performance)
 chapters go deeper on each mechanism; [chapter D1](#core-language) establishes the language
 basics this chapter assumes.
 
+For library readers, the honest map is this: the *mechanisms* in §13.1–§13.7 —
+lifetimes, typestate, macros — have full chapters of their own, linked above,
+and are recapped here only as far as the patterns need them. The *architecture*
+in §13.8–§13.13 — plugins, dependency injection, event-driven design, CQRS,
+domain-driven design and hexagonal structure — is taught nowhere else in the
+guide, and neither is the measurement discipline that closes the chapter
+(§13.14–§13.16). Read the first half as a check on your foundations and the
+second half as new material.
+
 :::analogy A building, not a pile of bricks
 A small program can be a pile of bricks: any brick can be moved anywhere. A
 large program needs load-bearing walls, service corridors and labelled doors.

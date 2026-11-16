@@ -421,6 +421,8 @@ Only one of the two functions exists in the compiled program. (On Windows, the f
 
 `macro_rules!` matches patterns. A **[[procedural macro]]** is more powerful: it is an ordinary Rust function that runs inside the compiler. It receives code as a stream of tokens, can analyse it in any way, and returns new code. There are three kinds:
 
+This section teaches the idea and builds one small derive macro end to end. Two Definitive chapters return to procedural macros as a craft: [DevOps and tooling](#devops-tooling) covers developing, testing and publishing a macro crate, and [advanced patterns](#advanced-patterns) walks through a full derive with error spans and attribute macros that define a small language. Learn what a procedural macro *is* here; open those chapters when you are ready to ship one.
+
 | Kind | Looks like | Examples |
 |---|---|---|
 | Derive macro | `#[derive(Name)]` | `Serialize`, `Deserialize` (serde), `Parser` (clap), `Error` (thiserror) |

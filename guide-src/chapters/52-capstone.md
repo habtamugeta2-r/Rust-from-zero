@@ -61,6 +61,14 @@ The capstone is the guide's only chapter that uses everything at once: a `Cargo.
 A library has a card catalogue: one card per book, filed so that any librarian can find a book by title, author or subject. The catalogue is the database. The librarian behind the desk is the rules layer — they check that a new book has a title before filing it. The public catalogue terminal and the telephone are the web API and the CLI: two different ways to ask the same librarian about the same cards.
 :::
 
+:::note Same pattern as the link shortener, on purpose — here is what to skim and what to study
+This project reuses the architecture of the [link shortener project](#project-api): an HTTP layer, a rules layer and a storage layer, one error type for the whole program, settings from the environment, and tests that hand requests straight to the router. That repetition is the lesson. Building the same shape a second time, in a new domain, is how the shape becomes a habit rather than a copy.
+
+- **The same, so skim it if the shortener is still fresh:** the project layout and migrations in Step 1, the store in Step 3, the routes in Step 5, and settings and `main` in Step 6. Recognise the shape, check what differs, and move on.
+- **New here, so slow down for it:** one data model shared by a web API *and* a command-line tool, a richer domain rule set (reading status and a rating that is only allowed once a book is read), partial updates with `PATCH`, and importing and exporting the whole library as JSON.
+- **If you skipped the shortener:** read every step in order. This chapter is complete on its own, and the shortener can wait until you want a second, shorter example of the same pattern.
+:::
+
 ## Step 0: plan
 
 ### The API

@@ -8,6 +8,8 @@
 
 This chapter surveys three areas that use Rust: games, embedded devices and data work. Each has its own constraints, tools and learning path, so the aim here is orientation rather than mastery. You will meet a small example in each area, learn the central terms, and find a route for exploring further.
 
+Each area also has a full chapter in the Definitive Curriculum, and the two treatments have different jobs. This survey helps you decide whether an area interests you, with one honest example of each. The dedicated chapters then teach the area properly: [game development](#game-development) for games, [embedded systems and IoT](#embedded-iot) for devices, and [AI and machine learning](#ai-ml) for data and models. If you already know which area you want, you may go straight to its chapter and keep this survey as the map you check your choice against.
+
 :::note How the programs of this chapter were tested
 The Cortex-M3 bare-metal project (`thumbv7m-none-eabi`) is extracted and cross-compiled in CI by `tools/check.py --projects`, and the standalone `embedded-hal`, `heapless`, `ndarray`, and machine-learning listings are checked and run by `tools/check.py`. Windowed games (`macroquad`, `Bevy`) were built and played on Linux with real key presses, the QEMU firmware run and Raspberry Pi Pico binary were verified against their targets locally, and the Polars snippet was run against the [Chapter 31](#project-report) sales data.
 :::

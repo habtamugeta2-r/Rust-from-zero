@@ -15,6 +15,14 @@ chapter](#async) and [async internals chapter](#concurrency-async-internals)
 go deeper into the machine-level story; this chapter is the working engineer's
 map.
 
+If you already read those library chapters, read this one selectively. The
+futures, polling and Tokio basics in §2.1–§2.4 will be familiar; the new
+material for you is concentrated in async channels as a family (§2.5), streams
+and sinks (§2.6), async traits (§2.7), and the diagnosis of deadlocks,
+starvation and blocking-in-async failures that the later sections collect in
+one place. Conversely, if this chapter is your first async reading, the library
+chapters are where its claims are proved at machine level.
+
 :::analogy A kitchen, not a photocopier
 A **thread** is a second cook: more chopping happens at the same instant, but
 each cook needs space and equipment. An **async task** is one cook who starts

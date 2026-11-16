@@ -8,6 +8,8 @@
 
 The compiler catches many kinds of mistakes, but it does not check formatting, every style issue or all likely bugs. Rust's toolchain includes tools such as rustfmt and Clippy for those jobs. Teams choose which checks to run locally and in continuous integration; using them consistently makes code easier to review and maintain.
 
+Keep this chapter's job separate from its neighbour's. [Cargo in depth](#cargo) is about Cargo itself: the manifest, dependencies, features, profiles, workspaces and publishing. This chapter is about the tools that pass judgement on the code Cargo builds — formatting, linting, debugging, dependency checks, and the continuous integration that runs them on every change. A tool appears here when its subject is the quality of the code, and in the Cargo chapter when its subject is the structure of the project.
+
 :::plain rustfmt, Clippy, and the toolchain
 The three tools that keep a Rust codebase uniform are all one command away. **rustfmt** rewrites layout — line breaks, spacing, import order — so nobody argues about style and diffs stay small. **[[Clippy]]** is a few hundred lints beyond the compiler's, catching `&Vec<T>` parameters, redundant clones, `if let` chains that want `match`, and off-by-one iterator mistakes, with `#[allow(clippy::…)]` when you genuinely mean it. **[[cargo]] doc** builds the API documentation from your doc comments, and `cargo audit`/`cargo deny` check dependencies for known vulnerabilities and licence problems. Run them in CI with `-D warnings`, so a clean local run and a green build mean the same thing.
 :::

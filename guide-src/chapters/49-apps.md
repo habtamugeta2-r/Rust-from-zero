@@ -8,6 +8,8 @@
 
 A program can present its interface in a browser, in a desktop window or in a native graphical toolkit. Rust can participate in each approach, but the architecture and boundary between Rust and the UI differ. This chapter compares WebAssembly-based browser code, desktop webview shells and native GUI libraries so you can choose a direction for a project.
 
+This is a survey: its job is to help you choose, using one small counter program in each world. When the choice is made, the Definitive Curriculum teaches the chosen world in depth — [WebAssembly](#webassembly) for code in the browser and at the edge, in far more detail than the overview here. Read this chapter to decide *which* interface world fits your project; read that one to build in it.
+
 1. **Rust inside a web page.** The Rust code is compiled to *WebAssembly* and runs in the browser, next to JavaScript or in place of it.
 2. **A web page inside a desktop window, with Rust behind it.** This is the design of *Tauri*.
 3. **Windows drawn by Rust itself.** The libraries *egui*, *iced* and *Slint* stand for three different ways to do that.

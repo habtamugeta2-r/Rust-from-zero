@@ -6,7 +6,9 @@
 @level advanced
 @time 45
 
-This appendix is for readers who want the last layer of the story. [Chapter 13](#memory) introduced the stack and the heap. [Chapter 41](#memory-layout) showed how individual values are arranged byte by byte. This page takes the remaining step: what the compiler does between your source text and a running program, what the operating system does to start it, and what the processor does with each instruction once it is running.
+This appendix is a consolidation, not a second teaching pass. The journey it follows — source text, compiler, executable, running process, processor — is taught in full, one stage at a time, in Part 2 and Parts 6–8. This page puts the stages back together on one screen, so you can check that you hold the whole route at once. If a stage below feels unfamiliar, read its chapter first and return here; the table after the picture says which chapter teaches which stage.
+
+Two neighbouring pages do related but different work. [The compilation pipeline](#compilation-pipeline) teaches each compiler stage with real `rustc` output, and the [end-to-end trace](#end-to-end-trace) follows two concrete lines of Rust through a running program, the allocator and the kernel. This appendix stays at map level: one small example, every station named, and a link onward wherever you want the detail.
 
 Everything here is a model, not a specification of the compiler. `rustc` and LLVM evolve, and internal stage names or ordering can change between versions. The explanations focus on recurring ideas—parsing, type checking, optimisation, code generation and process startup—and flag details that depend on the toolchain, target or optimisation settings.
 
@@ -55,7 +57,19 @@ Here is the whole route a Rust program travels, from the characters you type to 
   └──────────────────┘
 ```
 
-Each station is explained below, in order.
+Each station is explained below, in order. Use this table to find the full teaching chapter for any station:
+
+| Station on this page | Taught in full in |
+|---|---|
+| 1–2. Lexing and parsing | [The compilation pipeline](#compilation-pipeline) |
+| 3. HIR: names and types | [The compilation pipeline](#compilation-pipeline) |
+| 4. MIR and the borrow checker | [The compilation pipeline](#compilation-pipeline), and from the programmer's side in [borrowing](#borrowing) and [lifetimes](#lifetimes) |
+| 5. LLVM IR and optimisation | [The compilation pipeline](#compilation-pipeline) |
+| 6. Machine code | [Assembly and machine code](#assembly-machine-code) and [calling conventions](#calling-conventions-execution) |
+| 7. The linker and the executable file | [Linking and ELF](#linking-elf) |
+| 8. The operating system starts the program | [Program loading and start-up](#program-loading-startup) and [virtual memory](#virtual-memory-address-spaces) |
+| 9. Fetch, decode, execute | [Hardware architecture](#hardware-architecture) and [pipelines and branch prediction](#pipelines-branch-prediction-ooo) |
+| 10. One line, all the way down | [The end-to-end trace](#end-to-end-trace), which follows a running program into the kernel and the terminal |
 
 ## 1. Lexing: text becomes tokens
 
@@ -169,11 +183,10 @@ bytes:  89 F8   0F AF C7   C3
 
 Six bytes of machine code. The numbers and the names are different things: the processor only ever sees the bytes. `89 F8` *is* "move EDI into EAX"; the disassembler prints the friendly names for you.
 
-A few observations worth internalising:
+Two observations carry most of the value here:
 
-- **Registers, not memory.** The arguments and the result travel in registers — the processor's tiny, blisteringly fast storage — not in memory. Reading or writing a register costs under a nanosecond; reading main memory can cost around a hundred nanoseconds.
-- **Position within the call.** On the System V ABI used on Linux and macOS, the first integer argument goes in `RDI`, the second in `RSI`, then `RDX`, `RCX`, `R8`, `R9`, and the integer return value comes back in `RAX`. (Windows uses a different convention: `RCX`, `RDX`, `R8`, `R9`.) `EDI`, `ESI`, `EAX` are the 32-bit halves of those registers. See [chapter 40](#ffi) and [chapter 50](#calling-conventions-execution) for why the ABI matters when Rust calls C.
-- **64-bit registers share names.** Each general-purpose register is one 64-bit cell with narrower windows onto it: `RAX` (64 bits) contains `EAX` (32) contains `AX` (16) contains `AH` and `AL` (8 bits each). Writing `EAX` zeroes the top half of `RAX`.
+- **Registers, not memory.** Arguments and results travel in registers, the processor's fastest storage (under a nanosecond), rather than in main memory (around a hundred nanoseconds). That gap is why compilers work so hard to keep values in registers, a theme the [hardware chapter](#hardware-architecture) develops.
+- **Which register is a rule, not a choice.** On the System V convention used on Linux and macOS, integer arguments arrive in `RDI`, `RSI`, `RDX`, `RCX`, `R8`, `R9` and the result returns in `RAX`; names such as `EDI` and `EAX` are the 32-bit halves of those same registers. Windows assigns the registers differently. These conventions, and why they matter at the boundary with C, are the subject of the [calling conventions](#calling-conventions-execution) chapter and the [FFI chapter](#ffi).
 
 ## 7. The linker: many pieces become one program
 
@@ -207,7 +220,7 @@ Typing `cargo run` (or `./myprogram`) starts a chain of events before your first
 
 ### Virtual memory in one paragraph
 
-The addresses your program uses are **virtual**. Each process believes it has the whole 64-bit range to itself, but those numbers are indices into page tables maintained by the operating system and consulted by a hardware unit called the **memory management unit** (MMU) on every memory access. The unit of mapping is a **page**, typically 4 KB. Two processes can both use address `0x7ffe…` and mean different physical RAM, because their page tables differ. Pages can be marked read-only, can be shared between processes (code pages usually are), and can live in a swapped-out file instead of RAM. The stack overflows you met in [chapter 13](#memory) are caught precisely this way: the OS leaves an unmapped **guard page** at the end of the stack, and the first write into it triggers a page fault that kills the program.
+The addresses your program uses are **virtual**: each process sees its own address space, and the hardware's memory management unit (MMU) translates every address through that process's page tables, in units called **pages** (typically 4 KB). Two consequences explain most of what you observe. The same address in two processes names different physical memory, because their page tables differ. And protection is enforced on every access, which is why the unmapped **guard page** at the end of a stack turns runaway recursion into a clean page fault instead of silent corruption. Page tables, the translation lookaside buffer, demand paging and copy-on-write are taught in full in the [virtual memory](#virtual-memory-address-spaces) chapter; hold on to this paragraph as the map of that territory.
 
 ## 9. Fetch, decode, execute: the processor's three-beat heartbeat
 

@@ -4,6 +4,54 @@ All notable changes to the guide are recorded here. The version number tracks
 the web application in `package.json`; the chapters themselves are content, and
 they change continuously.
 
+## Unreleased — clearer second visits: a duplication pass over every page
+
+An audit of all 101 chapters (verbatim, near-duplicate and topic-level checks)
+found no copied paragraphs, but seven places where the same ground is taught
+twice without saying so. Each now states its own job and what to skim:
+
+- **Two spines, one reading.** The start page, the roadmap and the home page
+  now say plainly that Parts 1–15 and D1–D13 overlap by design, that a reader
+  should follow one spine and use the other as a reference, and that route
+  hours on the home page overlap rather than add up. A stale coverage sentence
+  that sent blockchain readers to other books now points to D5.
+- **The compiler journey, at three depths.** Chapter 1, Part 2, the end-to-end
+  trace and the source-to-silicon appendix now name their distinct depths
+  (idea, stages, running trace, revision map), and the appendix carries a
+  table from each of its stations to the chapter that teaches that station.
+- **Async, three times with boundaries.** The async chapter's internals
+  section, the async-internals chapter and D2 now state what each assumes and
+  what is new, and the double-taught `ureq` lesson in the async ecosystem
+  chapter is one lesson plus a shorter follow-on about reusing an `Agent`.
+- **Observability, essentials then depth.** The async ecosystem chapter is
+  framed as the working essentials and checklist; the observability chapter
+  is framed as the second, production-depth pass. The ecosystem section
+  itself was rewritten tighter — one reason per signal, RED metrics, the
+  label-cardinality trap, and liveness versus readiness (including the
+  `/health` versus `/health/live` naming difference) — with subscriber
+  composition, OpenTelemetry wiring and probe code left to the dedicated
+  chapter. In the same spirit, the async chapter's `Pin` box is now a short
+  answer that defers the in-memory mechanism to async internals, the
+  silicon appendix's virtual-memory and machine-code sections were cut back
+  to map level with links onward, and Part 2 now opens by naming what it
+  assumes from chapter 1.
+- **The two database-backed projects.** The link shortener and the capstone
+  now cross-frame each other: which steps are the familiar pattern to skim,
+  and which (a data model shared by API and CLI, richer domain rules, JSON
+  import and export) are new.
+- **Surveys versus domain chapters, and the Definitive fast paths.** The apps
+  and games/devices/data surveys now state that they help a reader choose,
+  while D11, D12, D7 and D8 teach; every D chapter (D1–D13) opens with
+  tailored guidance on what library readers can skim and what is taught only
+  there. The macros chapter likewise points to the two D chapters that treat
+  procedural macros as a craft.
+- **Neighbouring tooling chapters.** Cargo-versus-quality-tools, memory
+  versus memory-layout, and the final chapter versus the orientation pages
+  each gained a one-paragraph statement of where one job ends and the other
+  begins.
+
+Published statistics were regenerated with `npm run stats` to match.
+
 ## 3.3.0 — the definitive curriculum
 
 ### Added
