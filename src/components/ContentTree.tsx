@@ -16,7 +16,7 @@ import {
   Pencil,
   UnfoldVertical,
 } from "lucide-react";
-import type { ChapterSummary, ContentNode, ContentNodeKind, PartMeta } from "@/lib/guide-types";
+import type { ContentNode, ContentNodeKind, NavigationChapter, PartMeta } from "@/lib/guide-types";
 import {
   contentKindCounts,
   countContentNodes,
@@ -86,8 +86,8 @@ function nodeKey(chapterId: string, nodeId: string) {
 }
 
 /** “6 sections · 2 key ideas · 3 exercises” for an expanded chapter. */
-function chapterCaption(chapter: ChapterSummary): string {
-  const counts = contentKindCounts(chapter.outline);
+function chapterCaption(chapter: NavigationChapter): string {
+  const counts = contentKindCounts(chapter.outline ?? []);
   const bits: string[] = [];
   if (counts.section)
     bits.push(`${counts.section} ${counts.section === 1 ? "section" : "sections"}`);
@@ -105,13 +105,15 @@ export function ContentTree({
   activeChapterId,
   done,
   onNavigate,
+  onRequestOutline,
 }: {
   parts: PartMeta[];
-  chapters: ChapterSummary[];
+  chapters: NavigationChapter[];
   activeChapterId: string | null;
   /** Completion timestamps per chapter id, as kept by GuideStateProvider. */
   done: Record<string, number>;
   onNavigate: () => void;
+  onRequestOutline: (chapterId: string) => void;
 }) {
   const [collapsedParts, setCollapsedParts] = useState<Record<string, boolean>>({});
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
@@ -125,21 +127,21 @@ export function ContentTree({
 
   /* Scroll-spy over the active chapter's headings, shared with the rail. */
   const headingItems = useMemo(
-    () => (activeChapter ? headingItemsFromTree(activeChapter.outline) : []),
+    () => (activeChapter ? headingItemsFromTree(activeChapter.outline ?? []) : []),
     [activeChapter],
   );
   const activeHeadingId = useActiveHeading(headingItems);
   const activePath = useMemo(
     () =>
       activeChapter && activeHeadingId
-        ? (findContentPath(activeChapter.outline, activeHeadingId) ?? [])
+        ? (findContentPath(activeChapter.outline ?? [], activeHeadingId) ?? [])
         : [],
     [activeChapter, activeHeadingId],
   );
   const activePathIds = useMemo(() => new Set(activePath.map((n) => n.id)), [activePath]);
 
   const totalNodes = useMemo(
-    () => chapters.reduce((sum, c) => sum + countContentNodes(c.outline), 0),
+    () => chapters.reduce((sum, c) => sum + countContentNodes(c.outline ?? []), 0),
     [chapters],
   );
 
@@ -192,7 +194,7 @@ export function ContentTree({
 
   /* ---------------- expansion model ---------------- */
 
-  const isChapterExpanded = (chapter: ChapterSummary) => {
+  const isChapterExpanded = (chapter: NavigationChapter) => {
     const key = chapterKey(chapter.id);
     return key in expanded ? expanded[key] : chapter.id === activeChapterId;
   };
@@ -204,7 +206,7 @@ export function ContentTree({
     return chapterId === activeChapterId && activePathIds.has(node.id);
   };
 
-  const toggleChapter = (chapter: ChapterSummary) =>
+  const toggleChapter = (chapter: NavigationChapter) =>
     setExpanded((prev) => ({
       ...prev,
       [chapterKey(chapter.id)]: !isChapterExpanded(chapter),
@@ -220,8 +222,9 @@ export function ContentTree({
     setExpanded((prev) => {
       const next = { ...prev };
       for (const chapter of chapters) {
-        if (chapter.outline.length > 0) next[chapterKey(chapter.id)] = open;
-        for (const { node } of flattenContentTree(chapter.outline)) {
+        const outline = chapter.outline ?? [];
+        if (outline.length > 0) next[chapterKey(chapter.id)] = open;
+        for (const { node } of flattenContentTree(outline)) {
           if (node.children.length > 0) next[nodeKey(chapter.id, node.id)] = open;
         }
       }
@@ -252,7 +255,7 @@ export function ContentTree({
 
   /* ---------------- rendering ---------------- */
 
-  const renderNode = (chapter: ChapterSummary, node: ContentNode, depth: number) => {
+  const renderNode = (chapter: NavigationChapter, node: ContentNode, depth: number) => {
     const hasChildren = node.children.length > 0;
     const open = hasChildren && isNodeExpanded(chapter.id, node);
     const isCurrent =
@@ -420,7 +423,11 @@ export function ContentTree({
                 {list.map((chapter) => {
                   const isActive = chapter.id === activeChapterId;
                   const isDone = Boolean(done[chapter.id]);
-                  const hasOutline = chapter.outline.length > 0;
+                  const outline = chapter.outline;
+                  const outlineNodes = outline ?? [];
+                  const hasOutline = outlineNodes.length > 0;
+                  const needsOutline = outline === undefined;
+                  const canExpand = hasOutline || needsOutline;
                   const open = hasOutline && isChapterExpanded(chapter);
                   const panelId = `ctree-${chapter.id}`;
                   const caption = open ? chapterCaption(chapter) : "";
@@ -438,13 +445,25 @@ export function ContentTree({
                             className="absolute top-1.5 bottom-1.5 -left-2 w-[3px] rounded-full bg-[var(--g-accent)]"
                           />
                         )}
-                        {hasOutline ? (
+                        {canExpand ? (
                           <button
                             type="button"
-                            onClick={() => toggleChapter(chapter)}
+                            onClick={() => {
+                              if (needsOutline) {
+                                setExpanded((prev) => ({
+                                  ...prev,
+                                  [chapterKey(chapter.id)]: true,
+                                }));
+                                onRequestOutline(chapter.id);
+                              } else {
+                                toggleChapter(chapter);
+                              }
+                            }}
                             aria-expanded={open}
                             aria-controls={panelId}
-                            aria-label={`${open ? "Collapse" : "Expand"} contents of “${chapter.short}”`}
+                            aria-label={`${
+                              needsOutline ? "Load" : open ? "Collapse" : "Expand"
+                            } contents of “${chapter.short}”`}
                             className="grid h-7 w-5 shrink-0 place-items-center rounded text-[var(--g-ink3)] hover:text-[var(--g-ink)]"
                           >
                             {open ? (
@@ -474,9 +493,9 @@ export function ContentTree({
                           {hasOutline && (
                             <span
                               className="shrink-0 text-[10px] font-medium text-[var(--g-ink3)] tabular-nums"
-                              title={`${countContentNodes(chapter.outline)} topics inside this chapter`}
+                              title={`${countContentNodes(outlineNodes)} topics inside this chapter`}
                             >
-                              {countContentNodes(chapter.outline)}
+                              {countContentNodes(outlineNodes)}
                             </span>
                           )}
                           {chapter.kind === "project" && (
@@ -502,7 +521,7 @@ export function ContentTree({
                             </p>
                           )}
                           <ol className="content-tree-children content-tree-chapter">
-                            {chapter.outline.map((node) => renderNode(chapter, node, 1))}
+                            {outlineNodes.map((node) => renderNode(chapter, node, 1))}
                           </ol>
                         </div>
                       )}

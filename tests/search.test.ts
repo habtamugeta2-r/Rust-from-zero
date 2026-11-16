@@ -96,3 +96,25 @@ test("search: hits group by chapter in ranking order", () => {
   );
   assert.equal(groups[0].chapterId, hits[0].chapterId);
 });
+
+test("search: short tokens require word-boundary or prefix match, not infix substring", () => {
+  const entries = [
+    entry({ chapterId: "infix", text: "We compute permutations in parallel." }),
+    entry({ chapterId: "word", text: "Declare let mut count = 0;" }),
+  ];
+  const hits = searchEntries(entries, "mut");
+  assert.equal(hits.length, 1);
+  assert.equal(hits[0].chapterId, "word");
+});
+
+test("search: caps query length at 120 chars and deduplicated tokens at 8", () => {
+  const longQuery = `${"borrowing ".repeat(20)}nonexistenttokenbeyond120chars`;
+  const hits = searchEntries(INDEX, longQuery);
+  assert.equal(hits.length, 1);
+  assert.equal(hits[0].chapterId, "borrowing");
+
+  const eightWords = "borrowing lets a function read value without owning nonexistent9thword";
+  const cappedTokens = searchEntries(INDEX, eightWords);
+  assert.equal(cappedTokens.length, 1);
+  assert.equal(cappedTokens[0].chapterId, "borrowing");
+});

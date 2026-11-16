@@ -336,14 +336,63 @@ body {
 /* Dual-theme Shiki: colors switch via CSS variables                   */
 /* ------------------------------------------------------------------ */
 
-.shiki,
-.shiki span {
+.shiki {
+  color: #24292e;
+}
+
+.dark .shiki {
+  color: #e1e4e8;
+}
+
+.shiki span[style] {
   color: var(--shiki-light);
 }
 
-.dark .shiki,
-.dark .shiki span {
+.dark .shiki span[style] {
   color: var(--shiki-dark);
+}
+
+.shiki .s1 {
+  color: #d73a49;
+}
+.dark .shiki .s1 {
+  color: #f97583;
+}
+.shiki .s2 {
+  color: #6f42c1;
+}
+.dark .shiki .s2 {
+  color: #b392f0;
+}
+.shiki .s3 {
+  color: #032f62;
+}
+.dark .shiki .s3 {
+  color: #9ecbff;
+}
+.shiki .s4 {
+  color: #005cc5;
+}
+.dark .shiki .s4 {
+  color: #79b8ff;
+}
+.shiki .s5 {
+  color: #6a737d;
+}
+.dark .shiki .s5 {
+  color: #6a737d;
+}
+.shiki .s6 {
+  color: #22863a;
+}
+.dark .shiki .s6 {
+  color: #85e89d;
+}
+.shiki .s7 {
+  color: #e36209;
+}
+.dark .shiki .s7 {
+  color: #ffab70;
 }
 
 /* ------------------------------------------------------------------ */

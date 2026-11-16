@@ -85,7 +85,7 @@ export function ProgressDashboard({ chapters }: { chapters: ChapterMeta[] }) {
   const totals = useMemo(() => summariseProgress(rows), [rows]);
   const upNext = useMemo(() => nextChapter(rows), [rows]);
   const marks = useMemo(() => bookmarkedChapters(rows), [rows]);
-  const { started, untouched } = useMemo(() => bucketChapters(rows), [rows]);
+  const { completed, started, untouched } = useMemo(() => bucketChapters(rows), [rows]);
 
   const nothingYet = totals.chaptersDone === 0 && totals.questionsAnswered === 0;
 
@@ -235,6 +235,30 @@ export function ProgressDashboard({ chapters }: { chapters: ChapterMeta[] }) {
           </ul>
         )}
       </section>
+
+      {/* Completed chapters stay available as a browsable, collapsible list. */}
+      {completed.length > 0 && (
+        <details className="group">
+          <summary className="flex cursor-pointer list-none items-center gap-2 font-sans text-xs font-bold tracking-wider text-[var(--g-ink3)] uppercase hover:text-[var(--g-ink)]">
+            <Check
+              className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400"
+              aria-hidden="true"
+            />
+            Completed chapters
+            <span className="font-medium normal-case">({completed.length})</span>
+          </summary>
+          <ul className="mt-3 space-y-2">
+            {completed.map((row) => (
+              <ChapterRow
+                key={row.id}
+                row={row}
+                onToggleDone={toggleDone}
+                onToggleBookmark={toggleBookmark}
+              />
+            ))}
+          </ul>
+        </details>
+      )}
 
       {/* In progress */}
       {started.length > 0 && (

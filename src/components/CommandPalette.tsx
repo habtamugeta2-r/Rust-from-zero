@@ -42,8 +42,8 @@ type Item = ActionItem | HitItem;
 /**
  * The single search surface for the whole guide.
  *
- * Opens from the header button, the sidebar field, the home-page button, or the
- * `/` and ⌘K / Ctrl-K shortcuts. Search results and navigation actions live in
+ * Opens from the header button, the home-page button, or the `/` and ⌘K /
+ * Ctrl-K shortcuts. Search results and navigation actions live in
  * one list so a reader can type a word *or* jump straight to a page without
  * deciding which box to use first.
  */

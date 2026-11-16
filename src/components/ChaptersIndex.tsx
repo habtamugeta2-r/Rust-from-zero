@@ -90,15 +90,25 @@ export function ChaptersIndex({ chapters }: { chapters: ChapterMeta[] }) {
                   )}
                   <span
                     className={`inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-1 font-sans text-[11px] font-bold ${
-                      row.done
-                        ? "bg-emerald-600 text-white"
-                        : row.pct > 0
-                          ? "bg-[var(--g-accent-soft)] text-[var(--g-accent)]"
-                          : "bg-[var(--g-sunken)] text-[var(--g-ink3)]"
+                      row.kind === "appendix"
+                        ? "bg-[var(--g-sunken)] text-[var(--g-ink3)]"
+                        : row.done
+                          ? "bg-emerald-600 text-white"
+                          : row.pct > 0
+                            ? "bg-[var(--g-accent-soft)] text-[var(--g-accent)]"
+                            : "bg-[var(--g-sunken)] text-[var(--g-ink3)]"
                     }`}
                   >
-                    {row.done && <Check className="h-3 w-3" aria-hidden="true" />}
-                    {row.done ? "Done" : row.pct > 0 ? `${row.pct}%` : "Not started"}
+                    {row.done && row.kind !== "appendix" && (
+                      <Check className="h-3 w-3" aria-hidden="true" />
+                    )}
+                    {row.kind === "appendix"
+                      ? "Reference"
+                      : row.done
+                        ? "Done"
+                        : row.pct > 0
+                          ? `${row.pct}%`
+                          : "Not started"}
                   </span>
                 </Link>
               </li>
