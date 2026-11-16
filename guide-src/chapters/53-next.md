@@ -93,12 +93,13 @@ Every ecosystem has corners that a guide starting from zero cannot teach honestl
 
 | Area | Why it is out of scope | Where to go |
 |---|---|---|
-| Blockchain and Web3 (`solana`, `anchor`) | Domain-specific, fast-moving, and needs a blockchain mental model before Rust helps | the [Solana developer docs](https://solana.com/developers) |
 | Writing a full custom OS kernel from scratch (`blog_os`, Rust for Linux) | This guide teaches hardware, virtual memory, syscalls, and OS internals from user space; writing an entire bootable kernel requires a dedicated book | [Writing an OS in Rust](https://os.phil-opp.com) and *Operating Systems: Three Easy Pieces* |
 | Robotics (ROS 2 bindings) | The hard part is robotics, not Rust | [`r2r`](https://docs.rs/r2r) and the ROS 2 tutorials |
 | High-frequency trading and market data | Latency engineering at that level is its own discipline, and much of it is closed-source | measure first: [chapter 76](#performance) |
 | Cloud-provider SDKs (`aws-sdk-*`, `azure_*`, `google-cloud-*`) | Each vendor ships its own generated SDK and its own documentation; the pattern is the same for all of them | the vendor's Rust SDK docs, and [`object_store`](https://docs.rs/object_store) for a vendor-neutral API |
-| GraphQL and full-screen terminal UIs (`async-graphql`, `ratatui`) | Real subjects with their own books. This guide names them, says when they are the right choice, and stops there rather than half-teaching them | the crate books linked in the table above and in [chapter 75](#cli) |
+| GraphQL (`async-graphql`) | Real subject with its own book. This guide names it, says when it is the right choice, and stops there rather than half-teaching it | the `async-graphql` book and [chapter 75](#cli) |
+
+Two areas that used to be listed here are now taught in full. Blockchain and Web3 is covered by [chapter D5](#blockchain-development): Solana and Anchor, Substrate, CosmWasm, NEAR, `alloy`, consensus, wallets, bridges and DeFi. Full-screen terminal UIs are covered by [chapter D9](#devops-tooling), which builds a `ratatui` and `crossterm` interface. The [Definitive Curriculum](#roadmap) collects those thirteen domain-complete chapters.
 
 Everything else you meet in [chapter 44](#crates) is either taught in a chapter or described with advice about when to choose it. If you find a crate that is only a name in a table, that is a gap worth reporting.
 

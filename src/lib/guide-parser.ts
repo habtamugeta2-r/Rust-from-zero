@@ -1267,6 +1267,7 @@ export function loadGuide(forceReload = false, rootDir?: string): LoadedGuide {
   const nums: Record<string, string> = {};
   let num = 0;
   let letter = 0;
+  let definitive = 0;
   let projectCount = 0;
 
   for (const ch of rawChapters) {
@@ -1276,6 +1277,11 @@ export function loadGuide(forceReload = false, rootDir?: string): LoadedGuide {
       letter += 1;
     } else if (ch.part === "welcome") {
       ch.num = ch.id === "roadmap" ? "Map" : "0";
+    } else if (ch.part === "def") {
+      // The definitive curriculum is a parallel track with its own D-prefix.
+      // It deliberately does not advance the library's 01–83 numbering.
+      definitive += 1;
+      ch.num = `D${definitive}`;
     } else {
       num += 1;
       ch.num = String(num).padStart(2, "0");

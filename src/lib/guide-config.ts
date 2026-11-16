@@ -108,6 +108,13 @@ export const RAW_PARTS: Omit<PartMeta, "partLabel" | "partTitle">[] = [
       "UI/WebAssembly/Tauri, games and embedded systems, and where to continue your journey.",
   },
   {
+    key: "def",
+    title: "The Definitive Curriculum",
+    level: "All levels",
+    blurb:
+      "Thirteen domain-complete chapters, D1 to D13, covering the language, async and concurrency, systems programming, backend, blockchain, security, AI and machine learning, embedded and IoT, DevOps, networking, games, WebAssembly, and advanced meta-programming. Each chapter stands on its own and links into the deep-dive library.",
+  },
+  {
     key: "app",
     title: "Appendices",
     level: "",
@@ -193,6 +200,28 @@ export const SYSTEMS_IDS = [
   "linux-systems-lab",
 ];
 
+/**
+ * The thirteen chapters of the definitive curriculum, in reading order. They
+ * carry a `D` prefix because the 83 numbered chapters and 524 in-prose
+ * references to them predate this track; renumbering the library would
+ * falsify every one of those references.
+ */
+export const DEFINITIVE_IDS = [
+  "core-language",
+  "async-concurrency",
+  "systems-programming",
+  "backend-development",
+  "blockchain-development",
+  "security-engineering",
+  "ai-ml",
+  "embedded-iot",
+  "devops-tooling",
+  "network-programming",
+  "game-development",
+  "webassembly",
+  "advanced-patterns",
+];
+
 export const ROUTES: RouteMeta[] = [
   {
     id: "all",
@@ -200,6 +229,13 @@ export const ROUTES: RouteMeta[] = [
     summary:
       "The complete 15-part curriculum: computer systems from hardware up, Rust internals, and 9 hands-on projects.",
     chapters: null,
+  },
+  {
+    id: "definitive",
+    label: "Definitive 13",
+    summary:
+      "The domain-complete track, D1 to D13: language, async and concurrency, systems, backend, blockchain, security, AI and ML, embedded and IoT, DevOps, networking, games, WebAssembly, and advanced meta-programming.",
+    chapters: DEFINITIVE_IDS,
   },
   {
     id: "core",

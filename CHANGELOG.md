@@ -4,9 +4,34 @@ All notable changes to the guide are recorded here. The version number tracks
 the web application in `package.json`; the chapters themselves are content, and
 they change continuously.
 
-## Unreleased
+## 3.3.0 — the definitive curriculum
 
 ### Added
+
+- **The Definitive Curriculum: thirteen domain-complete chapters (`D1`–`D13`).**
+  A second, self-contained route through the material, numbered `D1` to `D13` in
+  a new `definitive` part and exposed as the **Definitive 13** route: core
+  language, async and concurrency, systems programming, backend development,
+  blockchain, security engineering, AI and machine learning, embedded systems
+  and IoT, DevOps and tooling, network programming, game development,
+  WebAssembly, and advanced patterns and meta-programming. Every chapter follows
+  the house format — `@learn` objectives, numbered sections, an analogy, a
+  comparison box, runnable examples, pitfalls, three exercises with hints and
+  worked solutions, a five-question quiz and a recap — and links into the
+  numbered library for the underlying mechanics. The `D` prefix keeps the
+  existing 83 numbered chapters and their 524 in-prose references intact.
+- **New parser and configuration surface for the extra part.**
+  `DEFINITIVE_IDS`, a `definitive` route and a `@part def` branch in
+  `src/lib/guide-parser.ts` that numbers the track `D1`…`D13` without touching
+  the positional part numbering.
+- **A design record and gap assessment** in `guide-src/ASSESSMENT.md`, mapping
+  the thirteen requested chapters onto existing content, listing what was
+  missing, and recording the numbering decision and its limits.
+- **Roadmap, coverage policy and README updates.** A
+  `## The Definitive Curriculum` section with reading sequences, blockchain and
+  terminal UIs moved from “out of scope” to taught, and statistics regenerated
+  from the parser (101 chapters, 96 tracked, 1,688 code blocks, 313 exercises,
+  444 quiz questions).
 
 - **The sidebar is now a full content map.** Every chapter expands in
   place into its internal content graph — sections (`##`) hold their
