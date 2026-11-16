@@ -6,9 +6,10 @@ import { NextRequest } from "next/server";
 import { POST as runPost } from "../src/app/api/run/route";
 import { POST as formatPost } from "../src/app/api/format/route";
 import { CodeBlock } from "../src/components/CodeBlock";
+import { shouldHidePairedOutput } from "../src/components/CodeBlockActions";
 import { GuideStateProvider } from "../src/components/GuideStateProvider";
 import { HeroRunner } from "../src/components/HeroRunner";
-import { loadGuide } from "../src/lib/guide-parser";
+import { inlinePlainText, loadGuide } from "../src/lib/guide-parser";
 import type { BlockNode } from "../src/lib/guide-types";
 import {
   FALLBACK_EXECUTE_PATH,
@@ -17,6 +18,7 @@ import {
   PLAYGROUND_EXECUTE_URL,
   PLAYGROUND_FORMAT_URL,
   buildExecuteRequest,
+  consumedPairedOutputCount,
   executeRustCode,
   formatRunDuration,
   formatRustCode,
@@ -687,5 +689,154 @@ describe("in-guide Rust runner", () => {
       `expected >= 55 runnable ext blocks, got ${extRunnableCount}`,
     );
     assert.ok(hiddenRunnableCount > 0, "expected hidden setup lines on runnable blocks");
+  });
+
+  it("pairs static Output and Compiler message blocks so Run never duplicates them", () => {
+    // Only the untouched idle state displays the pre-written static output box.
+    assert.equal(
+      shouldHidePairedOutput({ runnerStatus: "idle", isEditing: false, isModified: false }),
+      false,
+    );
+    for (const runnerStatus of ["running", "done", "error"] as const) {
+      assert.equal(
+        shouldHidePairedOutput({ runnerStatus, isEditing: false, isModified: false }),
+        true,
+      );
+    }
+    assert.equal(
+      shouldHidePairedOutput({ runnerStatus: "idle", isEditing: true, isModified: false }),
+      true,
+    );
+    assert.equal(
+      shouldHidePairedOutput({ runnerStatus: "idle", isEditing: false, isModified: true }),
+      true,
+    );
+
+    // Verify pairing across all 88 chapters, including `variables` E0384 (`score = 20;`).
+    const guide = loadGuide();
+    let directPairs = 0;
+    let bridgePairs = 0;
+    let foundVariablesScoreError = false;
+
+    function scan(blocks: BlockNode[], chapterId: string) {
+      for (let i = 0; i < blocks.length; i += 1) {
+        const consumed = consumedPairedOutputCount(blocks, i, inlinePlainText);
+        if (consumed === 1) {
+          directPairs += 1;
+          const src = blocks[i];
+          const out = blocks[i + 1];
+          if (
+            chapterId === "variables" &&
+            src.type === "code" &&
+            src.kind === "fail" &&
+            src.code.includes("score = 20;") &&
+            out?.type === "code" &&
+            out.isError &&
+            out.code.includes("error[E0384]")
+          ) {
+            foundVariablesScoreError = true;
+          }
+        } else if (consumed === 2) {
+          bridgePairs += 1;
+        }
+
+        const b = blocks[i];
+        if (b.type === "callout" || b.type === "details" || b.type === "blockquote") {
+          scan(b.blocks, chapterId);
+        } else if (b.type === "list") {
+          for (const item of b.items) scan(item.blocks, chapterId);
+        } else if (b.type === "exercise") {
+          scan(b.body, chapterId);
+          if (b.hint) scan(b.hint, chapterId);
+          if (b.solution) scan(b.solution, chapterId);
+        } else if (b.type === "quiz") {
+          for (const q of b.questions) {
+            scan(q.prompt, chapterId);
+            scan(q.explanation, chapterId);
+          }
+        }
+      }
+    }
+
+    for (const ch of guide.chapters) scan(ch.blocks, ch.id);
+
+    assert.equal(foundVariablesScoreError, true);
+    assert.ok(directPairs >= 615, `expected >= 615 direct output pairs, got ${directPairs}`);
+    assert.equal(bridgePairs, 2);
+
+    // Non-runnable blocks (`noplay`) must never consume their static output.
+    const noplayBlocks: BlockNode[] = [
+      {
+        type: "code",
+        lang: "rust",
+        label: "Rust",
+        code: "fn main() {}",
+        isContinuation: false,
+        kind: "run",
+        isExt: false,
+        noPlay: true,
+        isRelease: false,
+        isSoft: false,
+        isOutput: false,
+        isError: false,
+        isPanicOutput: false,
+      },
+      {
+        type: "code",
+        lang: "output",
+        label: "Output",
+        code: "hello",
+        isContinuation: false,
+        kind: "",
+        isExt: false,
+        noPlay: false,
+        isRelease: false,
+        isSoft: false,
+        isOutput: true,
+        isError: false,
+        isPanicOutput: false,
+      },
+    ];
+    assert.equal(consumedPairedOutputCount(noplayBlocks, 0, inlinePlainText), 0);
+
+    // Rendered paired output attaches to the runnable block without double labels.
+    const pairedHtml = renderToStaticMarkup(
+      React.createElement(GuideStateProvider, {
+        children: React.createElement(CodeBlock, {
+          lang: "rust",
+          label: "Rust",
+          rawCode: 'fn main() { let score = 10; score = 20; println!("{score}"); }',
+          isContinuation: false,
+          kind: "fail",
+          isExt: false,
+          noPlay: false,
+          isRelease: false,
+          isSoft: false,
+          isOutput: false,
+          isError: false,
+          pairedOutput: React.createElement(CodeBlock, {
+            lang: "error",
+            label: "Compiler message",
+            isContinuation: false,
+            kind: "",
+            isExt: false,
+            noPlay: false,
+            isRelease: false,
+            isSoft: false,
+            isOutput: false,
+            isError: true,
+            children: React.createElement(
+              "pre",
+              null,
+              "error[E0384]: cannot assign twice to immutable variable `score`",
+            ),
+          }),
+          children: React.createElement("pre", null, "let score = 10;"),
+        }),
+      }),
+    );
+    assert.match(pairedHtml, /data-paired-output="visible"/);
+    assert.match(pairedHtml, /Compiler message/);
+    assert.doesNotMatch(pairedHtml, /Compiler output/);
   });
 });

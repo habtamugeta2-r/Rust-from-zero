@@ -858,6 +858,10 @@ body {
     display: none !important;
   }
 
+  .paired-static-output[hidden] {
+    display: contents !important;
+  }
+
   .guide-figure img.guide-figure-light,
   .guide-lightbox img.guide-figure-light {
     display: block !important;

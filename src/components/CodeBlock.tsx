@@ -17,6 +17,8 @@ export interface CodeBlockProps {
   isOutput: boolean;
   isError: boolean;
   hasMain?: boolean;
+  /** Pre-rendered static output/error block replaced in place on Run or Edit. */
+  pairedOutput?: React.ReactNode;
   children: React.ReactNode;
 }
 
@@ -47,13 +49,12 @@ export function CodeBlock(props: CodeBlockProps) {
         >
           <span className="flex items-center gap-2 font-semibold tracking-[0.08em] text-[var(--g-ink3)] uppercase">
             <span
-              className="h-2 w-2 shrink-0 rounded-full bg-[var(--g-line2)]"
+              className={`h-2 w-2 shrink-0 rounded-full ${
+                props.isError ? "bg-red-400 dark:bg-red-500" : "bg-[var(--g-line2)]"
+              }`}
               aria-hidden="true"
             />
             {props.label}
-          </span>
-          <span className="rounded-full border border-[var(--g-line2)] bg-[var(--g-surface)] px-2 py-0.5 text-[11px] font-semibold text-[var(--g-ink2)]">
-            {props.isError ? "Compiler output" : "Output"}
           </span>
         </figcaption>
 
@@ -93,6 +94,7 @@ export function CodeBlock(props: CodeBlockProps) {
       hiddenFullCode={hiddenFullCode}
       isRelease={props.isRelease}
       isSoft={props.isSoft}
+      pairedOutput={runMode ? props.pairedOutput : undefined}
     >
       {props.children}
     </CodeBlockActions>

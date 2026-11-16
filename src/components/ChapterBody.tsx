@@ -14,6 +14,7 @@ import { CALLOUT_LABELS } from "@/lib/guide-config";
 import type { BlockNode, CalloutKind } from "@/lib/guide-types";
 import { highlightCode, highlightRustLines } from "@/lib/highlight";
 import { inlinePlainText } from "@/lib/guide-parser";
+import { consumedPairedOutputCount } from "@/lib/rust-runner";
 import { ChecklistWidget } from "./ChecklistWidget";
 import { CodeBlock } from "./CodeBlock";
 import { ExerciseCard } from "./ExerciseCard";
@@ -26,10 +27,7 @@ import { QuizWidget } from "./QuizWidget";
 
 /* Kind colours live in globals.css (.guide-callout[data-kind=…]) so the
    eight tints are design tokens, not palette classes scattered here. */
-const CALLOUT_ICONS: Record<
-  CalloutKind,
-  React.ComponentType<{ className?: string }>
-> = {
+const CALLOUT_ICONS: Record<CalloutKind, React.ComponentType<{ className?: string }>> = {
   analogy: Lightbulb,
   plain: MessageSquare,
   compare: Scale,
@@ -41,15 +39,34 @@ const CALLOUT_ICONS: Record<
 };
 
 export async function BlockList({ blocks }: { blocks: BlockNode[] }) {
-  const rendered = await Promise.all(
-    blocks.map((block, idx) => renderBlock(block, idx))
-  );
+  const tasks: Promise<React.ReactNode>[] = [];
+
+  for (let idx = 0; idx < blocks.length;) {
+    const pairedCount = consumedPairedOutputCount(blocks, idx, inlinePlainText);
+    if (pairedCount > 0) {
+      const codeBlock = blocks[idx];
+      const pairedSlice = blocks.slice(idx + 1, idx + 1 + pairedCount);
+      const startIdx = idx;
+      tasks.push(
+        Promise.all(
+          pairedSlice.map((child, offset) => renderBlock(child, startIdx + 1 + offset)),
+        ).then((pairedNodes) => renderBlock(codeBlock, startIdx, <>{pairedNodes}</>)),
+      );
+      idx += 1 + pairedCount;
+    } else {
+      tasks.push(renderBlock(blocks[idx], idx));
+      idx += 1;
+    }
+  }
+
+  const rendered = await Promise.all(tasks);
   return <>{rendered}</>;
 }
 
 async function renderBlock(
   block: BlockNode,
-  key: number
+  key: number,
+  pairedOutput?: React.ReactNode,
 ): Promise<React.ReactNode> {
   switch (block.type) {
     case "heading": {
@@ -131,11 +148,7 @@ async function renderBlock(
             <thead>
               <tr className="border-b border-[var(--g-line2)] bg-[var(--g-sunken)]">
                 {block.headers.map((h, hi) => (
-                  <th
-                    key={hi}
-                    scope="col"
-                    className="px-4 py-2.5 font-bold text-[var(--g-ink)]"
-                  >
+                  <th key={hi} scope="col" className="px-4 py-2.5 font-bold text-[var(--g-ink)]">
                     {inlinePlainText(h).trim() === "" ? (
                       <span className="sr-only">Column {hi + 1}</span>
                     ) : (
@@ -149,10 +162,7 @@ async function renderBlock(
               {block.rows.map((row, ri) => (
                 <tr key={ri} className="hover:bg-[var(--g-bg)]/60">
                   {row.map((cell, ci) => (
-                    <td
-                      key={ci}
-                      className="px-4 py-2.5 align-top text-[var(--g-ink2)]"
-                    >
+                    <td key={ci} className="px-4 py-2.5 align-top text-[var(--g-ink2)]">
                       <InlineRenderer nodes={cell} />
                     </td>
                   ))}
@@ -165,8 +175,7 @@ async function renderBlock(
 
     case "code": {
       const highlightedHtml = await highlightCode(block.code, block.lang);
-      const copyPayload =
-        block.isOutput || block.isError ? undefined : block.code;
+      const copyPayload = block.isOutput || block.isError ? undefined : block.code;
       return (
         <CodeBlock
           key={key}
@@ -183,6 +192,7 @@ async function renderBlock(
           isSoft={block.isSoft}
           isOutput={block.isOutput}
           isError={block.isError}
+          pairedOutput={pairedOutput}
         >
           <div dangerouslySetInnerHTML={{ __html: highlightedHtml }} />
         </CodeBlock>
@@ -195,9 +205,7 @@ async function renderBlock(
           key={key}
           src={block.src}
           alt={block.alt}
-          caption={
-            block.caption.length > 0 ? <InlineRenderer nodes={block.caption} /> : null
-          }
+          caption={block.caption.length > 0 ? <InlineRenderer nodes={block.caption} /> : null}
         />
       );
 
@@ -205,11 +213,7 @@ async function renderBlock(
       return (
         <FlameGraph
           key={key}
-          caption={
-            block.caption.length > 0 ? (
-              <InlineRenderer nodes={block.caption} />
-            ) : null
-          }
+          caption={block.caption.length > 0 ? <InlineRenderer nodes={block.caption} /> : null}
           roots={block.roots}
         />
       );
@@ -264,7 +268,7 @@ async function renderBlock(
             content: <InlineRenderer nodes={o.children} />,
           })),
           explanationNode: <BlockList blocks={q.explanation} />,
-        }))
+        })),
       );
       return (
         <QuizWidget
@@ -285,9 +289,7 @@ async function renderBlock(
           title={<InlineRenderer nodes={block.title} />}
           body={<BlockList blocks={block.body} />}
           hint={block.hint ? <BlockList blocks={block.hint} /> : undefined}
-          solution={
-            block.solution ? <BlockList blocks={block.solution} /> : undefined
-          }
+          solution={block.solution ? <BlockList blocks={block.solution} /> : undefined}
         />
       );
 

@@ -12,6 +12,8 @@
  * `/api/format`).
  */
 
+import type { BlockNode, InlineNode } from "./guide-types";
+
 export const PLAYGROUND_EXECUTE_URL = "https://play.rust-lang.org/execute";
 export const PLAYGROUND_FORMAT_URL = "https://play.rust-lang.org/format";
 export const FALLBACK_EXECUTE_PATH = "/api/run";
@@ -416,6 +418,61 @@ export function getBlockRunMode(opts: {
   if (opts.kind === "panic" && hasMainFn(source)) return "run";
   if (opts.kind === "test") return "test";
   return null;
+}
+
+const RUN_LEAD_IN_RE = /^Run cargo (?:run|test)\b/;
+
+/**
+ * When `blocks[index]` is a runnable Rust code block followed by its static
+ * pre-written `output` or `error` block (either immediately at `index + 1`, or
+ * after a short `"Run cargo run/test…"` lead-in paragraph at `index + 1` with
+ * the output/error at `index + 2`), return how many following sibling blocks
+ * belong to that static output slot (`1` or `2`; otherwise `0`).
+ *
+ * Pairing them lets `CodeBlockActions` swap out the static output box as soon
+ * as the reader clicks Run, Test, or Edit, preventing duplicate live + static
+ * outputs from appearing together.
+ */
+export function consumedPairedOutputCount(
+  blocks: readonly BlockNode[],
+  index: number,
+  plainText: (nodes: InlineNode[]) => string,
+): 0 | 1 | 2 {
+  const current = blocks[index];
+  if (!current || current.type !== "code" || current.isOutput || current.isError) {
+    return 0;
+  }
+
+  const runMode = getBlockRunMode({
+    lang: current.lang,
+    kind: current.kind,
+    rawCode: current.code,
+    fullCode: current.fullCode,
+    isExt: current.isExt,
+    noPlay: current.noPlay,
+  });
+  if (!runMode) return 0;
+
+  const next = blocks[index + 1];
+  if (!next) return 0;
+
+  if (next.type === "code" && (next.isOutput || next.isError)) {
+    return 1;
+  }
+
+  const afterNext = blocks[index + 2];
+  if (
+    next.type === "paragraph" &&
+    afterNext?.type === "code" &&
+    (afterNext.isOutput || afterNext.isError)
+  ) {
+    const text = plainText(next.children).trim();
+    if (text.length <= 120 && RUN_LEAD_IN_RE.test(text)) {
+      return 2;
+    }
+  }
+
+  return 0;
 }
 
 export function buildExecuteRequest(opts: {
