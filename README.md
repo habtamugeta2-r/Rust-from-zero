@@ -17,24 +17,24 @@ table disagrees with that measurement.
 
 | Published number | Count |
 | --- | ---: |
-| Chapters | 88 |
-| Tracked chapters | 83 |
+| Chapters | 101 |
+| Tracked chapters | 96 |
 | Appendices | 5 |
 | Projects | 9 |
-| Code blocks | 1,329 |
-| Rust code fences | 1,007 |
-| Exercises | 274 |
-| Quiz questions | 379 |
+| Code blocks | 1,688 |
+| Rust code fences | 1,298 |
+| Exercises | 313 |
+| Quiz questions | 444 |
 | Captured outputs | 104 |
-| Search entries | 17,768 |
+| Search entries | 20,687 |
 | Glossary terms | 253 |
 | Glossary terms linked from prose | 253 |
-| Cross-links (inbound edges) | 1,137 |
-| Words of prose | 224,546 |
-| Declared reading time (minutes) | 3,800 |
+| Cross-links (inbound edges) | 1,259 |
+| Words of prose | 267,220 |
+| Declared reading time (minutes) | 5,030 |
 
 Exercises carry a hint and a worked solution; quiz questions carry an
-explanation of the answer. Declared reading time sums the `@time` of all 88
+explanation of the answer. Declared reading time sums the `@time` of all 101
 chapters, appendices included, derived from prose word count plus exercises
 and quiz questions. Stack: Next.js 16 App Router, React 19, TypeScript,
 Tailwind CSS v4, Shiki.
@@ -44,11 +44,28 @@ comparison tables, runnable examples and machine-level walkthroughs, exercises,
 a quiz, and a recap. Verified Rust examples are compiled and checked against
 printed output by `guide-src/tools/check.py` (Rust Edition 2024).
 
-## What the guide covers (15 Parts + 5 Appendices)
+## Two ways through the material
 
-Explore the full dependency graph in the **[Complete Learning Roadmap](./guide-src/chapters/00b-roadmap.md)** (`#roadmap`) or filter by route (**Core Rust**, **Systems & internals**, **CLI tools**, **Web & APIs**, **Optional surveys**) directly on the home page:
+**The Definitive Curriculum** is a domain-complete track of thirteen chapters,
+numbered **D1–D13**: core language, async and concurrency, systems programming,
+backend, blockchain, security, AI and machine learning, embedded and IoT,
+DevOps and tooling, networking, game development, WebAssembly, and advanced
+patterns and meta-programming. Each chapter is self-contained, from beginner
+explanations to advanced practice, with idiomatic code, pitfalls,
+cross-references, three exercises and a quiz. Start at
+[D1 · Core language fundamentals](./guide-src/chapters/d01-core-language.md) or
+read [the track overview](./guide-src/chapters/00b-roadmap.md#the-definitive-curriculum).
+
+The original **15-part library** below remains the deep reference for hardware,
+the compiler, memory, the kernel and the ecosystem. Every `D` chapter links into
+it for the underlying mechanics.
+
+## What the guide covers (15 Parts + 13 Definitive chapters + 5 Appendices)
+
+Explore the full dependency graph in the **[Complete Learning Roadmap](./guide-src/chapters/00b-roadmap.md)** (`#roadmap`) or filter by route (**Definitive 13**, **Core Rust**, **Systems & internals**, **CLI tools**, **Web & APIs**, **Optional surveys**) directly on the home page:
 
 - **Welcome (`00-start`, `00b-roadmap`):** How to study with the 10-stage systems lens, plus the complete chapter-by-chapter dependency map
+- **Definitive Curriculum (`D1`–`D13`):** Thirteen domain-complete chapters — core language, async and concurrency, systems, backend, blockchain, security, AI/ML, embedded and IoT, DevOps, networking, games, WebAssembly, and advanced patterns — each with explanations, runnable code, pitfalls, exercises and a quiz
 - **Part 1 — Understanding computers from the inside:** why Rust exists, hardware architecture (CPU, ALU, registers, caches, DRAM, buses), bits/bytes/two's complement/IEEE-754/UTF-8/endianness, and setting up Rust + Linux inspection tools
 - **Part 2 — From source code to machine instructions:** `rustc` pipeline (lexing, AST, HIR, MIR, LLVM IR), code generation, x86-64/ARM64 assembly, machine opcodes, object files, linking, and ELF segments
 - **Part 3 — Rust foundations and ownership:** variables, types, functions, control flow, stack/heap memory, ownership, borrowing, slices/strings, structs, enums, patterns, collections, and two CLI projects
@@ -68,7 +85,7 @@ Explore the full dependency graph in the **[Complete Learning Roadmap](./guide-s
 
 ## What it deliberately does not cover
 
-"Everything in computing" is unbounded, so this guide maintains a clear coverage boundary declared in [Where to go from here](./guide-src/chapters/53-next.md): blockchain/Web3 (`solana`, `anchor`), writing a complete standalone bootable OS kernel from scratch (`blog_os`, Rust for Linux kernel drivers), robotics (`ROS 2`), high-frequency trading, and provider-specific cloud SDKs beyond S3-compatible patterns are pointed cleanly to dedicated follow-on references.
+"Everything in computing" is unbounded, so this guide maintains a clear coverage boundary declared in [Where to go from here](./guide-src/chapters/53-next.md): writing a complete standalone bootable OS kernel from scratch (`blog_os`, Rust for Linux kernel drivers), robotics (`ROS 2`), high-frequency trading, GraphQL servers, and provider-specific cloud SDKs beyond S3-compatible patterns are pointed cleanly to dedicated follow-on references. Blockchain and Web3, and full-screen terminal UIs, are now taught in [D5](./guide-src/chapters/d05-blockchain-development.md) and [D9](./guide-src/chapters/d09-devops-tooling.md).
 
 ## Run locally
 

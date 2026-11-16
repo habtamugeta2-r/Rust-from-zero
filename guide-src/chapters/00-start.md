@@ -24,11 +24,11 @@ Explore the full chapter-by-chapter dependency map in the **[Complete Learning R
 
 | | |
 |---|---|
-| Structure | 15 Parts + 5 Appendices (83 tracked chapters & orientation guides + 5 appendices = 88 sections) |
+| Structure | 15 Parts + 13 definitive chapters (D1–D13) + 5 Appendices (96 tracked chapters & orientation guides + 5 appendices = 101 sections) |
 | Projects | 9 complete projects and labs built step by step, including a Linux `/proc` & ELF systems inspector |
 | Appendices | Glossary, systems & Rust reference tables, compiler error catalogue, language translation guides, and a from-source-to-silicon deep dive |
-| Rust examples | 1,007 Rust listings across 1,329 code blocks, paired with real compiler diagnostics and machine-level traces |
-| Exercises & Quizzes | 274 worked exercises (each with hint + solution) and 379 instant-feedback quiz questions |
+| Rust examples | 1,298 Rust listings across 1,688 code blocks, paired with real compiler diagnostics and machine-level traces |
+| Exercises & Quizzes | 313 worked exercises (each with hint + solution) and 444 instant-feedback quiz questions |
 
 Where the guide shows compiler diagnostics or captured output, those blocks come straight from `rustc` (Rust 2024 edition). Hardware, ELF, and Linux kernel experiments are written for `x86_64` and `ARM64` Linux environments with `rustc`, `cargo`, `objdump`, `readelf`, `nm`, `strace`, `rust-gdb`, `perf`, and `/proc`.
 
@@ -42,6 +42,7 @@ Start with the **Complete Learning Roadmap** ([roadmap](#roadmap)) to see how ev
 | **Systems & internals** | Parts 1 through 14 in full order | Understanding the entire computer stack from hardware & compilation to OS, I/O, CPU, networking & storage |
 | **CLI tools** | Core path → [Crates](#crates) → [Serde](#serde) → [Command-line tools](#cli) | Terminal utilities and automation scripts |
 | **Web backends & APIs** | Core path → Part 11 Concurrency → Part 12 Networking & [Axum](#web) → Part 13 [Databases](#databases) → [Observability](#observability) → [Capstone](#capstone) | Production HTTP services, telemetry, and SQL persistence |
+| **Definitive 13** | [D1–D13](#roadmap), one domain-complete chapter per area, from core language to advanced meta-programming | A structured domain path through backend, blockchain, security, AI/ML, embedded, DevOps, networking, games or WebAssembly |
 | **Optional ecosystem surveys** | [Apps (Wasm, Tauri, GUI)](#apps) and [Games, embedded & data](#games-embedded) | Exploring specialised application domains |
 
 :::tip Follow the ten-stage lens

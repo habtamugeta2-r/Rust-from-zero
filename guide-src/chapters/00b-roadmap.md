@@ -433,6 +433,51 @@ Read the parts in numerical order if you want the complete computer-systems stor
 
 ---
 
+## The Definitive Curriculum
+
+The fifteen parts above are a library: deep dives into hardware, the compiler,
+memory, the kernel and the ecosystem, written to be read in any order once the
+basics are in place. **The Definitive Curriculum** is the other way through the
+same material: thirteen domain-complete chapters, numbered **D1 to D13**, that
+each cover one area from beginner explanations to advanced practice, with
+idiomatic code, pitfalls, cross-references and exercises. Read it front to back
+for a structured path, or open a single chapter when you need that domain.
+
+| # | Chapter | Focus | Level |
+| --- | --- | --- | --- |
+| D1 | [Core language fundamentals](#core-language) | Ownership, types, traits, generics, error handling, modules, closures, iterators, smart pointers | Beginner to intermediate |
+| D2 | [Async and concurrency](#async-concurrency) | Threads, channels, `Mutex`, `Send`/`Sync`, futures, Tokio, cancellation, structured concurrency | Intermediate |
+| D3 | [Systems programming](#systems-programming) | `unsafe`, FFI, layout, allocators, syscalls, `mmap`, signals, processes, `strace` | Intermediate to advanced |
+| D4 | [Backend development](#backend-development) | Axum, extractors, SQLx, migrations, auth, background jobs, gRPC, observability, deploys | Intermediate |
+| D5 | [Blockchain development](#blockchain-development) | Solana and Anchor, Substrate, CosmWasm, NEAR, `alloy`, consensus, wallets, DeFi, MEV | Advanced |
+| D6 | [Security engineering](#security-engineering) | Threat modelling, input validation, injection, secrets, crypto, supply chain, sandboxing | Intermediate to advanced |
+| D7 | [AI and machine learning](#ai-ml) | Tensors, `ort`, `candle`, embeddings, RAG, inference serving, evaluation, safety | Intermediate to advanced |
+| D8 | [Embedded systems and IoT](#embedded-iot) | `no_std`, `embedded-hal`, Embassy, RTIC, DMA, low power, OTA, MQTT, LoRaWAN, BLE | Intermediate to advanced |
+| D9 | [DevOps, tooling and best practices](#devops-tooling) | Workspaces, proc macros, testing, coverage, CI, Docker, Nix, releases, supply chain | Intermediate |
+| D10 | [Network programming](#network-programming) | TCP/UDP framing, HTTP clients and servers, TLS, WebSockets, QUIC, gRPC, MQTT, libp2p | Advanced |
+| D11 | [Game development](#game-development) | Bevy ECS, rendering, physics, audio, input, assets, netcode, procedural generation | Intermediate |
+| D12 | [WebAssembly](#webassembly) | `wasm-bindgen`, Yew/Leptos/Dioxus, WASI, components, memory, size, workers, plugins | Intermediate to advanced |
+| D13 | [Advanced patterns and meta-programming](#advanced-patterns) | HRTBs, GATs, typestate, derive and attribute macros, plugins, DI, CQRS, DDD, profiling | Advanced |
+
+**How the two tracks relate.** Every `D` chapter links into the numbered library
+for the underlying mechanics: D1 leans on Parts 3–4, D2 on
+[threads](#threads) and [async](#async), D3 on Parts 6–10, D10 on Parts 12–13,
+and D13 on [advanced traits](#advanced-traits), [type system](#type-system) and
+[performance](#performance). The library remains the reference; the definitive
+track is the guided route through it. Chapters carry a `D` prefix on purpose:
+the numbered chapters and the hundreds of in-prose references to them predate
+this track, so renumbering them would falsify those references. The design
+record is in `guide-src/ASSESSMENT.md`.
+
+**Suggested sequences.**
+
+- *Application developer:* D1 → D2 → D4 → D6 → D9 → D10.
+- *Systems and embedded:* D1 → D3 → D8 → D10 → D13.
+- *Data, AI and games:* D1 → D2 → D7 → D11 → D12.
+- *Web3:* D1 → D2 → D4 → D5 → D6.
+
+---
+
 ## Appendices
 
 - **[Appendix A · Glossary](#glossary)** — Searchable dictionary of every computer systems, hardware, compiler, OS, and Rust term used in this guide.
