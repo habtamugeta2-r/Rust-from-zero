@@ -30,7 +30,7 @@ table disagrees with that measurement.
 | Glossary terms | 253 |
 | Glossary terms linked from prose | 253 |
 | Cross-links (inbound edges) | 1,259 |
-| Words of prose | 267,156 |
+| Words of prose | 267,220 |
 | Declared reading time (minutes) | 5,030 |
 
 Exercises carry a hint and a worked solution; quiz questions carry an
@@ -120,8 +120,8 @@ npx vercel --prod # production deployment
 ```
 
 Or import the repository in the Vercel dashboard (framework preset: **Next.js**).
-The `/api/search` route runs as a serverless function; the chapter pages are
-fully prerendered static output.
+The `/api/search`, `/api/run`, and `/api/format` routes run as serverless
+functions; the chapter pages are fully prerendered static output.
 
 **Node.js version.** The build's Node version comes from the Vercel project
 setting, so `package.json` deliberately declares **no** `engines.node` pin. An

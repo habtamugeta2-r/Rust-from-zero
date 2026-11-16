@@ -420,7 +420,8 @@ body {
 .guide-prose code:not(pre code),
 .guide-prose kbd,
 .guide-prose table,
-.guide-prose pre {
+.guide-prose pre,
+.guide-prose textarea {
   font-family: var(--font-mono);
 }
 
@@ -855,6 +856,10 @@ body {
   .chapter-aside,
   .app-scrim {
     display: none !important;
+  }
+
+  .paired-static-output[hidden] {
+    display: contents !important;
   }
 
   .guide-figure img.guide-figure-light,

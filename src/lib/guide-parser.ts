@@ -364,7 +364,8 @@ function renderCode(info: string, rawLines: string[], ctx: ParseCtx): BlockNode 
     }
   }
   const isContinuation = Boolean(filename && flags.includes("cont"));
-  const kind = flags.find((f) => CHECK_FLAGS.has(f)) ?? "";
+  const isExt = flags.includes("ext") || flags.some((f) => f.startsWith("ext="));
+  const kind = flags.find((f) => f !== "ext" && CHECK_FLAGS.has(f)) ?? (isExt ? "ext" : "");
   let lines = [...rawLines];
   let fullCode: string | undefined;
 
@@ -379,9 +380,13 @@ function renderCode(info: string, rawLines: string[], ctx: ParseCtx): BlockNode 
       return st === "#" || st.startsWith("# ");
     });
     if (
-      (kind === "run" || kind === "wrap") &&
-      (hidden || kind === "wrap") &&
-      !flags.includes("ext")
+      (kind === "run" ||
+        kind === "wrap" ||
+        kind === "test" ||
+        kind === "panic" ||
+        kind === "fail" ||
+        kind === "warns") &&
+      (hidden || kind === "wrap")
     ) {
       const src: string[] = [];
       for (const l of rawLines) {
@@ -460,7 +465,7 @@ function renderCode(info: string, rawLines: string[], ctx: ParseCtx): BlockNode 
     filename,
     isContinuation,
     kind,
-    isExt: flags.includes("ext"),
+    isExt,
     noPlay: flags.includes("noplay"),
     isRelease: lang === "rust" && flags.includes("release"),
     isSoft,

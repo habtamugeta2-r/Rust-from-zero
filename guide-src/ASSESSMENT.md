@@ -147,7 +147,7 @@ tree on 2026-11-16.
 | Quiz questions | 379 | 444 |
 | Search entries | 17,768 | 20,687 |
 | Inbound cross-links | 1,137 | 1,259 |
-| Words of prose | 224,482 | 267,156 |
+| Words of prose | 224,482 | 267,220 |
 
 The thirteen new chapters total about 75,300 words. Every `D` chapter carries a
 full header, 16–30 numbered sections, an analogy, a comparison box, three
