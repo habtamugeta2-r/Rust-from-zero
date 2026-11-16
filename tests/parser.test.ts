@@ -5,7 +5,45 @@ import os from "node:os";
 import path from "node:path";
 import { test } from "node:test";
 import { loadGuide } from "../src/lib/guide-parser";
-import type { BlockNode } from "../src/lib/guide-types";
+import { flattenContentTree } from "../src/lib/content-tree";
+import type { BlockNode, ContentNodeKind } from "../src/lib/guide-types";
+
+/** Every DOM anchor a chapter outline may point at, from its blocks. */
+function anchorIds(blocks: BlockNode[], into = new Set<string>()): Set<string> {
+  for (const block of blocks) {
+    switch (block.type) {
+      case "heading":
+        into.add(block.id);
+        break;
+      case "exercise":
+        into.add(block.exerciseId);
+        anchorIds(block.body, into);
+        if (block.hint) anchorIds(block.hint, into);
+        if (block.solution) anchorIds(block.solution, into);
+        break;
+      case "quiz":
+        into.add(block.quizId);
+        break;
+      case "checklist":
+        into.add(block.checklistId);
+        break;
+      case "callout":
+        if (block.id) into.add(block.id);
+        anchorIds(block.blocks, into);
+        break;
+      case "blockquote":
+      case "details":
+        anchorIds(block.blocks, into);
+        break;
+      case "list":
+        for (const item of block.items) anchorIds(item.blocks, into);
+        break;
+      default:
+        break;
+    }
+  }
+  return into;
+}
 
 const RUST_LINES = ["fn main() {", '    println!("hi");', "}"];
 const RUST_HASH = crypto
@@ -227,6 +265,72 @@ test("parser: an unknown glossary term is a warning, a known one is not", () => 
     !guide.warnings.some((warning) => warning.includes("[[borrowing]]")),
     "the defined term must not warn",
   );
+});
+
+test("parser: a chapter summary carries its content graph", () => {
+  const guide = loadGuide(true, fixtureRoot());
+  const fixture = guide.chapterMap["fixture"];
+  const flat = flattenContentTree(fixture.outline);
+
+  // The fixture has one `##` heading; its quiz, exercise, checklist and
+  // recap all hang underneath it, in document order.
+  assert.equal(flat[0].node.kind, "section");
+  assert.equal(flat[0].node.label, "First heading");
+  assert.equal(flat[0].depth, 0);
+  const leafKinds = flat.slice(1).map(({ node }) => node.kind);
+  for (const expected of ["recap", "quiz", "exercise", "checklist"]) {
+    assert.ok(
+      leafKinds.includes(expected as ContentNodeKind),
+      `outline is missing a ${expected} node`,
+    );
+  }
+  assert.ok(flat.every(({ depth }) => depth <= 1));
+
+  // Every node in the graph is a working deep link: its anchor exists on
+  // a block the chapter page renders with that id.
+  const anchors = anchorIds(fixture.blocks);
+  for (const { node } of flat) {
+    assert.ok(anchors.has(node.id), `outline node ${node.id} has no matching anchor`);
+  }
+
+  // Summaries and chapter data share the same graph (the sidebar reads
+  // summaries, so a graph only on ChapterData would never reach it).
+  const summary = guide.summaries.find((c) => c.id === "fixture");
+  assert.deepEqual(summary?.outline, fixture.outline);
+});
+
+test("parser: the real guide's content graphs resolve to real anchors", () => {
+  const guide = loadGuide(true);
+  assert.ok(guide.summaries.length > 50, "the real guide is loaded");
+
+  let totalNodes = 0;
+  for (const chapter of guide.chapters) {
+    const flat = flattenContentTree(chapter.outline);
+    totalNodes += flat.length;
+
+    const sections = flat.filter(({ node }) => node.kind === "section").length;
+    assert.equal(
+      sections,
+      chapter.headings.filter((h) => h.level === 2).length,
+      `${chapter.id}: outline sections must mirror its ## headings`,
+    );
+
+    const anchors = anchorIds(chapter.blocks);
+    const seen = new Set<string>();
+    for (const { node, depth } of flat) {
+      assert.ok(node.id, `${chapter.id}: outline node “${node.label}” has no anchor`);
+      assert.ok(!seen.has(node.id), `${chapter.id}: duplicate outline anchor ${node.id}`);
+      seen.add(node.id);
+      assert.ok(
+        anchors.has(node.id),
+        `${chapter.id}: outline anchor ${node.id} is not rendered on the page`,
+      );
+      assert.ok(depth <= 3, `${chapter.id}: outline nests deeper than key-point level`);
+    }
+  }
+
+  // The whole knowledge base at a glance: well over a thousand topics.
+  assert.ok(totalNodes > 1000, `expected a deep content graph, got ${totalNodes} nodes`);
 });
 
 test("parser: fixture statistics count exercises, questions and code", () => {

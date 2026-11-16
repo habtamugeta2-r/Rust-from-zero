@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
+import { buildContentTree } from "./content-tree";
 import { CALLOUT_LABELS, CHECK_FLAGS, LANG_LABELS, RAW_PARTS, ROUTES } from "./guide-config";
 import type {
   BlockNode,
@@ -51,6 +52,7 @@ interface ParseCtx {
   quiz: number;
   ex: number;
   check: number;
+  callout: number;
   lastHash: string;
   glossary: Record<string, GlossaryEntry>;
   nums: Record<string, string>;
@@ -799,10 +801,14 @@ function renderDirective(head: string, buf: string[], ctx: ParseCtx): BlockNode[
   const title = (sp >= 0 ? head.slice(sp + 1) : "").trim();
 
   if (kind in CALLOUT_LABELS) {
+    ctx.callout += 1;
     return [
       {
         type: "callout",
         kind: kind as CalloutKind,
+        // Every callout gets a stable anchor so the content graph can
+        // deep-link to key ideas and recaps, not only to headings.
+        id: `${ctx.id}--callout-${ctx.callout}`,
         title: title ? splitMarkdownInline(title, ctx) : undefined,
         blocks: parseBlocks(buf, ctx),
       },
@@ -1247,6 +1253,7 @@ export function loadGuide(forceReload = false, rootDir?: string): LoadedGuide {
     quiz: 0,
     ex: 0,
     check: 0,
+    callout: 0,
     lastHash: "",
     capturedDir,
     publicDir: rootDir ? path.join(rootDir, "public") : path.join(process.cwd(), "public"),
@@ -1296,6 +1303,8 @@ export function loadGuide(forceReload = false, rootDir?: string): LoadedGuide {
     time: ch.time,
     learn: ch.learn,
     file: ch.file,
+    // Filled in below, once the chapter's blocks have been parsed.
+    outline: [],
   }));
 
   const chapters: ChapterData[] = rawChapters.map((ch, idx) => {
@@ -1306,6 +1315,7 @@ export function loadGuide(forceReload = false, rootDir?: string): LoadedGuide {
       quiz: 0,
       ex: 0,
       check: 0,
+      callout: 0,
       lastHash: "",
       capturedDir,
       publicDir: rootDir ? path.join(rootDir, "public") : path.join(process.cwd(), "public"),
@@ -1318,6 +1328,10 @@ export function loadGuide(forceReload = false, rootDir?: string): LoadedGuide {
     const blocks = parseBlocks(ch.lines, ctx);
     const learnNodes = ch.learn.map((item) => splitMarkdownInline(item, ctx));
     const summary = summaries[idx];
+    // The summary is shared with the sidebar, so writing the outline onto
+    // it here gives every consumer (sidebar, chapter list, prev/next) the
+    // same content graph without a second parse.
+    summary.outline = buildContentTree(blocks);
     return {
       ...summary,
       learnNodes,

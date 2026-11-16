@@ -110,7 +110,7 @@ export type BlockNode =
     }
   | { type: "flame"; caption: InlineNode[]; roots: FlameNode[] }
   | { type: "figure"; src: string; alt: string; caption: InlineNode[] }
-  | { type: "callout"; kind: CalloutKind; title?: InlineNode[]; blocks: BlockNode[] }
+  | { type: "callout"; kind: CalloutKind; id?: string; title?: InlineNode[]; blocks: BlockNode[] }
   | { type: "details"; title: InlineNode[]; blocks: BlockNode[] }
   | { type: "quiz"; quizId: string; title: InlineNode[]; questions: QuizQuestion[] }
   | {
@@ -135,6 +135,35 @@ export interface HeadingItem {
   text: string;
 }
 
+/**
+ * One node of a chapter's internal content graph.
+ *
+ * The sidebar renders a chapter as a tree of these: a section (`##`) holds
+ * its subsections (`###`), which hold their key points — a `####` detail,
+ * a `:::key` callout, an exercise, a quiz, a checklist or a recap. Every
+ * node's `id` is the DOM anchor of the block it came from inside the
+ * chapter page, so a node is also a deep link: `/chapters/<id>#<node id>`.
+ * `children` is always present (empty for leaves) so renderers and tests
+ * never have to null-check the graph.
+ */
+export type ContentNodeKind =
+  | "section"
+  | "subsection"
+  | "detail"
+  | "key"
+  | "recap"
+  | "exercise"
+  | "quiz"
+  | "checklist";
+
+export interface ContentNode {
+  /** DOM anchor id inside the chapter page (a heading id, `exerciseId`, …). */
+  id: string;
+  label: string;
+  kind: ContentNodeKind;
+  children: ContentNode[];
+}
+
 export interface ChapterSummary {
   id: string;
   num: string;
@@ -147,6 +176,8 @@ export interface ChapterSummary {
   time: number;
   learn: string[];
   file: string;
+  /** The chapter broken down into its internal content graph. */
+  outline: ContentNode[];
 }
 
 export interface ChapterData extends ChapterSummary {

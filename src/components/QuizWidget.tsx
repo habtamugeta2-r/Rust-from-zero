@@ -37,6 +37,7 @@ export function QuizWidget({
 
   return (
     <section
+      id={quizId}
       className="my-8 overflow-hidden rounded-card border border-[var(--g-line)] bg-[var(--g-surface)] shadow-card"
       aria-label="Quiz"
     >

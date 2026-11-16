@@ -36,6 +36,7 @@ export function ExerciseCard({
 
   return (
     <div
+      id={exerciseId}
       className={`my-7 overflow-hidden rounded-card border transition-colors ${
         isDone
           ? "border-emerald-400/70 bg-[var(--g-surface)] dark:border-emerald-800/70"

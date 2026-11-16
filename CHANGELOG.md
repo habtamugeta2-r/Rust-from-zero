@@ -4,6 +4,23 @@ All notable changes to the guide are recorded here. The version number tracks
 the web application in `package.json`; the chapters themselves are content, and
 they change continuously.
 
+## Unreleased
+
+### Added
+
+- **The sidebar is now a full content map.** Every chapter expands in
+  place into its internal content graph — sections (`##`) hold their
+  subsections (`###`), which hold their key points (a `####` detail, a
+  `:::key` idea, an exercise, a quiz, a checklist, a recap) — drawn with
+  connector rails, depth icons and nested-topic counts, so the depth of
+  the whole guide is visible at a glance (the map header counts the
+  chapters and topics from the chapters themselves).
+  Every node deep-links to its anchor on the chapter page (key ideas,
+  exercises, quizzes and checklists gained stable anchors to make that
+  true), branches collapse independently or all at once, the reader's
+  arrangement persists across reloads, and the branch containing the
+  section being read opens and highlights itself as they scroll.
+
 ## 3.2.0 — pictures everywhere they earn their place
 
 3.1.0 proved the figure system on four chapters. 3.2.0 takes it to the
